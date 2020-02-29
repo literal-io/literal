@@ -1,0 +1,19 @@
+{
+  "name": "literal",
+  "version": "1.0.0",
+  "description": "A textual annotation management system.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/javamonn/literal.git"
+  },
+  "author": "",
+  "license": "MIT - Hippocratic 1.2",
+  "bugs": {
+    "url": "https://github.com/javamonn/literal/issues"
+  },
+  "homepage": "https://github.com/javamonn/literal#readme"
+}
