@@ -4,7 +4,7 @@
   "description": "A textual annotation management system.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lerna": "lerna"
   },
   "repository": {
     "type": "git",
@@ -15,5 +15,9 @@
   "bugs": {
     "url": "https://github.com/javamonn/literal/issues"
   },
-  "homepage": "https://github.com/javamonn/literal#readme"
+  "homepage": "https://github.com/javamonn/literal#readme",
+  "devDependencies": {
+    "lerna": "^3.20.2",
+    "prettier": "^1.19.1"
+  }
 }
