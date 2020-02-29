@@ -1,8 +1,11 @@
-package io.literal;
+package io.literal.ui;
+
+import io.literal.R;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+
 
 public class MainActivity extends AppCompatActivity {
 
