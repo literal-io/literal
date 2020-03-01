@@ -88,10 +88,7 @@ Parameters:
                     
   authProviders:
     Type: CommaDelimitedList
-      
-  googleClientId:
-    Type: String
-                      
+              
   usernameAttributes:
     Type: CommaDelimitedList
         
@@ -109,7 +106,7 @@ Parameters:
                     
   userPoolGroupList:
     Type: CommaDelimitedList
-                                                
+                                    
   parentStack:
     Type: String
                 
@@ -118,7 +115,10 @@ Parameters:
               
   dependsOn:
     Type: CommaDelimitedList
-    
+      
+  googleClientId:
+    Type: String
+                        
 Conditions:
   ShouldNotCreateEnvResources: !Equals [ !Ref env, NONE ]
 

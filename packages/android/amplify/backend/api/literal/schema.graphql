@@ -1,7 +1,28 @@
-type Screenshot @model {
-	id: ID!
-	title: String!
-	content: String!
-	price: Int
-	rating: Float
+input S3ObjectInput {
+  bucket: String!
+  key: String!
+  region: String!
+  localUri: String
+  mimeType: String
+}
+
+type S3Object @aws_iam {
+  bucket: String!
+  key: String!
+  region: String!
+}
+
+type Screenshot
+  @model 
+  @auth(rules: [{allow: public, provider: iam, operations: [create, read]}]) 
+  {
+  id: ID!
+  createdAt: String!
+  file: S3Object!
+}
+
+input CreateScreenshotInput {
+  id: ID
+  createdAt: String
+  file: S3ObjectInput!
 }

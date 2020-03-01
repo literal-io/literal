@@ -1,0 +1,37 @@
+# this is an auto generated file. This will be overwritten
+mutation CreateScreenshot(
+  $input: CreateScreenshotInput!
+  $condition: ModelScreenshotConditionInput
+) {
+  createScreenshot(input: $input, condition: $condition) {
+    id
+    createdAt
+    file {
+      ...S3Object
+    }
+  }
+}
+mutation UpdateScreenshot(
+  $input: UpdateScreenshotInput!
+  $condition: ModelScreenshotConditionInput
+) {
+  updateScreenshot(input: $input, condition: $condition) {
+    id
+    createdAt
+    file {
+      ...S3Object
+    }
+  }
+}
+mutation DeleteScreenshot(
+  $input: DeleteScreenshotInput!
+  $condition: ModelScreenshotConditionInput
+) {
+  deleteScreenshot(input: $input, condition: $condition) {
+    id
+    createdAt
+    file {
+      ...S3Object
+    }
+  }
+}

@@ -1,0 +1,28 @@
+# this is an auto generated file. This will be overwritten
+subscription OnCreateScreenshot {
+  onCreateScreenshot {
+    id
+    createdAt
+    file {
+      ...S3Object
+    }
+  }
+}
+subscription OnUpdateScreenshot {
+  onUpdateScreenshot {
+    id
+    createdAt
+    file {
+      ...S3Object
+    }
+  }
+}
+subscription OnDeleteScreenshot {
+  onDeleteScreenshot {
+    id
+    createdAt
+    file {
+      ...S3Object
+    }
+  }
+}
