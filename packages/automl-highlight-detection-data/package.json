@@ -5,6 +5,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "npm run ts:build && node dist",
     "ts:build": "tsc",
     "ts:watch": "tsc -w"
   },
