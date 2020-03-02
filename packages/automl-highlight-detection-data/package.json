@@ -5,13 +5,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npm run ts:build && node dist",
+    "start": "npm run clean && npm run ts:build && node dist",
+    "clean": "rm -r dist && rm output/screenshot/*",
     "ts:build": "tsc",
     "ts:watch": "tsc -w"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google-cloud/storage": "^4.3.1",
     "@types/ramda": "^0.26.43",
     "@types/uuid": "^7.0.0",
     "playwright": "^0.11.1",

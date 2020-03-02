@@ -1,7 +1,8 @@
 import * as R from 'ramda'
-import { DOMAIN, Injectable, SerializedScope, RehydratedScope } from './types'
-import { parsers } from './parsers'
-import { scope } from './scope'
+import {DOMAIN, SerializedScope, RehydratedScope} from './types'
+import {parsers} from './parsers'
+import {scope} from './scope'
+import {Page} from 'playwright'
 
 export * from './types'
 
@@ -10,13 +11,13 @@ export * from './types'
  * serialized into the browser context, **everything** it accesses must be an explicit 
  * arg, and not just closed over. Typescript compilation can disrupt this subtley.
  */
-export const browserInject = (domain: DOMAIN): Injectable => {
+export const browserInject = (domain: DOMAIN, page: Page) => {
 
   const serializedScope: SerializedScope = R.map((fn) => fn.toString(), scope)
   const serializedParser: string = parsers[domain].toString()
 
-  return {
-    handler: (serializedScope: SerializedScope) => {
+  return page.evaluate(
+    (serializedScope: SerializedScope) => {
       const scope =
         Object.keys(serializedScope).reduce((memo, key) => ({
           ...memo,
@@ -27,7 +28,7 @@ export const browserInject = (domain: DOMAIN): Injectable => {
       const range = scope.getRandomRange(textNodes)
       scope.scrollToRange(range)
 
-    },
-    args: {...serializedScope, parser: serializedParser}
-  }
+      const annotations = scope.getSelectionAnnotations(range)
+      return annotations
+    }, {...serializedScope, parser: serializedParser})
 }
