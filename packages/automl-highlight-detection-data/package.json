@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npm run clean && npm run ts:build && node dist",
-    "clean": "rm -r dist && rm output/screenshot/*",
+    "clean": "rm -rf dist && rm -f output/screenshot/*",
     "ts:build": "tsc",
     "ts:watch": "tsc -w"
   },

@@ -18,7 +18,7 @@ const exec = async ({context}: {context: BrowserContext}) => {
   const outputPath = resolve(OUTPUT_DIR, fileName)
   const annotations = await getScreenshot({
     context,
-    href: 'https://en.wikipedia.org/wiki/Baroque',
+    href: 'https://en.wikipedia.org/wiki/Special:Random',
     outputPath,
     domain: DOMAIN.WIKIPEDIA
   })
@@ -45,7 +45,7 @@ const exec = async ({context}: {context: BrowserContext}) => {
       url: `gs://${GCLOUD_BUCKET_NAME}/${jobId}/${destinationName}`,
       ...a
     }))
-  }, 5)).then(R.flatten)
+  }, 10)).then(R.flatten)
 
 
   const csv = results.map(({
@@ -76,4 +76,6 @@ const exec = async ({context}: {context: BrowserContext}) => {
   )
 
   await browser.close()
+
+  console.log(`Upload complete. Job ID: ${jobId}`)
 })()

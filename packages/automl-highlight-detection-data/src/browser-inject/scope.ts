@@ -1,5 +1,4 @@
 import {InjectScope, SelectionAnnotation} from './types'
-import {identity} from 'ramda';
 
 export const scope: InjectScope = {
   getTextNodes: (el: HTMLElement): Text[] => {
@@ -19,31 +18,39 @@ export const scope: InjectScope = {
     range.setStart(startNode, 0)
 
     // walk ranges of increasing distance until we exceed the viewport height
-    let maxEndNodeIdx = startNodeIdx
-    try {
-      while (
-        range.setEnd(textNodes[maxEndNodeIdx], 0),
-        range.getBoundingClientRect().height < viewportHeight
-      ) {maxEndNodeIdx++}
-      maxEndNodeIdx = maxEndNodeIdx - 1
-    } catch (ex) { /** noop */ }
+    let maxEndNodeIdx = Math.max(startNodeIdx - 1, 0)
+    do {
+      maxEndNodeIdx = maxEndNodeIdx + 1
+      range.setEnd(textNodes[maxEndNodeIdx], textNodes[maxEndNodeIdx].length)
+    } while (
+      maxEndNodeIdx < textNodes.length - 1 &&
+      range.getBoundingClientRect().height < viewportHeight
+    )
+    maxEndNodeIdx = maxEndNodeIdx - 1
+    const maxRangeLength = range.toString().trim().length
 
-    // randomly select end node from the set of valid nodes
-    const endNodeIdx = startNodeIdx + Math.round(Math.random() * (maxEndNodeIdx - startNodeIdx))
-    // randomly select an offset within the end node
-    // TODO: weight begin / end of the node more than the middle?
-    const endNodeOffset = Math.round(Math.random() * (textNodes[endNodeIdx].length - 1))
+    // randomly select end node from the set of valid nodes, ensuring it results in a selection
+    // at least of a certain size
+    let endNodeIdx
+    let endNodeOffset
+    do {
+      endNodeIdx = startNodeIdx + Math.round(Math.random() * (maxEndNodeIdx - startNodeIdx))
+      endNodeOffset = Math.round(Math.random() * (textNodes[endNodeIdx].length))
 
-    range.setEnd(textNodes[endNodeIdx], endNodeOffset)
+      range.setEnd(textNodes[endNodeIdx], endNodeOffset)
+    } while (range.collapsed || range.toString().trim().length < Math.min(20, maxRangeLength))
 
     return range
   },
   scrollToRange: (range: Range) => {
-    document.getSelection().removeAllRanges()
-    document.getSelection().addRange(range)
+    window.getSelection().removeAllRanges()
+    window.getSelection().addRange(range)
 
     // scroll the range into view, with some random offset
-    window.scroll(0, range.getBoundingClientRect().top)
+    window.scroll(
+      window.scrollX + range.getBoundingClientRect().left,
+      window.scrollY + range.getBoundingClientRect().top
+    )
   },
   getSelectionAnnotations: (range: Range): SelectionAnnotation[] => {
     const vWidth = document.documentElement.clientWidth
@@ -51,11 +58,13 @@ export const scope: InjectScope = {
     const bb = range.getBoundingClientRect()
 
     const startRange = new Range()
-    startRange.selectNode(range.startContainer)
+    startRange.setStart(range.startContainer, range.startOffset)
+    startRange.setEnd(range.startContainer, (range.startContainer as Text).length)
     const startBB = startRange.getBoundingClientRect()
 
     const endRange = new Range()
-    endRange.selectNode(range.endContainer)
+    endRange.setStart(range.endContainer, 0)
+    endRange.setEnd(range.endContainer, range.endOffset)
     const endBB = endRange.getBoundingClientRect()
 
     const annotations = [
@@ -68,18 +77,18 @@ export const scope: InjectScope = {
           yRelativeMax: bb.bottom / vHeight
         }
       },
-      startBB.left > bb.left && startBB.top === bb.top
+      startBB.left > bb.left
         ? {
           label: 'highlight_edge',
           boundingBox: {
             xRelativeMin: bb.left / vWidth,
-            yRelativeMin: startBB.top / vHeight,
+            yRelativeMin: bb.top / vHeight,
             xRelativeMax: startBB.left / vWidth,
             yRelativeMax: startBB.bottom / vHeight
           }
         }
         : null,
-      endBB.right < bb.right && endBB.bottom === bb.bottom
+      endBB.right < bb.right
         ? {
           label: 'highlight_edge',
           boundingBox: {
