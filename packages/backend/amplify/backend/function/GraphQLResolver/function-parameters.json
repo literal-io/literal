@@ -1,0 +1,28 @@
+{
+    "permissions": {
+        "auth": {
+            "literalAuth": [
+                "create",
+                "read",
+                "update",
+                "delete"
+            ]
+        },
+        "api": {
+            "literal": [
+                "create",
+                "read",
+                "update",
+                "delete"
+            ]
+        },
+        "storage": {
+            "literalStorage": [
+                "create",
+                "read",
+                "update",
+                "delete"
+            ]
+        }
+    }
+}
