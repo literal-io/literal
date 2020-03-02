@@ -4,6 +4,7 @@ import * as R from 'ramda'
 import {Storage} from '@google-cloud/storage'
 import {getScreenshot, getBrowserContext} from './lib/playwright'
 import {DOMAIN} from './browser-inject'
+import limit from 'p-limit'
 
 import {resolve} from 'path'
 import {writeFileSync} from 'fs'
@@ -12,6 +13,9 @@ const OUTPUT_DIR = resolve(__dirname, '../output/screenshot')
 const GCLOUD_SERVICE_ACCOUNT_FILENAME = resolve(__dirname, '../gcloud-service-account.json')
 const GCLOUD_PROJECT_ID = 'literal-269716'
 const GCLOUD_BUCKET_NAME = 'literal-screenshot'
+const OUTPUT_SIZE = 500
+
+const pLimit = limit(25)
 
 const exec = async ({context}: {context: BrowserContext}) => {
   const fileName = `${uuid()}_firefox_wikipedia_pixel-2.png`
@@ -35,7 +39,7 @@ const exec = async ({context}: {context: BrowserContext}) => {
   })
   const jobId = uuid()
 
-  const results = await Promise.all(R.times(async () => {
+  const run = async () => {
     const {screenshotPath, annotations, screenshotFileName: destinationName} = await exec({context})
     await storage
       .bucket(GCLOUD_BUCKET_NAME)
@@ -45,8 +49,14 @@ const exec = async ({context}: {context: BrowserContext}) => {
       url: `gs://${GCLOUD_BUCKET_NAME}/${jobId}/${destinationName}`,
       ...a
     }))
-  }, 10)).then(R.flatten)
+  }
 
+  const results = await Promise.all(
+    R.times(
+      () => pLimit(() => run()),
+      OUTPUT_SIZE
+    )
+  ).then(R.flatten)
 
   const csv = results.map(({
     url,

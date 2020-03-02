@@ -38,7 +38,11 @@ export const scope: InjectScope = {
       endNodeOffset = Math.round(Math.random() * (textNodes[endNodeIdx].length))
 
       range.setEnd(textNodes[endNodeIdx], endNodeOffset)
-    } while (range.collapsed || range.toString().trim().length < Math.min(20, maxRangeLength))
+    } while (
+      range.collapsed ||
+      range.toString().trim().length < Math.min(10, maxRangeLength) ||
+      range.getBoundingClientRect().height > viewportHeight
+    )
 
     return range
   },
@@ -46,10 +50,14 @@ export const scope: InjectScope = {
     window.getSelection().removeAllRanges()
     window.getSelection().addRange(range)
 
+    const bb = range.getBoundingClientRect()
+    const maxYOffset = document.documentElement.clientHeight - bb.height
+    const maxXOffset = document.documentElement.clientWidth - bb.width
+
     // scroll the range into view, with some random offset
     window.scroll(
-      window.scrollX + range.getBoundingClientRect().left,
-      window.scrollY + range.getBoundingClientRect().top
+      window.scrollX + range.getBoundingClientRect().left - (maxXOffset * Math.random()),
+      window.scrollY + range.getBoundingClientRect().top - (maxYOffset * Math.random())
     )
   },
   getSelectionAnnotations: (range: Range): SelectionAnnotation[] => {
