@@ -7,6 +7,6 @@
         android:layout_width="132dp"
         android:layout_height="132dp"
         android:layout_centerInParent="true"
-        android:src="@mipmap/ic_launcher"
+        android:src="@drawable/logo"
         android:elevation="2dp"/>
 </RelativeLayout>
