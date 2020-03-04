@@ -1,0 +1,45 @@
+g_std_incl = /home/daniel/Documents/javamonn/literal/packages/backend/amplify/backend/function/GraphQLResolver/src/node_modules/bs-platform/lib/ocaml
+g_pkg_flg = -bs-package-name GraphQLResolver -bs-ns GraphQLResolver
+src_root_dir = /home/daniel/Documents/javamonn/literal/packages/backend/amplify/backend/function/GraphQLResolver/src
+bsc = /home/daniel/Documents/javamonn/literal/packages/backend/amplify/backend/function/GraphQLResolver/src/node_modules/bs-platform/lib/bsc.exe
+bsdep = /home/daniel/Documents/javamonn/literal/packages/backend/amplify/backend/function/GraphQLResolver/src/node_modules/bs-platform/lib/bsb_helper.exe
+warnings =  -warn-error +101
+bsc_flags = 
+ppx_flags = -ppx /home/daniel/Documents/javamonn/literal/packages/backend/amplify/backend/function/GraphQLResolver/src/node_modules/decco/ppx
+g_dpkg_incls = 
+g_ns = -bs-ns GraphQLResolver
+bsb_dir_group = 0
+g_lib_incls = -I . -I src -I /home/daniel/Documents/javamonn/literal/packages/backend/amplify/backend/function/GraphQLResolver/src/node_modules/decco/lib/ocaml
+rule build_ast_from_re
+  command = $bsc  $warnings -color always $ppx_flags $bsc_flags -o $out -bs-syntax-only -bs-binary-ast $in
+  description = [34mBuilding[39m [2m${out}[22m
+build  src/Index.reast : build_ast_from_re $src_root_dir/src/Index.re
+rule build_deps
+  command = $bsdep -hash bbacca94cd90f392c6baa803a6b5b52b $g_ns -g $bsb_dir_group $in
+  restat = 1
+  description = [34mBuilding[39m [2m${out}[22m
+build  src/Index.d : build_deps src/Index.reast
+rule ml_cmj_cmi
+  command = $bsc -nostdlib $g_pkg_flg -color always -bs-suffix $g_lib_incls -I $g_std_incl $warnings $bsc_flags -o $out $in
+  dyndep = $in_e.d
+  restat = 1
+  description = [34mBuilding[39m [2m${out}[22m
+build  src/Index-GraphQLResolver.cmj |  src/Index-GraphQLResolver.cmi $src_root_dir/src/Index.bs.js : ml_cmj_cmi src/Index.reast ||  src/Index.d
+  g_pkg_flg = $g_pkg_flg  -bs-package-output commonjs:src
+build  src/Lib_Lambda.reast : build_ast_from_re $src_root_dir/src/Lib_Lambda.re
+build  src/Lib_Lambda.d : build_deps src/Lib_Lambda.reast
+build  src/Lib_Lambda-GraphQLResolver.cmj |  src/Lib_Lambda-GraphQLResolver.cmi $src_root_dir/src/Lib_Lambda.bs.js : ml_cmj_cmi src/Lib_Lambda.reast ||  src/Lib_Lambda.d
+  g_pkg_flg = $g_pkg_flg  -bs-package-output commonjs:src
+build  src/QueryResolver.reast : build_ast_from_re $src_root_dir/src/QueryResolver.re
+build  src/QueryResolver.d : build_deps src/QueryResolver.reast
+build  src/QueryResolver-GraphQLResolver.cmj |  src/QueryResolver-GraphQLResolver.cmi $src_root_dir/src/QueryResolver.bs.js : ml_cmj_cmi src/QueryResolver.reast ||  src/QueryResolver.d
+  g_pkg_flg = $g_pkg_flg  -bs-package-output commonjs:src
+build  src/Externals_GoogleCloud.reast : build_ast_from_re $src_root_dir/src/Externals_GoogleCloud.re
+build  src/Externals_GoogleCloud.d : build_deps src/Externals_GoogleCloud.reast
+build  src/Externals_GoogleCloud-GraphQLResolver.cmj |  src/Externals_GoogleCloud-GraphQLResolver.cmi $src_root_dir/src/Externals_GoogleCloud.bs.js : ml_cmj_cmi src/Externals_GoogleCloud.reast ||  src/Externals_GoogleCloud.d
+  g_pkg_flg = $g_pkg_flg  -bs-package-output commonjs:src
+rule build_package
+  command = $bsc -w -49 -color always -no-alias-deps  $in
+  restat = 1
+  description = [34mBuilding[39m [2m${out}[22m
+build  GraphQLResolver.cmi : build_package GraphQLResolver.mlmap

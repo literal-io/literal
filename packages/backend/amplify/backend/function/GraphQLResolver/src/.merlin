@@ -1,0 +1,14 @@
+####{BSB GENERATED: NO EDIT
+B lib/bs
+FLG -open GraphQLResolver
+FLG -ppx /home/daniel/Documents/javamonn/literal/packages/backend/amplify/backend/function/GraphQLResolver/src/node_modules/decco/ppx
+FLG -ppx /home/daniel/Documents/javamonn/literal/packages/backend/amplify/backend/function/GraphQLResolver/src/node_modules/bs-platform/lib/bsppx.exe
+S /home/daniel/Documents/javamonn/literal/packages/backend/amplify/backend/function/GraphQLResolver/src/node_modules/bs-platform/lib/ocaml
+B /home/daniel/Documents/javamonn/literal/packages/backend/amplify/backend/function/GraphQLResolver/src/node_modules/bs-platform/lib/ocaml
+FLG -nostdlib
+FLG -w +a-4-9-40-41-42-50-102
+S /home/daniel/Documents/javamonn/literal/packages/backend/amplify/backend/function/GraphQLResolver/src/node_modules/decco/lib/ocaml
+B /home/daniel/Documents/javamonn/literal/packages/backend/amplify/backend/function/GraphQLResolver/src/node_modules/decco/lib/ocaml
+S src
+B lib/bs/src
+####BSB GENERATED: NO EDIT}
