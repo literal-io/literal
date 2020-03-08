@@ -2,8 +2,12 @@
 'use strict';
 
 var Js_exn = require("bs-platform/lib/js/js_exn.js");
+var Core = require("@aws-amplify/core");
 var Lib_Lambda$GraphQLResolver = require("./Lib_Lambda.bs.js");
+var Lib_Constants$GraphQLResolver = require("./Lib_Constants.bs.js");
 var QueryResolver$GraphQLResolver = require("./QueryResolver.bs.js");
+
+Core.default.configure(Lib_Constants$GraphQLResolver.awsAmplifyConfig);
 
 function handler($$event) {
   var match = Lib_Lambda$GraphQLResolver.event_decode($$event);
@@ -22,4 +26,4 @@ function handler($$event) {
 }
 
 exports.handler = handler;
-/* No side effect */
+/*  Not a pure module */

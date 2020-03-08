@@ -1,1 +1,0 @@
-{ "dirs" : [ "src" ] , "pkgs" : [ [ "bs-platform" , "/home/daniel/Documents/javamonn/literal/packages/backend/amplify/backend/function/GraphQLResolver/src/node_modules/bs-platform" ] , [ "decco" , "/home/daniel/Documents/javamonn/literal/packages/backend/amplify/backend/function/GraphQLResolver/src/node_modules/decco" ] ] , "generated" : [] }

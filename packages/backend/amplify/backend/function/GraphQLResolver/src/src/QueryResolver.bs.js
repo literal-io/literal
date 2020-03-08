@@ -2,12 +2,150 @@
 'use strict';
 
 var Block = require("bs-platform/lib/js/block.js");
+var Curry = require("bs-platform/lib/js/curry.js");
 var Decco = require("decco/src/Decco.js");
 var Js_exn = require("bs-platform/lib/js/js_exn.js");
 var Js_dict = require("bs-platform/lib/js/js_dict.js");
 var Js_json = require("bs-platform/lib/js/js_json.js");
+var Js_option = require("bs-platform/lib/js/js_option.js");
 var Belt_Option = require("bs-platform/lib/js/belt_Option.js");
 var Belt_Result = require("bs-platform/lib/js/belt_Result.js");
+var Caml_option = require("bs-platform/lib/js/caml_option.js");
+var Api = require("@aws-amplify/api");
+var $$Storage = require("@aws-amplify/storage");
+
+var ppx_printed_query = "query GetScreenshot($screenshotId: ID!)  {\ngetScreenshot(id: $screenshotId)  {\nfile  {\nbucket  \nkey  \nregion  \n}\n\n}\n\n}\n";
+
+function parse(value) {
+  var value$1 = Js_option.getExn(Js_json.decodeObject(value));
+  var match = Js_dict.get(value$1, "getScreenshot");
+  var tmp;
+  if (match !== undefined) {
+    var value$2 = Caml_option.valFromOption(match);
+    var match$1 = Js_json.decodeNull(value$2);
+    if (match$1 !== undefined) {
+      tmp = undefined;
+    } else {
+      var value$3 = Js_option.getExn(Js_json.decodeObject(value$2));
+      var match$2 = Js_dict.get(value$3, "file");
+      var tmp$1;
+      if (match$2 !== undefined) {
+        var value$4 = Js_option.getExn(Js_json.decodeObject(Caml_option.valFromOption(match$2)));
+        var match$3 = Js_dict.get(value$4, "bucket");
+        var tmp$2;
+        if (match$3 !== undefined) {
+          var value$5 = Caml_option.valFromOption(match$3);
+          var match$4 = Js_json.decodeString(value$5);
+          tmp$2 = match$4 !== undefined ? match$4 : Js_exn.raiseError("graphql_ppx: Expected string, got " + JSON.stringify(value$5));
+        } else {
+          tmp$2 = Js_exn.raiseError("graphql_ppx: Field bucket on type S3Object is missing");
+        }
+        var match$5 = Js_dict.get(value$4, "key");
+        var tmp$3;
+        if (match$5 !== undefined) {
+          var value$6 = Caml_option.valFromOption(match$5);
+          var match$6 = Js_json.decodeString(value$6);
+          tmp$3 = match$6 !== undefined ? match$6 : Js_exn.raiseError("graphql_ppx: Expected string, got " + JSON.stringify(value$6));
+        } else {
+          tmp$3 = Js_exn.raiseError("graphql_ppx: Field key on type S3Object is missing");
+        }
+        var match$7 = Js_dict.get(value$4, "region");
+        var tmp$4;
+        if (match$7 !== undefined) {
+          var value$7 = Caml_option.valFromOption(match$7);
+          var match$8 = Js_json.decodeString(value$7);
+          tmp$4 = match$8 !== undefined ? match$8 : Js_exn.raiseError("graphql_ppx: Expected string, got " + JSON.stringify(value$7));
+        } else {
+          tmp$4 = Js_exn.raiseError("graphql_ppx: Field region on type S3Object is missing");
+        }
+        tmp$1 = {
+          bucket: tmp$2,
+          key: tmp$3,
+          region: tmp$4
+        };
+      } else {
+        tmp$1 = Js_exn.raiseError("graphql_ppx: Field file on type Screenshot is missing");
+      }
+      tmp = {
+        file: tmp$1
+      };
+    }
+  } else {
+    tmp = undefined;
+  }
+  return {
+          getScreenshot: tmp
+        };
+}
+
+function make(screenshotId, param) {
+  return {
+          query: ppx_printed_query,
+          variables: Js_dict.fromArray([/* tuple */[
+                    "screenshotId",
+                    screenshotId
+                  ]].filter((function (param) {
+                      return !Js_json.test(param[1], /* Null */5);
+                    }))),
+          parse: parse
+        };
+}
+
+function makeWithVariables(variables) {
+  var screenshotId = variables.screenshotId;
+  return {
+          query: ppx_printed_query,
+          variables: Js_dict.fromArray([/* tuple */[
+                    "screenshotId",
+                    screenshotId
+                  ]].filter((function (param) {
+                      return !Js_json.test(param[1], /* Null */5);
+                    }))),
+          parse: parse
+        };
+}
+
+function makeVariables(screenshotId, param) {
+  return Js_dict.fromArray([/* tuple */[
+                  "screenshotId",
+                  screenshotId
+                ]].filter((function (param) {
+                    return !Js_json.test(param[1], /* Null */5);
+                  })));
+}
+
+function definition_002(graphql_ppx_use_json_variables_fn, screenshotId, param) {
+  return Curry._1(graphql_ppx_use_json_variables_fn, Js_dict.fromArray([/* tuple */[
+                      "screenshotId",
+                      screenshotId
+                    ]].filter((function (param) {
+                        return !Js_json.test(param[1], /* Null */5);
+                      }))));
+}
+
+var definition = /* tuple */[
+  parse,
+  ppx_printed_query,
+  definition_002
+];
+
+function ret_type(f) {
+  return { };
+}
+
+var MT_Ret = { };
+
+var GetScreenshotQuery = {
+  ppx_printed_query: ppx_printed_query,
+  query: ppx_printed_query,
+  parse: parse,
+  make: make,
+  makeWithVariables: makeWithVariables,
+  makeVariables: makeVariables,
+  definition: definition,
+  ret_type: ret_type,
+  MT_Ret: MT_Ret
+};
 
 function id(param) {
   return param.id;
@@ -139,7 +277,32 @@ function resolver(ctx) {
     console.log("Unable to decode arguments");
     return Js_exn.raiseError(match[0].message);
   } else {
-    return match[0].screenshotId;
+    var query = make(match[0].screenshotId, /* () */0);
+    var op = {
+      query: query.query,
+      variables: query.variables
+    };
+    return Api.default.graphql(op).then((function (r) {
+                      var data = parse(r);
+                      var match = data.getScreenshot;
+                      if (match !== undefined) {
+                        return $$Storage.default.get(Caml_option.valFromOption(match).file.key, {
+                                      level: "public",
+                                      download: true
+                                    }).then((function (s) {
+                                      return Promise.resolve(Caml_option.some(s.Data));
+                                    }));
+                      } else {
+                        return Promise.resolve(undefined);
+                      }
+                    })).then((function (data) {
+                    return Belt_Option.getWithDefault(Belt_Option.map(data, (function (data) {
+                                      data.toString("base64");
+                                      return Promise.resolve(/* () */0);
+                                    })), Promise.resolve(undefined));
+                  })).catch((function (err) {
+                  return Promise.resolve(undefined);
+                }));
   }
 }
 
@@ -156,5 +319,6 @@ var CreateHighlightFromScreenshot = {
   resolver: resolver
 };
 
+exports.GetScreenshotQuery = GetScreenshotQuery;
 exports.CreateHighlightFromScreenshot = CreateHighlightFromScreenshot;
-/* No side effect */
+/* @aws-amplify/api Not a pure module */

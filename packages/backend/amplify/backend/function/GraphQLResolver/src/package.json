@@ -22,7 +22,9 @@
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
+    "@baransu/graphql_ppx_re": "^0.7.1",
     "@google-cloud/vision": "^1.10.0",
+    "@trashed/bs-aws-amplify": "^1.0.0",
     "bs-platform": "^7.1.1",
     "decco": "^1.1.1"
   }
