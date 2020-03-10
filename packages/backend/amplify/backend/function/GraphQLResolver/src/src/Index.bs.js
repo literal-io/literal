@@ -7,6 +7,8 @@ var Lib_Lambda$GraphQLResolver = require("./Lib_Lambda.bs.js");
 var Lib_Constants$GraphQLResolver = require("./Lib_Constants.bs.js");
 var QueryResolver$GraphQLResolver = require("./QueryResolver.bs.js");
 
+((require('isomorphic-fetch')));
+
 Core.default.configure(Lib_Constants$GraphQLResolver.awsAmplifyConfig);
 
 function handler($$event) {

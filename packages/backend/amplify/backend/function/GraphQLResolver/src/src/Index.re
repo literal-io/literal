@@ -1,3 +1,5 @@
+[%raw "require('isomorphic-fetch')"];
+
 let _ = AwsAmplify.(inst->configure(Lib_Constants.awsAmplifyConfig));
 
 let handler = event => {

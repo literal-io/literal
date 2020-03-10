@@ -7,12 +7,19 @@ var Decco = require("decco/src/Decco.js");
 var Js_exn = require("bs-platform/lib/js/js_exn.js");
 var Js_dict = require("bs-platform/lib/js/js_dict.js");
 var Js_json = require("bs-platform/lib/js/js_json.js");
+var V4 = require("uuid/v4");
 var Js_option = require("bs-platform/lib/js/js_option.js");
+var Belt_Array = require("bs-platform/lib/js/belt_Array.js");
+var Caml_array = require("bs-platform/lib/js/caml_array.js");
+var Caml_int32 = require("bs-platform/lib/js/caml_int32.js");
 var Belt_Option = require("bs-platform/lib/js/belt_Option.js");
 var Belt_Result = require("bs-platform/lib/js/belt_Result.js");
 var Caml_option = require("bs-platform/lib/js/caml_option.js");
 var Api = require("@aws-amplify/api");
 var $$Storage = require("@aws-amplify/storage");
+var Vision = require("@google-cloud/vision");
+var Externals_Gm$GraphQLResolver = require("./Externals_Gm.bs.js");
+var Service_HighlightBoundingBoxDetector$GraphQLResolver = require("./Service_HighlightBoundingBoxDetector.bs.js");
 
 var ppx_printed_query = "query GetScreenshot($screenshotId: ID!)  {\ngetScreenshot(id: $screenshotId)  {\nfile  {\nbucket  \nkey  \nregion  \n}\n\n}\n\n}\n";
 
@@ -283,22 +290,86 @@ function resolver(ctx) {
       variables: query.variables
     };
     return Api.default.graphql(op).then((function (r) {
-                      var data = parse(r);
-                      var match = data.getScreenshot;
+                          var data = parse(r);
+                          var match = data.getScreenshot;
+                          if (match !== undefined) {
+                            return $$Storage.default.get(Caml_option.valFromOption(match).file.key, {
+                                          level: "public",
+                                          download: true
+                                        }).then((function (s) {
+                                          return Promise.resolve(Caml_option.some(s.Data));
+                                        }));
+                          } else {
+                            return Promise.resolve(undefined);
+                          }
+                        })).then((function (data) {
+                        return Belt_Option.getWithDefault(Belt_Option.map(data, (function (imageBuf) {
+                                          var requestData = {
+                                            instances: [{
+                                                key: V4(),
+                                                imageBytes: {
+                                                  b64: imageBuf.toString("base64")
+                                                }
+                                              }]
+                                          };
+                                          return Promise.all(/* tuple */[
+                                                      Service_HighlightBoundingBoxDetector$GraphQLResolver.request(requestData),
+                                                      Promise.resolve(Caml_option.some(imageBuf))
+                                                    ]);
+                                        })), Promise.all(/* tuple */[
+                                        Promise.resolve(undefined),
+                                        Promise.resolve(undefined)
+                                      ]));
+                      })).then((function (data) {
+                      var match = data[0];
                       if (match !== undefined) {
-                        return $$Storage.default.get(Caml_option.valFromOption(match).file.key, {
-                                      level: "public",
-                                      download: true
-                                    }).then((function (s) {
-                                      return Promise.resolve(Caml_option.some(s.Data));
-                                    }));
+                        var match$1 = data[1];
+                        if (match$1 !== undefined) {
+                          var predictions = match;
+                          if (predictions.length !== 0) {
+                            var gm = Curry._2(Externals_Gm$GraphQLResolver.client, Caml_option.valFromOption(match$1), V4());
+                            return Externals_Gm$GraphQLResolver.size(gm).then((function (size) {
+                                          var scaleX = Caml_int32.div(size.width, Service_HighlightBoundingBoxDetector$GraphQLResolver.sizeX);
+                                          var scaleY = Caml_int32.div(size.height, Service_HighlightBoundingBoxDetector$GraphQLResolver.sizeY);
+                                          var match = Belt_Array.reduce(predictions, Caml_array.caml_array_get(predictions, 0), (function (memo, p) {
+                                                  if (p.score > memo.score) {
+                                                    return {
+                                                            label: p.label,
+                                                            boundingBox: {
+                                                              top: p.boundingBox.top * scaleY,
+                                                              left: p.boundingBox.left * scaleX,
+                                                              right: p.boundingBox.right * scaleX,
+                                                              bottom: p.boundingBox.bottom * scaleY
+                                                            },
+                                                            score: p.score
+                                                          };
+                                                  } else {
+                                                    return memo;
+                                                  }
+                                                }));
+                                          var boundingBox = match.boundingBox;
+                                          return Externals_Gm$GraphQLResolver.toBuffer(gm.crop(boundingBox.right - boundingBox.left | 0, boundingBox.top - boundingBox.bottom | 0, boundingBox.left | 0, boundingBox.right | 0), "PNG").then((function (r) {
+                                                        return Promise.resolve(Js_option.some(r));
+                                                      }));
+                                        }));
+                          } else {
+                            return Promise.resolve(undefined);
+                          }
+                        } else {
+                          return Promise.resolve(undefined);
+                        }
                       } else {
                         return Promise.resolve(undefined);
                       }
                     })).then((function (data) {
-                    return Belt_Option.getWithDefault(Belt_Option.map(data, (function (data) {
-                                      data.toString("base64");
-                                      return Promise.resolve(/* () */0);
+                    return Belt_Option.getWithDefault(Belt_Option.map(data, (function (croppedImageBuf) {
+                                      return new Vision.ImageAnnotatorClient().documentTextDetection({
+                                                    image: {
+                                                      content: croppedImageBuf
+                                                    }
+                                                  }).then((function (r) {
+                                                    return Promise.resolve(Js_option.some(r));
+                                                  }));
                                     })), Promise.resolve(undefined));
                   })).catch((function (err) {
                   return Promise.resolve(undefined);
@@ -321,4 +392,4 @@ var CreateHighlightFromScreenshot = {
 
 exports.GetScreenshotQuery = GetScreenshotQuery;
 exports.CreateHighlightFromScreenshot = CreateHighlightFromScreenshot;
-/* @aws-amplify/api Not a pure module */
+/* uuid/v4 Not a pure module */

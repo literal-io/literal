@@ -9,12 +9,15 @@ module.exports = {
     filename: "bundle.js",
     libraryTarget: "umd"
   },
-  plugins: [new webpack.EnvironmentPlugin([
-    "NODE_ENV",
-    "API_LITERAL_GRAPHQLAPIENDPOINTOUTPUT",
-    "STORAGE_LITERAL_STORAGE_BUCKETNAME",
-    "AUTH_LITERAL_AUTH_USERPOOLID",
-    "AUTH_LITERAL_AUTH_USERPOOLWEBCLIENTID"
-    "REGION"
-  ])]
+  plugins: [
+    new webpack.EnvironmentPlugin([
+      "NODE_ENV",
+      "API_LITERAL_GRAPHQLAPIENDPOINTOUTPUT",
+      "STORAGE_LITERAL_STORAGE_BUCKETNAME",
+      "AUTH_LITERAL_AUTH_USERPOOLID",
+      "AUTH_LITERAL_AUTH_USERPOOLWEBCLIENTID",
+      "HIGHLIGHT_BOUNDING_BOX_DETECTOR_API",
+      "REGION"
+    ])
+  ]
 };

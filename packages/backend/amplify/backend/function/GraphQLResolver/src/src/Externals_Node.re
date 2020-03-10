@@ -3,3 +3,4 @@ module Buffer = {
   external toStringWithEncoding: (Node.Buffer.t, string) => string =
     "toString";
 };
+

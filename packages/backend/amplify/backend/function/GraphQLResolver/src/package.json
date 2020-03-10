@@ -24,8 +24,13 @@
   "dependencies": {
     "@baransu/graphql_ppx_re": "^0.7.1",
     "@google-cloud/vision": "^1.10.0",
+    "@ristostevcev/bs-node-stream": "^0.1.0",
     "@trashed/bs-aws-amplify": "^1.0.0",
+    "bs-fetch": "^0.5.2",
     "bs-platform": "^7.1.1",
-    "decco": "^1.1.1"
+    "decco": "^1.1.1",
+    "gm": "^1.23.1",
+    "isomorphic-fetch": "^2.2.1",
+    "uuid": "^7.0.2"
   }
 }

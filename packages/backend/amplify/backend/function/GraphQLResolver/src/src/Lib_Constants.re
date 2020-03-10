@@ -9,11 +9,15 @@ module Env = {
   [@bs.val]
   external authLiteralAuthUserPoolId: string =
     "process.env.AUTH_LITERAL_AUTH_USERPOOLID";
-
   [@bs.val]
   external authLiteralAuthUserPooWebClientId: string =
     "process.env.AUTH_LITERAL_AUTH_USERPOOLWEBCLIENTID";
+  [@bs.val]
+  external highlightBoundingBoxDetectorAPI: string =
+    "process.env.HIGHLIGHT_BOUNDING_BOX_DETECTOR_API";
 };
+
+let highlightBoundingBoxScoreThreshold = 0.5;
 
 let awsAmplifyConfig =
   AwsAmplify.Config.make(
