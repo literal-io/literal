@@ -125,6 +125,19 @@ module CreateHighlightFromScreenshot = {
               })
           )
           |> Js.Promise.then_(r => r->Js.Option.some->Js.Promise.resolve)
+        })
+      ->Lib_OptionPromise.mapOption(textDetectionResponse => {
+          textDetectionResponse
+          ->Belt.Array.get(0)
+          ->Belt.Option.map(r =>
+              Externals_GoogleCloud.Vision.(
+                r
+                ->fullTextAnnotation
+                ->Belt.Array.map(text)
+                ->Js.String.concatMany
+                ->Js.Promise.resolve
+              )
+            )
         });
     | Belt.Result.Error(e) =>
       Js.log("Unable to decode arguments");
