@@ -134,13 +134,13 @@ module CreateHighlightFromScreenshot = {
                 r
                 ->fullTextAnnotation
                 ->Belt.Array.map(text)
-                ->Js.String.concatMany
+                ->Js.String.concatMany(" ")
                 ->Js.Promise.resolve
               )
             )
         });
     | Belt.Result.Error(e) =>
-      Js.log("Unable to decode arguments");
-      Js.Exn.raiseError(e.message);
+      Js.log2("Unable to decode arguments", e);
+      Js.Promise.resolve(None);
     };
 };
