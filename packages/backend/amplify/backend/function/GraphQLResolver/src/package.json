@@ -24,7 +24,6 @@
   "dependencies": {
     "@baransu/graphql_ppx_re": "^0.7.1",
     "@google-cloud/vision": "^1.10.0",
-    "@ristostevcev/bs-node-stream": "^0.1.0",
     "@trashed/bs-aws-amplify": "^1.0.0",
     "bs-fetch": "^0.5.2",
     "bs-platform": "^7.1.1",
