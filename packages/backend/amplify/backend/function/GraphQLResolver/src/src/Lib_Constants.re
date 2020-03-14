@@ -8,10 +8,10 @@ module Env = {
     "process.env.STORAGE_LITERAL_STORAGE_BUCKETNAME";
   [@bs.val]
   external authLiteralAuthUserPoolId: string =
-    "process.env.AUTH_LITERAL_AUTH_USERPOOLID";
+    "process.env.AUTH_LITERALAUTH_USERPOOLID";
   [@bs.val]
   external authLiteralAuthUserPooWebClientId: string =
-    "process.env.AUTH_LITERAL_AUTH_USERPOOLWEBCLIENTID";
+    "process.env.AUTH_LITERALAUTH_USERPOOLWEBCLIENTID";
   [@bs.val]
   external highlightBoundingBoxDetectorAPI: string =
     "process.env.HIGHLIGHT_BOUNDING_BOX_DETECTOR_API";

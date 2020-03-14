@@ -10,14 +10,21 @@ module.exports = {
     libraryTarget: "umd"
   },
   plugins: [
-    new webpack.EnvironmentPlugin([
-      "NODE_ENV",
-      "API_LITERAL_GRAPHQLAPIENDPOINTOUTPUT",
-      "STORAGE_LITERAL_STORAGE_BUCKETNAME",
-      "AUTH_LITERAL_AUTH_USERPOOLID",
-      "AUTH_LITERAL_AUTH_USERPOOLWEBCLIENTID",
-      "HIGHLIGHT_BOUNDING_BOX_DETECTOR_API",
-      "REGION"
-    ])
+    new webpack.EnvironmentPlugin(
+      process.env.NODE_ENV === "production"
+        ? [
+            "AUTH_LITERALAUTH_USERPOOLWEBCLIENTID",
+            "HIGHLIGHT_BOUNDING_BOX_DETECTOR_API"
+          ]
+        : [
+            "NODE_ENV",
+            "API_LITERAL_GRAPHQLAPIENDPOINTOUTPUT",
+            "STORAGE_LITERAL_STORAGE_BUCKETNAME",
+            "AUTH_LITERALAUTH_USERPOOLID",
+            "AUTH_LITERALAUTH_USERPOOLWEBCLIENTID",
+            "HIGHLIGHT_BOUNDING_BOX_DETECTOR_API",
+            "REGION"
+          ]
+    )
   ]
 };

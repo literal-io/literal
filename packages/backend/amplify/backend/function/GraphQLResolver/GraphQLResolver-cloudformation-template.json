@@ -36,11 +36,11 @@
 		"LambdaFunction": {
 			"Type": "AWS::Lambda::Function",
 			"Metadata": {
-				"aws:asset:path": "./src",
+				"aws:asset:path": "./src/dist",
 				"aws:asset:property": "Code"
 			},
 			"Properties": {
-				"Handler": "index.handler",
+				"Handler": "dist/bundle.handler",
 				"FunctionName": {
 					"Fn::If": [
 						"ShouldNotCreateEnvResources",
@@ -91,7 +91,7 @@
 				"Timeout": "25",
 				"Code": {
 					"S3Bucket": "amplify-literal-production-114446-deployment",
-					"S3Key": "amplify-builds/GraphQLResolver-554543435955785a7a68-build.zip"
+					"S3Key": "amplify-builds/GraphQLResolver-65566e623464416d7854-build.zip"
 				}
 			}
 		},

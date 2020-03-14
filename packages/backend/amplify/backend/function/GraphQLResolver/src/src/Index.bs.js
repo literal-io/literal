@@ -12,6 +12,7 @@ var QueryResolver_CreateHighlightFromScreenshot$GraphQLResolver = require("./Que
 Core.default.configure(Lib_Constants$GraphQLResolver.awsAmplifyConfig);
 
 function handler($$event) {
+  console.log(JSON.stringify($$event));
   var match = Lib_Lambda$GraphQLResolver.event_decode($$event);
   if (match.tag) {
     console.log("Unable to decode event.");

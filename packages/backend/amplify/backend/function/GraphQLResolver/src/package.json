@@ -12,7 +12,8 @@
     "bsb:start": "bsb -make-world -w",
     "bsb:clean": "bsb -clean-world",
     "webpack:start": "webpack --watch",
-    "webpack:build": "npm run bsb:clean && npm run bsb:build && webpack"
+    "webpack:build": "npm run bsb:clean && npm run bsb:build && webpack",
+    "graphql:sync-schema": "./scripts/graphql-sync-schema.sh"
   },
   "devDependencies": {
     "concurrently": "^5.1.0",

@@ -54,7 +54,7 @@ public class ShareTargetHandler extends AppCompatActivity {
         String bucket = s3TransferUtilityJson.optString("Bucket");
         String region = s3TransferUtilityJson.optString("Region");
 
-        String id = UUID.randomUUID().toString();
+        String screenshotId = UUID.randomUUID().toString();
         Uri imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
         String filePath = "screenshots/" + id;
         File file = ContentResolverLib.toFile(this, imageUri, filePath);
@@ -63,11 +63,11 @@ public class ShareTargetHandler extends AppCompatActivity {
                 .builder()
                 .input(
                         CreateScreenshotInput.builder()
-                                .id(id)
+                                .id(screenshotId)
                                 .file(
                                         S3ObjectInput.builder()
                                                 .bucket(bucket)
-                                                .key("public/screenshot/" + id)
+                                                .key("public/screenshot/" + screenshotId)
                                                 .region(region)
                                                 .localUri(file.getAbsolutePath())
                                                 .mimeType(intent.getType())

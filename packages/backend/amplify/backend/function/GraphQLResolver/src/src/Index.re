@@ -3,6 +3,7 @@
 let _ = AwsAmplify.(inst->configure(Lib_Constants.awsAmplifyConfig));
 
 let handler = event => {
+  Js.log(Js.Json.stringifyAny(event));
   switch (event->Lib_Lambda.event_decode) {
   | Belt.Result.Ok(
       {typeName: "Mutation", fieldName: "createHighlightFromScreenshot"} as ctx,
