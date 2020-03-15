@@ -1,10 +1,9 @@
 type t;
-type client = (. Node.Buffer.t, string) => t;
+type client = (Node.Buffer.t, string) => t;
 
 type subclassOptions = {imageMagick: bool};
 
 [@bs.module] external _client: client = "gm";
-
 [@bs.send]
 external _subClass: (client, subclassOptions) => client = "subClass";
 
@@ -17,8 +16,7 @@ type size = {
   height: int,
 };
 [@bs.send]
-external _size: (t, [@bs.uncurry] ((option(Js.Exn.t), size) => unit)) => t =
-  "size";
+external _size: (t, (option(Js.Exn.t), size) => unit) => t = "size";
 let size = t =>
   Js.Promise.make((~resolve, ~reject) => {
     let _ =
@@ -37,14 +35,13 @@ let size = t =>
 exception ToBufferError;
 [@bs.send]
 external _toBuffer:
-  (t, string, (Js.Nullable.t(Js.Exn.t), Node.Buffer.t) => unit) => unit =
+  (t, string, (option(Js.Exn.t), Node.Buffer.t) => unit) => unit =
   "toBuffer";
-
 let toBuffer = (t, format) =>
   Js.Promise.make((~resolve, ~reject) => {
     let _ =
       _toBuffer(t, format, (err, buf) => {
-        switch (err->Js.Nullable.toOption) {
+        switch (err) {
         | Some(_) => reject(. ToBufferError)
         | None => resolve(. buf)
         }

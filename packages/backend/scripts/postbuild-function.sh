@@ -7,5 +7,6 @@ FUNCTION_DIR=`realpath "$(dirname $OWN_PATH)/../amplify/backend/function/"`
 
 GRAPHQL_RESOLVER_SRC_DIR="$FUNCTION_DIR/GraphQLResolver/src"
 
-# Remove node_modules to avoid bloating deploy artifact.
-(cd $GRAPHQL_RESOLVER_SRC_DIR && rm -rf node_modules)
+# Prune unneeded deps that are too large for lambda.
+(cd $GRAPHQL_RESOLVER_SRC_DIR && \
+  rm -rf node_modules && npm install --production)

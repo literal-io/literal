@@ -1,9 +1,8 @@
 module Vision = {
   type t;
 
-  type clientOptions = {keyFilename: string};
   [@bs.new] [@bs.module "@google-cloud/vision"]
-  external client: clientOptions => t = "ImageAnnotatorClient";
+  external client: unit => t = "ImageAnnotatorClient";
 
   type annotateImageRequest_image = {content: Node.Buffer.t};
   type annotateImageRequest = {image: annotateImageRequest_image};

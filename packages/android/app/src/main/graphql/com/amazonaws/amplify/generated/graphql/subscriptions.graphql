@@ -26,3 +26,39 @@ subscription OnDeleteScreenshot {
     }
   }
 }
+subscription OnCreateHighlight {
+  onCreateHighlight {
+    id
+    createdAt
+    text
+    note
+    screenshot {
+      id
+      createdAt
+    }
+  }
+}
+subscription OnUpdateHighlight {
+  onUpdateHighlight {
+    id
+    createdAt
+    text
+    note
+    screenshot {
+      id
+      createdAt
+    }
+  }
+}
+subscription OnDeleteHighlight {
+  onDeleteHighlight {
+    id
+    createdAt
+    text
+    note
+    screenshot {
+      id
+      createdAt
+    }
+  }
+}

@@ -4,4 +4,3 @@ module Buffer = {
     "toString";
 };
 
-[@bs.val] external dirname: string = "__dirname";

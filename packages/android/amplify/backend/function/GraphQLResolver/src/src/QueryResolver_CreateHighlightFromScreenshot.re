@@ -15,64 +15,44 @@ module GetScreenshotQuery = [%graphql
 ];
 
 let cropImageToHighlight = (predictions, imageBuffer) => {
-  let gm = Externals_Gm.client(. imageBuffer, Externals_UUID.makeV4());
+  let gm = Externals_Gm.client(imageBuffer, Externals_UUID.makeV4());
   Externals_Gm.size(gm)
   |> Js.Promise.then_(size => {
-       let resizedX =
-         float_of_int(Service_HighlightBoundingBoxDetector.sizeX);
-       let resizedY =
-         float_of_int(Service_HighlightBoundingBoxDetector.sizeY);
-
-       // ratio of original image to resized square used for prediction
-       let relativeScaleX = float_of_int(size.Externals_Gm.width) /. resizedX;
-       let relativeScaleY = float_of_int(size.height) /. resizedY;
-
-       // get prediction with top score
+       let scaleX =
+         float_of_int(
+           size.Externals_Gm.width / Service_HighlightBoundingBoxDetector.sizeX,
+         );
+       let scaleY =
+         float_of_int(
+           size.height / Service_HighlightBoundingBoxDetector.sizeY,
+         );
        let {boundingBox}: Service_HighlightBoundingBoxDetector.prediction =
          predictions->Belt.Array.reduce(predictions[0], (memo, p) =>
-           if (p.Service_HighlightBoundingBoxDetector.score >= memo.score) {
+           if (p.Service_HighlightBoundingBoxDetector.score > memo.score) {
              {
                ...p,
                boundingBox: {
-                 top: p.boundingBox.top *. resizedY *. relativeScaleY,
-                 bottom: p.boundingBox.bottom *. resizedY *. relativeScaleY,
-                 left: p.boundingBox.left *. resizedX *. relativeScaleX,
-                 right: p.boundingBox.right *. resizedX *. relativeScaleX,
+                 top: p.boundingBox.top *. scaleY,
+                 bottom: p.boundingBox.bottom *. scaleY,
+                 left: p.boundingBox.left *. scaleX,
+                 right: p.boundingBox.right *. scaleX,
                },
              };
            } else {
              memo;
            }
          );
-
-       Js.log2("boundingBox", boundingBox);
-
        // TODO: remove highlight edges
        gm
        ->Externals_Gm.crop(
            int_of_float(boundingBox.right -. boundingBox.left),
-           int_of_float(boundingBox.bottom -. boundingBox.top),
+           int_of_float(boundingBox.top -. boundingBox.bottom),
            int_of_float(boundingBox.left),
-           int_of_float(boundingBox.top),
+           int_of_float(boundingBox.right),
          )
        ->Externals_Gm.toBuffer("PNG");
      })
-  |> Js.Promise.then_(r => {
-       let _ = [%raw
-         {|
-          (function () {
-            const path = "/tmp/crop-" + (new Date()).toISOString() + ".png"
-            require('fs').writeFileSync(path, r)
-            console.log("cropped", path)
-          })()
-        |}
-       ];
-       r->Js.Option.some->Js.Promise.resolve;
-     })
-  |> Js.Promise.catch(e => {
-       Js.log(e);
-       Js.Promise.resolve(None);
-     });
+  |> Js.Promise.then_(r => r->Js.Option.some->Js.Promise.resolve);
 };
 
 let parseTextFromScreenshot = screenshotId => {
@@ -83,31 +63,22 @@ let parseTextFromScreenshot = screenshotId => {
       ~variables=query##variables,
     );
   Lib_OptionPromise.fromPromise(AwsAmplify.Api.(graphql(inst, op)))
-  ->Lib_OptionPromise.mapOption(r => {
+  ->Lib_OptionPromise.mapOption(r =>
       r
-      ->Js.Json.decodeObject
-      ->Belt.Option.flatMap(o => o->Js.Dict.get("data"))
-      ->Belt.Option.flatMap(d =>
-          d->GetScreenshotQuery.parse->(r => r##getScreenshot)
-        )
+      ->GetScreenshotQuery.parse
+      ->(d => d##getScreenshot)
       ->Belt.Option.map(s => {
-          let unleveledKey =
-            s##file##key
-            ->Js.String2.split("/")
-            ->Js.Array2.sliceFrom(1)
-            ->Js.Array2.joinWith("/");
-
           AwsAmplify.Storage.(
             getWithConfig(
               inst,
-              unleveledKey,
+              s##file##key,
               {level: "public", download: true},
             )
-          );
+          )
         })
-    })
+    )
   ->Lib_OptionPromise.map(s3GetResult => {
-      let imageBuffer = s3GetResult.AwsAmplify.Storage.body;
+      let imageBuffer = s3GetResult.AwsAmplify.Storage.data;
       let requestData =
         Service_HighlightBoundingBoxDetector.{
           instances: [|
@@ -128,7 +99,7 @@ let parseTextFromScreenshot = screenshotId => {
     })
   ->Lib_OptionPromise.map(croppedImageBuffer => {
       Externals_GoogleCloud.Vision.(
-        client({keyFilename: Lib_Constants.gcloudServiceAccountFilename})
+        client()
         ->documentTextDetection({
             image: {
               content: croppedImageBuffer,
@@ -138,10 +109,6 @@ let parseTextFromScreenshot = screenshotId => {
       |> Js.Promise.then_(r => r->Js.Option.some->Js.Promise.resolve)
     })
   ->Lib_OptionPromise.mapOption(textDetectionResponse => {
-      Js.log2(
-        "textDetectionResponse",
-        Js.Json.stringifyAny(textDetectionResponse),
-      );
       textDetectionResponse
       ->Belt.Array.get(0)
       ->Belt.Option.map(r =>
@@ -152,7 +119,7 @@ let parseTextFromScreenshot = screenshotId => {
             ->Js.String.concatMany(" ")
             ->Js.Promise.resolve
           )
-        );
+        )
     });
 };
 
@@ -193,7 +160,7 @@ type argumentsInput = {
   id: option(string),
   createdAt: option(string),
   screenshotId: string,
-  note: option(string),
+  note: string,
 };
 
 [@decco]

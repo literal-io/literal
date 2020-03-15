@@ -20,14 +20,11 @@
     "dotenv": "^8.2.0",
     "dotenv-cli": "^3.1.0",
     "webpack": "^4.42.0",
-    "webpack-cli": "^3.3.11",
-    "webpack-node-externals": "^1.7.2",
+    "webpack-cli": "^3.3.11"
+  },
+  "dependencies": {
     "@baransu/graphql_ppx_re": "^0.7.1",
-    "@aws-amplify/api": "^2.1.6",
-    "@aws-amplify/auth": "^2.1.6",
-    "@aws-amplify/core": "^2.2.5",
-    "@aws-amplify/pubsub": "^2.1.7",
-    "@aws-amplify/storage": "^2.2.1",
+    "@google-cloud/vision": "^1.10.0",
     "@trashed/bs-aws-amplify": "^1.0.0",
     "bs-fetch": "^0.5.2",
     "bs-platform": "^7.1.1",
@@ -35,8 +32,5 @@
     "gm": "^1.23.1",
     "isomorphic-fetch": "^2.2.1",
     "uuid": "^7.0.2"
-  },
-  "dependencies": {
-    "@google-cloud/vision": "^1.10.0"
   }
 }

@@ -17,10 +17,7 @@ module Env = {
     "process.env.HIGHLIGHT_BOUNDING_BOX_DETECTOR_API";
 };
 
-let gcloudServiceAccountFilename =
-  Node.Path.resolve(Externals_Node.dirname, "../gcloud-service-account.json");
-
-let highlightBoundingBoxScoreThreshold = 0.3;
+let highlightBoundingBoxScoreThreshold = 0.5;
 
 let awsAmplifyConfig =
   AwsAmplify.Config.make(

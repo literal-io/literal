@@ -5,15 +5,9 @@ module.exports = {
   target: "node",
   mode: process.env.NODE_ENV || "development",
   entry: [path.resolve(__dirname, "./src/Index.bs.js")],
-  node: {
-    __dirname: false
-  },
   output: {
     filename: "bundle.js",
     libraryTarget: "umd"
-  },
-  externals: {
-    "@google-cloud/vision": "@google-cloud/vision"
   },
   plugins: [
     new webpack.EnvironmentPlugin(

@@ -15,7 +15,7 @@ type rawPrediction = {
   detectionMulticlassScores: array(array(float)),
   [@decco.key "detection_classes"]
   detectionClasses: array(float),
-  [@decco.key "num_detections"]
+  [@decco.key "num_detection"]
   numDetections: float,
   [@decco.key "image_info"]
   imageInfo: array(int),
@@ -92,11 +92,8 @@ let request = r =>
                )
            })
          ->Belt.Array.concatMany
-         ->(
-             arr =>
-               Js.Array.length(arr) > 0
-                 ? Js.Promise.resolve(Some(arr)) : Js.Promise.resolve(None)
-           )
+         ->Js.Option.some
+         ->Js.Promise.resolve
        | Belt.Result.Error(e) =>
          Js.log(e);
          Js.Promise.resolve(None);
