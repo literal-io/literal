@@ -34,6 +34,17 @@ let size = t =>
 // width, height, x, y
 [@bs.send] external crop: (t, int, int, int, int) => t = "crop";
 [@bs.send] external chop: (t, int, int, int, int) => t = "chop";
+[@bs.send] external region: (t, int, int, int, int) => t = "region";
+
+[@bs.send] external command: (t, string) => t = "command";
+[@bs.send] external out: (t, string) => t = "out";
+[@bs.send] external noop: t => t = "noop";
+[@bs.send] external transparent: (t, string) => t = "transparent";
+[@bs.send] external fill: (t, string) => t = "fill";
+
+// x0, y0, x1, y1
+[@bs.send]
+external drawRectangle: (t, int, int, int, int) => t = "drawRectangle";
 
 exception ToBufferError;
 [@bs.send]

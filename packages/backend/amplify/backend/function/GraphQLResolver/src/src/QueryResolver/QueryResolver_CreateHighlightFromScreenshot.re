@@ -53,11 +53,34 @@ let cropImageToHighlight = (predictions, imageBuffer) => {
            );
 
        let _ =
+         highlightEdges->Belt.Array.forEach(({boundingBox}) => {
+           let _ =
+             gm
+             ->Externals.Gm.fill("black")
+             ->Externals.Gm.drawRectangle(
+                 int_of_float(boundingBox.left),
+                 int_of_float(boundingBox.top),
+                 int_of_float(boundingBox.right),
+                 int_of_float(boundingBox.bottom),
+               );
+           let _ =
+             gm
+             ->Externals.Gm.region(
+                 int_of_float(boundingBox.right -. boundingBox.left),
+                 int_of_float(boundingBox.bottom -. boundingBox.top),
+                 int_of_float(boundingBox.left),
+                 int_of_float(boundingBox.top),
+               )
+             ->Externals.Gm.transparent("black")
+             ->Externals.Gm.out("+region");
+           ();
+         });
+
+       let _ =
          highlights
          ->Belt.Array.get(0)
          ->Belt.Option.map(({boundingBox}) => {
-             Externals_Gm.crop(
-               gm,
+             gm->Externals.Gm.crop(
                int_of_float(boundingBox.right -. boundingBox.left),
                int_of_float(boundingBox.bottom -. boundingBox.top),
                int_of_float(boundingBox.left),
@@ -65,21 +88,7 @@ let cropImageToHighlight = (predictions, imageBuffer) => {
              )
            });
 
-       /**
-       let _ =
-         highlightEdges->Belt.Array.forEach(({boundingBox}) => {
-           let _ =
-             Externals_Gm.chop(
-               gm,
-               int_of_float(boundingBox.right -. boundingBox.left),
-               int_of_float(boundingBox.bottom -. boundingBox.top),
-               int_of_float(boundingBox.left),
-               int_of_float(boundingBox.top),
-             );
-           ();
-         });
-        **/
-       (gm->Externals_Gm.toBuffer("PNG"));
+       gm->Externals_Gm.toBuffer("PNG");
      })
   |> Js.Promise.then_(r => {
        let _ = [%raw
