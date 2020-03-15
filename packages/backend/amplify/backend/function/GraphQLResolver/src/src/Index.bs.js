@@ -3,9 +3,9 @@
 
 var Js_exn = require("bs-platform/lib/js/js_exn.js");
 var Core = require("@aws-amplify/core");
-var Lib_Lambda$GraphQLResolver = require("./Lib_Lambda.bs.js");
-var Lib_Constants$GraphQLResolver = require("./Lib_Constants.bs.js");
-var QueryResolver_CreateHighlightFromScreenshot$GraphQLResolver = require("./QueryResolver_CreateHighlightFromScreenshot.bs.js");
+var Lib_Lambda$GraphQLResolver = require("./Lib/Lib_Lambda.bs.js");
+var Lib_Constants$GraphQLResolver = require("./Lib/Lib_Constants.bs.js");
+var QueryResolver_CreateHighlightFromScreenshot$GraphQLResolver = require("./QueryResolver/QueryResolver_CreateHighlightFromScreenshot.bs.js");
 
 ((require('isomorphic-fetch')));
 

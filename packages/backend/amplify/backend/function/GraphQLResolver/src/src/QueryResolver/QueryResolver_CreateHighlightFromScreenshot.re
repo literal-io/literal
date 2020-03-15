@@ -16,6 +16,7 @@ module GetScreenshotQuery = [%graphql
 
 let cropImageToHighlight = (predictions, imageBuffer) => {
   let gm = Externals_Gm.client(. imageBuffer, Externals_UUID.makeV4());
+
   Externals_Gm.size(gm)
   |> Js.Promise.then_(size => {
        let resizedX =
@@ -27,11 +28,10 @@ let cropImageToHighlight = (predictions, imageBuffer) => {
        let relativeScaleX = float_of_int(size.Externals_Gm.width) /. resizedX;
        let relativeScaleY = float_of_int(size.height) /. resizedY;
 
-       // get prediction with top score
-       let {boundingBox}: Service_HighlightBoundingBoxDetector.prediction =
-         predictions->Belt.Array.reduce(predictions[0], (memo, p) =>
-           if (p.Service_HighlightBoundingBoxDetector.score >= memo.score) {
-             {
+       let (highlights, highlightEdges) =
+         predictions
+         ->Belt.Array.map(p =>
+             Service.HighlightBoundingBoxDetector.{
                ...p,
                boundingBox: {
                  top: p.boundingBox.top *. resizedY *. relativeScaleY,
@@ -39,23 +39,47 @@ let cropImageToHighlight = (predictions, imageBuffer) => {
                  left: p.boundingBox.left *. resizedX *. relativeScaleX,
                  right: p.boundingBox.right *. resizedX *. relativeScaleX,
                },
-             };
-           } else {
-             memo;
-           }
-         );
+             }
+           )
+         ->Js.Array2.sortInPlaceWith((p1, p2) =>
+             p2.score -. p1.score < 0.
+               ? Js.Math.floor(p2.score -. p1.score)
+               : Js.Math.ceil(p2.score -. p1.score)
+           )
+         ->Belt.Array.partition(
+             fun
+             | {label: Highlight} => true
+             | _ => false,
+           );
 
-       Js.log2("boundingBox", boundingBox);
+       let _ =
+         highlights
+         ->Belt.Array.get(0)
+         ->Belt.Option.map(({boundingBox}) => {
+             Externals_Gm.crop(
+               gm,
+               int_of_float(boundingBox.right -. boundingBox.left),
+               int_of_float(boundingBox.bottom -. boundingBox.top),
+               int_of_float(boundingBox.left),
+               int_of_float(boundingBox.top),
+             )
+           });
 
-       // TODO: remove highlight edges
-       gm
-       ->Externals_Gm.crop(
-           int_of_float(boundingBox.right -. boundingBox.left),
-           int_of_float(boundingBox.bottom -. boundingBox.top),
-           int_of_float(boundingBox.left),
-           int_of_float(boundingBox.top),
-         )
-       ->Externals_Gm.toBuffer("PNG");
+       /**
+       let _ =
+         highlightEdges->Belt.Array.forEach(({boundingBox}) => {
+           let _ =
+             Externals_Gm.chop(
+               gm,
+               int_of_float(boundingBox.right -. boundingBox.left),
+               int_of_float(boundingBox.bottom -. boundingBox.top),
+               int_of_float(boundingBox.left),
+               int_of_float(boundingBox.top),
+             );
+           ();
+         });
+        **/
+       (gm->Externals_Gm.toBuffer("PNG"));
      })
   |> Js.Promise.then_(r => {
        let _ = [%raw

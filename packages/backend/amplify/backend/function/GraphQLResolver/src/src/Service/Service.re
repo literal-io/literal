@@ -1,0 +1,1 @@
+module HighlightBoundingBoxDetector = Service_HighlightBoundingBoxDetector;

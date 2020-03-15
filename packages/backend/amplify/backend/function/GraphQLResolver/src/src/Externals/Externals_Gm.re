@@ -33,6 +33,7 @@ let size = t =>
 
 // width, height, x, y
 [@bs.send] external crop: (t, int, int, int, int) => t = "crop";
+[@bs.send] external chop: (t, int, int, int, int) => t = "chop";
 
 exception ToBufferError;
 [@bs.send]
