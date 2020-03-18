@@ -90,18 +90,7 @@ let cropImageToHighlight = (predictions, imageBuffer) => {
 
        gm->Externals_Gm.toBuffer("PNG");
      })
-  |> Js.Promise.then_(r => {
-       let _ = [%raw
-         {|
-          (function () {
-            const path = "/tmp/crop-" + (new Date()).toISOString() + ".png"
-            require('fs').writeFileSync(path, r)
-            console.log("cropped", path)
-          })()
-        |}
-       ];
-       r->Js.Option.some->Js.Promise.resolve;
-     })
+  |> Js.Promise.then_(r => {r->Js.Option.some->Js.Promise.resolve})
   |> Js.Promise.catch(e => {
        Js.log(e);
        Js.Promise.resolve(None);
@@ -171,21 +160,13 @@ let parseTextFromScreenshot = screenshotId => {
       |> Js.Promise.then_(r => r->Js.Option.some->Js.Promise.resolve)
     })
   ->Lib_OptionPromise.mapOption(textDetectionResponse => {
-      Js.log2(
-        "textDetectionResponse",
-        Js.Json.stringifyAny(textDetectionResponse),
-      );
       textDetectionResponse
       ->Belt.Array.get(0)
       ->Belt.Option.map(r =>
           Externals_GoogleCloud.Vision.(
-            r
-            ->fullTextAnnotation
-            ->Belt.Array.map(text)
-            ->Js.String.concatMany(" ")
-            ->Js.Promise.resolve
+            r->fullTextAnnotation->text->Js.Promise.resolve
           )
-        );
+        )
     });
 };
 

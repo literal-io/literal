@@ -18,9 +18,7 @@ module Vision = {
   };
 
   [@bs.deriving accessors]
-  type annotateImageResponse = {
-    fullTextAnnotation: array(fullTextAnnotation),
-  };
+  type annotateImageResponse = {fullTextAnnotation};
   type documentTextDetectionResponse = array(annotateImageResponse);
 
   [@bs.send]

@@ -39,6 +39,7 @@
 				"aws:asset:path": "./src/dist",
 				"aws:asset:property": "Code"
 			},
+			"DependsOn": "ImageMagickLayer",
 			"Properties": {
 				"Handler": "dist/bundle.handler",
 				"FunctionName": {
@@ -91,8 +92,13 @@
 				"Timeout": "25",
 				"Code": {
 					"S3Bucket": "amplify-literal-production-114446-deployment",
-					"S3Key": "amplify-builds/GraphQLResolver-366c4657332b34426a64-build.zip"
-				}
+					"S3Key": "amplify-builds/GraphQLResolver-72354668585447536366-build.zip"
+				},
+				"Layers": [
+					{
+						"Ref": "ImageMagickLayer"
+					}
+				]
 			}
 		},
 		"LambdaExecutionRole": {
@@ -358,6 +364,21 @@
 						}
 					]
 				}
+			}
+		},
+		"ImageMagickLayer": {
+			"Type": "AWS::Lambda::LayerVersion",
+			"Properties": {
+				"Content": {
+					"S3Bucket": "awsserverlessrepo-changesets-plntc6bfnfj",
+					"S3Key": "046525304497/arn:aws:serverlessrepo:us-east-1:145266761615:applications-image-magick-lambda-layer-versions-1.0.0/cc8f7984-1453-4338-826b-536d2127e3f5"
+				},
+				"LayerName": "image-magick",
+				"Description": "Static build of ImageMagick for AWS Linux 2,",
+				"LicenseInfo": "https://imagemagick.org/script/license.php",
+				"CompatibleRuntimes": [
+					"nodejs10.x"
+				]
 			}
 		}
 	},
