@@ -1,7 +1,8 @@
-import webdriver from "webdriverio";
+import { remote as webdriver } from "webdriverio";
 
-async () => {
+(async () => {
   const opts = {
+    port: 4723,
     capabilities: {
       platformName: "Android",
       platformVersion: "10",
@@ -10,7 +11,7 @@ async () => {
     }
   };
 
-  const client = webdriver.remote(opts);
+  const client = await webdriver(opts);
 
   const result = client.execute(
     function(a, b) {
@@ -23,4 +24,4 @@ async () => {
   console.log("roundtrip: " + result);
 
   await client.deleteSession();
-};
+})();
