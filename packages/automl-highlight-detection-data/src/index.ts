@@ -1,14 +1,17 @@
-import { v4 as uuid } from "uuid";
-import * as R from "ramda";
-import { Storage } from "@google-cloud/storage";
-import { DOMAIN } from "./browser-inject";
-import limit from "p-limit";
-
-import { PlaywrightDriver, DriverInterface } from "./drivers";
-
 import { resolve } from "path";
 import { writeFileSync } from "fs";
 
+import { v4 as uuid } from "uuid";
+import * as R from "ramda";
+import { Storage } from "@google-cloud/storage";
+import limit from "p-limit";
+
+import { DOMAIN } from "./browser-inject";
+
+import { PlaywrightDriver, AppiumDriver, DriverInterface } from "./drivers";
+
+const DEBUG = true;
+const DRIVER = "appium"; // 'playwright'
 const OUTPUT_DIR = resolve(__dirname, "../output/screenshot");
 const GCLOUD_SERVICE_ACCOUNT_FILENAME = resolve(
   __dirname,
@@ -16,9 +19,9 @@ const GCLOUD_SERVICE_ACCOUNT_FILENAME = resolve(
 );
 const GCLOUD_PROJECT_ID = "literal-269716";
 const GCLOUD_BUCKET_NAME = "literal-screenshot";
-const OUTPUT_SIZE = 500;
+const OUTPUT_SIZE = 1;
 
-const pLimit = limit(25);
+const pLimit = limit(1);
 
 const exec = async (driver: DriverInterface) => {
   const fileName = `${uuid()}_firefox_wikipedia_pixel-2.png`;
@@ -37,11 +40,19 @@ const exec = async (driver: DriverInterface) => {
 };
 
 (async () => {
-  const driver = new PlaywrightDriver();
-  await driver.initializeContext({
-    browser: "firefox",
-    device: "Pixel 2"
-  });
+  const driver =
+    DRIVER === "appium" ? new AppiumDriver() : new PlaywrightDriver();
+  await driver.initializeContext(
+    DRIVER === "appium"
+      ? {
+          browser: "Chrome",
+          device: "Android Emulator"
+        }
+      : {
+          browser: "firefox",
+          device: "Pixel 2"
+        }
+  );
   const storage = new Storage({
     projectId: GCLOUD_PROJECT_ID,
     keyFilename: GCLOUD_SERVICE_ACCOUNT_FILENAME
@@ -95,11 +106,13 @@ const exec = async (driver: DriverInterface) => {
   const manifestPath = resolve(OUTPUT_DIR, "manifest.csv");
   writeFileSync(manifestPath, csv);
 
-  await storage
-    .bucket(GCLOUD_BUCKET_NAME)
-    .upload(manifestPath, { destination: `${jobId}/manifest.csv` });
+  if (!DEBUG) {
+    await storage
+      .bucket(GCLOUD_BUCKET_NAME)
+      .upload(manifestPath, { destination: `${jobId}/manifest.csv` });
+
+    console.log(`Upload complete. Job ID: ${jobId}`);
+  }
 
   await driver.cleanup();
-
-  console.log(`Upload complete. Job ID: ${jobId}`);
 })();

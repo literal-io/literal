@@ -4,7 +4,7 @@ import {
   browserInject,
   DOMAIN
 } from "../../browser-inject";
-import { Driver } from '../types'
+import { Driver } from "../types";
 
 export class PlaywrightDriver implements Driver {
   context: BrowserContext;
@@ -13,7 +13,7 @@ export class PlaywrightDriver implements Driver {
     browser,
     device = "Pixel 2"
   }: {
-    browser: "firefox" | "chrome";
+    browser: string;
     device: string;
   }): Promise<void> => {
     const d = devices[device];
@@ -45,7 +45,7 @@ export class PlaywrightDriver implements Driver {
     const page = await this.context.newPage();
     await page.goto(href);
 
-    const annotations = await browserInject(domain, page);
+    const annotations = await browserInject(domain, page.evaluate);
 
     await page.screenshot({ path: outputPath });
     await page.close();
@@ -55,7 +55,7 @@ export class PlaywrightDriver implements Driver {
 
   cleanup = async () => {
     if (this.context) {
-      await this.context.close()
+      await this.context.close();
     }
-  }
+  };
 }

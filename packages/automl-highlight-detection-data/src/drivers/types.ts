@@ -1,10 +1,7 @@
 import { SelectionAnnotation, DOMAIN } from "../browser-inject";
 
 export interface Driver {
-  initializeContext(arg: {
-    browser: "firefox" | "chrome";
-    device: "string";
-  }): Promise<void>;
+  initializeContext(arg: { browser: string; device: string }): Promise<void>;
   getScreenshot(arg: {
     href: string;
     outputPath: string;

@@ -8,7 +8,8 @@
     "start": "npm run clean && npm run ts:build && node dist",
     "clean": "rm -rf dist && rm -f output/screenshot/*",
     "ts:build": "tsc",
-    "ts:watch": "tsc -w"
+    "ts:watch": "tsc -w",
+    "appium:start": "appium --relaxed-security"
   },
   "author": "",
   "license": "ISC",
