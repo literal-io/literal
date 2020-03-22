@@ -10,7 +10,7 @@ import { DOMAIN } from "./browser-inject";
 
 import { PlaywrightDriver, AppiumDriver, DriverInterface } from "./drivers";
 
-const DEBUG = true;
+const DEBUG = false;
 const DRIVER = "appium"; // 'playwright'
 const OUTPUT_DIR = resolve(__dirname, "../output/screenshot");
 const GCLOUD_SERVICE_ACCOUNT_FILENAME = resolve(
@@ -19,7 +19,7 @@ const GCLOUD_SERVICE_ACCOUNT_FILENAME = resolve(
 );
 const GCLOUD_PROJECT_ID = "literal-269716";
 const GCLOUD_BUCKET_NAME = "literal-screenshot";
-const OUTPUT_SIZE = 1;
+const OUTPUT_SIZE = 20;
 
 const pLimit = limit(1);
 

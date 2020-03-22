@@ -1,15 +1,29 @@
-import {DOMAIN, InjectScope} from './types'
+import { DOMAIN, InjectScope } from "./types";
 
 export const parsers = {
   [DOMAIN.WIKIPEDIA]: (scope: InjectScope): Text[] => {
     // open all closed sections
     document
-      .querySelectorAll('#bodyContent .collapsible-heading,.collapsible-block')
-      .forEach((elem) => {elem.classList.add('open-block')})
+      .querySelectorAll("#bodyContent .collapsible-heading,.collapsible-block")
+      .forEach(elem => {
+        elem.classList.add("open-block");
+      });
 
-    const textNodes = scope.getTextNodes(document.querySelector('#bodyContent'))
+    // remove interactive elements
+    ($("*") as any).off();
 
-    return textNodes
+    // disable all links: replace with spans
+    document.querySelectorAll("a, img").forEach(el => {
+      const span = document.createElement("span");
+      span.style.color = "#0645ad";
+      span.innerHTML = el.innerHTML;
+      el.parentNode.replaceChild(span, el);
+    });
+
+    const textNodes = scope.getTextNodes(
+      document.querySelector("#bodyContent")
+    );
+
+    return textNodes;
   }
-}
-
+};

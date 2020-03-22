@@ -45,7 +45,7 @@ export class PlaywrightDriver implements Driver {
     const page = await this.context.newPage();
     await page.goto(href);
 
-    const annotations = await browserInject(domain, page.evaluate);
+    const { annotations } = await browserInject(domain, page.evaluate);
 
     await page.screenshot({ path: outputPath });
     await page.close();

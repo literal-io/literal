@@ -18,7 +18,14 @@ export * from "./types";
 export const browserInject = (
   domain: DOMAIN,
   execute: any
-): Promise<SelectionAnnotation[]> => {
+): Promise<{
+  annotations: SelectionAnnotation[];
+  size: {
+    width: number;
+    height: number;
+  };
+  text: string;
+}> => {
   const serializedScope: SerializedScope = R.map(fn => fn.toString(), scope);
   const serializedParser: string = parsers[domain].toString();
 
@@ -37,6 +44,13 @@ export const browserInject = (
     scope.scrollToRange(range);
 
     const annotations = scope.getSelectionAnnotations(range);
-    return annotations;
+    return {
+      annotations,
+      text: window.getSelection().toString(),
+      size: {
+        height: document.documentElement.clientHeight,
+        width: document.documentElement.clientWidth
+      }
+    };
   }, JSON.stringify({ ...serializedScope, parser: serializedParser }));
 };
