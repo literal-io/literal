@@ -52,6 +52,10 @@ export class AppiumDriver implements Driver {
       (fn: any, arg: any) => this.context.execute(fn, arg)
     );
 
+    if (annotations.length === 0) {
+      return [];
+    }
+
     await this.context.switchContext("NATIVE_APP");
 
     const chromeToolbarHeight = await this.context
@@ -98,6 +102,16 @@ export class AppiumDriver implements Driver {
       )
     });
     await new Promise(resolve => setTimeout(resolve, 500));
+
+    /** after clicking, make sure the selection still exists. */
+    await this.context.switchContext("CHROMIUM");
+    const selectionExists = await this.context.execute(function() {
+      return !window.getSelection().isCollapsed;
+    });
+    if (!selectionExists) {
+      return [];
+    }
+    await this.context.switchContext("NATIVE_APP");
 
     /**
      * Bounding boxes were calculated relative to DOM viewport, adjust to overall

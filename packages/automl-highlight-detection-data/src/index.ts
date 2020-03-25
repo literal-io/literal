@@ -76,7 +76,15 @@ const exec = async (driver: DriverInterface) => {
   };
 
   const results = await Promise.all(
-    R.times(() => pLimit(() => run()), OUTPUT_SIZE)
+    R.times(
+      () =>
+        pLimit(() =>
+          run().catch(err => {
+            return [];
+          })
+        ),
+      OUTPUT_SIZE
+    )
   ).then(R.flatten);
 
   const csv = results

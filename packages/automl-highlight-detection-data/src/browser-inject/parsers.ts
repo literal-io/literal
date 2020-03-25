@@ -12,6 +12,11 @@ export const parsers = {
     // remove interactive elements
     ($("*") as any).off();
 
+    // remove non-text elements
+    document.querySelectorAll("table, h2, img, sup, ol").forEach(elem => {
+      elem.remove();
+    });
+
     // disable all links: replace with spans
     document.querySelectorAll("a, img").forEach(el => {
       const span = document.createElement("span");

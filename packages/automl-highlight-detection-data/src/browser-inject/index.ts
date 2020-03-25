@@ -41,6 +41,17 @@ export const browserInject = (
 
     const textNodes = scope.parser(scope);
     const range = scope.getRandomRange(textNodes);
+    if (!range) {
+      return {
+        annotations: [],
+        text: "",
+        size: {
+          height: document.documentElement.clientHeight,
+          width: document.documentElement.clientWidth
+        }
+      };
+    }
+
     scope.scrollToRange(range);
 
     const annotations = scope.getSelectionAnnotations(range);
