@@ -93,8 +93,8 @@ export const scope: InjectScope = {
           xRelativeMin: bb.left / vWidth,
           yRelativeMin: bb.top / vHeight,
           xRelativeMax: bb.right / vWidth,
-          yRelativeMax: bb.bottom / vHeight
-        }
+          yRelativeMax: bb.bottom / vHeight,
+        },
       },
       startBB.left > bb.left &&
       (startBB.left > bb.left || startBB.bottom > bb.top)
@@ -104,8 +104,8 @@ export const scope: InjectScope = {
               xRelativeMin: bb.left / vWidth,
               yRelativeMin: startBB.top / vHeight,
               xRelativeMax: startBB.left / vWidth,
-              yRelativeMax: startBB.bottom / vHeight
-            }
+              yRelativeMax: startBB.bottom / vHeight,
+            },
           }
         : null,
       endBB.right < bb.right && endBB.top < bb.bottom
@@ -115,12 +115,17 @@ export const scope: InjectScope = {
               xRelativeMin: endBB.right / vWidth,
               yRelativeMin: endBB.top / vHeight,
               xRelativeMax: bb.right / vWidth,
-              yRelativeMax: endBB.bottom / vHeight
-            }
+              yRelativeMax: endBB.bottom / vHeight,
+            },
           }
-        : null
-    ].filter(Boolean);
+        : null,
+    ].filter(
+      (h) =>
+        Boolean(h) &&
+        h.boundingBox.xRelativeMin !== h.boundingBox.xRelativeMax &&
+        h.boundingBox.yRelativeMin !== h.boundingBox.yRelativeMax
+    );
 
     return annotations as SelectionAnnotation[];
-  }
+  },
 };

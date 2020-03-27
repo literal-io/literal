@@ -4,7 +4,7 @@ import { remote as webdriver } from "webdriverio";
 import {
   SelectionAnnotation,
   browserInject,
-  DOMAIN
+  DOMAIN,
 } from "../../browser-inject";
 import { Driver } from "../types";
 
@@ -13,7 +13,7 @@ export class AppiumDriver implements Driver {
 
   initializeContext = async ({
     browser,
-    device
+    device,
   }: {
     browser: string;
     device: string;
@@ -24,18 +24,35 @@ export class AppiumDriver implements Driver {
         platformName: "Android",
         platformVersion: "10",
         deviceName: device,
-        browserName: browser
+        browserName: browser,
       },
-      logLevel: "warn" as WebDriverLogTypes
+      logLevel: "warn" as WebDriverLogTypes,
     };
 
     this.context = await webdriver(opts);
   };
 
+  getViewportRect = async () => {
+    if (!this.context) {
+      throw new Error("Driver uninitialized");
+    }
+
+    const orientation = await this.context.getOrientation();
+    const rect = (this.context.capabilities as any).viewportRect;
+
+    return orientation === "PORTRAIT"
+      ? rect
+      : {
+          ...rect,
+          width: rect.height + rect.top,
+          height: rect.width - rect.top,
+        };
+  };
+
   getScreenshot = async ({
     href,
     outputPath,
-    domain
+    domain,
   }: {
     href: string;
     outputPath: string;
@@ -44,6 +61,14 @@ export class AppiumDriver implements Driver {
     if (!this.context) {
       throw new Error("Driver uninitialized");
     }
+
+    const orientation = Math.random() > 0.66 ? "LANDSCAPE" : "PORTRAIT";
+    const currentOrientation = await this.context.getOrientation();
+    if (currentOrientation !== orientation) {
+      await this.context.setOrientation(orientation);
+    }
+
+    await this.context.switchContext("CHROMIUM");
 
     await this.context.navigateTo(href);
 
@@ -60,20 +85,24 @@ export class AppiumDriver implements Driver {
 
     const chromeToolbarHeight = await this.context
       .findElement("id", "com.android.chrome:id/toolbar")
-      .then(id => {
+      .then((id) => {
         if (!id) {
           return 0;
         }
         return this.context
           .$(id)
-          .then(el => el.getSize())
-          .then(s => s.height);
-      });
+          .then((el) => el.getSize())
+          .then((s) => s.height);
+      })
+      .catch((_err) => 0);
 
     const pixelRatio = (this.context.capabilities as any).pixelRatio;
-    const statusBarHeight = (this.context.capabilities as any).statBarHeight;
-    const viewportRect = (this.context.capabilities as any).viewportRect;
-    const systemBars = await this.context.getSystemBars();
+    const viewportRect = await this.getViewportRect();
+    const systemBars: any = await this.context.getSystemBars();
+
+    const statusBarHeight = systemBars.statusBar.visible
+      ? systemBars.statusBar.height
+      : 0;
 
     /**
      * Creating a selection within JS doesn't trigger Chrome's text selection action
@@ -82,13 +111,13 @@ export class AppiumDriver implements Driver {
      * display the UI.
      */
     const {
-      boundingBox: { xRelativeMin, xRelativeMax, yRelativeMin, yRelativeMax }
+      boundingBox: { xRelativeMin, xRelativeMax, yRelativeMin, yRelativeMax },
     } = annotations.find(({ label }) => label === "highlight");
     const [xMin, xMax, yMin, yMax] = [
       xRelativeMin * size.width * pixelRatio,
       xRelativeMax * size.width * pixelRatio,
       yRelativeMin * size.height * pixelRatio,
-      yRelativeMax * size.height * pixelRatio
+      yRelativeMax * size.height * pixelRatio,
     ];
     await this.context.touchAction({
       action: "tap",
@@ -99,9 +128,9 @@ export class AppiumDriver implements Driver {
       y: Math.min(
         yMin + (yMax - yMin) / 2 + chromeToolbarHeight + statusBarHeight,
         viewportRect.top + viewportRect.height - 1
-      )
+      ),
     });
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     /** after clicking, make sure the selection still exists. */
     await this.context.switchContext("CHROMIUM");
@@ -120,23 +149,28 @@ export class AppiumDriver implements Driver {
     const reframedBoundingBoxes = annotations.map(
       ({
         boundingBox: { xRelativeMin, xRelativeMax, yRelativeMin, yRelativeMax },
-        label
+        label,
       }) => {
         const [xMin, xMax, yMin, yMax] = [
-          xRelativeMin * size.width * pixelRatio,
-          xRelativeMax * size.width * pixelRatio,
+          xRelativeMin * size.width * pixelRatio +
+            (orientation === "LANDSCAPE" ? systemBars.navigationBar.width : 0),
+          xRelativeMax * size.width * pixelRatio +
+            (orientation === "LANDSCAPE" ? systemBars.navigationBar.width : 0),
           yRelativeMin * size.height * pixelRatio +
             chromeToolbarHeight +
             statusBarHeight,
           yRelativeMax * size.height * pixelRatio +
             chromeToolbarHeight +
-            statusBarHeight
+            statusBarHeight,
         ];
         const viewportHeight =
           viewportRect.height +
           statusBarHeight +
-          (systemBars as any).navigationBar.height;
-        const viewportWidth = viewportRect.width;
+          // @ts-ignore
+          (orientation === "PORTRAIT" ? systemBars.navigationBar.height : 0);
+        const viewportWidth =
+          viewportRect.width +
+          (orientation === "LANDSCAPE" ? systemBars.navigationBar.width : 0);
 
         return {
           label,
@@ -144,8 +178,8 @@ export class AppiumDriver implements Driver {
             xRelativeMin: Math.max(xMin / viewportWidth, 0),
             xRelativeMax: Math.min(xMax / viewportWidth, 1.0),
             yRelativeMin: Math.max(yMin / viewportHeight, 0),
-            yRelativeMax: Math.min(yMax / viewportHeight, 1.0)
-          }
+            yRelativeMax: Math.min(yMax / viewportHeight, 1.0),
+          },
         };
       }
     );
@@ -154,8 +188,8 @@ export class AppiumDriver implements Driver {
       "mobile:shell",
       [
         {
-          command: "stty raw; screencap -p 2>/dev/null | base64 -w 0"
-        }
+          command: "stty raw; screencap -p 2>/dev/null | base64 -w 0",
+        },
       ]
     );
 
