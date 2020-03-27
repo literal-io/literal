@@ -8,6 +8,36 @@ import {
 } from "../../browser-inject";
 import { Driver } from "../types";
 
+enum Orientation {
+  LANDSCAPE = "LANDSCAPE",
+  PORTRAIT = "PORTRAIT",
+}
+
+enum AppiumContext {
+  NATIVE_APP = "NATIVE_APP",
+  CHROMIUM = "CHROMIUM",
+}
+
+interface SystemBar {
+  visible: boolean;
+  height: number;
+  width: number;
+}
+interface AndroidSystemBars {
+  statusBar: SystemBar;
+  navigationBar: SystemBar;
+}
+
+type AndroidCapabilities = WebDriver.DesiredCapabilities & {
+  pixelRatio: number;
+  viewportRect: {
+    width: number;
+    height: number;
+    top: number;
+    left: number;
+  };
+};
+
 export class AppiumDriver implements Driver {
   context: WebdriverIOAsync.BrowserObject;
 
@@ -38,9 +68,9 @@ export class AppiumDriver implements Driver {
     }
 
     const orientation = await this.context.getOrientation();
-    const rect = (this.context.capabilities as any).viewportRect;
+    const rect = this.getCapabilities().viewportRect;
 
-    return orientation === "PORTRAIT"
+    return orientation === Orientation.PORTRAIT
       ? rect
       : {
           ...rect,
@@ -49,10 +79,13 @@ export class AppiumDriver implements Driver {
         };
   };
 
+  getCapabilities = () => {
+    return this.context.capabilities as AndroidCapabilities;
+  };
+
   getScreenshot = async ({
-    href,
-    outputPath,
     domain,
+    outputPath,
   }: {
     href: string;
     outputPath: string;
@@ -62,13 +95,15 @@ export class AppiumDriver implements Driver {
       throw new Error("Driver uninitialized");
     }
 
-    const orientation = Math.random() > 0.66 ? "LANDSCAPE" : "PORTRAIT";
+    const orientation =
+      Math.random() > 0.66 ? Orientation.LANDSCAPE : Orientation.PORTRAIT;
     const currentOrientation = await this.context.getOrientation();
+
     if (currentOrientation !== orientation) {
       await this.context.setOrientation(orientation);
     }
 
-    await this.context.switchContext("CHROMIUM");
+    await this.context.switchContext(AppiumContext.CHROMIUM);
 
     await this.context.navigateTo(href);
 
@@ -81,7 +116,7 @@ export class AppiumDriver implements Driver {
       return [];
     }
 
-    await this.context.switchContext("NATIVE_APP");
+    await this.context.switchContext(AppiumContext.NATIVE_APP);
 
     const chromeToolbarHeight = await this.context
       .findElement("id", "com.android.chrome:id/toolbar")
@@ -96,9 +131,9 @@ export class AppiumDriver implements Driver {
       })
       .catch((_err) => 0);
 
-    const pixelRatio = (this.context.capabilities as any).pixelRatio;
+    const pixelRatio = this.getCapabilities().pixelRatio;
     const viewportRect = await this.getViewportRect();
-    const systemBars: any = await this.context.getSystemBars();
+    const systemBars: AndroidSystemBars = (await this.context.getSystemBars()) as any;
 
     const statusBarHeight = systemBars.statusBar.visible
       ? systemBars.statusBar.height
@@ -133,14 +168,14 @@ export class AppiumDriver implements Driver {
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     /** after clicking, make sure the selection still exists. */
-    await this.context.switchContext("CHROMIUM");
+    await this.context.switchContext(AppiumContext.CHROMIUM);
     const selectionExists = await this.context.execute(function() {
       return !window.getSelection().isCollapsed;
     });
     if (!selectionExists) {
       return [];
     }
-    await this.context.switchContext("NATIVE_APP");
+    await this.context.switchContext(AppiumContext.NATIVE_APP);
 
     /**
      * Bounding boxes were calculated relative to DOM viewport, adjust to overall
@@ -153,9 +188,13 @@ export class AppiumDriver implements Driver {
       }) => {
         const [xMin, xMax, yMin, yMax] = [
           xRelativeMin * size.width * pixelRatio +
-            (orientation === "LANDSCAPE" ? systemBars.navigationBar.width : 0),
+            (orientation === Orientation.LANDSCAPE
+              ? systemBars.navigationBar.width
+              : 0),
           xRelativeMax * size.width * pixelRatio +
-            (orientation === "LANDSCAPE" ? systemBars.navigationBar.width : 0),
+            (orientation === Orientation.LANDSCAPE
+              ? systemBars.navigationBar.width
+              : 0),
           yRelativeMin * size.height * pixelRatio +
             chromeToolbarHeight +
             statusBarHeight,
@@ -166,11 +205,14 @@ export class AppiumDriver implements Driver {
         const viewportHeight =
           viewportRect.height +
           statusBarHeight +
-          // @ts-ignore
-          (orientation === "PORTRAIT" ? systemBars.navigationBar.height : 0);
+          (orientation === Orientation.PORTRAIT
+            ? systemBars.navigationBar.height
+            : 0);
         const viewportWidth =
           viewportRect.width +
-          (orientation === "LANDSCAPE" ? systemBars.navigationBar.width : 0);
+          (orientation === Orientation.LANDSCAPE
+            ? systemBars.navigationBar.width
+            : 0);
 
         return {
           label,
@@ -184,18 +226,10 @@ export class AppiumDriver implements Driver {
       }
     );
 
-    const screenshotData: string = await this.context.executeScript(
-      "mobile:shell",
-      [
-        {
-          command: "stty raw; screencap -p 2>/dev/null | base64 -w 0",
-        },
-      ]
-    );
-
+    const screenshotData = await this.context.takeScreenshot();
     writeFileSync(outputPath, screenshotData, { encoding: "base64" });
 
-    await this.context.switchContext("CHROMIUM");
+    await this.context.switchContext(AppiumContext.CHROMIUM);
 
     return reframedBoundingBoxes;
   };

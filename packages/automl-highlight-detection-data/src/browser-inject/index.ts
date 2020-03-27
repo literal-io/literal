@@ -3,12 +3,13 @@ import {
   DOMAIN,
   SerializedScope,
   RehydratedScope,
-  SelectionAnnotation
+  SelectionAnnotation,
 } from "./types";
 import { parsers } from "./parsers";
 import { scope } from "./scope";
 
 export * from "./types";
+export * from "./parsers";
 
 /**
  * NOTE: We have to be careful around the logic in the injected fn, as the function is
@@ -26,15 +27,15 @@ export const browserInject = (
   };
   text: string;
 }> => {
-  const serializedScope: SerializedScope = R.map(fn => fn.toString(), scope);
-  const serializedParser: string = parsers[domain].toString();
+  const serializedScope: SerializedScope = R.map((fn) => fn.toString(), scope);
+  const serializedParser: string = parsers[domain].getTextNodes.toString();
 
   return execute((stringifiedArgs: string) => {
     const serializedScope = JSON.parse(stringifiedArgs);
     const scope = Object.keys(serializedScope).reduce(
       (memo, key) => ({
         ...memo,
-        [key]: eval(serializedScope[key])
+        [key]: eval(serializedScope[key]),
       }),
       {}
     ) as RehydratedScope;
@@ -47,8 +48,8 @@ export const browserInject = (
         text: "",
         size: {
           height: document.documentElement.clientHeight,
-          width: document.documentElement.clientWidth
-        }
+          width: document.documentElement.clientWidth,
+        },
       };
     }
 
@@ -60,8 +61,8 @@ export const browserInject = (
       text: window.getSelection().toString(),
       size: {
         height: document.documentElement.clientHeight,
-        width: document.documentElement.clientWidth
-      }
+        width: document.documentElement.clientWidth,
+      },
     };
   }, JSON.stringify({ ...serializedScope, parser: serializedParser }));
 };

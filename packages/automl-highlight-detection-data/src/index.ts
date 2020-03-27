@@ -10,7 +10,7 @@ import { DOMAIN } from "./browser-inject";
 
 import { PlaywrightDriver, AppiumDriver, DriverInterface } from "./drivers";
 
-const DEBUG = false;
+const DEBUG = true;
 const DRIVER = "appium"; // 'playwright'
 const OUTPUT_DIR = resolve(__dirname, "../output/screenshot");
 const GCLOUD_SERVICE_ACCOUNT_FILENAME = resolve(
@@ -19,7 +19,7 @@ const GCLOUD_SERVICE_ACCOUNT_FILENAME = resolve(
 );
 const GCLOUD_PROJECT_ID = "literal-269716";
 const GCLOUD_BUCKET_NAME = "literal-screenshot";
-const OUTPUT_SIZE = 20;
+const OUTPUT_SIZE = 5;
 
 const pLimit = limit(1);
 
@@ -27,15 +27,14 @@ const exec = async (driver: DriverInterface) => {
   const fileName = `${uuid()}_firefox_wikipedia_pixel-2.png`;
   const outputPath = resolve(OUTPUT_DIR, fileName);
   const annotations = await driver.getScreenshot({
-    href: "https://en.wikipedia.org/wiki/Special:Random",
+    domain: DOMAIN.WIKIPEDIA,
     outputPath,
-    domain: DOMAIN.WIKIPEDIA
   });
 
   return {
     screenshotPath: outputPath,
     annotations,
-    screenshotFileName: fileName
+    screenshotFileName: fileName,
   };
 };
 
@@ -46,16 +45,16 @@ const exec = async (driver: DriverInterface) => {
     DRIVER === "appium"
       ? {
           browser: "Chrome",
-          device: "Android Emulator"
+          device: "Android Emulator",
         }
       : {
           browser: "firefox",
-          device: "Pixel 2"
+          device: "Pixel 2",
         }
   );
   const storage = new Storage({
     projectId: GCLOUD_PROJECT_ID,
-    keyFilename: GCLOUD_SERVICE_ACCOUNT_FILENAME
+    keyFilename: GCLOUD_SERVICE_ACCOUNT_FILENAME,
   });
   const jobId = uuid();
 
@@ -63,15 +62,15 @@ const exec = async (driver: DriverInterface) => {
     const {
       screenshotPath,
       annotations,
-      screenshotFileName: destinationName
+      screenshotFileName: destinationName,
     } = await exec(driver);
     await storage
       .bucket(GCLOUD_BUCKET_NAME)
       .upload(screenshotPath, { destination: `${jobId}/${destinationName}` });
 
-    return annotations.map(a => ({
+    return annotations.map((a) => ({
       url: `gs://${GCLOUD_BUCKET_NAME}/${jobId}/${destinationName}`,
-      ...a
+      ...a,
     }));
   };
 
@@ -79,7 +78,7 @@ const exec = async (driver: DriverInterface) => {
     R.times(
       () =>
         pLimit(() =>
-          run().catch(err => {
+          run().catch((err) => {
             return [];
           })
         ),
@@ -92,7 +91,7 @@ const exec = async (driver: DriverInterface) => {
       ({
         url,
         label,
-        boundingBox: { xRelativeMin, yRelativeMin, xRelativeMax, yRelativeMax }
+        boundingBox: { xRelativeMin, yRelativeMin, xRelativeMax, yRelativeMax },
       }) => {
         return [
           "UNASSIGNED",
@@ -109,7 +108,7 @@ const exec = async (driver: DriverInterface) => {
         ];
       }
     )
-    .map(row => row.join(","))
+    .map((row) => row.join(","))
     .join("\n");
   const manifestPath = resolve(OUTPUT_DIR, "manifest.csv");
   writeFileSync(manifestPath, csv);
