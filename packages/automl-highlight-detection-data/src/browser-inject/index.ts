@@ -12,9 +12,10 @@ export * from "./types";
 export * from "./parsers";
 
 /**
- * NOTE: We have to be careful around the logic in the injected fn, as the function is
- * serialized into the browser context, **everything** it accesses must be an explicit
- * arg, and not just closed over. Typescript compilation can disrupt this subtley.
+ * NOTE: We have to be careful around the logic in the injected fn, as the
+ * function is serialized into the browser context, **everything** it
+ * accesses must be an explicit arg, and not just closed over. Typescript
+ * compilation can disrupt this subtley.
  */
 export const browserInject = (
   domain: DOMAIN,
@@ -27,8 +28,10 @@ export const browserInject = (
   };
   text: string;
 }> => {
-  const serializedScope: SerializedScope = R.map((fn) => fn.toString(), scope);
-  const serializedParser: string = parsers[domain].getTextNodes.toString();
+  const serializedScope: SerializedScope = R.map((fn) => fn.toString(), {
+    ...scope,
+    ...parsers[domain],
+  });
 
   return execute((stringifiedArgs: string) => {
     const serializedScope = JSON.parse(stringifiedArgs);
@@ -40,8 +43,22 @@ export const browserInject = (
       {}
     ) as RehydratedScope;
 
-    const textNodes = scope.parser(scope);
-    const range = scope.getRandomRange(textNodes);
+    const textNodes = scope.parse(scope);
+    if (!textNodes || textNodes.length === 0) {
+      return {
+        annotations: [],
+        text: "",
+        size: {
+          height: document.documentElement.clientHeight,
+          width: document.documentElement.clientWidth,
+        },
+      };
+    }
+
+    const range = scope.getRandomRange(
+      textNodes,
+      scope.getBoundaryAncestorSelector()
+    );
     if (!range) {
       return {
         annotations: [],
@@ -64,5 +81,5 @@ export const browserInject = (
         width: document.documentElement.clientWidth,
       },
     };
-  }, JSON.stringify({ ...serializedScope, parser: serializedParser }));
+  }, JSON.stringify(serializedScope));
 };

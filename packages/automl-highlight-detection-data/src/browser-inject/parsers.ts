@@ -1,9 +1,9 @@
-import { DOMAIN, InjectScope } from "./types";
+import { DOMAIN, InjectScope, ParserInterface } from "./types";
 
-export const parsers = {
+export const parsers: { [domain: string]: ParserInterface } = {
   [DOMAIN.WIKIPEDIA]: {
     getUrl: () => "https://en.wikipedia.org/wiki/Special:Random",
-    getTextNodes: (scope: InjectScope): Text[] => {
+    parse: (scope: InjectScope): Text[] => {
       // open all closed sections
       document
         .querySelectorAll(
@@ -35,6 +35,7 @@ export const parsers = {
 
       return textNodes;
     },
+    getBoundaryAncestorSelector: () => "section",
   },
   [DOMAIN.HACKERNEWS]: {
     // hn uses incremental ids, max id taken on 03/27/20
@@ -42,7 +43,11 @@ export const parsers = {
       `https://news.ycombinator.com/item?id=${Math.floor(
         Math.random() * 22702482
       )}`,
-    getTextNodes: (scope: InjectScope): Text[] => {
+    parse: (scope: InjectScope): Text[] => {
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+
       const textNodes = Array.from(document.querySelectorAll(".comment"))
         .map(scope.getTextNodes)
         //@ts-ignore: this should work fine
@@ -50,5 +55,6 @@ export const parsers = {
 
       return textNodes;
     },
+    getBoundaryAncestorSelector: () => ".comment",
   },
 };

@@ -19,7 +19,7 @@ const GCLOUD_SERVICE_ACCOUNT_FILENAME = resolve(
 );
 const GCLOUD_PROJECT_ID = "literal-269716";
 const GCLOUD_BUCKET_NAME = "literal-screenshot";
-const OUTPUT_SIZE = 5;
+const OUTPUT_SIZE = 10;
 
 const pLimit = limit(1);
 
@@ -27,7 +27,7 @@ const exec = async (driver: DriverInterface) => {
   const fileName = `${uuid()}_firefox_wikipedia_pixel-2.png`;
   const outputPath = resolve(OUTPUT_DIR, fileName);
   const annotations = await driver.getScreenshot({
-    domain: DOMAIN.WIKIPEDIA,
+    domain: DOMAIN.HACKERNEWS,
     outputPath,
   });
 

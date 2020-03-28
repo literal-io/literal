@@ -2,7 +2,8 @@ import { devices, firefox, BrowserContext } from "playwright";
 import {
   SelectionAnnotation,
   browserInject,
-  DOMAIN
+  DOMAIN,
+  parsers,
 } from "../../browser-inject";
 import { Driver } from "../types";
 
@@ -11,7 +12,7 @@ export class PlaywrightDriver implements Driver {
 
   initializeContext = async ({
     browser,
-    device = "Pixel 2"
+    device = "Pixel 2",
   }: {
     browser: string;
     device: string;
@@ -25,16 +26,14 @@ export class PlaywrightDriver implements Driver {
     })();
     this.context = await browserInst.newContext({
       viewport: d.viewport,
-      userAgent: d.userAgent
+      userAgent: d.userAgent,
     });
   };
 
   getScreenshot = async ({
-    href,
     outputPath,
-    domain
+    domain,
   }: {
-    href: string;
     outputPath: string;
     domain: DOMAIN;
   }): Promise<SelectionAnnotation[]> => {
@@ -43,7 +42,7 @@ export class PlaywrightDriver implements Driver {
     }
 
     const page = await this.context.newPage();
-    await page.goto(href);
+    await page.goto(parsers[domain].getUrl());
 
     const { annotations } = await browserInject(domain, page.evaluate);
 

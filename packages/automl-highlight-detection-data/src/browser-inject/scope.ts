@@ -9,7 +9,10 @@ export const scope: InjectScope = {
     }
     return nodes;
   },
-  getRandomRange: (textNodes: Text[]): Range => {
+  getRandomRange: (
+    textNodes: Text[],
+    boundaryAncestorSelector: string
+  ): Range => {
     const viewportHeight = document.documentElement.clientHeight;
     const startNodeIdx = Math.round(Math.random() * (textNodes.length - 1));
     const startNode = textNodes[startNodeIdx];
@@ -21,16 +24,21 @@ export const scope: InjectScope = {
     let maxEndNodeIdx = Math.max(startNodeIdx - 1, 0);
     do {
       maxEndNodeIdx = maxEndNodeIdx + 1;
-      range.setEnd(textNodes[maxEndNodeIdx], textNodes[maxEndNodeIdx].length);
+      range.setEnd(
+        textNodes[Math.min(maxEndNodeIdx, textNodes.length)],
+        textNodes[Math.min(maxEndNodeIdx, textNodes.length)].length
+      );
     } while (
       maxEndNodeIdx < textNodes.length - 1 &&
-      range.getBoundingClientRect().height < viewportHeight
+      range.getBoundingClientRect().height < viewportHeight &&
+      startNode.parentElement.closest(boundaryAncestorSelector) ===
+        textNodes[maxEndNodeIdx].parentElement.closest(boundaryAncestorSelector)
     );
     maxEndNodeIdx = maxEndNodeIdx - 1;
     const maxRangeLength = range.toString().trim().length;
 
-    // randomly select end node from the set of valid nodes, ensuring it results in a selection
-    // at least of a certain size
+    // randomly select end node from the set of valid nodes, ensuring it
+    // results in a selection at least of a certain size
     let endNodeIdx;
     let endNodeOffset;
     let tries = 100;

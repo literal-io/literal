@@ -5,6 +5,7 @@ import {
   SelectionAnnotation,
   browserInject,
   DOMAIN,
+  parsers,
 } from "../../browser-inject";
 import { Driver } from "../types";
 
@@ -105,7 +106,7 @@ export class AppiumDriver implements Driver {
 
     await this.context.switchContext(AppiumContext.CHROMIUM);
 
-    await this.context.navigateTo(href);
+    await this.context.navigateTo(parsers[domain].getUrl());
 
     const { annotations, size } = await browserInject(
       domain,
@@ -140,10 +141,10 @@ export class AppiumDriver implements Driver {
       : 0;
 
     /**
-     * Creating a selection within JS doesn't trigger Chrome's text selection action
-     * menu. For realism, we want the normal UI that comes up to appear. Using the
-     * highlight coords, tap in the center and wait a short period to have chrome
-     * display the UI.
+     * Creating a selection within JS doesn't trigger Chrome's text selection 
+     * action menu. For realism, we want the normal UI that comes up to 
+     * appear. Using the highlight coords, tap in the center and wait a 
+     * short period to have chrome display the UI.
      */
     const {
       boundingBox: { xRelativeMin, xRelativeMax, yRelativeMin, yRelativeMax },
