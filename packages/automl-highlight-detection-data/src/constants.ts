@@ -3,6 +3,9 @@ import { resolve } from "path";
 export const DEBUG = process.env.NODE_ENV !== "production";
 export const OUTPUT_SIZE = parseInt(process.env.OUTPUT_SIZE || "20");
 
+console.log("DEBUG: ", DEBUG)
+console.log("OUTPUT_SIZE: ", OUTPUT_SIZE)
+
 export const DRIVER = "appium"; // 'playwright'
 
 export const OUTPUT_DIR = resolve(__dirname, "../output/screenshot");

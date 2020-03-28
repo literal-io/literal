@@ -87,6 +87,6 @@ export const parsers: { [domain: string]: ParserInterface } = {
 
       return scope.getTextNodes(document.querySelector(".entry-content"));
     },
-    getBoundaryAncestorSelector: () => "p"
+    getBoundaryAncestorSelector: () => "p",
   },
 };
