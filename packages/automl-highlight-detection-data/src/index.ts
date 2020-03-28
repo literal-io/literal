@@ -4,88 +4,55 @@ import { writeFileSync } from "fs";
 import { v4 as uuid } from "uuid";
 import * as R from "ramda";
 import { Storage } from "@google-cloud/storage";
-import limit from "p-limit";
+import pSeries from "p-series";
 
-import { DOMAIN } from "./browser-inject";
-
+import { DOMAIN, SelectionAnnotation } from "./browser-inject";
+import {
+  DEBUG,
+  DRIVER,
+  OUTPUT_DIR,
+  OUTPUT_SIZE,
+  GCLOUD_PROJECT_ID,
+  GCLOUD_SERVICE_ACCOUNT_FILENAME,
+  GCLOUD_BUCKET_NAME,
+} from "./constants";
 import { PlaywrightDriver, AppiumDriver, DriverInterface } from "./drivers";
 
-const DEBUG = true;
-const DRIVER = "appium"; // 'playwright'
-const OUTPUT_DIR = resolve(__dirname, "../output/screenshot");
-const GCLOUD_SERVICE_ACCOUNT_FILENAME = resolve(
-  __dirname,
-  "../gcloud-service-account.json"
-);
-const GCLOUD_PROJECT_ID = "literal-269716";
-const GCLOUD_BUCKET_NAME = "literal-screenshot";
-const OUTPUT_SIZE = 10;
+const storage = new Storage({
+  projectId: GCLOUD_PROJECT_ID,
+  keyFilename: GCLOUD_SERVICE_ACCOUNT_FILENAME,
+});
 
-const pLimit = limit(1);
+interface Task {
+  jobId: string;
+  driver: DriverInterface;
+  domain: DOMAIN;
+}
 
-const exec = async (driver: DriverInterface) => {
-  const fileName = `${uuid()}_firefox_wikipedia_pixel-2.png`;
+const execTask = async (task: Task) => {
+  const fileName = `${uuid()}_chrome_pixel-2.png`;
   const outputPath = resolve(OUTPUT_DIR, fileName);
-  const annotations = await driver.getScreenshot({
-    domain: DOMAIN.HACKERNEWS,
+  const annotations = await task.driver.getScreenshot({
+    domain: task.domain,
     outputPath,
   });
 
-  return {
-    screenshotPath: outputPath,
-    annotations,
-    screenshotFileName: fileName,
-  };
-};
-
-(async () => {
-  const driver =
-    DRIVER === "appium" ? new AppiumDriver() : new PlaywrightDriver();
-  await driver.initializeContext(
-    DRIVER === "appium"
-      ? {
-          browser: "Chrome",
-          device: "Android Emulator",
-        }
-      : {
-          browser: "firefox",
-          device: "Pixel 2",
-        }
-  );
-  const storage = new Storage({
-    projectId: GCLOUD_PROJECT_ID,
-    keyFilename: GCLOUD_SERVICE_ACCOUNT_FILENAME,
-  });
-  const jobId = uuid();
-
-  const run = async () => {
-    const {
-      screenshotPath,
-      annotations,
-      screenshotFileName: destinationName,
-    } = await exec(driver);
+  if (!DEBUG) {
     await storage
       .bucket(GCLOUD_BUCKET_NAME)
-      .upload(screenshotPath, { destination: `${jobId}/${destinationName}` });
+      .upload(outputPath, { destination: `${task.jobId}/${fileName}` });
+  }
 
-    return annotations.map((a) => ({
-      url: `gs://${GCLOUD_BUCKET_NAME}/${jobId}/${destinationName}`,
-      ...a,
-    }));
-  };
+  return annotations.map((a) => ({
+    url: `gs://${GCLOUD_BUCKET_NAME}/${task.jobId}/${fileName}`,
+    ...a,
+  }));
+};
 
-  const results = await Promise.all(
-    R.times(
-      () =>
-        pLimit(() =>
-          run().catch((err) => {
-            return [];
-          })
-        ),
-      OUTPUT_SIZE
-    )
-  ).then(R.flatten);
-
+const processResults = async (
+  jobId: string,
+  results: Array<SelectionAnnotation & { url: string }>
+) => {
   const csv = results
     .map(
       ({
@@ -120,6 +87,42 @@ const exec = async (driver: DriverInterface) => {
 
     console.log(`Upload complete. Job ID: ${jobId}`);
   }
+};
+
+(async () => {
+  const driver =
+    DRIVER === "appium" ? new AppiumDriver() : new PlaywrightDriver();
+  await driver.initializeContext(
+    DRIVER === "appium"
+      ? {
+          browser: "Chrome",
+          device: "Android Emulator",
+        }
+      : {
+          browser: "firefox",
+          device: "Pixel 2",
+        }
+  );
+  const jobId = uuid();
+
+  const tasks = R.times(
+    () => () => {
+      return execTask({
+        jobId,
+        driver,
+        domain: Object.values(DOMAIN)[
+          Math.floor(Math.random() * Object.values(DOMAIN).length)
+        ],
+      }).catch((err) => {
+        console.error(err);
+        return [];
+      });
+    },
+    OUTPUT_SIZE
+  );
+  const results = await pSeries(tasks).then(R.flatten);
+
+  await processResults(jobId, results);
 
   await driver.cleanup();
 })();
