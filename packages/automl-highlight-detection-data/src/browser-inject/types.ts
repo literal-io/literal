@@ -1,6 +1,7 @@
 export enum DOMAIN {
   WIKIPEDIA = "wikipedia",
   HACKERNEWS = "hackernews",
+  RIBBONFARM = "ribbonfarm",
 }
 
 export interface InjectScope {
