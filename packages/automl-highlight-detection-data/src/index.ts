@@ -5,6 +5,7 @@ import { v4 as uuid } from "uuid";
 import * as R from "ramda";
 import { Storage } from "@google-cloud/storage";
 import pSeries from "p-series";
+import pRetry from "p-retry";
 
 import { DOMAIN, SelectionAnnotation } from "./browser-inject";
 import {
@@ -107,14 +108,29 @@ const processResults = async (
 
   const tasks = R.times(
     () => () => {
-      return execTask({
-        jobId,
-        driver,
-        domain: Object.values(DOMAIN)[
-          Math.floor(Math.random() * Object.values(DOMAIN).length)
-        ],
-      }).catch((err) => {
-        console.error(err);
+      return pRetry(
+        () =>
+          execTask({
+            jobId,
+            driver,
+            domain: Object.values(DOMAIN)[
+              Math.floor(Math.random() * Object.values(DOMAIN).length)
+            ],
+          }).then((res) => {
+            if (res.length === 0) {
+              // if we didn't return annotations for any reason, throw
+              // an error so that the task is retried.
+              throw new Error();
+            }
+            return res;
+          }),
+        {
+          minTimeout: 1,
+          maxTimeout: Infinity,
+          factor: 1,
+          retries: 10,
+        }
+      ).catch((_err) => {
         return [];
       });
     },
