@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npm run clean && npm run ts:build && node dist",
-    "start:production": "npm run clean && npm run ts:build && NODE_ENV=production OUTPUT_SIZE=1000 node dist",
+    "start:production": "npm run clean && npm run ts:build && NODE_ENV=production OUTPUT_SIZE=500 node dist",
     "clean": "rm -rf dist && rm -f output/screenshot/*",
     "ts:build": "tsc",
     "ts:watch": "tsc -w",

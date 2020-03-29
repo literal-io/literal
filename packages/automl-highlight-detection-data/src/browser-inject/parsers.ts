@@ -39,10 +39,27 @@ export const parsers: { [domain: string]: ParserInterface } = {
   },
   [DOMAIN.HACKERNEWS]: {
     // hn uses incremental ids, max id taken on 03/27/20
+    /**
     getUrl: () =>
       `https://news.ycombinator.com/item?id=${Math.floor(
         Math.random() * 22702482
       )}`,
+    **/
+    getUrl: () => {
+      const urls = [
+        "https://news.ycombinator.com/item?id=22717982",
+        "https://news.ycombinator.com/item?id=22717650",
+        "https://news.ycombinator.com/item?id=22718207",
+        "https://news.ycombinator.com/item?id=22716839",
+        "https://news.ycombinator.com/item?id=22715947",
+        "https://news.ycombinator.com/item?id=22708094",
+        "https://news.ycombinator.com/item?id=22717333",
+        "https://news.ycombinator.com/item?id=22715031",
+        "https://news.ycombinator.com/item?id=22711661",
+        "https://news.ycombinator.com/item?id=22701896"
+      ]
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
     parse: (scope: InjectScope): Text[] => {
       document.querySelectorAll("a").forEach((el) => {
         el.removeAttribute("href");

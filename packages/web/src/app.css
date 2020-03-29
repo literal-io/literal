@@ -1,0 +1,19 @@
+/* purgecss start ignore */
+@tailwind base;
+@tailwind components;
+/* purgecss end ignore */
+
+@tailwind utilities;
+
+:root {
+  --root-height: 100vh;
+}
+
+html {
+  font-size: 16px;
+}
+
+#__next {
+  width: 100vw;
+  height: var(--root-height);
+}

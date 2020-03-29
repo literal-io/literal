@@ -1,0 +1,38 @@
+{
+  "name": "web",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run bsb:clean && npm run bsb:build && concurrently -k -n \"bsb,next\" \"npm run bsb:start\" \"npm run next:start\"",
+    "next:start": "next",
+    "next:build": "next build",
+    "bsb:build": "bsb -make-world",
+    "bsb:start": "bsb -make-world -w",
+    "bsb:clean": "bsb -clean-world"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-amplify/api": "^2.2.0",
+    "@aws-amplify/auth": "^2.1.7",
+    "@aws-amplify/core": "^2.2.6",
+    "@aws-amplify/pubsub": "^2.1.8",
+    "@aws-amplify/storage": "^2.2.2",
+    "@baransu/graphql_ppx_re": "^0.7.1",
+    "@fullhuman/postcss-purgecss": "^2.1.0",
+    "@trashed/bs-aws-amplify": "1.0.0",
+    "bs-platform": "^7.2.2",
+    "draft-js": "^0.11.5",
+    "next": "^9.3.2",
+    "postcss-import": "^12.0.1",
+    "re-classnames": "^4.1.0",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "reason-react": "^0.7.0",
+    "tailwindcss": "^1.2.0"
+  },
+  "devDependencies": {
+    "concurrently": "^5.1.0"
+  }
+}
