@@ -47,16 +47,17 @@ export const parsers: { [domain: string]: ParserInterface } = {
     **/
     getUrl: () => {
       const urls = [
-        "https://news.ycombinator.com/item?id=22717982",
-        "https://news.ycombinator.com/item?id=22717650",
-        "https://news.ycombinator.com/item?id=22718207",
-        "https://news.ycombinator.com/item?id=22716839",
-        "https://news.ycombinator.com/item?id=22715947",
-        "https://news.ycombinator.com/item?id=22708094",
-        "https://news.ycombinator.com/item?id=22717333",
-        "https://news.ycombinator.com/item?id=22715031",
-        "https://news.ycombinator.com/item?id=22711661",
-        "https://news.ycombinator.com/item?id=22701896"
+        "https://news.ycombinator.com/item?id=22726416",
+        "https://news.ycombinator.com/item?id=22725015",
+        "https://news.ycombinator.com/item?id=22719488",
+        "https://news.ycombinator.com/item?id=22717900",
+        "https://news.ycombinator.com/item?id=22725905",
+        "https://news.ycombinator.com/item?id=22725529",
+        "https://news.ycombinator.com/item?id=22721123",
+        "https://news.ycombinator.com/item?id=22716612",
+        "https://news.ycombinator.com/item?id=22722211",
+        "https://news.ycombinator.com/item?id=22722477",
+        "https://news.ycombinator.com/item?id=22724447"
       ]
       return urls[Math.floor(Math.random() * urls.length)];
     },
