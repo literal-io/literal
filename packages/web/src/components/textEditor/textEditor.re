@@ -1,7 +1,12 @@
 open Styles;
 
 let decorator =
-  Draft.(makeCompositeDecorator([|HighlightDecorator.decoratorInput|]));
+  Draft.(
+    makeCompositeDecorator([|
+      HighlightTextDecorator.decoratorInput,
+      HighlightLeaderDecorator.decoratorInput,
+    |])
+  );
 
 let emptyContentState =
   Draft.convertFromRaw({
@@ -15,9 +20,7 @@ let emptyContentState =
 let make = () => {
   let (editorState, setEditorState) =
     React.useState(() =>
-      Draft.(
-        editorStateClass->makeWithContent(emptyContentState, decorator)
-      )
+      Draft.(editorStateClass->makeWithContent(emptyContentState, decorator))
     );
 
   let handleChange = nextEditorState => setEditorState(_ => nextEditorState);
