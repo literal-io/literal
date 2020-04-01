@@ -13,8 +13,8 @@ type S3Object @aws_iam {
 }
 
 type Screenshot
-  @model 
-  @auth(rules: [{allow: public, provider: iam, operations: [create, read]}]) {
+  @model
+  @auth(rules: [{ allow: public, provider: iam, operations: [create, read] }]) {
   id: ID!
   createdAt: String!
   file: S3Object!
@@ -26,9 +26,17 @@ input CreateScreenshotInput {
   file: S3ObjectInput!
 }
 
+input CreateHighlightInput {
+  id: ID
+  createdAt: String
+  text: String!
+  note: String
+  highlightScreenshotId: ID!
+}
+
 type Highlight
   @model
-  @auth(rules: [{allow: public, provider: iam, operations: [create, read]}]) {
+  @auth(rules: [{ allow: public, provider: iam, operations: [create, read] }]) {
   id: ID!
   createdAt: String!
   text: String!
@@ -44,5 +52,9 @@ input CreateHighlightFromScreenshotInput {
 }
 
 type Mutation {
-  createHighlightFromScreenshot(input: CreateHighlightFromScreenshotInput!): Highlight @function(name: "GraphQLResolverFunction")
+  createHighlightFromScreenshot(
+    input: CreateHighlightFromScreenshotInput!
+  ): Highlight
+    @function(name: "GraphQLResolver-${env}")
+    @auth(rules: [{ allow: public, provider: iam }])
 }

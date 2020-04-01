@@ -21,3 +21,30 @@ query ListScreenshots(
     nextToken
   }
 }
+query GetHighlight($id: ID!) {
+  getHighlight(id: $id) {
+    id
+    createdAt
+    text
+    note
+    screenshot {
+      id
+      createdAt
+    }
+  }
+}
+query ListHighlights(
+  $filter: ModelHighlightFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listHighlights(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      id
+      createdAt
+      text
+      note
+    }
+    nextToken
+  }
+}

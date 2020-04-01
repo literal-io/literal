@@ -1,0 +1,1 @@
+module CreateHighlightFromScreenshot = QueryResolver_CreateHighlightFromScreenshot;

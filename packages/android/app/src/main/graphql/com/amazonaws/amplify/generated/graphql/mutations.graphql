@@ -1,4 +1,18 @@
 # this is an auto generated file. This will be overwritten
+mutation CreateHighlightFromScreenshot(
+  $input: CreateHighlightFromScreenshotInput!
+) {
+  createHighlightFromScreenshot(input: $input) {
+    id
+    createdAt
+    text
+    note
+    screenshot {
+      id
+      createdAt
+    }
+  }
+}
 mutation CreateScreenshot(
   $input: CreateScreenshotInput!
   $condition: ModelScreenshotConditionInput
@@ -32,6 +46,51 @@ mutation DeleteScreenshot(
     createdAt
     file {
       ...S3Object
+    }
+  }
+}
+mutation CreateHighlight(
+  $input: CreateHighlightInput!
+  $condition: ModelHighlightConditionInput
+) {
+  createHighlight(input: $input, condition: $condition) {
+    id
+    createdAt
+    text
+    note
+    screenshot {
+      id
+      createdAt
+    }
+  }
+}
+mutation UpdateHighlight(
+  $input: UpdateHighlightInput!
+  $condition: ModelHighlightConditionInput
+) {
+  updateHighlight(input: $input, condition: $condition) {
+    id
+    createdAt
+    text
+    note
+    screenshot {
+      id
+      createdAt
+    }
+  }
+}
+mutation DeleteHighlight(
+  $input: DeleteHighlightInput!
+  $condition: ModelHighlightConditionInput
+) {
+  deleteHighlight(input: $input, condition: $condition) {
+    id
+    createdAt
+    text
+    note
+    screenshot {
+      id
+      createdAt
     }
   }
 }
