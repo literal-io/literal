@@ -15,9 +15,21 @@
     "in-source": true
   },
   "suffix": ".js",
-  "bs-dependencies": ["@trashed/bs-aws-amplify", "reason-react", "re-classnames"],
+  "js-post-build": {
+    "cmd": "./scripts/bsb-js-post-build.sh"
+  },
+  "bs-dependencies": [
+    "@trashed/bs-aws-amplify",
+    "decco",
+    "reason-react",
+    "re-classnames",
+    "reason-apollo",
+    "reason-apollo-hooks",
+    "@trashed/bs-aws-appsync"
+  ],
   "ppx-flags": [
-    ["@baransu/graphql_ppx_re/ppx", "-schema ./graphql-schema.json"]
+    ["@baransu/graphql_ppx_re/ppx", "-schema ./graphql-schema.json"],
+    "decco/ppx"
   ],
   "warnings": {
     "error": "+101"
