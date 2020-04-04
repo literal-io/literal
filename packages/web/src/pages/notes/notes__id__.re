@@ -27,7 +27,7 @@ module Data = {
         "flex-col",
       ])}>
       <Header title="Create" />
-      <div className={cn(["my-4"])}>
+      <div className={cn(["border-white", "border-b", "py-2"])}>
         <TextEditor
           contentState={Draft.ContentState.createFromText(highlight##text)}
           editorKey="highlight"

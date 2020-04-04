@@ -11,6 +11,7 @@ let emptyContentState = () =>
 [@react.component]
 let make =
     (
+      ~className=?,
       ~contentState=emptyContentState(),
       ~customStyleMap=?,
       ~decorator=?,
@@ -24,7 +25,7 @@ let make =
 
   let handleChange = nextEditorState => setEditorState(_ => nextEditorState);
 
-  <div className={cn(["border-white", "border-b", "text-white"])}>
+  <div ?className>
     <Draft.Editor
       ?editorKey
       ?customStyleMap
