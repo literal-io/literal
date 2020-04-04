@@ -14,6 +14,42 @@ module GetNoteQuery = [%graphql
 [@decco]
 type routeParams = {id: string};
 
+module Data = {
+  [@react.component]
+  let make = (~highlight) => {
+    <div
+      className={cn([
+        "w-full",
+        "h-full",
+        "bg-black",
+        "px-6",
+        "flex",
+        "flex-col",
+      ])}>
+      <Header title="Create" />
+      <div className={cn(["my-4"])}>
+        <TextEditor
+          contentState={Draft.ContentState.createFromText(highlight##text)}
+          editorKey="highlight"
+          decorator={Draft.makeCompositeDecorator([|
+            HighlightTextDecorator.decoratorInput,
+          |])}
+        />
+      </div>
+    </div>;
+  };
+};
+
+module Empty = {
+  [@react.component]
+  let make = () => React.string("Not Found...");
+};
+
+module Loading = {
+  [@react.component]
+  let make = () => React.string("Loading...");
+};
+
 [@react.component]
 let default = () => {
   let router = Next.useRouter();
@@ -36,20 +72,12 @@ let default = () => {
 
   switch (query) {
   | Data(data) =>
-    <div
-      className={cn([
-        "w-full",
-        "h-full",
-        "bg-black",
-        "px-6",
-        "flex",
-        "flex-col",
-      ])}>
-      <Header title="Create" />
-      <div className={cn(["my-4"])}> <TextEditor /> </div>
-    </div>
-  | Loading => React.string("Loading...")
+    switch (data##getHighlight) {
+    | Some(highlight) => <Data highlight />
+    | None => <Empty />
+    }
+  | Loading => <Loading />
   | NoData
-  | Error(_) => React.string("Error...")
+  | Error(_) => <Empty />
   };
 };

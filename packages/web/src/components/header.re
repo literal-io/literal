@@ -9,6 +9,6 @@ let make = (~title) =>
       </h1>
     </div>
     <div
-      className={cn(["h-2", "border-white", "border-t", "border-b"])}
+      className={cn(["h-1", "border-white", "border-t", "border-b"])}
     />
   </>;

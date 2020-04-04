@@ -1,21 +1,32 @@
+open Styles;
+
 let highlightTextComponent = props => {
   ReasonReact.cloneElement(
-    <span className="bg-white text-black font-serif text-lg leading-snug" />,
+    <span
+      className={cn([
+        "bg-white",
+        "text-black",
+        "font-serif",
+        "text-lg",
+        "leading-relaxed",
+        "box-decoration-break-clone",
+        "px-1",
+      ])}
+      style={ReactDOMRe.Style.make(
+        ~paddingTop="0.125rem",
+        ~paddingBottom="0.125rem",
+        (),
+      )}
+    />,
     ~props=DecoratorUtils.filterProps(props),
     [|props##children|],
   );
 };
 
-let highlightRegex = [%re "/^\>(.+\\n?)/gm"];
 let decoratorInput =
   Draft.{
-    strategy: (contentBlock, callback, contentState) => {
-      DecoratorUtils.findWithRegex(
-        ~matchIdx=1,
-        highlightRegex, 
-        contentBlock,
-        callback
-      );
+    strategy: (contentBlock, callback, _contentState) => {
+      callback(. 0, contentBlock->Draft.getText->Js.String2.length);
     },
     component: highlightTextComponent,
   };

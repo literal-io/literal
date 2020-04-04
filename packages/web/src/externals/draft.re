@@ -1,8 +1,6 @@
 type editorStateClass;
 type editorState;
 
-type contentState;
-
 type entityRange;
 type entity;
 
@@ -16,9 +14,16 @@ type block = {
 
 [@bs.send] external getText: block => string = "getText";
 
+module ContentState = {
+  type t;
+
+  [@bs.module "draft-js"] [@bs.scope "ContentState"]
+  external createFromText: string => t = "createFromText";
+};
+
 type decoratorComponent('a) = Js.t({..} as 'a) => React.element;
 type decoratorInput('a) = {
-  strategy: (block, (. int, int) => unit, contentState) => unit,
+  strategy: (block, (. int, int) => unit, ContentState.t) => unit,
   component: decoratorComponent('a),
 };
 
@@ -33,13 +38,15 @@ type rawEditorState = {
 external editorStateClass: editorStateClass = "EditorState";
 
 [@bs.module "draft-js"]
-external convertFromRaw: rawEditorState => contentState = "convertFromRaw";
+external convertFromRaw: rawEditorState => ContentState.t = "convertFromRaw";
 
+/** editorStateClass **/
 [@bs.send]
 external createEmpty: editorStateClass => editorState = "createEmpty";
 [@bs.send]
 external makeWithContent:
-  (editorStateClass, contentState, compositeDecorator) => editorState =
+  (editorStateClass, ContentState.t, option(compositeDecorator)) =>
+  editorState =
   "createWithContent";
 
 [@bs.module "draft-js"] [@bs.new]
@@ -52,7 +59,9 @@ module Editor = {
   external make:
     (
       ~editorState: editorState,
-      ~editorKey: string,
+      ~editorKey: option(string),
+      ~blockStyleFn: option(block => string),
+      ~customStyleMap: option(Js.Dict.t(ReactDOMRe.Style.t)),
       ~onChange: editorState => unit,
       ~placeholder: string
     ) =>

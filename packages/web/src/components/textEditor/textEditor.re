@@ -1,14 +1,6 @@
 open Styles;
 
-let decorator =
-  Draft.(
-    makeCompositeDecorator([|
-      HighlightTextDecorator.decoratorInput,
-      HighlightLeaderDecorator.decoratorInput,
-    |])
-  );
-
-let emptyContentState =
+let emptyContentState = () =>
   Draft.convertFromRaw({
     entityMap: Js.Dict.empty(),
     blocks: [|
@@ -17,17 +9,26 @@ let emptyContentState =
   });
 
 [@react.component]
-let make = () => {
+let make =
+    (
+      ~contentState=emptyContentState(),
+      ~customStyleMap=?,
+      ~decorator=?,
+      ~editorKey=?,
+      ~onGetBlockClassName=?,
+    ) => {
   let (editorState, setEditorState) =
     React.useState(() =>
-      Draft.(editorStateClass->makeWithContent(emptyContentState, decorator))
+      Draft.(editorStateClass->makeWithContent(contentState, decorator))
     );
 
   let handleChange = nextEditorState => setEditorState(_ => nextEditorState);
 
   <div className={cn(["border-white", "border-b", "text-white"])}>
     <Draft.Editor
-      editorKey="editor"
+      ?editorKey
+      ?customStyleMap
+      blockStyleFn=?onGetBlockClassName
       editorState
       onChange=handleChange
       placeholder="Thoughts..."

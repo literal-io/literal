@@ -5,6 +5,8 @@
 
 @tailwind utilities;
 
+/* base */
+
 :root {
   --root-height: 100vh;
 }
@@ -16,4 +18,16 @@ html {
 #__next {
   width: 100vw;
   height: var(--root-height);
+}
+
+.awsappsync {
+  width: 100%;
+  height: 100%;
+}
+
+/* utility classes */
+
+.box-decoration-break-clone {
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
