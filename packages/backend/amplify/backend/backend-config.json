@@ -21,11 +21,6 @@
 		}
 	},
 	"function": {
-		"S3Triggerf2ea6423": {
-			"service": "Lambda",
-			"providerPlugin": "awscloudformation",
-			"build": true
-		},
 		"GraphQLResolver": {
 			"service": "Lambda",
 			"providerPlugin": "awscloudformation",
@@ -54,23 +49,18 @@
 					]
 				}
 			]
+		},
+		"CloudfrontOriginRequest": {
+			"service": "Lambda",
+			"providerPlugin": "awscloudformation",
+			"build": true
 		}
 	},
 	"storage": {
 		"literalStorage": {
 			"service": "S3",
 			"providerPlugin": "awscloudformation",
-			"dependsOn": [
-				{
-					"category": "function",
-					"resourceName": "S3Triggerf2ea6423",
-					"attributes": [
-						"Name",
-						"Arn",
-						"LambdaExecutionRole"
-					]
-				}
-			]
+			"dependsOn": []
 		}
 	}
 }
