@@ -14,7 +14,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
 
 import com.amazonaws.amplify.generated.graphql.CreateHighlightFromScreenshotMutation;
 import com.amazonaws.amplify.generated.graphql.CreateScreenshotMutation;
@@ -115,14 +116,20 @@ public class ShareTargetHandler extends AppCompatActivity {
             Log.i("Literal", "highlightResult is null");
             return;
         }
-
         Log.i("Literal", "highlight created.");
-
-        this.finish();
+        this.initializeWebView("https://literal.io/notes/" + highlightId);
     }
 
     void handleSendNotSupported() {
         // TODO: implement fallback handling, e.g. display a "This does not look like a screenshot" UI
+    }
+
+    void initializeWebView(String initialURL) {
+        WebView webView = (WebView) findViewById(R.id.webview);
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+
+        webView.loadUrl(initialURL);
     }
 
     private LatchedGraphQLCallback<CreateScreenshotMutation.Data> createScreenshotCallback = new LatchedGraphQLCallback<>();
