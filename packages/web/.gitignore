@@ -1,5 +1,4 @@
 lib
-.next
 src/**/*.js
 .merlin
 .bsb.lock
@@ -26,3 +25,5 @@ amplifyxc.config
 
 .graphql_ppx_cache
 
+out
+.next

@@ -18,7 +18,7 @@ module.exports = {
       ? [
           "@fullhuman/postcss-purgecss",
           {
-            content: ["./src/**/*.bs.js"],
+            content: ["./src/**/*.js"],
             whitelist: ["awsappsync", "app"],
           },
         ]

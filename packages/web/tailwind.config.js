@@ -7,6 +7,9 @@ module.exports = {
       margin: {
         "1/2": "0.2rem",
       },
+      borderWidth: {
+        "1/2": "0.5px",
+      },
     },
   },
 };
