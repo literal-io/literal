@@ -4,6 +4,9 @@
 	"Parameters": {
 		"env": {
 			"Type": "String"
+		},
+		"version": {
+			"Type": "String"
 		}
 	},
 	"Conditions": {
@@ -63,7 +66,7 @@
 				"Timeout": "25",
 				"Code": {
 					"S3Bucket": "amplify-literal-production-114446-deployment",
-					"S3Key": "amplify-builds/CloudfrontOriginRequest-694b63437779787a4f32-build.zip"
+					"S3Key": "amplify-builds/CloudfrontOriginRequest-5a785072586b54313746-build.zip"
 				}
 			}
 		},
@@ -148,6 +151,17 @@
 					]
 				}
 			}
+		},
+		"Version": {
+			"Type": "AWS::Lambda::Version",
+			"Properties": {
+				"FunctionName": {
+					"Ref": "LambdaFunction"
+				},
+				"Description": {
+					"Ref": "version"
+				}
+			}
 		}
 	},
 	"Outputs": {
@@ -162,6 +176,11 @@
 					"LambdaFunction",
 					"Arn"
 				]
+			}
+		},
+		"VersionArn": {
+			"Value": {
+				"Ref": "Version"
 			}
 		},
 		"Region": {

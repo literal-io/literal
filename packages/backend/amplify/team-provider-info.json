@@ -18,7 +18,8 @@
                 }
             },
             "function": {
-                "CloudfrontOriginRequest": {}
+                "CloudfrontOriginRequest": {},
+                "GraphQLResolver": {}
             }
         }
     }
