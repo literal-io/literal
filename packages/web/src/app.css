@@ -31,3 +31,7 @@ html {
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
+
+.touch-none {
+  touch-action: none;
+}

@@ -24,9 +24,9 @@ let highlightTextComponent = props => {
 };
 
 let decoratorInput =
-  Draft.{
+  Draft.Decorator.{
     strategy: (contentBlock, callback, _contentState) => {
-      callback(. 0, contentBlock->Draft.getText->Js.String2.length);
+      callback(. 0, contentBlock->Draft.Block.getText->Js.String2.length);
     },
     component: highlightTextComponent,
   };

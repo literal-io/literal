@@ -12,7 +12,7 @@ let filterProps = [%raw
 ];
 
 let findWithRegex = (~matchIdx=0, regex, contentBlock, callback) => {
-  let text = contentBlock->Draft.getText;
+  let text = contentBlock->Draft.Block.getText;
   let break = ref(false);
   while (! break^) {
     switch (regex->Js.Re.exec_(text)) {

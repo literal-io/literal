@@ -3,7 +3,7 @@ import "draft-js/dist/Draft.css";
 
 import * as React from "react";
 
-const Provider = require("./provider").make;
+const Provider = require("../provider").make;
 
 export default function App({ Component, pageProps }) {
   return (

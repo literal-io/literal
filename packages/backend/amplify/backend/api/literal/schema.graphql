@@ -36,7 +36,15 @@ input CreateHighlightInput {
 
 type Highlight
   @model
-  @auth(rules: [{ allow: public, provider: iam, operations: [create, read] }]) {
+  @auth(
+    rules: [
+      {
+        allow: public
+        provider: iam
+        operations: [create, read, update, delete]
+      }
+    ]
+  ) {
   id: ID!
   createdAt: String!
   text: String!
