@@ -16,9 +16,6 @@
     },
     "route53HostedZoneId": {
       "Type": "String"
-    },
-    "cloudfrontOriginRequestLambdaARN": {
-      "Type": "String"
     }
   },
   "Conditions": {
@@ -188,16 +185,7 @@
             "DefaultTTL": 86400,
             "MaxTTL": 31536000,
             "MinTTL": 60,
-            "Compress": true,
-            "LambdaFunctionAssociations": [
-              {
-                "EventType": "origin-request",
-                "IncludeBody": false,
-                "LambdaFunctionARN": {
-                  "Ref": "cloudfrontOrginRequestLambdaARN"
-                }
-              }
-            ]
+            "Compress": true
           },
           "DefaultRootObject": "index.html",
           "CustomErrorResponses": [
