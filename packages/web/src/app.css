@@ -35,3 +35,10 @@ html {
 .touch-none {
   touch-action: none;
 }
+
+.textInputBasic_input {
+  background-image: -webkit-linear-gradient(left, white 10px, transparent 10px),
+    -webkit-linear-gradient(right, white 10px, transparent 10px),
+    -webkit-linear-gradient(white 20px, #ccc 20px, #ccc 31px, white 31px) !important;
+  background-size: 100% 100%, 100% 100%, 100% 30px !important;
+}

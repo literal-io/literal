@@ -1,5 +1,4 @@
 import "../app.css";
-import "draft-js/dist/Draft.css";
 
 import * as React from "react";
 

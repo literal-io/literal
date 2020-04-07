@@ -16,29 +16,14 @@ module Data = {
     let (updateHighlightMutation, _s, _f) =
       ApolloHooks.useMutation(UpdateHighlightMutation.definition);
 
-    let (editorState, setEditorState) =
-      React.useState(() => {
-        let contentState = Draft.ContentState.createFromText(highlight##text);
-        let decorator =
-          Draft.Decorator.makeComposite([|
-            HighlightTextDecorator.decoratorInput,
-          |]);
-        Draft.EditorState.makeWithContent(contentState, Some(decorator));
-      });
+    let (textState, setTextState) = React.useState(() => {highlight##text});
 
     let handleSave = () => {
       let variables =
         UpdateHighlightMutation.makeVariables(
           ~input={
             "id": highlight##id,
-            "text":
-              editorState
-              ->Draft.EditorState.getCurrentContent
-              ->Draft.ContentState.convertToRaw
-              ->Draft.ContentState.blocks
-              ->Belt.Array.map(Draft.Block.text)
-              ->Js.Array2.joinWith("\n")
-              ->Js.Option.some,
+            "text": textState->Js.Option.some,
             "createdAt": None,
             "note": None,
             "highlightScreenshotId": None,
@@ -49,7 +34,7 @@ module Data = {
       ();
     };
 
-    let handleChange = nextEditorState => setEditorState(_ => nextEditorState);
+    let handleTextChange = s => setTextState(_ => s);
 
     <div
       className={cn([
@@ -63,7 +48,7 @@ module Data = {
       ])}>
       <Header title="Create" />
       <div className={cn(["border-white", "border-b", "py-2"])}>
-        <TextEditor editorKey="highlight" editorState onChange=handleChange />
+        <TextInput.Basic onChange=handleTextChange value=textState />
       </div>
       <FloatingActionButton
         onClick={_ev => handleSave()}
