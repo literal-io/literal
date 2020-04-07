@@ -1,5 +1,6 @@
 package io.literal.ui;
 
+import io.literal.BuildConfig;
 import io.literal.R;
 import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.ContentResolverLib;
@@ -8,10 +9,12 @@ import type.CreateHighlightFromScreenshotInput;
 import type.CreateScreenshotInput;
 import type.S3ObjectInput;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.WebSettings;
@@ -103,6 +106,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                                 .build()
                 )
                 .build();
+
         AppSyncClientFactory.getInstance(this)
                 .mutate(createHighlightMutation)
                 .enqueue(createHighlightCallback.getCallback());
@@ -126,6 +130,9 @@ public class ShareTargetHandler extends AppCompatActivity {
 
     void initializeWebView(String initialURL) {
         WebView webView = (WebView) findViewById(R.id.webview);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            webView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
+        }
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
 

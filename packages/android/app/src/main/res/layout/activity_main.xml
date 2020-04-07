@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<WebView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/webview"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <ImageView
-        android:layout_width="132dp"
-        android:layout_height="132dp"
-        android:layout_centerInParent="true"
-        android:elevation="2dp"
-        android:src="@drawable/logo" />
-</RelativeLayout>
+    android:layout_height="match_parent" />
