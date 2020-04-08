@@ -41,14 +41,34 @@ module Data = {
         "w-full",
         "h-full",
         "bg-black",
-        "px-6",
         "flex",
         "flex-col",
         "relative",
       ])}>
-      <Header title="Create" />
-      <div className={cn(["border-white", "border-b", "py-2"])}>
-        <TextInput.Basic onChange=handleTextChange value=textState />
+      <Header>
+        <MaterialUi.IconButton
+          size=`Small
+          edge=`Start
+          _TouchRippleProps={
+            "classes": {
+              "child": cn(["bg-white"]),
+              "rippleVisible": cn(["opacity-50"]),
+            },
+          }
+          classes=[EdgeStart(cn(["-ml-1"]))]>
+          <Svg
+            placeholderViewBox="0 0 24 24"
+            className={cn(["w-8", "h-8", "pointer-events-none"])}
+            icon=Svg.close
+          />
+        </MaterialUi.IconButton>
+      </Header>
+      <div className={cn(["px-6", "py-4"])}>
+        <TextInput.Basic
+          onChange=handleTextChange
+          value=textState
+          label={React.string("Highlight")}
+        />
       </div>
       <FloatingActionButton
         onClick={_ev => handleSave()}

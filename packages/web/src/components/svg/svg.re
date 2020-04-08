@@ -1,6 +1,7 @@
 open Styles;
 
 let done_: string = [%raw "require('./done.svg')"];
+let close: string = [%raw "require('./close.svg')"];
 
 type state = {
   isLoading: bool,
