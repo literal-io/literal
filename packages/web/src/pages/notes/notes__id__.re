@@ -67,7 +67,6 @@ module Data = {
         <TextInput.Basic
           onChange=handleTextChange
           value=textState
-          label={React.string("Highlight")}
         />
       </div>
       <FloatingActionButton

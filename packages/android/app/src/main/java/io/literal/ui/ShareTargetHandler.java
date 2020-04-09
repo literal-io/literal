@@ -90,7 +90,6 @@ public class ShareTargetHandler extends AppCompatActivity {
     }
 
     void handleSendImage(Intent intent) {
-
         JSONObject s3TransferUtilityJson = AppSyncClientFactory
                 .getConfiguration(this)
                 .optJsonObject("S3TransferUtility");

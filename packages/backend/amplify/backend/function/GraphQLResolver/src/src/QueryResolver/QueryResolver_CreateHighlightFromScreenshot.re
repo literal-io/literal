@@ -191,7 +191,7 @@ let createHighlight = (text, screenshotId) => {
         "note": None,
         "id": None,
         "createdAt": None,
-        "highlightScreenshotId": screenshotId,
+        "highlightScreenshotId": Some(screenshotId),
       },
       (),
     );
