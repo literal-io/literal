@@ -6,6 +6,7 @@ import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.ContentResolverLib;
 
 import type.CreateHighlightFromScreenshotInput;
+import type.CreateHighlightInput;
 import type.CreateScreenshotInput;
 import type.S3ObjectInput;
 
@@ -21,6 +22,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 
 import com.amazonaws.amplify.generated.graphql.CreateHighlightFromScreenshotMutation;
+import com.amazonaws.amplify.generated.graphql.CreateHighlightMutation;
 import com.amazonaws.amplify.generated.graphql.CreateScreenshotMutation;
 
 import com.apollographql.apollo.GraphQLCall;
@@ -48,9 +50,43 @@ public class ShareTargetHandler extends AppCompatActivity {
 
         if (Intent.ACTION_SEND.equals(action) && type != null && type.startsWith("image/")) {
             handleSendImage(intent);
+        } else if (Intent.ACTION_SEND.equals(action) && type != null && type.equals("text/plain")) {
+            handleSendText(intent);
         } else {
             handleSendNotSupported();
         }
+    }
+
+    void handleSendText(Intent intent) {
+        String text = intent.getStringExtra(Intent.EXTRA_TEXT);
+
+        String highlightId = UUID.randomUUID().toString();
+        CreateHighlightMutation createHighlightMutation = CreateHighlightMutation
+                .builder()
+                .input(
+                        CreateHighlightInput
+                                .builder()
+                                .id(highlightId)
+                                .text(text)
+                                .build()
+                )
+                .build();
+
+        AppSyncClientFactory.getInstance(this)
+                .mutate(createHighlightMutation)
+                .enqueue(createHighlightCallback.getCallback());
+
+        // TODO: handle errors causing screenshot to not be created.
+        CreateHighlightMutation.Data highlightResult = null;
+        try {
+            highlightResult = createHighlightCallback.awaitResult();
+        } catch (InterruptedException e) {}
+        if (highlightResult == null) {
+            Log.i("Literal", "highlightResult is null");
+            return;
+        }
+        Log.i("Literal", "highlight created.");
+        this.initializeWebView("https://literal.io/notes/" + highlightId);
     }
 
     void handleSendImage(Intent intent) {
@@ -109,12 +145,12 @@ public class ShareTargetHandler extends AppCompatActivity {
 
         AppSyncClientFactory.getInstance(this)
                 .mutate(createHighlightMutation)
-                .enqueue(createHighlightCallback.getCallback());
+                .enqueue(createHighlightFromScreenshotCallback.getCallback());
 
         // TODO: handle errors causing screenshot to not be created.
         CreateHighlightFromScreenshotMutation.Data highlightResult = null;
         try {
-            highlightResult = createHighlightCallback.awaitResult();
+            highlightResult = createHighlightFromScreenshotCallback.awaitResult();
         } catch (InterruptedException e) {}
         if (highlightResult == null) {
             Log.i("Literal", "highlightResult is null");
@@ -140,7 +176,8 @@ public class ShareTargetHandler extends AppCompatActivity {
     }
 
     private LatchedGraphQLCallback<CreateScreenshotMutation.Data> createScreenshotCallback = new LatchedGraphQLCallback<>();
-    private LatchedGraphQLCallback<CreateHighlightFromScreenshotMutation.Data> createHighlightCallback = new LatchedGraphQLCallback<>();
+    private LatchedGraphQLCallback<CreateHighlightFromScreenshotMutation.Data> createHighlightFromScreenshotCallback = new LatchedGraphQLCallback<>();
+    private LatchedGraphQLCallback<CreateHighlightMutation.Data> createHighlightCallback = new LatchedGraphQLCallback<>();
 
     private class LatchedGraphQLCallback<T> extends CountDownLatch {
 
