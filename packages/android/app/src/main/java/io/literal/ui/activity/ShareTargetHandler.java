@@ -1,10 +1,11 @@
-package io.literal.ui;
+package io.literal.ui.activity;
 
 import io.literal.BuildConfig;
 import io.literal.R;
 import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.ContentResolverLib;
 
+import io.literal.lib.WebEvent;
 import type.CreateHighlightFromScreenshotInput;
 import type.CreateHighlightInput;
 import type.CreateScreenshotInput;
@@ -15,11 +16,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
 
 import com.amazonaws.amplify.generated.graphql.CreateHighlightFromScreenshotMutation;
 import com.amazonaws.amplify.generated.graphql.CreateHighlightMutation;
@@ -35,25 +33,44 @@ import java.io.File;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
+import io.literal.ui.view.WebView;
+
 import javax.annotation.Nonnull;
 
 public class ShareTargetHandler extends AppCompatActivity {
+
+    private WebView webView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_share_target_handler);
 
-        Intent intent = getIntent();
-        String action = intent.getAction();
-        String type = intent.getType();
+        webView = findViewById(R.id.webview);
 
-        if (Intent.ACTION_SEND.equals(action) && type != null && type.startsWith("image/")) {
-            handleSendImage(intent);
-        } else if (Intent.ACTION_SEND.equals(action) && type != null && type.equals("text/plain")) {
-            handleSendText(intent);
-        } else {
-            handleSendNotSupported();
+        webView.onWebEvent(new WebView.WebEventCallback() {
+            @Override
+            public void onWebEvent(WebEvent event) {
+                switch (event.getType()) {
+                    case WebEvent.TYPE_ACTIVITY_FINISH:
+                        // TODO: show local notification
+                        finish();
+                }
+            }
+        });
+
+        if (savedInstanceState == null) {
+            Intent intent = getIntent();
+            String action = intent.getAction();
+            String type = intent.getType();
+
+            if (Intent.ACTION_SEND.equals(action) && type != null && type.startsWith("image/")) {
+                handleSendImage(intent);
+            } else if (Intent.ACTION_SEND.equals(action) && type != null && type.equals("text/plain")) {
+                handleSendText(intent);
+            } else {
+                handleSendNotSupported();
+            }
         }
     }
 
@@ -85,8 +102,8 @@ public class ShareTargetHandler extends AppCompatActivity {
             Log.i("Literal", "highlightResult is null");
             return;
         }
-        Log.i("Literal", "highlight created.");
-        this.initializeWebView("https://literal.io/notes/" + highlightId);
+
+        webView.loadUrl("https://literal.io/notes/" + highlightId);
     }
 
     void handleSendImage(Intent intent) {
@@ -156,22 +173,30 @@ public class ShareTargetHandler extends AppCompatActivity {
             return;
         }
         Log.i("Literal", "highlight created.");
-        this.initializeWebView("https://literal.io/notes/" + highlightId);
+
+        webView.loadUrl("https://literal.io/notes/" + highlightId);
     }
 
     void handleSendNotSupported() {
         // TODO: implement fallback handling, e.g. display a "This does not look like a screenshot" UI
     }
 
-    void initializeWebView(String initialURL) {
-        WebView webView = (WebView) findViewById(R.id.webview);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            webView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
+    @Override
+    protected void onSaveInstanceState(Bundle outState)
+    {
+        super.onSaveInstanceState(outState);
+        if (this.webView != null) {
+            webView.saveState(outState);
         }
-        WebSettings webSettings = webView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
+    }
 
-        webView.loadUrl(initialURL);
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState)
+    {
+        super.onRestoreInstanceState(savedInstanceState);
+        if (this.webView != null) {
+            this.webView.restoreState(savedInstanceState);
+        }
     }
 
     private LatchedGraphQLCallback<CreateScreenshotMutation.Data> createScreenshotCallback = new LatchedGraphQLCallback<>();

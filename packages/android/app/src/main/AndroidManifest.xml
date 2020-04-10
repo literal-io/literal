@@ -18,7 +18,9 @@
         android:theme="@style/AppTheme"
         android:requestLegacyExternalStorage="true">
 
-        <activity android:name=".ui.ShareTargetHandler">
+        <activity
+            android:name=".ui.activity.ShareTargetHandler"
+            android:configChanges="orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -31,7 +33,9 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".ui.MainActivity">
+        <activity
+            android:name=".ui.activity.MainActivity"
+            android:configChanges="orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
