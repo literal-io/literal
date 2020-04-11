@@ -14,9 +14,15 @@ import type.S3ObjectInput;
 
 import javax.annotation.Nonnull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -45,17 +51,18 @@ public class ShareTargetHandler extends AppCompatActivity {
 
         webView = findViewById(R.id.webview);
 
-        webView.onWebEvent(new WebView.WebEventCallback() {
-            @Override
-            public void onWebEvent(WebEvent event) {
-                switch (event.getType()) {
-                    case WebEvent.TYPE_ACTIVITY_FINISH:
-                        // TODO: show local notification
-                        Log.i("Literal", "Finishing Activity");
-                        finish();
-                }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel chan = new NotificationChannel(
+                    Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_ID,
+                    Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_NAME,
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            chan.setDescription(Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_DESCRIPTION);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(chan);
             }
-        });
+        }
 
         if (savedInstanceState == null) {
             Intent intent = getIntent();
@@ -70,6 +77,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                 handleSendNotSupported();
             }
         }
+
     }
 
     void handleSendText(Intent intent) {
@@ -91,17 +99,35 @@ public class ShareTargetHandler extends AppCompatActivity {
                 .mutate(createHighlightMutation)
                 .enqueue(createHighlightCallback.getCallback());
 
-        // TODO: handle errors causing screenshot to not be created.
-        CreateHighlightMutation.Data highlightResult = null;
         try {
-            highlightResult = createHighlightCallback.awaitResult();
-        } catch (InterruptedException e) {}
-        if (highlightResult == null) {
-            Log.i("Literal", "highlightResult is null");
-            return;
-        }
+            final CreateHighlightMutation.Data highlightResult = createHighlightCallback.awaitResult();
+            if (highlightResult == null) {
+                // TODO: handle errors causing screenshot to not be created.
+                Log.i("Literal", "highlightResult is null");
+                finish();
+                return;
+            }
 
-        webView.loadUrl(Constants.WEB_HOST + "/notes/" + highlightId);
+            webView.onWebEvent(new WebView.WebEventCallback() {
+                @Override
+                public void onWebEvent(WebEvent event) {
+                    switch (event.getType()) {
+                        case WebEvent.TYPE_ACTIVITY_FINISH:
+                            CreateHighlightMutation.CreateHighlight highlight = highlightResult.createHighlight();
+                            if (highlight != null) {
+                                handleDisplayNotification(highlight.id(), highlight.text());
+                            }
+                            finish();
+                    }
+                }
+            });
+
+            webView.loadUrl(Constants.WEB_HOST + "/notes/" + highlightId);
+        } catch (InterruptedException ex) {
+            // TODO: handle errors causing screenshot to not be created.
+            Log.e(Constants.LOG_TAG, "createHighlight failed", ex);
+            finish();
+        }
     }
 
     void handleSendImage(Intent intent) {
@@ -161,22 +187,59 @@ public class ShareTargetHandler extends AppCompatActivity {
                 .mutate(createHighlightMutation)
                 .enqueue(createHighlightFromScreenshotCallback.getCallback());
 
-        // TODO: handle errors causing screenshot to not be created.
-        CreateHighlightFromScreenshotMutation.Data highlightResult = null;
         try {
-            highlightResult = createHighlightFromScreenshotCallback.awaitResult();
-        } catch (InterruptedException e) {}
-        if (highlightResult == null) {
-            Log.i("Literal", "highlightResult is null");
-            return;
-        }
-        Log.i("Literal", "highlight created.");
+            final CreateHighlightFromScreenshotMutation.Data highlightResult = createHighlightFromScreenshotCallback.awaitResult();
 
-        webView.loadUrl(Constants.WEB_HOST + "/notes/" + highlightId);
+            // TODO: handle errors causing screenshot to not be created.
+            if (highlightResult == null) {
+                Log.i("Literal", "highlightResult is null");
+                return;
+            }
+
+            webView.onWebEvent(new WebView.WebEventCallback() {
+                @Override
+                public void onWebEvent(WebEvent event) {
+                    switch (event.getType()) {
+                        case WebEvent.TYPE_ACTIVITY_FINISH:
+                            CreateHighlightFromScreenshotMutation.CreateHighlightFromScreenshot highlight = highlightResult.createHighlightFromScreenshot();
+                            if (highlight != null) {
+                                handleDisplayNotification(highlight.id(), highlight.text());
+                            }
+                            finish();
+                    }
+                }
+            });
+
+            webView.loadUrl(Constants.WEB_HOST + "/notes/" + highlightId);
+        } catch (InterruptedException ex) {
+            // TODO: handle errors causing screenshot to not be created.
+            Log.e(Constants.LOG_TAG, "createHighlightFromScreenshot failed", ex);
+            finish();
+        }
+
     }
 
-    void handleSendNotSupported() {
+    private void handleSendNotSupported() {
+
         // TODO: implement fallback handling, e.g. display a "This does not look like a screenshot" UI
+    }
+
+    private void handleDisplayNotification(String noteId, String noteText) {
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(ShareTargetHandler.this, Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_ID)
+                .setSmallIcon(R.drawable.notification_icon)
+                .setContentTitle(Constants.NOTIFICATION_NOTE_CREATED_TITLE)
+                .setStyle(
+                        new NotificationCompat.BigTextStyle().bigText(noteText)
+                )
+                .setContentText(noteText)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true);
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        notificationManager.notify(noteId.hashCode(), builder.build());
     }
 
     @Override

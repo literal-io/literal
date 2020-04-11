@@ -71,7 +71,9 @@ let postMessage = webEvent =>
   | Some(port) =>
     port->MessagePort.postMessage(
       webEvent->WebEvent.encode->Js.Json.stringify,
-    )
+    );
+    true;
   | None =>
-    Js.log2("Attempted to postMessage, but found no MessagePort", webEvent)
+    Js.log2("Attempted to postMessage, but found no MessagePort", webEvent);
+    false;
   };
