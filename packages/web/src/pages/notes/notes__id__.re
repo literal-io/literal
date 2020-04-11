@@ -30,7 +30,20 @@ module Data = {
           },
           (),
         );
-      let _ = updateHighlightMutation(~variables, ());
+      let _ =
+        updateHighlightMutation(~variables, ())
+        |> Js.Promise.then_(_ => {
+             let _ =
+               Webview.(
+                 postMessage(WebEvent.make(~type_="ACTIVITY_FINISH"))
+               );
+             Js.Promise.resolve();
+           });
+      ();
+    };
+
+    let handleClose = () => {
+      let _ = Webview.(postMessage(WebEvent.make(~type_="ACTIVITY_FINISH")));
       ();
     };
 
@@ -49,6 +62,7 @@ module Data = {
         <MaterialUi.IconButton
           size=`Small
           edge=`Start
+          onClick={_ => handleClose()}
           _TouchRippleProps={
             "classes": {
               "child": cn(["bg-white"]),
@@ -64,10 +78,7 @@ module Data = {
         </MaterialUi.IconButton>
       </Header>
       <div className={cn(["px-6", "py-4"])}>
-        <TextInput.Basic
-          onChange=handleTextChange
-          value=textState
-        />
+        <TextInput.Basic onChange=handleTextChange value=textState />
       </div>
       <FloatingActionButton
         onClick={_ev => handleSave()}

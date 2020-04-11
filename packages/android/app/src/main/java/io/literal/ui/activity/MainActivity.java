@@ -1,12 +1,12 @@
 package io.literal.ui.activity;
 
 import io.literal.R;
+import io.literal.lib.Constants;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.webkit.WebView;
-
 
 public class MainActivity extends AppCompatActivity {
 
@@ -20,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
         this.webView = findViewById(R.id.webview);
 
         if (savedInstanceState == null) {
-            webView.loadUrl("https://literal.io/notes");
+            webView.loadUrl(Constants.WEB_HOST + "/notes");
         }
     }
 

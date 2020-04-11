@@ -1,17 +1,18 @@
 package io.literal.ui.activity;
 
-import io.literal.BuildConfig;
 import io.literal.R;
 import io.literal.factory.AppSyncClientFactory;
+import io.literal.lib.Constants;
 import io.literal.lib.ContentResolverLib;
-
+import io.literal.ui.view.WebView;
 import io.literal.lib.WebEvent;
+
 import type.CreateHighlightFromScreenshotInput;
 import type.CreateHighlightInput;
 import type.CreateScreenshotInput;
 import type.S3ObjectInput;
 
-import androidx.annotation.RequiresApi;
+import javax.annotation.Nonnull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
@@ -33,10 +34,6 @@ import java.io.File;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
-import io.literal.ui.view.WebView;
-
-import javax.annotation.Nonnull;
-
 public class ShareTargetHandler extends AppCompatActivity {
 
     private WebView webView;
@@ -54,6 +51,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                 switch (event.getType()) {
                     case WebEvent.TYPE_ACTIVITY_FINISH:
                         // TODO: show local notification
+                        Log.i("Literal", "Finishing Activity");
                         finish();
                 }
             }
@@ -103,7 +101,7 @@ public class ShareTargetHandler extends AppCompatActivity {
             return;
         }
 
-        webView.loadUrl("https://literal.io/notes/" + highlightId);
+        webView.loadUrl(Constants.WEB_HOST + "/notes/" + highlightId);
     }
 
     void handleSendImage(Intent intent) {
@@ -174,7 +172,7 @@ public class ShareTargetHandler extends AppCompatActivity {
         }
         Log.i("Literal", "highlight created.");
 
-        webView.loadUrl("https://literal.io/notes/" + highlightId);
+        webView.loadUrl(Constants.WEB_HOST + "/notes/" + highlightId);
     }
 
     void handleSendNotSupported() {

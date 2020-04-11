@@ -2,6 +2,7 @@ package io.literal.ui.view;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -9,6 +10,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.webkit.WebSettings;
+import android.webkit.WebViewClient;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,6 +23,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import io.literal.BuildConfig;
+import io.literal.lib.Constants;
 import io.literal.lib.WebEvent;
 
 public class WebView extends android.webkit.WebView {
@@ -44,20 +47,26 @@ public class WebView extends android.webkit.WebView {
         }
         WebSettings webSettings = this.getSettings();
         webSettings.setJavaScriptEnabled(true);
+
+        this.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(android.webkit.WebView webview, String url) {
+                initializeWebMessageChannel();
+            }
+        });
     }
 
     public void onWebEvent(WebEventCallback cb) {
         this.webEventCallback = cb;
     }
 
-    // TODO: call when webview content is loaded
     private void initializeWebMessageChannel() {
         if (WebViewFeature.isFeatureSupported(WebViewFeature.CREATE_WEB_MESSAGE_CHANNEL) &&
-                WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK)) {
+                WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK) &&
+                WebViewFeature.isFeatureSupported(WebViewFeature.POST_WEB_MESSAGE)) {
             final WebMessagePortCompat[] channel = WebViewCompat.createWebMessageChannel(this);
-            final WebMessagePortCompat port = channel[0];
             final Handler handler = new Handler(Looper.getMainLooper());
-            port.setWebMessageCallback(handler, new WebMessagePortCompat.WebMessageCallbackCompat() {
+            channel[0].setWebMessageCallback(handler, new WebMessagePortCompat.WebMessageCallbackCompat() {
                 @SuppressLint("RequiresFeature")
                 @Override
                 public void onMessage(@NonNull WebMessagePortCompat port, @Nullable WebMessageCompat message) {
@@ -65,6 +74,7 @@ public class WebView extends android.webkit.WebView {
                     String data = message.getData();
                     try {
                         JSONObject json = new JSONObject(data);
+                        Log.i("Literal", "Received WebEvent " + json.toString());
                         WebEvent webEvent = new WebEvent(json);
                         if (webEventCallback != null) {
                             webEventCallback.onWebEvent(webEvent);
@@ -74,6 +84,13 @@ public class WebView extends android.webkit.WebView {
                     }
                 }
             });
+
+            // Initial handshake - deliver WebMessageChannel port to JS.
+            WebViewCompat.postWebMessage(
+                    this,
+                    new WebMessageCompat("", new WebMessagePortCompat[]{channel[1]}),
+                    Uri.parse(Constants.WEB_HOST)
+            );
         }
     }
 

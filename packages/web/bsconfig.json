@@ -21,6 +21,7 @@
   "bs-dependencies": [
     "@trashed/bs-aws-amplify",
     "decco",
+    "bs-webapi",
     "reason-react",
     "re-classnames",
     "reason-apollo",
