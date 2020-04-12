@@ -1,6 +1,10 @@
 type router = {query: Js.Json.t};
 
-[@bs.module "next/router"] external useRouter: unit => router = "useRouter";
+module Router = {
+  [@bs.module "next/router"] external useRouter: unit => router = "useRouter";
+  [@bs.module "next/router"] [@bs.scope "default"]
+  external replace: string => unit = "replace";
+};
 
 module Link = {
   [@bs.module "next/link"] [@react.component]

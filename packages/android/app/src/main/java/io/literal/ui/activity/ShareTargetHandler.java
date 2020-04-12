@@ -226,6 +226,7 @@ public class ShareTargetHandler extends AppCompatActivity {
 
     private void handleDisplayNotification(String noteId, String noteText) {
         Intent intent = new Intent(this, MainActivity.class);
+        intent.setData(Uri.parse(Constants.WEB_HOST + "/notes/" + noteId));
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(ShareTargetHandler.this, Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_ID)

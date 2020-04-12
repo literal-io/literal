@@ -5,12 +5,18 @@ import io.literal.lib.Constants;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-import android.webkit.WebView;
+import android.util.Log;
+
+import io.literal.ui.view.WebView;
 
 public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
+
+    private static final String WEB_DEFAULT_URL = Constants.WEB_HOST + "/notes";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -18,9 +24,20 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         this.webView = findViewById(R.id.webview);
+        this.webView.requestFocus();
 
         if (savedInstanceState == null) {
-            webView.loadUrl(Constants.WEB_HOST + "/notes");
+            Intent intent = getIntent();
+            if (intent != null) {
+                Uri uri = intent.getData();
+                if (uri != null) {
+                    webView.loadUrlWithHistory(uri.toString(), new String[]{"/notes"});
+                } else {
+                    webView.loadUrl(WEB_DEFAULT_URL);
+                }
+            } else {
+                webView.loadUrl(WEB_DEFAULT_URL);
+            }
         }
     }
 

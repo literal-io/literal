@@ -120,7 +120,7 @@ type routeParams = {id: string};
 
 [@react.component]
 let default = () => {
-  let router = Next.useRouter();
+  let router = Next.Router.useRouter();
 
   let postId =
     switch (routeParams_decode(router.Next.query)) {

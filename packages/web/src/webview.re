@@ -22,6 +22,9 @@ module MessageEvent = {
 };
 
 module WebEvent = {
+  [@decco]
+  type routerReplace = {url: string};
+
   /**
    * See the following for class definition in Android:
    * android/app/src/main/java/io/literal/lib/WebEvent.java
@@ -60,6 +63,22 @@ let initialize = () => {
                port := message->MessageEvent.portsGet->Belt.Array.get(0)
              | _ => ()
              };
+
+           let json =
+             try(message->MessageEvent.dataGet->Js.Json.parseExn) {
+             | _ => Js.Json.null
+             };
+
+           let _ =
+             switch (WebEvent.decode(json)) {
+             | Belt.Result.Ok({type_: "ROUTER_REPLACE", data: Some(data)}) =>
+               switch (WebEvent.routerReplace_decode(data)) {
+               | Belt.Result.Ok({url}) => Next.Router.replace(url)
+               | _ => ()
+               }
+             | _ => ()
+             };
+
            ();
          })
     );

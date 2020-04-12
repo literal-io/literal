@@ -22,6 +22,12 @@ import androidx.webkit.WebViewFeature;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Array;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
 import io.literal.BuildConfig;
 import io.literal.lib.Constants;
 import io.literal.lib.WebEvent;
@@ -29,6 +35,7 @@ import io.literal.lib.WebEvent;
 public class WebView extends android.webkit.WebView {
 
     private WebEventCallback webEventCallback;
+    private ArrayDeque<String> baseHistory;
 
     public WebView(Context context) {
         super(context);
@@ -58,6 +65,10 @@ public class WebView extends android.webkit.WebView {
 
     public void onWebEvent(WebEventCallback cb) {
         this.webEventCallback = cb;
+    }
+    public void loadUrlWithHistory(String url, String[] history) {
+        this.baseHistory = new ArrayDeque<>(Arrays.asList(history));
+        this.loadUrl(url);
     }
 
     private void initializeWebMessageChannel() {
@@ -97,7 +108,32 @@ public class WebView extends android.webkit.WebView {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((keyCode == KeyEvent.KEYCODE_BACK) && this.canGoBack()) {
+            Log.i(Constants.LOG_TAG, "can go back");
             this.goBack();
+            return true;
+        }
+
+        if ((keyCode == KeyEvent.KEYCODE_BACK) && baseHistory != null && baseHistory.peek() != null) {
+            String prev = baseHistory.poll();
+            try {
+                if (WebViewFeature.isFeatureSupported(WebViewFeature.POST_WEB_MESSAGE)) {
+                    JSONObject data = new JSONObject();
+                    data.put("url", prev);
+                    WebViewCompat.postWebMessage(
+                            this,
+                            new WebMessageCompat(
+                                    new WebEvent(WebEvent.TYPE_ROUTER_REPLACE, UUID.randomUUID().toString(), data)
+                                            .toJSON()
+                                            .toString()
+                            ),
+                            Uri.parse(Constants.WEB_HOST)
+                    );
+                } else {
+                    this.loadUrl(prev);
+                }
+            } catch (JSONException ex) {
+                this.loadUrl(prev);
+            }
             return true;
         }
         return super.onKeyDown(keyCode, event);
