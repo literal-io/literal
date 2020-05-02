@@ -12,6 +12,9 @@
 /captures
 .externalNativeBuild
 .cxx
+app/release
+app/release-keystore.jks
+
 
 #amplify
 amplify/\#current-cloud-backend
