@@ -21,6 +21,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -230,7 +231,8 @@ public class ShareTargetHandler extends AppCompatActivity {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(ShareTargetHandler.this, Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_ID)
-                .setSmallIcon(R.drawable.notification_icon)
+                .setSmallIcon(R.drawable.ic_stat_name)
+                .setColor(Color.BLACK)
                 .setContentTitle(Constants.NOTIFICATION_NOTE_CREATED_TITLE)
                 .setStyle(
                         new NotificationCompat.BigTextStyle().bigText(noteText)

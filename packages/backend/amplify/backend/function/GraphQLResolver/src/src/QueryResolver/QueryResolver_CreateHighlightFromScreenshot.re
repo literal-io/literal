@@ -1,5 +1,3 @@
-// TODO: install imagemagick lambda layer: https://github.com/serverlesspub/imagemagick-aws-lambda-2
-
 module GetScreenshotQuery = [%graphql
   {|
     query GetScreenshot($screenshotId: ID!) {
