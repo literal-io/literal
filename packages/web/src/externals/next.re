@@ -4,6 +4,9 @@ module Router = {
   [@bs.module "next/router"] external useRouter: unit => router = "useRouter";
   [@bs.module "next/router"] [@bs.scope "default"]
   external replace: string => unit = "replace";
+
+  [@bs.module "next/router"] [@bs.scope "default"]
+  external back: unit => unit = "back";
 };
 
 module Link = {

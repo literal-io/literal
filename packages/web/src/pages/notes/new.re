@@ -11,57 +11,39 @@ module Data = {
   |}
   ];
 
-  let handleSave =
-    Lodash.debounce2(
-      (.
-        variables,
-        updateHighlightMutation:
-          ApolloHooks.Mutation.mutation(UpdateHighlightMutation.t),
-      ) => {
-        let _ = updateHighlightMutation(~variables, ());
-        ();
-      },
-      500,
-    );
-
   [@react.component]
   let make = (~highlight) => {
     let (updateHighlightMutation, _s, _f) =
       ApolloHooks.useMutation(UpdateHighlightMutation.definition);
+
     let (textState, setTextState) = React.useState(() => {highlight##text});
-    let _ =
-      React.useEffect1(
-        () => {
-          let variables =
-            UpdateHighlightMutation.makeVariables(
-              ~input={
-                "id": highlight##id,
-                "text": textState->Js.Option.some,
-                "createdAt": None,
-                "note": None,
-                "highlightScreenshotId": None,
-              },
-              (),
-            );
-          let _ = handleSave(. variables, updateHighlightMutation);
 
-          None;
-        },
-        [|textState|],
-      );
-
-    let _ =
-      React.useEffect0(() => {
-        Some(
-          () => {
-            let _ = Lodash.flush2(handleSave);
-            ();
+    let handleSave = () => {
+      let variables =
+        UpdateHighlightMutation.makeVariables(
+          ~input={
+            "id": highlight##id,
+            "text": textState->Js.Option.some,
+            "createdAt": None,
+            "note": None,
+            "highlightScreenshotId": None,
           },
-        )
-      });
+          (),
+        );
+      let _ =
+        updateHighlightMutation(~variables, ())
+        |> Js.Promise.then_(_ => {
+             let _ =
+               Webview.(
+                 postMessage(WebEvent.make(~type_="ACTIVITY_FINISH"))
+               );
+             Js.Promise.resolve();
+           });
+      ();
+    };
 
-    let handleBack = () => {
-      let _ = Next.Router.back();
+    let handleClose = () => {
+      let _ = Webview.(postMessage(WebEvent.make(~type_="ACTIVITY_FINISH")));
       ();
     };
 
@@ -75,30 +57,39 @@ module Data = {
         "flex",
         "flex-col",
         "relative",
-        "overflow-y",
+        "overflow-y-auto",
       ])}>
       <Header>
         <MaterialUi.IconButton
           size=`Small
           edge=`Start
-          onClick={_ => handleBack()}
+          onClick={_ => handleClose()}
           _TouchRippleProps={
             "classes": {
               "child": cn(["bg-white"]),
               "rippleVisible": cn(["opacity-50"]),
             },
           }
-          classes=[Root(cn(["p-0", "ml-1"]))]>
+          classes=[Root(cn(["p-0"]))]>
           <Svg
             placeholderViewBox="0 0 24 24"
-            className={cn(["w-6", "h-6", "pointer-events-none"])}
-            icon=Svg.back
+            className={cn(["w-8", "h-8", "pointer-events-none"])}
+            icon=Svg.close
           />
         </MaterialUi.IconButton>
       </Header>
-      <div className={cn(["px-6", "py-4"])}>
+      <div className={cn(["px-6", "pt-4", "pb-24"])}>
         <TextInput.Basic onChange=handleTextChange value=textState />
       </div>
+      <FloatingActionButton
+        onClick={_ev => handleSave()}
+        className={cn(["fixed", "right-0", "bottom-0", "m-6", "z-10"])}>
+        <Svg
+          placeholderViewBox="0 0 24 24"
+          className={cn(["w-10", "h-10", "pointer-events-none"])}
+          icon=Svg.done_
+        />
+      </FloatingActionButton>
     </div>;
   };
 };

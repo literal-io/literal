@@ -38,6 +38,7 @@
     "bs-webapi": "^0.15.9",
     "decco": "^1.2.0",
     "isomorphic-fetch": "^2.2.1",
+    "lodash": "^4.17.15",
     "next": "^9.3.2",
     "postcss-flexbugs-fixes": "^4.2.0",
     "postcss-import": "^12.0.1",
