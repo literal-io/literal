@@ -74,8 +74,7 @@ module Data = {
         "bg-black",
         "flex",
         "flex-col",
-        "relative",
-        "overflow-y",
+        "overflow-y-auto",
       ])}>
       <Header>
         <MaterialUi.IconButton

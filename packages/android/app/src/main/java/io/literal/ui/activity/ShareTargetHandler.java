@@ -123,7 +123,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                 }
             });
 
-            webView.loadUrl(Constants.WEB_HOST + "/notes/" + highlightId);
+            webView.loadUrl(Constants.WEB_HOST + "/notes/new?id=" + highlightId);
         } catch (InterruptedException ex) {
             // TODO: handle errors causing screenshot to not be created.
             Log.e(Constants.LOG_TAG, "createHighlight failed", ex);
@@ -211,7 +211,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                 }
             });
 
-            webView.loadUrl(Constants.WEB_HOST + "/notes/" + highlightId);
+            webView.loadUrl(Constants.WEB_HOST + "/notes/new?id=" + highlightId);
         } catch (InterruptedException ex) {
             // TODO: handle errors causing screenshot to not be created.
             Log.e(Constants.LOG_TAG, "createHighlightFromScreenshot failed", ex);
