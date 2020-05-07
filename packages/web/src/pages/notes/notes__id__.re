@@ -65,6 +65,10 @@ module Data = {
       ();
     };
 
+    let handleDelete = () => {
+      ();
+    };
+
     let handleTextChange = s => setTextState(_ => s);
 
     <div
@@ -76,7 +80,7 @@ module Data = {
         "flex-col",
         "overflow-y-auto",
       ])}>
-      <Header>
+      <Header className={cn(["justify-between"])}>
         <MaterialUi.IconButton
           size=`Small
           edge=`Start
@@ -90,8 +94,35 @@ module Data = {
           classes=[Root(cn(["p-0", "ml-1"]))]>
           <Svg
             placeholderViewBox="0 0 24 24"
-            className={cn(["w-6", "h-6", "pointer-events-none"])}
+            className={cn([
+              "w-6",
+              "h-6",
+              "pointer-events-none",
+              "opacity-75",
+            ])}
             icon=Svg.back
+          />
+        </MaterialUi.IconButton>
+        <MaterialUi.IconButton
+          size=`Small
+          edge=`End
+          onClick={_ => handleDelete()}
+          _TouchRippleProps={
+            "classes": {
+              "child": cn(["bg-white"]),
+              "rippleVisible": cn(["opacity-50"]),
+            },
+          }
+          classes=[Root(cn(["p-0", "ml-1"]))]>
+          <Svg
+            placeholderViewBox="0 0 24 24"
+            className={cn(["pointer-events-none", "opacity-75"])}
+            style={ReactDOMRe.Style.make(
+              ~width="1.75rem",
+              ~height="1.75rem",
+              (),
+            )}
+            icon=Svg.delete
           />
         </MaterialUi.IconButton>
       </Header>

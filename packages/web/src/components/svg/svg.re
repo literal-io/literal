@@ -3,6 +3,8 @@ open Styles;
 let done_: string = [%raw "require('./done.svg')"];
 let close: string = [%raw "require('./close.svg')"];
 let back: string = [%raw "require('./back.svg')"];
+let removeCircle: string = [%raw "require('./remove-circle.svg')"];
+let delete: string = [%raw "require('./delete.svg')"];
 
 type state = {
   isLoading: bool,
@@ -13,6 +15,7 @@ type state = {
 let make =
     (
       ~className=?,
+      ~style=?,
       ~placeholderClassName=?,
       ~onClick=?,
       ~placeholderViewBox,
@@ -56,6 +59,7 @@ let make =
             ? cn(["invisible", "absolute", "w-0", "h-0", "relative"])
             : cn([className->Cn.unpack])
         }
+        style=?{isLoading ? None : style}
         data=src
       />
     </>;
