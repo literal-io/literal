@@ -1,24 +1,45 @@
 open Styles;
 
+module GetNoteQuery = [%graphql
+  {|
+    query GetHighlight($id: ID!) {
+      getHighlight(id: $id) {
+        id
+        text
+        note
+      }
+    }
+  |}
+];
+
+external jsonToHighlight: Js.Json.t => GetNoteQuery.t = "%identity";
+
 module Data = {
   module UpdateHighlightMutation = [%graphql
     {|
     mutation UpdateHighlight($input: UpdateHighlightInput!) {
       updateHighlight(input: $input) {
         id
+        text
       }
     }
   |}
   ];
 
+  module HighlightCacheReadQuery = ApolloClient.ReadQuery(GetNoteQuery);
+  module HighlightCacheWriteQuery = ApolloClient.WriteQuery(GetNoteQuery);
+
   let handleSave =
-    Lodash.debounce2(
+    Lodash.debounce3(
       (.
         variables,
         updateHighlightMutation:
           ApolloHooks.Mutation.mutation(UpdateHighlightMutation.t),
+        onUpdate,
       ) => {
-        let _ = updateHighlightMutation(~variables, ());
+        let _ =
+          updateHighlightMutation(~variables, ())
+          |> Js.Promise.then_(onUpdate);
         ();
       },
       500,
@@ -43,7 +64,57 @@ module Data = {
               },
               (),
             );
-          let _ = handleSave(. variables, updateHighlightMutation);
+          let onUpdate =
+              (
+                result: ApolloHooks.Mutation.result(UpdateHighlightMutation.t),
+              ) => {
+            let _ =
+              switch (result) {
+              | Data(data) =>
+                switch (data##updateHighlight) {
+                | Some(h) =>
+                  let query = GetNoteQuery.make(~id=h##id, ());
+                  let readQueryOptions =
+                    ApolloHooks.toReadQueryOptions(query);
+                  let _ =
+                    switch (
+                      HighlightCacheReadQuery.readQuery(
+                        Provider.client,
+                        readQueryOptions,
+                      )
+                    ) {
+                    | exception _ => ()
+                    | cachedResponse =>
+                      switch (cachedResponse->Js.Nullable.toOption) {
+                      | None => ()
+                      | Some(cachedHighlight) =>
+                        let highlight = jsonToHighlight(cachedHighlight);
+                        let updatedHighlight = [%bs.raw
+                          {| {
+                          ...highlight,
+                          ...h
+                        } |}
+                        ];
+                        HighlightCacheWriteQuery.make(
+                          ~client=Provider.client,
+                          ~variables=query##variables,
+                          ~data=updatedHighlight,
+                          (),
+                        );
+                        ();
+                      }
+                    };
+                  ();
+                | None => ()
+                }
+              | Error(error) => ()
+              | NoData => ()
+              | _ => ()
+              };
+            Js.Promise.resolve();
+          };
+
+          let _ = handleSave(. variables, updateHighlightMutation, onUpdate);
 
           None;
         },
@@ -54,7 +125,7 @@ module Data = {
       React.useEffect0(() => {
         Some(
           () => {
-            let _ = Lodash.flush2(handleSave);
+            let _ = Lodash.flush3(handleSave);
             ();
           },
         )
@@ -142,18 +213,6 @@ module Loading = {
   [@react.component]
   let make = () => React.string("Loading...");
 };
-
-module GetNoteQuery = [%graphql
-  {|
-    query GetHighlight($id: ID!) {
-      getHighlight(id: $id) {
-        id
-        text
-        note
-      }
-    }
-  |}
-];
 
 [@decco]
 type routeParams = {id: string};
