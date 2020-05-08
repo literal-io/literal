@@ -12,34 +12,57 @@ module GetNoteQuery = [%graphql
   |}
 ];
 
-external jsonToHighlight: Js.Json.t => GetNoteQuery.t = "%identity";
-
-module Data = {
-  module UpdateHighlightMutation = [%graphql
-    {|
-    mutation UpdateHighlight($input: UpdateHighlightInput!) {
-      updateHighlight(input: $input) {
-        id
-        text
+module ListHighlightsQuery = [%graphql
+  {|
+    query ListHighlightsQuery {
+      listHighlights {
+        items {
+          id
+        }
       }
     }
   |}
-  ];
+];
+external castToListHighlights: Js.Json.t => ListHighlightsQuery.t =
+  "%identity";
 
-  module HighlightCacheReadQuery = ApolloClient.ReadQuery(GetNoteQuery);
-  module HighlightCacheWriteQuery = ApolloClient.WriteQuery(GetNoteQuery);
+module DeleteHighlightMutation = [%graphql
+  {|
+    mutation deleteHighlight($input: DeleteHighlightInput!) {
+      deleteHighlight(input: $input) {
+        id
+      }
+    }
+  |}
+];
 
+module UpdateHighlightMutation = [%graphql
+  {|
+  mutation UpdateHighlight($input: UpdateHighlightInput!) {
+    updateHighlight(input: $input) {
+      id
+      text
+    }
+  }
+|}
+];
+
+// module HighlightCacheReadQuery = ApolloClient.ReadQuery(GetNoteQuery);
+// module HighlightCacheWriteQuery = ApolloClient.WriteQuery(GetNoteQuery);
+module ListHighlightsCacheReadQuery =
+  ApolloClient.ReadQuery(ListHighlightsQuery);
+module ListHighlightsCacheWriteQuery =
+  ApolloClient.WriteQuery(ListHighlightsQuery);
+
+module Data = {
   let handleSave =
-    Lodash.debounce3(
+    Lodash.debounce2(
       (.
         variables,
         updateHighlightMutation:
           ApolloHooks.Mutation.mutation(UpdateHighlightMutation.t),
-        onUpdate,
       ) => {
-        let _ =
-          updateHighlightMutation(~variables, ())
-          |> Js.Promise.then_(onUpdate);
+        let _ = updateHighlightMutation(~variables, ());
         ();
       },
       500,
@@ -49,6 +72,9 @@ module Data = {
   let make = (~highlight) => {
     let (updateHighlightMutation, _s, _f) =
       ApolloHooks.useMutation(UpdateHighlightMutation.definition);
+    let (deleteHighlightMutation, _s, _f) =
+      ApolloHooks.useMutation(DeleteHighlightMutation.definition);
+
     let (textState, setTextState) = React.useState(() => {highlight##text});
     let _ =
       React.useEffect1(
@@ -64,57 +90,56 @@ module Data = {
               },
               (),
             );
-          let onUpdate =
-              (
-                result: ApolloHooks.Mutation.result(UpdateHighlightMutation.t),
-              ) => {
-            let _ =
-              switch (result) {
-              | Data(data) =>
-                switch (data##updateHighlight) {
-                | Some(h) =>
-                  let query = GetNoteQuery.make(~id=h##id, ());
-                  let readQueryOptions =
-                    ApolloHooks.toReadQueryOptions(query);
-                  let _ =
-                    switch (
-                      HighlightCacheReadQuery.readQuery(
-                        Provider.client,
-                        readQueryOptions,
-                      )
-                    ) {
-                    | exception _ => ()
-                    | cachedResponse =>
-                      switch (cachedResponse->Js.Nullable.toOption) {
-                      | None => ()
-                      | Some(cachedHighlight) =>
-                        let highlight = jsonToHighlight(cachedHighlight);
-                        let updatedHighlight = [%bs.raw
-                          {| {
-                          ...highlight,
-                          ...h
-                        } |}
-                        ];
-                        HighlightCacheWriteQuery.make(
-                          ~client=Provider.client,
-                          ~variables=query##variables,
-                          ~data=updatedHighlight,
-                          (),
-                        );
-                        ();
-                      }
-                    };
-                  ();
-                | None => ()
-                }
-              | Error(error) => ()
-              | NoData => ()
-              | _ => ()
-              };
-            Js.Promise.resolve();
-          };
+          /*
+           let onUpdate =
+               (
+                 result: ApolloHooks.Mutation.result(UpdateHighlightMutation.t),
+               ) => {
+             let _ =
+               switch (result) {
+               | Data(data) =>
+                 switch (data##updateHighlight) {
+                 | Some(h) =>
+                   let query = GetNoteQuery.make(~id=h##id, ());
+                   let readQueryOptions =
+                     ApolloHooks.toReadQueryOptions(query);
+                   let _ =
+                     switch (
+                       HighlightCacheReadQuery.readQuery(
+                         Provider.client,
+                         readQueryOptions,
+                       )
+                     ) {
+                     | exception e => Error.report(e)
+                     | cachedResponse =>
+                       switch (cachedResponse->Js.Nullable.toOption) {
+                       | None => Error.report(Error.ApolloEmptyCache)
+                       | Some(cachedHighlight) =>
+                         let updatedHighlight = Raw.merge(cachedHighlight, h);
+                         HighlightCacheWriteQuery.make(
+                           ~client=Provider.client,
+                           ~variables=query##variables,
+                           ~data=updatedHighlight,
+                           (),
+                         );
+                         ();
+                       }
+                     };
+                   ();
+                 | None => ()
+                 }
+               | Error(error) => Error.report(Error.ApolloError(error))
+               | NoData
+               | _ =>
+                 Error.report(
+                   Error.InvalidState("Expected data, but found none."),
+                 )
+               };
+             Js.Promise.resolve();
+           };
+           */
 
-          let _ = handleSave(. variables, updateHighlightMutation, onUpdate);
+          let _ = handleSave(. variables, updateHighlightMutation);
 
           None;
         },
@@ -125,7 +150,7 @@ module Data = {
       React.useEffect0(() => {
         Some(
           () => {
-            let _ = Lodash.flush3(handleSave);
+            let _ = Lodash.flush2(handleSave);
             ();
           },
         )
@@ -137,6 +162,52 @@ module Data = {
     };
 
     let handleDelete = () => {
+      let variables =
+        DeleteHighlightMutation.makeVariables(
+          ~input={"id": Some(highlight##id)},
+          (),
+        );
+
+      let _ =
+        deleteHighlightMutation(~variables, ())
+        |> Js.Promise.then_(_ => {
+             let query = ListHighlightsQuery.make();
+             let readQueryOptions = ApolloHooks.toReadQueryOptions(query);
+             let _ =
+               switch (
+                 ListHighlightsCacheReadQuery.readQuery(
+                   Provider.client,
+                   readQueryOptions,
+                 )
+               ) {
+               | exception e => Error.report(e)
+               | cachedResponse =>
+                 switch (cachedResponse->Js.Nullable.toOption) {
+                 /*** expected if direct link to this highlight **/
+                 | None => ()
+                 | Some(cachedListHighlights) =>
+                   let listHighlights =
+                     castToListHighlights(cachedListHighlights);
+                   /** FIXME: if option is some, write full query with nesting **/
+                   let updatedListHighlights = {
+                     "listHighlights":
+                       listHighlights##listHighlights
+                       ->Belt.Option.flatMap(i => i##items)
+                       ->Belt.Option.map(i =>
+                           Belt.Array.keep(
+                             i,
+                             fun
+                             | Some(h) => h##id !== highlight##id
+                             | None => false,
+                           )
+                         ),
+                   };
+                   ();
+                 }
+               };
+             let _ = Next.Router.back();
+             Js.Promise.resolve();
+           });
       ();
     };
 
