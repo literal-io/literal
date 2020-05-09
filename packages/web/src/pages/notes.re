@@ -2,7 +2,7 @@ open Styles;
 
 module Data = {
   [@react.component]
-  let make = (~highlights) =>
+  let make = (~highlights) => {
     highlights
     ->Belt.Array.map(h =>
         <Next.Link key={h##id} href="notes/[id]" _as={"notes/" ++ h##id}>
@@ -19,6 +19,7 @@ module Data = {
         </Next.Link>
       )
     ->React.array;
+  };
 };
 
 module Empty = {
@@ -31,6 +32,11 @@ module Loading = {
   let make = () => React.string("Loading...");
 };
 
+/**
+ * FIXME: We're ordering on createdAt on the client, so this will break
+ * once results are paginated. Requires tweaking indices in Dynamo to
+ * sort in DB.
+ */
 module ListHighlightsQuery = [%graphql
   {|
     query ListHighlights {
@@ -38,6 +44,7 @@ module ListHighlightsQuery = [%graphql
         items {
           id
           text
+          createdAt
         }
       }
     }
@@ -54,7 +61,14 @@ let default = () => {
      | Data(data) =>
        switch (data##listHighlights->Belt.Option.flatMap(h => h##items)) {
        | Some(highlights) =>
-         <Data highlights={highlights->Belt.Array.keepMap(i => i)} />
+         <Data
+           highlights={
+             highlights->Belt.Array.keepMap(i => i)
+             |> Ramda.sortBy(h => {
+                  -. h##createdAt->Js.Date.fromString->Js.Date.valueOf
+                })
+           }
+         />
        | None => <Empty />
        }
      | Loading => <Loading />
