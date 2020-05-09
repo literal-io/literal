@@ -34,7 +34,7 @@ module Loading = {
 module ListHighlightsQuery = [%graphql
   {|
     query ListHighlights {
-      listHighlights {
+      listHighlights(limit: 100) {
         items {
           id
           text

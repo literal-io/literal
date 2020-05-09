@@ -12,18 +12,7 @@ module GetNoteQuery = [%graphql
   |}
 ];
 
-module ListHighlightsQuery = [%graphql
-  {|
-    query ListHighlightsQuery {
-      listHighlights {
-        items {
-          id
-        }
-      }
-    }
-  |}
-];
-external castToListHighlights: Js.Json.t => ListHighlightsQuery.t =
+external castToListHighlights: Js.Json.t => Notes.ListHighlightsQuery.t =
   "%identity";
 
 module DeleteHighlightMutation = [%graphql
@@ -47,12 +36,10 @@ module UpdateHighlightMutation = [%graphql
 |}
 ];
 
-// module HighlightCacheReadQuery = ApolloClient.ReadQuery(GetNoteQuery);
-// module HighlightCacheWriteQuery = ApolloClient.WriteQuery(GetNoteQuery);
 module ListHighlightsCacheReadQuery =
-  ApolloClient.ReadQuery(ListHighlightsQuery);
+  ApolloClient.ReadQuery(Notes.ListHighlightsQuery);
 module ListHighlightsCacheWriteQuery =
-  ApolloClient.WriteQuery(ListHighlightsQuery);
+  ApolloClient.WriteQuery(Notes.ListHighlightsQuery);
 
 module Data = {
   let handleSave =
@@ -90,54 +77,6 @@ module Data = {
               },
               (),
             );
-          /*
-           let onUpdate =
-               (
-                 result: ApolloHooks.Mutation.result(UpdateHighlightMutation.t),
-               ) => {
-             let _ =
-               switch (result) {
-               | Data(data) =>
-                 switch (data##updateHighlight) {
-                 | Some(h) =>
-                   let query = GetNoteQuery.make(~id=h##id, ());
-                   let readQueryOptions =
-                     ApolloHooks.toReadQueryOptions(query);
-                   let _ =
-                     switch (
-                       HighlightCacheReadQuery.readQuery(
-                         Provider.client,
-                         readQueryOptions,
-                       )
-                     ) {
-                     | exception e => Error.report(e)
-                     | cachedResponse =>
-                       switch (cachedResponse->Js.Nullable.toOption) {
-                       | None => Error.report(Error.ApolloEmptyCache)
-                       | Some(cachedHighlight) =>
-                         let updatedHighlight = Raw.merge(cachedHighlight, h);
-                         HighlightCacheWriteQuery.make(
-                           ~client=Provider.client,
-                           ~variables=query##variables,
-                           ~data=updatedHighlight,
-                           (),
-                         );
-                         ();
-                       }
-                     };
-                   ();
-                 | None => ()
-                 }
-               | Error(error) => Error.report(Error.ApolloError(error))
-               | NoData
-               | _ =>
-                 Error.report(
-                   Error.InvalidState("Expected data, but found none."),
-                 )
-               };
-             Js.Promise.resolve();
-           };
-           */
 
           let _ = handleSave(. variables, updateHighlightMutation);
 
@@ -171,7 +110,7 @@ module Data = {
       let _ =
         deleteHighlightMutation(~variables, ())
         |> Js.Promise.then_(_ => {
-             let query = ListHighlightsQuery.make();
+             let query = Notes.ListHighlightsQuery.make();
              let readQueryOptions = ApolloHooks.toReadQueryOptions(query);
              let _ =
                switch (
@@ -188,26 +127,42 @@ module Data = {
                  | Some(cachedListHighlights) =>
                    let listHighlights =
                      castToListHighlights(cachedListHighlights);
-                   /** FIXME: if option is some, write full query with nesting **/
-                   let updatedListHighlights = {
-                     "listHighlights":
-                       listHighlights##listHighlights
-                       ->Belt.Option.flatMap(i => i##items)
-                       ->Belt.Option.map(i =>
-                           Belt.Array.keep(
-                             i,
-                             fun
-                             | Some(h) => h##id !== highlight##id
-                             | None => false,
-                           )
-                         ),
-                   };
+                   let updatedListHighlights =
+                     listHighlights##listHighlights
+                     ->Belt.Option.flatMap(i => i##items)
+                     ->Belt.Option.map(i => {
+                         let update = {
+                           "listHighlights":
+                             Some({
+                               "items":
+                                 i
+                                 ->Belt.Array.keep(
+                                     fun
+                                     | Some(h) => h##id !== highlight##id
+                                     | None => false,
+                                   )
+                                 ->Js.Option.some,
+                             }),
+                         };
+                         Ramda.mergeDeepLeft(update, listHighlights);
+                       });
+                   let _ =
+                     switch (updatedListHighlights) {
+                     | Some(updatedListHighlights) =>
+                       ListHighlightsCacheWriteQuery.make(
+                         ~client=Provider.client,
+                         ~variables=query##variables,
+                         ~data=updatedListHighlights,
+                         (),
+                       )
+                     | None => ()
+                     };
                    ();
                  }
                };
-             let _ = Next.Router.back();
              Js.Promise.resolve();
            });
+      let _ = Next.Router.back();
       ();
     };
 
