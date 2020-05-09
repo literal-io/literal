@@ -103,7 +103,7 @@ module Data = {
     let handleDelete = () => {
       let variables =
         DeleteHighlightMutation.makeVariables(
-          ~input={"id": Some(highlight##id)},
+          ~input={"id": highlight##id},
           (),
         );
 

@@ -187,7 +187,7 @@ let createHighlight = (text, screenshotId) => {
       ~input={
         "text": text,
         "note": None,
-        "id": None,
+        "id": Externals_UUID.makeV4(),
         "createdAt": None,
         "highlightScreenshotId": Some(screenshotId),
       },

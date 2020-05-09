@@ -25,6 +25,10 @@ html {
   height: 100%;
 }
 
+button:focus {
+  outline: none;
+}
+
 /* utility classes */
 
 .box-decoration-break-clone {

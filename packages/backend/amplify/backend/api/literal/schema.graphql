@@ -36,6 +36,7 @@ input CreateHighlightInput {
 
 type Highlight
   @model
+  @key(fields: ["id"])
   @auth(
     rules: [
       {
