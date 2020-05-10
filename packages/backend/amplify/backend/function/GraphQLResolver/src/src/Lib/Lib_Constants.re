@@ -5,7 +5,7 @@ module Env = {
     "process.env.API_LITERAL_GRAPHQLAPIENDPOINTOUTPUT";
   [@bs.val]
   external storageLiteralStorageBucketName: string =
-    "process.env.STORAGE_LITERAL_STORAGE_BUCKETNAME";
+    "process.env.STORAGE_LITERALSTORAGE_BUCKETNAME";
   [@bs.val]
   external authLiteralAuthUserPoolId: string =
     "process.env.AUTH_LITERALAUTH_USERPOOLID";

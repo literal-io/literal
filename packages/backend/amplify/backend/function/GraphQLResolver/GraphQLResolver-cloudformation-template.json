@@ -89,10 +89,11 @@
 					]
 				},
 				"Runtime": "nodejs10.x",
+				"MemorySize": "1024",
 				"Timeout": "25",
 				"Code": {
 					"S3Bucket": "amplify-literal-production-114446-deployment",
-					"S3Key": "amplify-builds/GraphQLResolver-72354668585447536366-build.zip"
+					"S3Key": "amplify-builds/GraphQLResolver-563743657135736a6933-build.zip"
 				},
 				"Layers": [
 					{

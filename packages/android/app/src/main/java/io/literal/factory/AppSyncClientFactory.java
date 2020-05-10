@@ -3,7 +3,6 @@ package io.literal.factory;
 import android.content.Context;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AwsChunkedEncodingInputStream;
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
 import com.amazonaws.mobile.config.AWSConfiguration;
 import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient;
@@ -13,10 +12,6 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3Client;
 
 import org.json.JSONObject;
-
-import java.util.Optional;
-
-import io.literal.R;
 
 public class AppSyncClientFactory {
 

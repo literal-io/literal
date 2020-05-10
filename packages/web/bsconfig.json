@@ -1,0 +1,41 @@
+{
+  "name": "web",
+  "version": "1.0.0",
+  "reason": {
+    "react-jsx": 3
+  },
+  "sources": [
+    {
+      "dir": "src",
+      "subdirs": true
+    }
+  ],
+  "package-specs": {
+    "module": "commonjs",
+    "in-source": true
+  },
+  "suffix": ".js",
+  "js-post-build": {
+    "cmd": "./scripts/bsb-js-post-build.sh"
+  },
+  "bs-dependencies": [
+    "@trashed/bs-aws-amplify",
+    "decco",
+    "bs-webapi",
+    "reason-react",
+    "re-classnames",
+    "reason-apollo",
+    "reason-apollo-hooks",
+    "@trashed/bs-aws-appsync",
+    "@jsiebern/bs-material-ui"
+  ],
+  "ppx-flags": [
+    ["@baransu/graphql_ppx_re/ppx", "-schema ./graphql-schema.json"],
+    "decco/ppx"
+  ],
+  "warnings": {
+    "error": "+101"
+  },
+  "namespace": true,
+  "refmt": 3
+}
