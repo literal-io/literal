@@ -63,7 +63,7 @@ let make = (~highlightFragment as highlight) => {
       "flex-col",
       "overflow-y-auto",
     ])}>
-    <div className={cn(["px-6", "py-4"])}>
+    <div className={cn(["px-6", "pb-4", "pt-16"])}>
       <TextInput.Basic onChange=handleTextChange value=textState />
     </div>
   </div>;

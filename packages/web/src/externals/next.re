@@ -1,9 +1,20 @@
-type router = {query: Js.Json.t};
+type router = {
+  query: Js.Json.t,
+  pathname: string,
+};
 
 module Router = {
   [@bs.module "next/router"] external useRouter: unit => router = "useRouter";
+
+  type urlOptions = {
+    pathname: string,
+    query: Js.Json.t,
+  };
+
   [@bs.module "next/router"] [@bs.scope "default"]
   external replace: string => unit = "replace";
+  [@bs.module "next/router"] [@bs.scope "default"]
+  external replaceWithOptions: urlOptions => unit = "replace";
 
   [@bs.module "next/router"] [@bs.scope "default"]
   external back: unit => unit = "back";

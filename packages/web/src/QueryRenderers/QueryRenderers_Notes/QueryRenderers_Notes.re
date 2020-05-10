@@ -2,27 +2,44 @@ open Styles;
 
 module Data = {
   [@react.component]
-  let make = (~highlights) => {
-    let activeIdx = 0;
-    let handleIdxChange = idx => ();
+  let make = (~highlights, ~initialHighlightId, ~onHighlightIdChange) => {
+    let (activeIdx, setActiveIdx) =
+      React.useState(() =>
+        switch (initialHighlightId) {
+        | Some(initialHighlightId) =>
+          highlights
+          ->Belt.Array.getIndexBy(h => h##id === initialHighlightId)
+          ->Belt.Option.getWithDefault(0)
+        | None => 0
+        }
+      );
+    let activeHighlight = highlights->Belt.Array.getExn(activeIdx);
+
+    let _ =
+      React.useEffect1(
+        () => {
+          let _ = onHighlightIdChange(activeHighlight##id);
+          None;
+        },
+        [|activeHighlight|],
+      );
+
+    let handleIdxChange = idx => setActiveIdx(_ => idx);
 
     <>
       <Containers_NoteHeader
-        highlightFragment={
-          highlights
-          ->Belt.Array.getExn(activeIdx)
-          ->(h => h##headerHighlightFragment)
-        }
+        highlightFragment={activeHighlight##headerHighlightFragment}
       />
       <ScrollSnapList.Container
         direction=ScrollSnapList.Horizontal
         onIdxChange=handleIdxChange
-        initialIdx=0>
+        initialIdx=activeIdx>
         {highlights->Belt.Array.map(h =>
            <ScrollSnapList.Item
              key={h##id} direction=ScrollSnapList.Horizontal>
-             <Header />
-             <Containers_NoteEditor highlightFragment={h##editorHighlightFragment} />
+             <Containers_NoteEditor
+               highlightFragment={h##editorHighlightFragment}
+             />
            </ScrollSnapList.Item>
          )}
       </ScrollSnapList.Container>
@@ -41,7 +58,7 @@ module Loading = {
 };
 
 [@react.component]
-let make = () => {
+let make = (~highlightId, ~onHighlightIdChange) => {
   let (query, _fullQuery) =
     ApolloHooks.useQuery(
       QueryRenderers_Notes_GraphQL.ListHighlightsQuery.definition,
@@ -53,6 +70,8 @@ let make = () => {
        switch (data##listHighlights->Belt.Option.flatMap(h => h##items)) {
        | Some(highlights) =>
          <Data
+           onHighlightIdChange
+           initialHighlightId=highlightId
            highlights={
              highlights->Belt.Array.keepMap(i => i)
              |> Ramda.sortBy(h => {
