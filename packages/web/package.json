@@ -35,6 +35,7 @@
     "apollo-client": "^2.6.8",
     "aws-appsync": "^3.0.2",
     "aws-appsync-react": "^3.0.2",
+    "bowser": "^2.9.0",
     "bs-platform": "7.0.1",
     "bs-webapi": "^0.15.9",
     "decco": "^1.2.0",

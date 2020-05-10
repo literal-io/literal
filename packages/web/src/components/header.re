@@ -1,7 +1,7 @@
 open Styles;
 
 [@react.component]
-let make = (~children, ~className=?) =>
+let make = (~children=React.null, ~className=?) =>
   <div
     className={cn([
       "flex",
