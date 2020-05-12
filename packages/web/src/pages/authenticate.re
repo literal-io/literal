@@ -2,6 +2,14 @@ open Styles;
 
 [@react.component]
 let default = () => {
+  let handleAuthenticateGoogle = () =>
+    AwsAmplify.Auth.(
+      federatedSignInWithOptions(
+        inst,
+        {provider: "Google", customState: None},
+      )
+    );
+
   <div
     className={cn([
       "w-full",
@@ -14,6 +22,7 @@ let default = () => {
       "px-6",
     ])}>
     <MaterialUi.Button
+      onClick={_ => handleAuthenticateGoogle()}
       _TouchRippleProps={
         "classes": {
           "child": cn(["bg-white"]),
