@@ -2,6 +2,24 @@ open Styles;
 
 [@react.component]
 let default = () => {
+  let _ =
+    React.useEffect0(() => {
+      let handleEvent = (ev: AwsAmplify.Hub.event(AwsAmplify.Hub.auth)) => {
+        switch (ev.payload.event) {
+        | "signIn" => Next.Router.replace("/notes")
+        | _ => ()
+        };
+      };
+
+      let _ = AwsAmplify.Hub.(listen(inst, `auth(handleEvent)));
+      Some(
+        () => {
+          let _ = AwsAmplify.Hub.(remove(inst, `auth(handleEvent)));
+          ();
+        },
+      );
+    });
+
   let handleAuthenticateGoogle = () =>
     AwsAmplify.Auth.(
       federatedSignInWithOptions(

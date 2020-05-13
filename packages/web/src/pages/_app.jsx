@@ -21,7 +21,6 @@ export default function App({ Component, pageProps, router: { asPath } }) {
       const asPathWithoutTrailingSlash =
         path.replace(/\/*$/gim, "") + (query ? `?${query}` : "");
       if (typeof window !== "undefined") {
-        console.log("replacing path", asPathWithoutTrailingSlash);
         Router.replace(asPathWithoutTrailingSlash);
         return null;
       }
