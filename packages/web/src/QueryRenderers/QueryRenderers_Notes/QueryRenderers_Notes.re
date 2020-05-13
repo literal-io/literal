@@ -49,7 +49,7 @@ module Data = {
 
 module Empty = {
   [@react.component]
-  let make = () => React.string("Not Found...");
+  let make = () => <span className={cn(["text-white"])}> {React.string("Empty...")} </span>
 };
 
 module Loading = {
@@ -68,7 +68,7 @@ let make = (~highlightId, ~onHighlightIdChange) => {
     {switch (query) {
      | Data(data) =>
        switch (data##listHighlights->Belt.Option.flatMap(h => h##items)) {
-       | Some(highlights) =>
+       | Some(highlights) when Array.length(highlights) > 0 =>
          <Data
            onHighlightIdChange
            initialHighlightId=highlightId
@@ -79,7 +79,7 @@ let make = (~highlightId, ~onHighlightIdChange) => {
                 })
            }
          />
-       | None => <Empty />
+       | _ => <Empty />
        }
      | Loading => <Loading />
      | NoData

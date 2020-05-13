@@ -32,7 +32,7 @@ let appSyncLinkOptions =
         Constants.awsAmplifyConfig->Config.appSyncGraphqlEndpointGet
       ),
     region: AwsAmplify.(Constants.awsAmplifyConfig->Config.appSyncRegionGet),
-    auth: unauthenticatedClientAuthOptions,
+    auth: authenticatedClientAuthOptions,
     disableOffline: true,
     complexObjectsCredentials: () =>
       AwsAmplify.Auth.(inst->currentCredentials),
