@@ -1,15 +1,6 @@
 open Styles;
 open Containers_NewNoteEditor_GraphQL;
 
-external castToListHighlights:
-  Js.Json.t => QueryRenderers_Notes_GraphQL.ListHighlightsQuery.t =
-  "%identity";
-
-module ListHighlightsCacheReadQuery =
-  ApolloClient.ReadQuery(QueryRenderers_Notes_GraphQL.ListHighlightsQuery);
-module ListHighlightsCacheWriteQuery =
-  ApolloClient.WriteQuery(QueryRenderers_Notes_GraphQL.ListHighlightsQuery);
-
 [@react.component]
 let make = (~highlightFragment as highlight) => {
   let (updateHighlightMutation, _s, _f) =

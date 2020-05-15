@@ -118,7 +118,13 @@ Parameters:
       
   hostedUIProviderMeta:
     Type: String
-              
+                
+  thirdPartyAuth:
+    Type: String
+                    
+  authProviders:
+    Type: CommaDelimitedList
+      
   hostedUIProviderCreds:
     Type: String
               

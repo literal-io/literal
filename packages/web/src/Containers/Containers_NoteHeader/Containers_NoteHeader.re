@@ -1,13 +1,8 @@
 open Styles;
 
 external castToListHighlights:
-  Js.Json.t => QueryRenderers_Notes_GraphQL.ListHighlightsQuery.t =
+  Js.Json.t => QueryRenderers_Notes_GraphQL.ListHighlights.Query.t =
   "%identity";
-
-module ListHighlightsCacheReadQuery =
-  ApolloClient.ReadQuery(QueryRenderers_Notes_GraphQL.ListHighlightsQuery);
-module ListHighlightsCacheWriteQuery =
-  ApolloClient.WriteQuery(QueryRenderers_Notes_GraphQL.ListHighlightsQuery);
 
 [@react.component]
 let make = (~highlightFragment as highlight) => {
@@ -26,54 +21,50 @@ let make = (~highlightFragment as highlight) => {
     let _ =
       deleteHighlightMutation(~variables, ())
       |> Js.Promise.then_(_ => {
-           let query = QueryRenderers_Notes_GraphQL.ListHighlightsQuery.make();
-           let readQueryOptions = ApolloHooks.toReadQueryOptions(query);
            let _ =
              switch (
-               ListHighlightsCacheReadQuery.readQuery(
+               QueryRenderers_Notes_GraphQL.ListHighlights.readCache(
                  Provider.client,
-                 readQueryOptions,
                )
              ) {
-             | exception e => Error.report(e)
-             | cachedResponse =>
-               switch (cachedResponse->Js.Nullable.toOption) {
-               | None => ()
-               | Some(cachedListHighlights) =>
-                 let listHighlights =
-                   castToListHighlights(cachedListHighlights);
-                 let updatedListHighlights =
-                   listHighlights##listHighlights
-                   ->Belt.Option.flatMap(i => i##items)
-                   ->Belt.Option.map(i => {
-                       let update = {
-                         "listHighlights":
+             | None => ()
+             | Some(cachedListHighlights) =>
+               let updatedListHighlights =
+                 QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
+                   cachedListHighlights
+                   ->listHighlights
+                   ->Belt.Option.flatMap(items)
+                   ->Belt.Option.map(items => {
+                       let updatedItems =
+                         items
+                         ->Belt.Array.keep(
+                             fun
+                             | Some(h) => h.id !== highlight##id
+                             | None => false,
+                           )
+                         ->Js.Option.some;
+                       {
+                         listHighlights:
                            Some({
-                             "items":
-                               i
-                               ->Belt.Array.keep(
-                                   fun
-                                   | Some(h) => h##id !== highlight##id
-                                   | None => false,
-                                 )
-                               ->Js.Option.some,
+                             ...
+                               cachedListHighlights
+                               ->listHighlights
+                               ->Belt.Option.getExn,
+                             items: updatedItems,
                            }),
                        };
-                       Ramda.mergeDeepLeft(update, listHighlights);
-                     });
-                 let _ =
-                   switch (updatedListHighlights) {
-                   | Some(updatedListHighlights) =>
-                     ListHighlightsCacheWriteQuery.make(
-                       ~client=Provider.client,
-                       ~variables=query##variables,
-                       ~data=updatedListHighlights,
-                       (),
-                     )
-                   | None => ()
-                   };
-                 ();
-               }
+                     })
+                 );
+               let _ =
+                 switch (updatedListHighlights) {
+                 | Some(updatedListHighlights) =>
+                   QueryRenderers_Notes_GraphQL.ListHighlights.writeCache(
+                     ~client=Provider.client,
+                     ~data=updatedListHighlights,
+                   )
+                 | None => ()
+                 };
+               ();
              };
            Js.Promise.resolve();
          });

@@ -30,7 +30,7 @@
     ],
     "userpoolClientLambdaRole": "literaee18a401_userpoolclient_lambda_role",
     "userpoolClientSetAttributes": false,
-    "useDefault": "defaultSocial",
+    "useDefault": "manual",
     "authSelections": "identityPoolAndUserPool",
     "resourceName": "literalAuth",
     "usernameAttributes": [
@@ -63,5 +63,7 @@
         "Google"
     ],
     "hostedUIProviderMeta": "[{\"ProviderName\":\"Google\",\"authorize_scopes\":\"openid email profile\",\"AttributeMapping\":{\"email\":\"email\",\"username\":\"sub\"}}]",
+    "thirdPartyAuth": true,
+    "authProviders": [],
     "oAuthMetadata": "{\"AllowedOAuthFlows\":[\"code\"],\"AllowedOAuthScopes\":[\"phone\",\"email\",\"openid\",\"profile\",\"aws.cognito.signin.user.admin\"],\"CallbackURLs\":[\"https://literal.io/authenticate/\",\"http://localhost:3000/authenticate/\"],\"LogoutURLs\":[\"https://literal.io/authenticate/\",\"http://localhost:3000/authenticate/\"]}"
 }
