@@ -18,7 +18,6 @@ module ListHighlights = {
    * Cache representation is of different structure than what
    * graphql_ppx generates.
    */
-  // FIXME: encode __typename
   module Raw = {
     [@decco]
     type highlight = {
@@ -56,7 +55,6 @@ module ListHighlights = {
       cachedResponse
       ->Js.Nullable.toOption
       ->Belt.Option.flatMap(j => {
-          Js.log2("raw cache", j);
           switch (Raw.decode(j)) {
           | Ok(c) => Some(c)
           | Error(e) =>
@@ -77,16 +75,3 @@ module ListHighlights = {
     );
   };
 };
-
-module CreateHighlightMutation = [%graphql
-  {|
-    mutation createHighlight($input: CreateHighlightInput!) {
-      createHighlight(input: $input) {
-        id
-        createdAt
-        ...Containers_NoteEditor_GraphQL.GetHighlightFragment.EditorHighlightFragment @bsField(name: "editorHighlightFragment")
-        ...Containers_NoteHeader_GraphQL.GetHighlightFragment.HeaderHighlightFragment @bsField(name: "headerHighlightFragment")
-      }
-    }
-  |}
-];
