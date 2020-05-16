@@ -5,6 +5,10 @@
 		"env": {
 			"Type": "String"
 		},
+		"authliteralAuthUserPoolId": {
+			"Type": "String",
+			"Default": "authliteralAuthUserPoolId"
+		},
 		"apiliteralGraphQLAPIIdOutput": {
 			"Type": "String",
 			"Default": "apiliteralGraphQLAPIIdOutput"
@@ -72,6 +76,9 @@
 						},
 						"STORAGE_LITERALSTORAGE_BUCKETNAME": {
 							"Ref": "storageliteralStorageBucketName"
+						},
+						"AUTH_LITERALAUTH_USERPOOLID": {
+							"Ref": "authliteralAuthUserPoolId"
 						}
 					}
 				},
@@ -86,7 +93,7 @@
 				"Timeout": "25",
 				"Code": {
 					"S3Bucket": "amplify-literal-production-114446-deployment",
-					"S3Key": "amplify-builds/GraphQLResolver-535674324e5756686d4a-build.zip"
+					"S3Key": "amplify-builds/GraphQLResolver-5a53463576324c614968-build.zip"
 				},
 				"Layers": [
 					{

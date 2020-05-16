@@ -11,13 +11,13 @@ Parameters:
   
   
   
-  functionliteralAuthPostAuthenticationArn: 
+  functionPostAuthenticationArn: 
     Type: String
-    Default: functionliteralAuthPostAuthenticationArn
+    Default: functionPostAuthenticationArn
   
-  functionliteralAuthPostAuthenticationName: 
+  functionPostAuthenticationName: 
     Type: String
-    Default: functionliteralAuthPostAuthenticationName
+    Default: functionPostAuthenticationName
   
   
   
@@ -201,7 +201,7 @@ Resources:
         
         
         
-          PostAuthentication: !Ref functionliteralAuthPostAuthenticationArn
+          PostAuthentication: !Ref functionPostAuthenticationArn
         
         
         
@@ -243,7 +243,7 @@ Resources:
     Properties: 
       Action: "lambda:invokeFunction"
       Principal: "cognito-idp.amazonaws.com"
-      FunctionName: !Ref functionliteralAuthPostAuthenticationName
+      FunctionName: !Ref functionPostAuthenticationName
       SourceArn: !GetAtt UserPool.Arn
     
     
