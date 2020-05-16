@@ -35,18 +35,17 @@
 				"aws:asset:path": "./src/dist",
 				"aws:asset:property": "Code"
 			},
-			"DependsOn": "ImageMagickLayer",
 			"Properties": {
 				"Handler": "dist/bundle.handler",
 				"FunctionName": {
 					"Fn::If": [
 						"ShouldNotCreateEnvResources",
-						"GraphQLResolver",
+						"PostAuthentication",
 						{
 							"Fn::Join": [
 								"",
 								[
-									"GraphQLResolver",
+									"PostAuthentication",
 									"-",
 									{
 										"Ref": "env"
@@ -82,17 +81,11 @@
 					]
 				},
 				"Runtime": "nodejs10.x",
-				"MemorySize": "1024",
 				"Timeout": "25",
 				"Code": {
 					"S3Bucket": "amplify-literal-production-114446-deployment",
-					"S3Key": "amplify-builds/GraphQLResolver-535674324e5756686d4a-build.zip"
-				},
-				"Layers": [
-					{
-						"Ref": "ImageMagickLayer"
-					}
-				]
+					"S3Key": "amplify-builds/PostAuthentication-34573158724e6f416e46-build.zip"
+				}
 			}
 		},
 		"LambdaExecutionRole": {
@@ -101,12 +94,12 @@
 				"RoleName": {
 					"Fn::If": [
 						"ShouldNotCreateEnvResources",
-						"literalLambdaRole334e4220",
+						"PostAuthentication",
 						{
 							"Fn::Join": [
 								"",
 								[
-									"literalLambdaRole334e4220",
+									"PostAuthentication",
 									"-",
 									{
 										"Ref": "env"
@@ -359,21 +352,6 @@
 					]
 				}
 			}
-		},
-		"ImageMagickLayer": {
-			"Type": "AWS::Lambda::LayerVersion",
-			"Properties": {
-				"Content": {
-					"S3Bucket": "awsserverlessrepo-changesets-plntc6bfnfj",
-					"S3Key": "046525304497/arn:aws:serverlessrepo:us-east-1:145266761615:applications-image-magick-lambda-layer-versions-1.0.0/cc8f7984-1453-4338-826b-536d2127e3f5"
-				},
-				"LayerName": "image-magick",
-				"Description": "Static build of ImageMagick for AWS Linux 2,",
-				"LicenseInfo": "https://imagemagick.org/script/license.php",
-				"CompatibleRuntimes": [
-					"nodejs10.x"
-				]
-			}
 		}
 	},
 	"Outputs": {
@@ -390,14 +368,14 @@
 				]
 			}
 		},
-		"Region": {
-			"Value": {
-				"Ref": "AWS::Region"
-			}
-		},
 		"LambdaExecutionRole": {
 			"Value": {
 				"Ref": "LambdaExecutionRole"
+			}
+		},
+		"Region": {
+			"Value": {
+				"Ref": "AWS::Region"
 			}
 		}
 	}

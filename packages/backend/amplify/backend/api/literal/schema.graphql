@@ -15,9 +15,7 @@ type S3Object @aws_iam {
 type Screenshot
   @model
   @auth(
-    rules: [
-      { allow: owner, ownerField: "owner", operations: [create, read] }
-    ]
+    rules: [{ allow: owner, ownerField: "owner", operations: [create, read] }]
   ) {
   id: ID!
   createdAt: String!
@@ -63,19 +61,13 @@ type Profile
   @model
   @key(fields: ["owner"])
   @auth(
-    {
-      allow: owner
-      ownerField: "owner"
-      operations: [read, update]
-    },
-    {
-      allow: private
-      provider: iam
-      operations: [create]
-    }
+    rules: [
+      { allow: owner, ownerField: "owner", operations: [read, update] }
+      { allow: private, provider: iam, operations: [create] }
+    ]
   ) {
   id: ID!
-  owner: String
+  owner: String!
   createdAt: String!
   isOnboarded: Boolean!
 }
