@@ -72,6 +72,13 @@ type Profile
   isOnboarded: Boolean!
 }
 
+input CreateProfileInput {
+  id: ID!
+  owner: String!
+  createdAt: String
+  isOnboarded: Boolean!
+}
+
 input CreateHighlightFromScreenshotInput {
   id: ID
   createdAt: String
