@@ -16,11 +16,11 @@
     "graphql:sync-schema": "./scripts/graphql-sync-schema.sh"
   },
   "devDependencies": {
-    "@aws-amplify/api": "^3.1.10",
-    "@aws-amplify/auth": "^3.2.7",
-    "@aws-amplify/core": "^3.2.7",
-    "@aws-amplify/pubsub": "^3.0.11",
-    "@aws-amplify/storage": "^3.2.0",
+    "@aws-amplify/api": "^2.2.1",
+    "@aws-amplify/auth": "^2.1.8",
+    "@aws-amplify/core": "^2.3.0",
+    "@aws-amplify/pubsub": "^2.1.9",
+    "@aws-amplify/storage": "^2.2.3",
     "@baransu/graphql_ppx_re": "^0.7.1",
     "bs-platform": "^7.3.2",
     "decco": "^1.2.1",
@@ -30,5 +30,6 @@
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11",
     "webpack-node-externals": "^1.7.2"
-  }
+  },
+  "dependencies": {}
 }
