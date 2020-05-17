@@ -13,7 +13,7 @@ let use = () => {
         AwsAmplify.Auth.(currentUserInfo(inst))
         |> Js.Promise.then_(currentUser => {
              let _ =
-               switch (currentUser) {
+               switch (currentUser->Js.Nullable.toOption) {
                | Some(currentUser) =>
                  setAuthenticationState(_ => Authenticated(currentUser))
                | None => setAuthenticationState(_ => Unauthenticated)

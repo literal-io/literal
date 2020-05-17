@@ -2,6 +2,8 @@ open Styles;
 
 [@react.component]
 let default = () => {
+  let authentication = CurrentUserInfo.use();
+
   let _ =
     React.useEffect0(() => {
       let handleEvent = (ev: AwsAmplify.Hub.event(AwsAmplify.Hub.auth)) => {
@@ -19,6 +21,19 @@ let default = () => {
         },
       );
     });
+
+  let _ =
+    React.useEffect1(
+      () => {
+        let _ =
+          switch (authentication) {
+          | Authenticated(_) => Next.Router.replace("/notes")
+          | _ => ()
+          };
+        None;
+      },
+      [|authentication|],
+    );
 
   let handleAuthenticateGoogle = () =>
     AwsAmplify.Auth.(
@@ -39,6 +54,14 @@ let default = () => {
       "py-6",
       "px-6",
     ])}>
+    <div
+      className={cn(["flex-auto", "flex", "items-center", "justify-center"])}>
+      <Svg
+        icon=Svg.logo
+        placeholderViewBox="0 0 24 24"
+        className={cn(["pointer-events-none", "w-20", "h-20"])}
+      />
+    </div>
     <MaterialUi.Button
       onClick={_ => handleAuthenticateGoogle()}
       _TouchRippleProps={
