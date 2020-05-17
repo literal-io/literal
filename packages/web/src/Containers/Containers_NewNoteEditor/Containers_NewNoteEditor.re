@@ -17,6 +17,7 @@ let make = (~highlightFragment as highlight) => {
           "createdAt": None,
           "note": None,
           "highlightScreenshotId": None,
+          "owner": None,
         },
         (),
       );

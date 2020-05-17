@@ -3,7 +3,7 @@ open QueryRenderers_NewNote_GraphQL;
 
 module Data = {
   [@react.component]
-  let make = (~highlight) => {
+  let make = (~highlight, ~currentUser) => {
     <div
       className={cn([
         "w-full",
@@ -15,6 +15,7 @@ module Data = {
         "overflow-y-auto",
       ])}>
       <Containers_NewNoteHeader
+        currentUser
         highlightFragment={highlight##headerHighlightFragment}
       />
       <Containers_NewNoteEditor
@@ -35,7 +36,7 @@ module Loading = {
 };
 
 [@react.component]
-let make = (~highlightId) => {
+let make = (~highlightId, ~currentUser) => {
   let (query, _fullQuery) =
     ApolloHooks.useQuery(
       ~variables=
@@ -46,7 +47,7 @@ let make = (~highlightId) => {
   switch (query) {
   | Data(data) =>
     switch (data##getHighlight) {
-    | Some(highlight) => <Data highlight />
+    | Some(highlight) => <Data highlight currentUser />
     | None => <Empty />
     }
   | Loading => <Loading />

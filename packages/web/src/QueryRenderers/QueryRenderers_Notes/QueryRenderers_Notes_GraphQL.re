@@ -1,7 +1,12 @@
 module ListHighlights = {
   module Query = [%graphql
     {|
-      query ListHighlights {
+      query listHighlights($owner: String!) {
+        getProfile(owner: $owner) {
+          id
+          isOnboarded
+          ...Containers_Onboarding_GraphQL.GetProfileFragment.OnboardingProfileFragment @bsField(name: "onboardingProfileFragment")
+        }
         listHighlights(limit: 100) {
           items {
             id
@@ -24,18 +29,33 @@ module ListHighlights = {
       id: string,
       createdAt: string,
       text: string,
-      [@decco.key "__typename"] typename: string
+      [@decco.key "__typename"]
+      typename: string,
     };
 
     [@decco]
     [@bs.deriving accessors]
     type listHighlightsConnection = {
       items: option(array(option(highlight))),
-      [@decco.key "__typename"] typename: string
+      [@decco.key "__typename"]
+      typename: string,
     };
+
+    [@decco]
+    type profile = {
+      id: string,
+      owner: string,
+      isOnboarded: bool,
+      [@decco.key "__typename"]
+      typename: string,
+    };
+
     [@decco]
     [@bs.deriving accessors]
-    type t = {listHighlights: option(listHighlightsConnection)};
+    type t = {
+      listHighlights: option(listHighlightsConnection),
+      getProfile: option(profile),
+    };
 
     let decode = t_decode;
     let encode = t_encode;
@@ -46,8 +66,7 @@ module ListHighlights = {
   module CacheReadQuery = ApolloClient.ReadQuery(Query);
   module CacheWriteQuery = ApolloClient.WriteQuery(Query);
 
-  let readCache = client => {
-    let query = Query.make();
+  let readCache = (~query, ~client, ()) => {
     let readQueryOptions = ApolloHooks.toReadQueryOptions(query);
     switch (CacheReadQuery.readQuery(client, readQueryOptions)) {
     | exception _ => None
@@ -61,12 +80,11 @@ module ListHighlights = {
             let _ = Error.report(Error.DeccoDecodeError(e));
             None;
           }
-      })
+        })
     };
   };
 
-  let writeCache = (~client, ~data) => {
-    let query = Query.make();
+  let writeCache = (~query, ~client, ~data, ()) => {
     CacheWriteQuery.make(
       ~client,
       ~variables=query##variables,

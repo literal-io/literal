@@ -5,7 +5,7 @@ external castToListHighlights:
   "%identity";
 
 [@react.component]
-let make = (~highlightFragment as highlight) => {
+let make = (~highlightFragment as highlight, ~currentUser) => {
   let (deleteHighlightMutation, _s, _f) =
     ApolloHooks.useMutation(
       Containers_NoteHeader_GraphQL.DeleteHighlightMutation.definition,
@@ -21,17 +21,24 @@ let make = (~highlightFragment as highlight) => {
     let _ =
       deleteHighlightMutation(~variables, ())
       |> Js.Promise.then_(_ => {
+           let cacheQuery =
+             QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
+               ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+               (),
+             );
            let _ =
              switch (
                QueryRenderers_Notes_GraphQL.ListHighlights.readCache(
-                 Provider.client,
+                 ~query=cacheQuery,
+                 ~client=Provider.client,
+                 (),
                )
              ) {
              | None => ()
-             | Some(cachedListHighlights) =>
+             | Some(cachedQuery) =>
                let updatedListHighlights =
                  QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
-                   cachedListHighlights
+                   cachedQuery
                    ->listHighlights
                    ->Belt.Option.flatMap(items)
                    ->Belt.Option.map(items => {
@@ -44,12 +51,11 @@ let make = (~highlightFragment as highlight) => {
                            )
                          ->Js.Option.some;
                        {
+                         ...cachedQuery,
                          listHighlights:
                            Some({
                              ...
-                               cachedListHighlights
-                               ->listHighlights
-                               ->Belt.Option.getExn,
+                               cachedQuery->listHighlights->Belt.Option.getExn,
                              items: updatedItems,
                            }),
                        };
@@ -60,8 +66,10 @@ let make = (~highlightFragment as highlight) => {
                  | Some(updatedListHighlights) =>
                    QueryRenderers_Notes_GraphQL.ListHighlights.(
                      writeCache(
+                       ~query=cacheQuery,
                        ~client=Provider.client,
                        ~data=updatedListHighlights,
+                       (),
                      )
                    )
                  | None => ()
