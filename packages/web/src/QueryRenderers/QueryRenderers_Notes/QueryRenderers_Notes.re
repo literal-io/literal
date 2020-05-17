@@ -1,8 +1,10 @@
 open Styles;
+open QueryRenderers_Notes_GraphQL;
 
 module Data = {
   [@react.component]
-  let make = (~highlights, ~initialHighlightId, ~onHighlightIdChange) => {
+  let make =
+      (~highlights, ~initialHighlightId, ~onHighlightIdChange, ~currentUser) => {
     let (activeIdx, setActiveIdx) =
       React.useState(() =>
         switch (initialHighlightId) {
@@ -29,6 +31,7 @@ module Data = {
     <>
       <Containers_NoteHeader
         highlightFragment={activeHighlight##headerHighlightFragment}
+        currentUser
       />
       <ScrollSnapList.Container
         direction=ScrollSnapList.Horizontal
@@ -47,31 +50,50 @@ module Data = {
   };
 };
 
-module Empty = {
-  [@react.component]
-  let make = () => React.string("Not Found...");
-};
-
 module Loading = {
   [@react.component]
   let make = () => React.string("Loading...");
 };
 
+module Onboarding = {
+  [@react.component]
+  let make = (~onboardingProfileFragment, ~currentUser) => {
+    <Containers_Onboarding
+      profileFragment=onboardingProfileFragment
+      currentUser
+    />;
+  };
+};
+
+module Empty = {
+  [@react.component]
+  let make = () => React.string("Empty...");
+};
+
 [@react.component]
-let make = (~highlightId, ~onHighlightIdChange) => {
+let make = (~highlightId, ~onHighlightIdChange, ~currentUser) => {
   let (query, _fullQuery) =
     ApolloHooks.useQuery(
-      QueryRenderers_Notes_GraphQL.ListHighlightsQuery.definition,
+      ~variables=
+        ListHighlights.Query.makeVariables(
+          ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+          (),
+        ),
+      ListHighlights.Query.definition,
     );
 
   <div className={cn(["w-full", "h-full", "bg-black", "overflow-y-scroll"])}>
     {switch (query) {
      | Data(data) =>
-       switch (data##listHighlights->Belt.Option.flatMap(h => h##items)) {
-       | Some(highlights) =>
+       switch (
+         data##listHighlights->Belt.Option.flatMap(h => h##items),
+         data##getProfile,
+       ) {
+       | (Some(highlights), _) when Array.length(highlights) > 0 =>
          <Data
            onHighlightIdChange
            initialHighlightId=highlightId
+           currentUser
            highlights={
              highlights->Belt.Array.keepMap(i => i)
              |> Ramda.sortBy(h => {
@@ -79,7 +101,12 @@ let make = (~highlightId, ~onHighlightIdChange) => {
                 })
            }
          />
-       | None => <Empty />
+       | (_, Some(profile)) when !profile##isOnboarded =>
+         <Onboarding
+           onboardingProfileFragment={profile##onboardingProfileFragment}
+           currentUser
+         />
+       | _ => <Empty />
        }
      | Loading => <Loading />
      | NoData

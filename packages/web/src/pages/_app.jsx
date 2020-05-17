@@ -1,5 +1,6 @@
 import "../app.css";
 import Head from "next/head";
+import Router from "next/router";
 
 import * as React from "react";
 
@@ -9,7 +10,23 @@ if (global.window) {
 
 const Provider = require("../provider").make;
 
-export default function App({ Component, pageProps }) {
+export default function App({ Component, pageProps, router: { asPath } }) {
+  // Next.js currently does not allow trailing slash in a route.
+  // This is a client side redirect in case trailing slash occurs.
+  // https://github.com/zeit/next.js/issues/5214
+  if (pageProps.statusCode === 404 && asPath.length > 1) {
+    const [path, query = ""] = asPath.split("?");
+
+    if (path.endsWith("/")) {
+      const asPathWithoutTrailingSlash =
+        path.replace(/\/*$/gim, "") + (query ? `?${query}` : "");
+      if (typeof window !== "undefined") {
+        Router.replace(asPathWithoutTrailingSlash);
+        return null;
+      }
+    }
+  }
+
   return (
     <>
       <Head>

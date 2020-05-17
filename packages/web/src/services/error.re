@@ -1,7 +1,10 @@
 exception InvalidState(string);
 
 exception ApolloEmptyCache;
+exception ApolloEmptyData;
 exception ApolloError(ApolloHooksTypes.apolloError);
+
+exception DeccoDecodeError(Decco.decodeError);
 
 // TODO: sentry
 let report = exn => {

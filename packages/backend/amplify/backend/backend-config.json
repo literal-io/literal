@@ -3,7 +3,14 @@
     "literalAuth": {
       "service": "Cognito",
       "providerPlugin": "awscloudformation",
-      "dependsOn": []
+      "dependsOn": [
+        {
+          "category": "function",
+          "resourceName": "PostAuthentication",
+          "triggerProvider": "Cognito",
+          "attributes": ["Arn", "Name"]
+        }
+      ]
     }
   },
   "api": {
@@ -12,9 +19,16 @@
       "providerPlugin": "awscloudformation",
       "output": {
         "authConfig": {
-          "additionalAuthenticationProviders": [],
+          "additionalAuthenticationProviders": [
+            {
+              "authenticationType": "AWS_IAM"
+            }
+          ],
           "defaultAuthentication": {
-            "authenticationType": "AWS_IAM"
+            "authenticationType": "AMAZON_COGNITO_USER_POOLS",
+            "userPoolConfig": {
+              "userPoolId": "authliteralAuth"
+            }
           }
         }
       }
@@ -47,6 +61,12 @@
       "service": "Lambda",
       "providerPlugin": "awscloudformation",
       "build": true
+    },
+    "PostAuthentication": {
+      "service": "Lambda",
+      "providerPlugin": "awscloudformation",
+      "build": true,
+      "dependsOn": []
     }
   },
   "storage": {
@@ -70,4 +90,3 @@
     }
   }
 }
-

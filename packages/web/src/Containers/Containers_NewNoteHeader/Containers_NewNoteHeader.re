@@ -1,16 +1,11 @@
 open Styles;
 
 external castToListHighlights:
-  Js.Json.t => QueryRenderers_Notes_GraphQL.ListHighlightsQuery.t =
+  Js.Json.t => QueryRenderers_Notes_GraphQL.ListHighlights.Query.t =
   "%identity";
 
-module ListHighlightsCacheReadQuery =
-  ApolloClient.ReadQuery(QueryRenderers_Notes_GraphQL.ListHighlightsQuery);
-module ListHighlightsCacheWriteQuery =
-  ApolloClient.WriteQuery(QueryRenderers_Notes_GraphQL.ListHighlightsQuery);
-
 [@react.component]
-let make = (~highlightFragment as highlight) => {
+let make = (~highlightFragment as highlight, ~currentUser) => {
   let (deleteHighlightMutation, _s, _f) =
     ApolloHooks.useMutation(
       Containers_NoteHeader_GraphQL.DeleteHighlightMutation.definition,
@@ -26,54 +21,60 @@ let make = (~highlightFragment as highlight) => {
     let _ =
       deleteHighlightMutation(~variables, ())
       |> Js.Promise.then_(_ => {
-           let query = QueryRenderers_Notes_GraphQL.ListHighlightsQuery.make();
-           let readQueryOptions = ApolloHooks.toReadQueryOptions(query);
+           let cacheQuery =
+             QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
+               ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+               (),
+             );
            let _ =
              switch (
-               ListHighlightsCacheReadQuery.readQuery(
-                 Provider.client,
-                 readQueryOptions,
+               QueryRenderers_Notes_GraphQL.ListHighlights.readCache(
+                 ~query=cacheQuery,
+                 ~client=Provider.client,
+                 (),
                )
              ) {
-             | exception _ => ()
-             | cachedResponse =>
-               switch (cachedResponse->Js.Nullable.toOption) {
-               | None => ()
-               | Some(cachedListHighlights) =>
-                 let listHighlights =
-                   castToListHighlights(cachedListHighlights);
-                 let updatedListHighlights =
-                   listHighlights##listHighlights
-                   ->Belt.Option.flatMap(i => i##items)
-                   ->Belt.Option.map(i => {
-                       let update = {
-                         "listHighlights":
+             | None => ()
+             | Some(cachedQuery) =>
+               let updatedListHighlights =
+                 QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
+                   cachedQuery
+                   ->listHighlights
+                   ->Belt.Option.flatMap(items)
+                   ->Belt.Option.map(items => {
+                       let updatedItems =
+                         items
+                         ->Belt.Array.keep(
+                             fun
+                             | Some(h) => h.id !== highlight##id
+                             | None => false,
+                           )
+                         ->Js.Option.some;
+                       {
+                         ...cachedQuery,
+                         listHighlights:
                            Some({
-                             "items":
-                               i
-                               ->Belt.Array.keep(
-                                   fun
-                                   | Some(h) => h##id !== highlight##id
-                                   | None => false,
-                                 )
-                               ->Js.Option.some,
+                             ...
+                               cachedQuery->listHighlights->Belt.Option.getExn,
+                             items: updatedItems,
                            }),
                        };
-                       Ramda.mergeDeepLeft(update, listHighlights);
-                     });
-                 let _ =
-                   switch (updatedListHighlights) {
-                   | Some(updatedListHighlights) =>
-                     ListHighlightsCacheWriteQuery.make(
+                     })
+                 );
+               let _ =
+                 switch (updatedListHighlights) {
+                 | Some(updatedListHighlights) =>
+                   QueryRenderers_Notes_GraphQL.ListHighlights.(
+                     writeCache(
+                       ~query=cacheQuery,
                        ~client=Provider.client,
-                       ~variables=query##variables,
                        ~data=updatedListHighlights,
                        (),
                      )
-                   | None => ()
-                   };
-                 ();
-               }
+                   )
+                 | None => ()
+                 };
+               ();
              };
            Js.Promise.resolve();
          })

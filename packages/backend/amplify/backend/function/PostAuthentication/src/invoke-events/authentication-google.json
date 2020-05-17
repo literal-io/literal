@@ -1,0 +1,21 @@
+{
+    "version": "1",
+    "region": "us-east-1",
+    "userPoolId": "us-east-1_EWCESLVzL",
+    "userName": "Google_106232639134000095801",
+    "callerContext": {
+        "awsSdkVersion": "aws-sdk-unknown-unknown",
+        "clientId": "h3mp7ptq4r54hk2ib7fg1eua0"
+    },
+    "triggerSource": "PostAuthentication_Authentication",
+    "request": {
+        "userAttributes": {
+            "sub": "829159d0-02b7-4968-adbb-11c6945cb891",
+            "identities": "[{\"userId\":\"106232639134000095801\",\"providerName\":\"Google\",\"providerType\":\"Google\",\"issuer\":null,\"primary\":true,\"dateCreated\":1589287884187}]",
+            "cognito:user_status": "EXTERNAL_PROVIDER",
+            "email": "javamonn@gmail.com"
+        },
+        "newDeviceUsed": false
+    },
+    "response": {}
+}

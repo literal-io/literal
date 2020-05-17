@@ -33,17 +33,13 @@
     "useDefault": "manual",
     "authSelections": "identityPoolAndUserPool",
     "resourceName": "literalAuth",
-    "thirdPartyAuth": true,
-    "authProviders": [
-        "accounts.google.com"
-    ],
     "usernameAttributes": [
         "email"
     ],
     "userPoolGroups": false,
     "adminQueries": false,
-    "triggers": "{}",
-    "hostedUI": false,
+    "triggers": "{\"PostAuthentication\":[\"custom\"]}",
+    "hostedUI": true,
     "userPoolGroupList": [],
     "authRoleArn": {
         "Fn::GetAtt": [
@@ -61,5 +57,23 @@
         "Ref": "AWS::StackId"
     },
     "permissions": [],
-    "dependsOn": []
+    "dependsOn": [
+        {
+            "category": "function",
+            "resourceName": "PostAuthentication",
+            "triggerProvider": "Cognito",
+            "attributes": [
+                "Arn",
+                "Name"
+            ]
+        }
+    ],
+    "hostedUIDomainName": "literal",
+    "authProvidersUserPool": [
+        "Google"
+    ],
+    "hostedUIProviderMeta": "[{\"ProviderName\":\"Google\",\"authorize_scopes\":\"openid email profile\",\"AttributeMapping\":{\"email\":\"email\",\"username\":\"sub\"}}]",
+    "thirdPartyAuth": true,
+    "authProviders": [],
+    "oAuthMetadata": "{\"AllowedOAuthFlows\":[\"code\"],\"AllowedOAuthScopes\":[\"phone\",\"email\",\"openid\",\"profile\",\"aws.cognito.signin.user.admin\"],\"CallbackURLs\":[\"https://literal.io/authenticate/\",\"http://localhost:3000/authenticate/\"],\"LogoutURLs\":[\"https://literal.io/authenticate/\",\"http://localhost:3000/authenticate/\"]}"
 }

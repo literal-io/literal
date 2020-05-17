@@ -5,6 +5,7 @@ let close: string = [%raw "require('./close.svg')"];
 let back: string = [%raw "require('./back.svg')"];
 let removeCircle: string = [%raw "require('./remove-circle.svg')"];
 let delete: string = [%raw "require('./delete.svg')"];
+let logo: string = [%raw "require('./logo.svg')"];
 
 type state = {
   isLoading: bool,
