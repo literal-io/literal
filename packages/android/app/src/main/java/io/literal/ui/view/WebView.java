@@ -1,6 +1,7 @@
 package io.literal.ui.view;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
@@ -22,10 +23,8 @@ import androidx.webkit.WebViewFeature;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.lang.reflect.Array;
 import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 
 import io.literal.BuildConfig;
@@ -34,27 +33,26 @@ import io.literal.lib.WebEvent;
 
 public class WebView extends android.webkit.WebView {
 
-    private WebEventCallback webEventCallback;
+    private WebEvent.Callback webEventCallback;
     private ArrayDeque<String> baseHistory;
 
     public WebView(Context context) {
         super(context);
-        this.initialize();
     }
 
     public WebView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        this.initialize();
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private void initialize() {
+    public void initialize(Activity activity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         }
         WebSettings webSettings = this.getSettings();
         webSettings.setJavaScriptEnabled(true);
 
+        this.onWebEvent(new WebEvent.Callback(activity));
         this.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(android.webkit.WebView webview, String url) {
@@ -63,7 +61,7 @@ public class WebView extends android.webkit.WebView {
         });
     }
 
-    public void onWebEvent(WebEventCallback cb) {
+    public void onWebEvent(WebEvent.Callback cb) {
         this.webEventCallback = cb;
     }
     public void loadUrlWithHistory(String url, String[] history) {
@@ -137,9 +135,5 @@ public class WebView extends android.webkit.WebView {
             return true;
         }
         return super.onKeyDown(keyCode, event);
-    }
-
-    public interface WebEventCallback {
-        void onWebEvent(WebEvent event);
     }
 }

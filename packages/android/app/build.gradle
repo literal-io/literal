@@ -53,4 +53,5 @@ dependencies {
     implementation ('com.amazonaws:aws-android-sdk-auth-userpools:2.15.+@aar') { transitive = true }
     // Auth
     implementation 'com.amazonaws:aws-android-sdk-mobile-client:2.16.+'
+    implementation 'com.amazonaws:aws-android-sdk-cognitoauth:2.16.+'
 }

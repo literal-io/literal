@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         this.webView = findViewById(R.id.webview);
+        this.webView.initialize(this);
         this.webView.requestFocus();
 
         if (savedInstanceState == null) {
