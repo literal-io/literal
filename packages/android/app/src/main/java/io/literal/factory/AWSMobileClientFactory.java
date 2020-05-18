@@ -6,13 +6,13 @@ import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.mobile.config.AWSConfiguration;
-import com.google.gson.JsonObject;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.CountDownLatch;
 
 import io.literal.R;
 
@@ -23,10 +23,12 @@ public class AWSMobileClientFactory {
     public static AWSMobileClient getInstance(Context context) {
 
         if (!hasInitialized) {
+            final CountDownLatch latch = new CountDownLatch(1);
             AWSMobileClient.getInstance().initialize(context, getConfiguration(context), new Callback<UserStateDetails>() {
                 @Override
                 public void onResult(UserStateDetails result) {
                     hasInitialized = true;
+                    latch.countDown();
                 }
 
                 @Override
@@ -34,7 +36,11 @@ public class AWSMobileClientFactory {
 
                 }
             });
-
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                return null;
+            }
         }
         return AWSMobileClient.getInstance();
     }

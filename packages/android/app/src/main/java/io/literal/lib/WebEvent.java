@@ -19,6 +19,7 @@ public class WebEvent {
     public static final String TYPE_ACTIVITY_FINISH = "ACTIVITY_FINISH";
     public static final String TYPE_ROUTER_REPLACE = "ROUTER_REPLACE";
     public static final String TYPE_SIGN_IN_GOOGLE = "SIGN_IN_GOOGLE";
+    public static final String TYPE_SIGN_IN_RESULT = "SIGN_IN_RESULT";
 
     private String type;
     private String pid;
@@ -69,6 +70,7 @@ public class WebEvent {
                 @Override
                 public void onResult(UserStateDetails result) {
                     Log.d(Constants.LOG_TAG, "onResult: "  + result.getUserState());
+                    Log.d(Constants.LOG_TAG, "onResult details: " + result.getDetails().toString());
                 }
                 @Override
                 public void onError(Exception e) {
