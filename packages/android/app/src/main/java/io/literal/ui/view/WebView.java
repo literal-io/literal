@@ -51,8 +51,9 @@ public class WebView extends android.webkit.WebView {
         }
         WebSettings webSettings = this.getSettings();
         webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
 
-        this.onWebEvent(new WebEvent.Callback(activity));
+        this.onWebEvent(new WebEvent.Callback(activity, this));
         this.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(android.webkit.WebView webview, String url) {
@@ -61,9 +62,23 @@ public class WebView extends android.webkit.WebView {
         });
     }
 
+    public void postWebEvent(WebEvent webEvent) {
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.POST_WEB_MESSAGE)) {
+            WebViewCompat.postWebMessage(
+                    this,
+                    new WebMessageCompat(webEvent
+                            .toJSON()
+                            .toString()
+                    ),
+                    Uri.parse(Constants.WEB_HOST)
+            );
+        }
+    }
+
     public void onWebEvent(WebEvent.Callback cb) {
         this.webEventCallback = cb;
     }
+
     public void loadUrlWithHistory(String url, String[] history) {
         this.baseHistory = new ArrayDeque<>(Arrays.asList(history));
         this.loadUrl(url);

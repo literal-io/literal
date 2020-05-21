@@ -25,6 +25,13 @@ module WebEvent = {
   [@decco]
   type routerReplace = {url: string};
 
+  [@decco]
+  type authGetTokensResult = {
+    idToken: string,
+    refreshToken: string,
+    accessToken: string,
+  };
+
   /**
    * See the following for class definition in Android:
    * android/app/src/main/java/io/literal/lib/WebEvent.java
@@ -44,6 +51,51 @@ module WebEvent = {
 };
 
 let port: ref(option(MessagePort.t)) = ref(None);
+
+/**
+let handleSignInResult = event =>
+  switch (WebEvent.signInResult_decode(event)) {
+  | Belt.Result.Ok({refreshToken, accessToken, idToken}) =>
+    let _ =
+      Authentication.signInWithToken(idToken, refreshToken, accessToken)
+      |> Js.Promise.then_(_ => {
+           Next.Router.replace("/notes");
+           Js.Promise.resolve();
+         });
+    ();
+  | _ => ()
+  };
+**/
+module WebEventHandler = {
+  let handleRouterReplace = (event: option(Js.Json.t)) => {
+    let _ =
+      event->Belt.Option.map(data => {
+        switch (WebEvent.routerReplace_decode(data)) {
+        | Belt.Result.Ok({url}) =>
+          Next.Router.replace(url);
+          ();
+        | _ => ()
+        }
+      });
+    ();
+  };
+
+  let config = [|("ROUTER_REPLACE", handleRouterReplace)|];
+
+  let dispatch = (ev: WebEvent.t) => {
+    Js.log2("dispatch handling message", ev);
+    config
+    ->Belt.Array.getBy(((type_, _)) => type_ === ev.type_)
+    ->Belt.Option.map(((_, handler)) => handler(ev.data));
+  }
+
+  let register = callback => {
+    let _ = Js.Array2.push(config, callback);
+    ();
+  };
+
+  let unregister = type_ => {/** FIXME: todo */};
+};
 
 let initialize = () => {
   let _ =
@@ -70,14 +122,7 @@ let initialize = () => {
              };
 
            let _ =
-             switch (WebEvent.decode(json)) {
-             | Belt.Result.Ok({type_: "ROUTER_REPLACE", data: Some(data)}) =>
-               switch (WebEvent.routerReplace_decode(data)) {
-               | Belt.Result.Ok({url}) => Next.Router.replace(url)
-               | _ => ()
-               }
-             | _ => ()
-             };
+             json->WebEvent.decode->Belt.Result.map(WebEventHandler.dispatch);
 
            ();
          })
@@ -96,3 +141,27 @@ let postMessage = webEvent =>
     Js.log2("Attempted to postMessage, but found no MessagePort", webEvent);
     false;
   };
+
+let postMessageForResult = (webEvent: WebEvent.t) =>
+  Js.Promise.make((~resolve, ~reject) => {
+    // infer type of result
+    Js.log2("postMessageForResult begin", webEvent);
+    let _ = Js.Global.setTimeout(
+      () => {
+        let resultType = webEvent.type_ ++ "_RESULT";
+        let eventHandler = (
+          resultType,
+          data => {
+            Js.log2("postMessageForResult", data);
+            let _ = resolve(. data);
+            let _ = WebEventHandler.unregister(resultType);
+            ();
+          },
+        );
+        let _ = WebEventHandler.register(eventHandler);
+        let _ = postMessage(webEvent);
+        ();
+      },
+      5000,
+    )
+  });

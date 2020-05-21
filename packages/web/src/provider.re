@@ -1,8 +1,10 @@
 %raw
 "require('isomorphic-fetch')";
 
+let _ = AwsAmplify.Cache.inst;
 let _ = AwsAmplify.(inst->configure(Constants.awsAmplifyConfig));
 
+/**
 let authenticatedClientAuthOptions =
   AwsAppSync.Client.authWithCognitoUserPools(~jwtToken=() =>
     AwsAmplify.(
@@ -15,6 +17,26 @@ let authenticatedClientAuthOptions =
          )
     )
   );
+**/
+
+let authenticatedClientAuthOptions =
+  AwsAppSync.Client.authWithCognitoUserPools(~jwtToken=() => {
+    Webview.(postMessageForResult(WebEvent.make(~type_="AUTH_GET_TOKENS")))
+    |> Js.Promise.then_(result => {
+         switch (result) {
+         | Some(data) =>
+           switch (Webview.WebEvent.authGetTokensResult_decode(data)) {
+           | Belt.Result.Ok(tokens) =>
+             tokens.idToken
+             ->AwsAmplify.Auth.JwtToken.unsafeOfString
+             ->Js.Promise.resolve
+           | Belt.Result.Error(_) =>
+             Js.Promise.reject(Error.AuthenticationRequired)
+           }
+         | None => Js.Promise.reject(Error.AuthenticationRequired)
+         }
+       })
+  });
 
 let unauthenticatedClientAuthOptions =
   AwsAppSync.Client.authWithIAM(~credentials=() =>

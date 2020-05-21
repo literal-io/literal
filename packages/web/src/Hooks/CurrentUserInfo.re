@@ -27,5 +27,11 @@ let use = () => {
       None;
     });
 
-  authenticationState;
+  Authenticated({
+    id: Some(""),
+    username: "",
+    attributes: Js.Json.null
+  })
+
+  // authenticationState;
 };

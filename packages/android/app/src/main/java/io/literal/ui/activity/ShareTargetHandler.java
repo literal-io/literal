@@ -110,7 +110,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                 return;
             }
 
-            webView.onWebEvent(new WebEvent.Callback(this) {
+            webView.onWebEvent(new WebEvent.Callback(this, webView) {
                 @Override
                 public void onWebEvent(WebEvent event) {
                     super.onWebEvent(event);
@@ -199,7 +199,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                 return;
             }
 
-            webView.onWebEvent(new WebEvent.Callback(this) {
+            webView.onWebEvent(new WebEvent.Callback(this, webView) {
                 @Override
                 public void onWebEvent(WebEvent event) {
                     super.onWebEvent(event);
