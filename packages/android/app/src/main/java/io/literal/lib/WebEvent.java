@@ -3,6 +3,7 @@ package io.literal.lib;
 import android.app.Activity;
 import android.util.Log;
 
+import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.HostedUIOptions;
 import com.amazonaws.mobile.client.SignInUIOptions;
 import com.amazonaws.mobile.client.UserStateDetails;
@@ -20,10 +21,15 @@ public class WebEvent {
 
     public static final String TYPE_ACTIVITY_FINISH = "ACTIVITY_FINISH";
     public static final String TYPE_ROUTER_REPLACE = "ROUTER_REPLACE";
+
     public static final String TYPE_AUTH_SIGN_IN = "AUTH_SIGN_IN";
     public static final String TYPE_AUTH_SIGN_IN_RESULT = "AUTH_SIGN_IN_RESULT";
+
     public static final String TYPE_AUTH_GET_TOKENS = "AUTH_GET_TOKENS";
     public static final String TYPE_AUTH_GET_TOKENS_RESULT = "AUTH_GET_TOKENS_RESULT";
+
+    public static final String TYPE_AUTH_GET_USER_INFO = "AUTH_GET_USER_INFO";
+    public static final String TYPE_AUTH_GET_USER_INFO_RESULT = "AUTH_GET_USER_INFO_RESULT";
 
     private String type;
     private String pid;
@@ -120,6 +126,23 @@ public class WebEvent {
             }
         }
 
+        private void handleGetUserInfo() {
+            try {
+                AWSMobileClient awsMobileClient = AWSMobileClientFactory.getInstance(activity);
+                JSONObject result = new JSONObject();
+                result.put("username", awsMobileClient.getUsername());
+                result.put("attributes", new JSONObject(awsMobileClient.getUserAttributes()));
+                result.put("id", awsMobileClient.getIdentityId());
+                webView.postWebEvent(
+                        new WebEvent(WebEvent.TYPE_AUTH_GET_USER_INFO_RESULT, UUID.randomUUID().toString(), result)
+                );
+            } catch (JSONException e) {
+                Log.e(Constants.LOG_TAG, "Unable to handleGetUserInfo: ", e);
+            } catch (Exception e) {
+                Log.e(Constants.LOG_TAG, "Unable to handleGetUserInfo: ", e);
+            }
+        }
+
         public void onWebEvent(WebEvent event) {
             switch (event.getType()) {
                 case WebEvent.TYPE_AUTH_SIGN_IN:
@@ -127,6 +150,9 @@ public class WebEvent {
                     return;
                 case WebEvent.TYPE_AUTH_GET_TOKENS:
                     this.handleGetTokens();
+                    return;
+                case WebEvent.TYPE_AUTH_GET_USER_INFO:
+                    this.handleGetUserInfo();
                     return;
             }
         }

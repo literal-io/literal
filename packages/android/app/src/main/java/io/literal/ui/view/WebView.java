@@ -10,11 +10,13 @@ import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebMessagePortCompat;
 import androidx.webkit.WebViewCompat;
@@ -49,6 +51,7 @@ public class WebView extends android.webkit.WebView {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         }
+        this.addJavascriptInterface(new JavascriptInterface(), "literalWebview");
         WebSettings webSettings = this.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
@@ -150,5 +153,10 @@ public class WebView extends android.webkit.WebView {
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    private class JavascriptInterface {
+        @android.webkit.JavascriptInterface
+        public boolean isWebview() { return true; }
     }
 }

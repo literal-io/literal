@@ -32,6 +32,13 @@ module WebEvent = {
     accessToken: string,
   };
 
+  [@decco]
+  type authGetUserInfoResult = {
+    id: string,
+    username: string,
+    attributes: Js.Json.t,
+  };
+
   /**
    * See the following for class definition in Android:
    * android/app/src/main/java/io/literal/lib/WebEvent.java
@@ -52,20 +59,6 @@ module WebEvent = {
 
 let port: ref(option(MessagePort.t)) = ref(None);
 
-/**
-let handleSignInResult = event =>
-  switch (WebEvent.signInResult_decode(event)) {
-  | Belt.Result.Ok({refreshToken, accessToken, idToken}) =>
-    let _ =
-      Authentication.signInWithToken(idToken, refreshToken, accessToken)
-      |> Js.Promise.then_(_ => {
-           Next.Router.replace("/notes");
-           Js.Promise.resolve();
-         });
-    ();
-  | _ => ()
-  };
-**/
 module WebEventHandler = {
   let handleRouterReplace = (event: option(Js.Json.t)) => {
     let _ =
@@ -87,7 +80,7 @@ module WebEventHandler = {
     config
     ->Belt.Array.getBy(((type_, _)) => type_ === ev.type_)
     ->Belt.Option.map(((_, handler)) => handler(ev.data));
-  }
+  };
 
   let register = callback => {
     let _ = Js.Array2.push(config, callback);
@@ -95,6 +88,47 @@ module WebEventHandler = {
   };
 
   let unregister = type_ => {/** FIXME: todo */};
+};
+
+/** Messages to be dispatched to native once we establish a connection. */
+let pendingMessageQueue = ref([||]);
+
+let postMessage = webEvent => {
+  let isWebview =
+    LiteralWebview.inst
+    ->Belt.Option.map(LiteralWebview.isWebview)
+    ->Belt.Option.getWithDefault(false);
+  switch (port^) {
+  | Some(port) =>
+    port->MessagePort.postMessage(
+      webEvent->WebEvent.encode->Js.Json.stringify,
+    );
+    true;
+  | None when isWebview =>
+    let _ = Js.Array.push(webEvent, pendingMessageQueue^);
+    true;
+  | None =>
+    Js.log2("Attempted to postMessage, but found no MessagePort", webEvent);
+    false;
+  };
+};
+
+let postMessageForResult = (webEvent: WebEvent.t) => {
+  Js.Promise.make((~resolve, ~reject) => {
+    // infer type of result
+    let resultType = webEvent.type_ ++ "_RESULT";
+    let eventHandler = (
+      resultType,
+      data => {
+        let _ = resolve(. data);
+        let _ = WebEventHandler.unregister(resultType);
+        ();
+      },
+    );
+    let _ = WebEventHandler.register(eventHandler);
+    let _ = postMessage(webEvent);
+    ();
+  });
 };
 
 let initialize = () => {
@@ -112,7 +146,15 @@ let initialize = () => {
            let _ =
              switch (port^) {
              | None when message->MessageEvent.portsGet->Js.Array.length > 0 =>
-               port := message->MessageEvent.portsGet->Belt.Array.get(0)
+               port := message->MessageEvent.portsGet->Belt.Array.get(0);
+               /** Drain pending message queue if one exists */
+               let _ =
+                 (pendingMessageQueue^)
+                 ->Belt.Array.forEach(ev => {
+                     let _ = postMessage(ev);
+                     ();
+                   });
+               pendingMessageQueue := [||];
              | _ => ()
              };
 
@@ -129,39 +171,3 @@ let initialize = () => {
     );
   ();
 };
-
-let postMessage = webEvent =>
-  switch (port^) {
-  | Some(port) =>
-    port->MessagePort.postMessage(
-      webEvent->WebEvent.encode->Js.Json.stringify,
-    );
-    true;
-  | None =>
-    Js.log2("Attempted to postMessage, but found no MessagePort", webEvent);
-    false;
-  };
-
-let postMessageForResult = (webEvent: WebEvent.t) =>
-  Js.Promise.make((~resolve, ~reject) => {
-    // infer type of result
-    Js.log2("postMessageForResult begin", webEvent);
-    let _ = Js.Global.setTimeout(
-      () => {
-        let resultType = webEvent.type_ ++ "_RESULT";
-        let eventHandler = (
-          resultType,
-          data => {
-            Js.log2("postMessageForResult", data);
-            let _ = resolve(. data);
-            let _ = WebEventHandler.unregister(resultType);
-            ();
-          },
-        );
-        let _ = WebEventHandler.register(eventHandler);
-        let _ = postMessage(webEvent);
-        ();
-      },
-      5000,
-    )
-  });
