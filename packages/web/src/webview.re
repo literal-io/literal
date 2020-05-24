@@ -105,7 +105,16 @@ module WebEventHandler = {
     ();
   };
 
-  let unregister = type_ => {/** FIXME: todo */};
+  let unregister = type_ => {
+    let idx =
+      Js.Array2.findIndex(config, ((listenerType, _)) =>
+        type_ === listenerType
+      );
+    if (idx !== (-1)) {
+      let _ = Js.Array2.spliceInPlace(config, ~pos=idx, ~remove=1, ~add=[||]);
+      ();
+    };
+  };
 };
 
 /** Messages to be dispatched to native once we establish a connection. */
