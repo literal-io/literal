@@ -1,6 +1,7 @@
 package io.literal.lib;
 
 import android.app.Activity;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
@@ -14,7 +15,6 @@ import org.json.JSONObject;
 
 import java.util.UUID;
 
-import io.literal.factory.AWSMobileClientFactory;
 import io.literal.ui.view.WebView;
 
 public class WebEvent {
@@ -80,14 +80,14 @@ public class WebEvent {
             SignInUIOptions signInUIOptions = SignInUIOptions.builder()
                     .hostedUIOptions(hostedUIOptions)
                     .build();
-            AWSMobileClientFactory.getInstance(activity).showSignIn(activity, signInUIOptions, new com.amazonaws.mobile.client.Callback<UserStateDetails>() {
+            AWSMobileClient.getInstance().showSignIn(activity, signInUIOptions, new com.amazonaws.mobile.client.Callback<UserStateDetails>() {
                 @Override
                 public void onResult(UserStateDetails result) {
                     activity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             try {
-                                Tokens tokens = AWSMobileClientFactory.getInstance(activity).getTokens();
+                                Tokens tokens = AWSMobileClient.getInstance().getTokens();
                                 JSONObject result = new JSONObject();
                                 result.put("idToken", tokens.getIdToken().getTokenString());
                                 result.put("refreshToken", tokens.getRefreshToken().getTokenString());
@@ -97,7 +97,8 @@ public class WebEvent {
                                 );
                             } catch (Exception e) {
                                 Log.e(Constants.LOG_TAG, "Unable to handleSignGoogle: ", e);
-                            };
+                            }
+                            ;
 
                         }
                     });
@@ -111,49 +112,68 @@ public class WebEvent {
             });
         }
 
-        private void handleGetTokens() {
-            try {
-                JSONObject result = new JSONObject();
-                Tokens tokens = AWSMobileClientFactory.getInstance(activity).getTokens();
-                result.put("idToken", tokens.getIdToken().getTokenString());
-                result.put("refreshToken", tokens.getRefreshToken().getTokenString());
-                result.put("accessToken", tokens.getAccessToken().getTokenString());
-                webView.postWebEvent(
-                        new WebEvent(WebEvent.TYPE_AUTH_GET_TOKENS_RESULT, UUID.randomUUID().toString(), result)
-                );
-            } catch (Exception e) {
-                Log.e(Constants.LOG_TAG, "Unable to handleGetTokens: ", e);
-            }
-        }
-
-        private void handleGetUserInfo() {
-            try {
-                AWSMobileClient awsMobileClient = AWSMobileClientFactory.getInstance(activity);
-                JSONObject result = new JSONObject();
-                result.put("username", awsMobileClient.getUsername());
-                result.put("attributes", new JSONObject(awsMobileClient.getUserAttributes()));
-                result.put("id", awsMobileClient.getIdentityId());
-                webView.postWebEvent(
-                        new WebEvent(WebEvent.TYPE_AUTH_GET_USER_INFO_RESULT, UUID.randomUUID().toString(), result)
-                );
-            } catch (JSONException e) {
-                Log.e(Constants.LOG_TAG, "Unable to handleGetUserInfo: ", e);
-            } catch (Exception e) {
-                Log.e(Constants.LOG_TAG, "Unable to handleGetUserInfo: ", e);
-            }
-        }
-
         public void onWebEvent(WebEvent event) {
             switch (event.getType()) {
                 case WebEvent.TYPE_AUTH_SIGN_IN:
                     this.handleSignInGoogle();
                     return;
                 case WebEvent.TYPE_AUTH_GET_TOKENS:
-                    this.handleGetTokens();
+                    new GetTokensHandlerTask().execute();
                     return;
                 case WebEvent.TYPE_AUTH_GET_USER_INFO:
-                    this.handleGetUserInfo();
+                    new GetUserInfoHandlerTask().execute();
                     return;
+            }
+        }
+
+        private class GetTokensHandlerTask extends AsyncTask<Void, Void, JSONObject> {
+            @Override
+            protected JSONObject doInBackground(Void... voids) {
+                try {
+                    JSONObject result = new JSONObject();
+                    Tokens tokens = AWSMobileClient.getInstance().getTokens();
+                    result.put("idToken", tokens.getIdToken().getTokenString());
+                    result.put("refreshToken", tokens.getRefreshToken().getTokenString());
+                    result.put("accessToken", tokens.getAccessToken().getTokenString());
+                    return result;
+                } catch (Exception e) {
+                    Log.e(Constants.LOG_TAG, "Unable to handleGetTokens: ", e);
+                    return null;
+                }
+            }
+
+            @Override
+            protected void onPostExecute(JSONObject result) {
+                webView.postWebEvent(
+                        new WebEvent(WebEvent.TYPE_AUTH_GET_TOKENS_RESULT, UUID.randomUUID().toString(), result)
+                );
+            }
+        }
+
+        private class GetUserInfoHandlerTask extends AsyncTask<Void, Void, JSONObject> {
+            @Override
+            protected JSONObject doInBackground(Void... voids) {
+                try {
+                    AWSMobileClient awsMobileClient = AWSMobileClient.getInstance();
+                    JSONObject result = new JSONObject();
+                    result.put("username", awsMobileClient.getUsername());
+
+                    // FIXME: getUserAttributes is slow - separate network call?
+                    result.put("attributes", new JSONObject(/*awsMobileClient.getUserAttributes()*/));
+                    result.put("id", awsMobileClient.getIdentityId());
+                    return result;
+
+                } catch (Exception e) {
+                    Log.e(Constants.LOG_TAG, "Unable to handleGetUserInfo: ", e);
+                    return null;
+                }
+            }
+
+            @Override
+            protected void onPostExecute(JSONObject result) {
+                webView.postWebEvent(
+                        new WebEvent(WebEvent.TYPE_AUTH_GET_USER_INFO_RESULT, UUID.randomUUID().toString(), result)
+                );
             }
         }
     }

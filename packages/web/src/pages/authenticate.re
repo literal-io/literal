@@ -7,7 +7,6 @@ let default = () => {
   let _ =
     React.useEffect0(() => {
       let handleEvent = (ev: AwsAmplify.Hub.event(AwsAmplify.Hub.auth)) => {
-        Js.log2("hub event", ev);
         switch (ev.payload.event) {
         | "signIn" => Next.Router.replace("/notes")
         | _ => ()
@@ -28,7 +27,7 @@ let default = () => {
       () => {
         let _ =
           switch (authentication) {
-          | Authenticated(_) => () // Next.Router.replace("/notes")
+          | Authenticated(_) => Next.Router.replace("/notes")
           | _ => ()
           };
         None;

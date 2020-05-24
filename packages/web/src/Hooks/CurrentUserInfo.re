@@ -10,7 +10,11 @@ let currentUserInfoWeb = () =>
      );
 
 let currentUserInfoWebview = () =>
-  Webview.(postMessageForResult(WebEvent.make(~type_="AUTH_GET_USER_INFO")))
+  Timer.thunkP(~label="AUTH_GET_USER_INFO", () =>
+    Webview.(
+      postMessageForResult(WebEvent.make(~type_="AUTH_GET_USER_INFO"))
+    )
+  )
   |> Js.Promise.then_(result => {
        result
        ->Belt.Option.flatMap(data => {

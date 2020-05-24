@@ -18,31 +18,17 @@ import io.literal.R;
 
 public class AWSMobileClientFactory {
 
-    private static volatile boolean hasInitialized = false;
-
-    public static AWSMobileClient getInstance(Context context) {
-
-        if (!hasInitialized) {
-            final CountDownLatch latch = new CountDownLatch(1);
-            AWSMobileClient.getInstance().initialize(context, getConfiguration(context), new Callback<UserStateDetails>() {
-                @Override
-                public void onResult(UserStateDetails result) {
-                    hasInitialized = true;
-                    latch.countDown();
-                }
-
-                @Override
-                public void onError(Exception e) {
-
-                }
-            });
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                return null;
+    public static void initializeClient(Context context) {
+        AWSMobileClient.getInstance().initialize(context, getConfiguration(context), new Callback<UserStateDetails>() {
+            @Override
+            public void onResult(UserStateDetails result) {
             }
-        }
-        return AWSMobileClient.getInstance();
+
+            @Override
+            public void onError(Exception e) {
+
+            }
+        });
     }
 
     private static JSONObject parseInputStream(InputStream inputStream) {

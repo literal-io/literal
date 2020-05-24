@@ -57,6 +57,11 @@ module WebEvent = {
   let decode = t_decode;
 };
 
+let isWebview = () =>
+  LiteralWebview.inst
+  ->Belt.Option.map(LiteralWebview.isWebview)
+  ->Belt.Option.getWithDefault(false);
+
 let port: ref(option(MessagePort.t)) = ref(None);
 
 module WebEventHandler = {
@@ -73,10 +78,23 @@ module WebEventHandler = {
     ();
   };
 
-  let config = [|("ROUTER_REPLACE", handleRouterReplace)|];
+  let handleSignInResult = (event: option(Js.Json.t)) => {
+    let _ =
+      event->Belt.Option.map(data => {
+        switch (WebEvent.authGetTokensResult_decode(data)) {
+        | Belt.Result.Ok(_) => Next.Router.replace("/notes")
+        | _ => ()
+        }
+      });
+    ();
+  };
+
+  let config = [|
+    ("ROUTER_REPLACE", handleRouterReplace),
+    ("AUTH_SIGN_IN_RESULT", handleSignInResult),
+  |];
 
   let dispatch = (ev: WebEvent.t) => {
-    Js.log2("dispatch handling message", ev);
     config
     ->Belt.Array.getBy(((type_, _)) => type_ === ev.type_)
     ->Belt.Option.map(((_, handler)) => handler(ev.data));
@@ -94,17 +112,13 @@ module WebEventHandler = {
 let pendingMessageQueue = ref([||]);
 
 let postMessage = webEvent => {
-  let isWebview =
-    LiteralWebview.inst
-    ->Belt.Option.map(LiteralWebview.isWebview)
-    ->Belt.Option.getWithDefault(false);
   switch (port^) {
   | Some(port) =>
     port->MessagePort.postMessage(
       webEvent->WebEvent.encode->Js.Json.stringify,
     );
     true;
-  | None when isWebview =>
+  | None when isWebview() =>
     let _ = Js.Array.push(webEvent, pendingMessageQueue^);
     true;
   | None =>

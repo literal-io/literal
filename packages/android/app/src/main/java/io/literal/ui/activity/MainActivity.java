@@ -1,6 +1,7 @@
 package io.literal.ui.activity;
 
 import io.literal.R;
+import io.literal.factory.AWSMobileClientFactory;
 import io.literal.lib.Constants;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,6 +24,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         this.webView = findViewById(R.id.webview);
+
+        AWSMobileClientFactory.initializeClient(this);
         this.webView.initialize(this);
         this.webView.requestFocus();
 

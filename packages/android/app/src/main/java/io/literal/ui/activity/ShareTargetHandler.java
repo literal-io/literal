@@ -1,6 +1,7 @@
 package io.literal.ui.activity;
 
 import io.literal.R;
+import io.literal.factory.AWSMobileClientFactory;
 import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.Constants;
 import io.literal.lib.ContentResolverLib;
@@ -51,7 +52,10 @@ public class ShareTargetHandler extends AppCompatActivity {
         setContentView(R.layout.activity_share_target_handler);
 
         webView = findViewById(R.id.webview);
+
+        AWSMobileClientFactory.initializeClient(this);
         webView.initialize(this);
+        webView.requestFocus();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel chan = new NotificationChannel(
