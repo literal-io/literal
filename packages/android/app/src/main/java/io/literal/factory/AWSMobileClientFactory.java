@@ -18,10 +18,13 @@ import io.literal.R;
 
 public class AWSMobileClientFactory {
 
+    static CountDownLatch initializationLatch = new CountDownLatch(1);
+
     public static void initializeClient(Context context) {
         AWSMobileClient.getInstance().initialize(context, getConfiguration(context), new Callback<UserStateDetails>() {
             @Override
             public void onResult(UserStateDetails result) {
+                initializationLatch.countDown();
             }
 
             @Override
@@ -29,6 +32,11 @@ public class AWSMobileClientFactory {
 
             }
         });
+    }
+
+    public static void initializeClientBlocking(Context context) throws InterruptedException {
+        initializeClient(context);
+        initializationLatch.await();
     }
 
     private static JSONObject parseInputStream(InputStream inputStream) {

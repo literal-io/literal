@@ -79,6 +79,7 @@ public class WebEvent {
                     .build();
             SignInUIOptions signInUIOptions = SignInUIOptions.builder()
                     .hostedUIOptions(hostedUIOptions)
+                    .canCancel(false)
                     .build();
             AWSMobileClient.getInstance().showSignIn(activity, signInUIOptions, new com.amazonaws.mobile.client.Callback<UserStateDetails>() {
                 @Override

@@ -5,7 +5,6 @@ import Router from "next/router";
 import * as React from "react";
 
 if (global.window) {
-  window.LOG_LEVEL = 'DEBUG'
   require("../webview.js").initialize();
 }
 

@@ -18,11 +18,16 @@ html {
 #__next {
   width: 100vw;
   height: var(--root-height);
+  background-color: black;
 }
 
 .awsappsync {
   width: 100%;
   height: 100%;
+}
+
+.awsappsync--rehydrating {
+  display: none;
 }
 
 button:focus {
