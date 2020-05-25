@@ -30,10 +30,19 @@ let handler = (event, _ctx, cb) => {
   let req = event.records->Belt.Array.getUnsafe(0)->cf->request;
 
   let _ =
-    if (req.uri !== "/notes/new" && Js.Re.test_([%re "/^\/notes\/.+$/"], req.uri)) {
+    if (req.uri !== "/notes/new"
+        && Js.Re.test_([%re "/^\/notes\/.+$/"], req.uri)) {
       req.uri = "/notes/[id].html";
     } else if (extname(req.uri) === "") {
-      req.uri = req.uri ++ ".html";
+      let path =
+        Js.String2.endsWith(req.uri, "/")
+          ? Js.String2.substring(
+              req.uri,
+              ~from=0,
+              ~to_=Js.String.length(req.uri) - 1,
+            )
+          : req.uri;
+      req.uri = path ++ ".html";
     };
 
   cb(. None, req);

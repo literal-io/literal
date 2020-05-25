@@ -1,6 +1,7 @@
 package io.literal.ui.activity;
 
 import io.literal.R;
+import io.literal.factory.AWSMobileClientFactory;
 import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.Constants;
 import io.literal.lib.ContentResolverLib;
@@ -51,6 +52,10 @@ public class ShareTargetHandler extends AppCompatActivity {
         setContentView(R.layout.activity_share_target_handler);
 
         webView = findViewById(R.id.webview);
+
+        AWSMobileClientFactory.initializeClient(this);
+        webView.initialize(this);
+        webView.requestFocus();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel chan = new NotificationChannel(
@@ -109,9 +114,10 @@ public class ShareTargetHandler extends AppCompatActivity {
                 return;
             }
 
-            webView.onWebEvent(new WebView.WebEventCallback() {
+            webView.onWebEvent(new WebEvent.Callback(this, webView) {
                 @Override
                 public void onWebEvent(WebEvent event) {
+                    super.onWebEvent(event);
                     switch (event.getType()) {
                         case WebEvent.TYPE_ACTIVITY_FINISH:
                             CreateHighlightMutation.CreateHighlight highlight = highlightResult.createHighlight();
@@ -197,9 +203,10 @@ public class ShareTargetHandler extends AppCompatActivity {
                 return;
             }
 
-            webView.onWebEvent(new WebView.WebEventCallback() {
+            webView.onWebEvent(new WebEvent.Callback(this, webView) {
                 @Override
                 public void onWebEvent(WebEvent event) {
+                    super.onWebEvent(event);
                     switch (event.getType()) {
                         case WebEvent.TYPE_ACTIVITY_FINISH:
                             CreateHighlightFromScreenshotMutation.CreateHighlightFromScreenshot highlight = highlightResult.createHighlightFromScreenshot();

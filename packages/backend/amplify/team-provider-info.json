@@ -20,7 +20,8 @@
             "function": {
                 "CloudfrontOriginRequest": {},
                 "GraphQLResolver": {},
-                "PostAuthentication": {}
+                "PostAuthentication": {},
+                "literalAuthPostAuthentication": {}
             }
         }
     }

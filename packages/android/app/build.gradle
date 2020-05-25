@@ -9,8 +9,8 @@ android {
         applicationId "io.literal"
         minSdkVersion 16
         targetSdkVersion 29
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -42,15 +42,15 @@ dependencies {
     // AWS
     //
     // Base SDK
-    implementation 'com.amazonaws:aws-android-sdk-core:2.15.+'
+    implementation 'com.amazonaws:aws-android-sdk-core:2.16.12'
     // AppSync SDK
-    implementation 'com.amazonaws:aws-android-sdk-appsync:2.8.+'
+    implementation 'com.amazonaws:aws-android-sdk-appsync:2.10.1'
     implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.0'
     implementation 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
     // S3 SDK
-    implementation 'com.amazonaws:aws-android-sdk-s3:2.15.+'
-    implementation ('com.amazonaws:aws-android-sdk-mobile-client:2.15.+@aar') { transitive = true }
-    implementation ('com.amazonaws:aws-android-sdk-auth-userpools:2.15.+@aar') { transitive = true }
+    implementation 'com.amazonaws:aws-android-sdk-s3:2.16.12'
+    implementation ('com.amazonaws:aws-android-sdk-auth-userpools:2.16.12@aar') { transitive = true }
     // Auth
-    implementation 'com.amazonaws:aws-android-sdk-mobile-client:2.16.+'
+    implementation 'com.amazonaws:aws-android-sdk-mobile-client:2.16.12'
+    implementation 'com.amazonaws:aws-android-sdk-cognitoauth:2.16.12'
 }

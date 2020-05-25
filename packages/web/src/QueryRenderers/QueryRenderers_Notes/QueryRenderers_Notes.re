@@ -50,11 +50,6 @@ module Data = {
   };
 };
 
-module Loading = {
-  [@react.component]
-  let make = () => React.string("Loading...");
-};
-
 module Onboarding = {
   [@react.component]
   let make = (~onboardingProfileFragment, ~currentUser) => {

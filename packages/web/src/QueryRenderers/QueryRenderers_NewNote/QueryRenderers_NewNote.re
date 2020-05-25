@@ -30,11 +30,6 @@ module Empty = {
   let make = () => React.string("Not Found...");
 };
 
-module Loading = {
-  [@react.component]
-  let make = () => React.string("Loading...");
-};
-
 [@react.component]
 let make = (~highlightId, ~currentUser) => {
   let (query, _fullQuery) =

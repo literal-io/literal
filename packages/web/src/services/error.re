@@ -6,6 +6,8 @@ exception ApolloError(ApolloHooksTypes.apolloError);
 
 exception DeccoDecodeError(Decco.decodeError);
 
+exception AuthenticationRequired;
+
 // TODO: sentry
 let report = exn => {
   Js.Console.trace();

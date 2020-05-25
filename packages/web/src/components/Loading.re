@@ -1,2 +1,4 @@
+open Styles;
+
 [@react.component]
-let make = () => React.string("loading...");
+let make = () => <div className={cn(["w-full", "h-full", "bg-black"])} />;

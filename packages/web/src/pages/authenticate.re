@@ -35,13 +35,21 @@ let default = () => {
       [|authentication|],
     );
 
-  let handleAuthenticateGoogle = () =>
-    AwsAmplify.Auth.(
-      federatedSignInWithOptions(
-        inst,
-        {provider: "Google", customState: None},
-      )
-    );
+  let handleAuthenticateGoogle = () => {
+    let didPostMessage =
+      Webview.(postMessage(WebEvent.make(~type_="AUTH_SIGN_IN")));
+
+    let _ =
+      if (!didPostMessage) {
+        AwsAmplify.Auth.(
+          federatedSignInWithOptions(
+            inst,
+            {provider: "Google", customState: None},
+          )
+        );
+      };
+    ();
+  };
 
   <div
     className={cn([
