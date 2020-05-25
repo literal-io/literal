@@ -3,6 +3,7 @@ package io.literal.ui.view;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
@@ -49,7 +50,7 @@ public class WebView extends android.webkit.WebView {
     @SuppressLint("SetJavaScriptEnabled")
     public void initialize(Activity activity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            WebView.setWebContentsDebuggingEnabled(true/*BuildConfig.DEBUG*/);
+            WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         }
         this.addJavascriptInterface(new JavascriptInterface(), "literalWebview");
         WebSettings webSettings = this.getSettings();
