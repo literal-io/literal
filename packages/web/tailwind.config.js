@@ -11,6 +11,9 @@ module.exports = {
       borderWidth: {
         "1/2": "0.5px",
       },
+      listStyleType: {
+        "square": "square"
+      }
     },
   },
 };
