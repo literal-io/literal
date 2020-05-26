@@ -25,7 +25,14 @@ let howItWorks = [|
 
 [@react.component]
 let default = () => {
-  <div className={cn(["w-full", "h-full", "overflow-y-scroll"])}>
+  <div
+    className={cn([
+      "w-full",
+      "h-full",
+      "overflow-y-scroll",
+      "flex",
+      "flex-col",
+    ])}>
     <div className={cn(["p-8", "bg-black"])}>
       <Svg
         icon=Svg.logo
