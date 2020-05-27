@@ -23,6 +23,8 @@ let howItWorks = [|
   "Reflect as ideas evolve over time in response to new annotations and relationships between them.",
 |];
 
+let waitlistFormUrl = "https://docs.google.com/forms/d/1S6xFRp80nYYvPcz9oQYmiyOqLyXKHPZ0D2LofOxgWeo/edit";
+
 [@react.component]
 let default = () => {
   <div
@@ -52,6 +54,7 @@ let default = () => {
         {React.string("Literal is a textual annotation management system.")}
       </h1>
       <a
+        href={waitlistFormUrl}
         className={cn([
           "text-white",
           "text-lg",
@@ -126,6 +129,7 @@ let default = () => {
     </div>
     <div className={cn(["p-8", "bg-white", "max-w-lg", "w-full", "m-auto"])}>
       <a
+        href={waitlistFormUrl}
         className={cn([
           "text-black",
           "underline",
@@ -137,6 +141,7 @@ let default = () => {
         {React.string("Install")}
       </a>
       <a
+        href="mailto:daniel@literal.io"
         className={cn([
           "text-black",
           "underline",
@@ -148,6 +153,7 @@ let default = () => {
         {React.string("Contact")}
       </a>
       <a
+        href="https://github.com/javamonn/literal"
         className={cn([
           "text-black",
           "underline",
