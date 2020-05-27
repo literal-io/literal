@@ -1,4 +1,7 @@
 import "../app.css";
+import "typeface-prata";
+import "typeface-montserrat";
+
 import Head from "next/head";
 import Router from "next/router";
 

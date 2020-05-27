@@ -32,8 +32,9 @@ let default = () => {
       "overflow-y-scroll",
       "flex",
       "flex-col",
+      "bg-white",
     ])}>
-    <div className={cn(["p-8", "bg-black"])}>
+    <div className={cn(["p-8", "bg-black", "max-w-lg", "m-auto"])}>
       <Svg
         icon=Svg.logo
         placeholderViewBox="0 0 24 24"
@@ -43,13 +44,30 @@ let default = () => {
         className={cn([
           "text-white",
           "font-serif",
-          "text-xl",
+          "text-2xl",
           "leading-none",
-          "mb-20",
-          "mt-12",
+          "mb-8",
+          "mt-20",
         ])}>
         {React.string("Literal is a textual annotation management system.")}
       </h1>
+      <a
+        className={cn([
+          "text-white",
+          "text-lg",
+          "font-sans",
+          "block",
+          "mb-32",
+        ])}>
+        <Svg
+          icon=Svg.arrowRight
+          placeholderViewBox="0 0 24 24"
+          className={cn(["pointer-events-none", "w-7", "h-7", "inline"])}
+        />
+        <span className={cn(["underline", "italic"])}>
+          {React.string("Start Now")}
+        </span>
+      </a>
       {manifesto
        ->Belt.Array.map(((header, body)) =>
            <>
@@ -57,7 +75,7 @@ let default = () => {
                className={cn([
                  "text-white",
                  "font-serif",
-                 "text-lg",
+                 "text-xl",
                  "mb-2",
                  "underline",
                ])}>
@@ -74,7 +92,7 @@ let default = () => {
         className={cn([
           "text-white",
           "font-serif",
-          "text-lg",
+          "text-xl",
           "leading-none",
           "mt-14",
           "mb-12",
@@ -106,12 +124,12 @@ let default = () => {
          ->React.array}
       </ul>
     </div>
-    <div className={cn(["p-8", "bg-white"])}>
+    <div className={cn(["p-8", "bg-white", "max-w-lg", "w-full", "m-auto"])}>
       <a
         className={cn([
           "text-black",
           "underline",
-          "text-lg",
+          "text-xl",
           "font-serif",
           "block",
           "mb-5",
@@ -122,7 +140,7 @@ let default = () => {
         className={cn([
           "text-black",
           "underline",
-          "text-lg",
+          "text-xl",
           "font-serif",
           "block",
           "mb-5",
@@ -133,7 +151,7 @@ let default = () => {
         className={cn([
           "text-black",
           "underline",
-          "text-lg",
+          "text-xl",
           "font-serif",
           "block",
         ])}>
