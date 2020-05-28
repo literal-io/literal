@@ -19,7 +19,6 @@ let make = (~onChange, ~label=?, ~value) =>
                 "text-white",
                 "font-serif",
                 "text-lg",
-                "italic",
                 "leading-relaxed",
                 "box-decoration-break-clone",
                 "px-1",

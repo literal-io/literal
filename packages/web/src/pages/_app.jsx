@@ -11,8 +11,6 @@ if (global.window) {
   require("../webview.js").initialize();
 }
 
-const Provider = require("../provider").make;
-
 export default function App({ Component, pageProps, router: { asPath } }) {
   // Next.js currently does not allow trailing slash in a route.
   // This is a client side redirect in case trailing slash occurs.
@@ -41,9 +39,7 @@ export default function App({ Component, pageProps, router: { asPath } }) {
         />
         <link rel="icon" type="image/png" href="/favicon-32.png" />
       </Head>
-      <Provider>
-        <Component {...pageProps} />
-      </Provider>
+      <Component {...pageProps} />
     </>
   );
 }
