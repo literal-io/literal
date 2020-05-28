@@ -55,6 +55,8 @@
     "reason-apollo-hooks": "^6.0.0",
     "reason-react": "^0.7.0",
     "tailwindcss": "^1.2.0",
+    "typeface-montserrat": "0.0.75",
+    "typeface-prata": "0.0.72",
     "uuid": "^7.0.3"
   },
   "devDependencies": {

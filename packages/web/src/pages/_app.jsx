@@ -1,4 +1,7 @@
 import "../app.css";
+import "typeface-prata";
+import "typeface-montserrat";
+
 import Head from "next/head";
 import Router from "next/router";
 
@@ -7,8 +10,6 @@ import * as React from "react";
 if (global.window) {
   require("../webview.js").initialize();
 }
-
-const Provider = require("../provider").make;
 
 export default function App({ Component, pageProps, router: { asPath } }) {
   // Next.js currently does not allow trailing slash in a route.
@@ -38,9 +39,7 @@ export default function App({ Component, pageProps, router: { asPath } }) {
         />
         <link rel="icon" type="image/png" href="/favicon-32.png" />
       </Head>
-      <Provider>
-        <Component {...pageProps} />
-      </Provider>
+      <Component {...pageProps} />
     </>
   );
 }

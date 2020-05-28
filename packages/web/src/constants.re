@@ -1,6 +1,11 @@
 [@bs.module "./aws-exports.js"]
 external awsAmplifyConfig: AwsAmplify.Config.t = "default";
 
+type window;
+[@bs.val] [@bs.scope ("globalThis")] [@bs.return nullable]
+external window: option(window) = "window";
+let isBrowser = window->Js.Option.isSome;
+
 %raw
 {|
   const domains = awsAmplifyConfig.oauth.redirectSignIn.split(",")

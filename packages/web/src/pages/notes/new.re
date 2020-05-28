@@ -1,3 +1,5 @@
+let _ = AwsAmplify.(inst->configure(Constants.awsAmplifyConfig));
+
 [@decco]
 type routeParams = {id: string};
 
@@ -25,9 +27,15 @@ let default = () => {
     | _ => None
     };
 
-  switch (authentication) {
-  | Loading
-  | Unauthenticated => <Loading />
-  | Authenticated(currentUser) => <QueryRenderers_NewNote highlightId currentUser />
-  };
+  <Provider
+    render={(~rehydrated) =>
+      switch (authentication) {
+      | Loading => <Loading />
+      | Unauthenticated => <Loading />
+      | _ when !rehydrated => <Loading />
+      | Authenticated(currentUser) =>
+        <QueryRenderers_NewNote highlightId currentUser />
+      }
+    }
+  />;
 };

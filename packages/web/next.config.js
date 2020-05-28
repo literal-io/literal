@@ -24,6 +24,7 @@ module.exports = {
               outputPath: "static",
               esModule: false,
               name: dev ? "[name].[ext]" : "[contenthash].[ext]",
+              publicPath: "/_next/static",
             },
           },
           R.pathOr([], ["module", "rules"], config)

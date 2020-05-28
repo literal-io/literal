@@ -103,7 +103,6 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
         className={cn([
           "text-white",
           "font-sans",
-          "font-bold",
           "italic",
           "leading-none",
           "text-xl",

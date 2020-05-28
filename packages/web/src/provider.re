@@ -1,9 +1,6 @@
 %raw
 "require('isomorphic-fetch')";
 
-let _ = AwsAmplify.Cache.inst;
-let _ = AwsAmplify.(inst->configure(Constants.awsAmplifyConfig));
-
 let authenticatedClientAuthOptions = {
   Webview.isWebview()
     ? AwsAppSync.Client.authWithCognitoUserPools(~jwtToken=() => {
@@ -73,9 +70,13 @@ let client =
   );
 
 [@react.component]
-let make = (~children) =>
+let make = (~render) =>
   <ReasonApollo.Provider client>
-    <AwsAppSync.Rehydrated>
-      <ApolloHooks.Provider client> children </ApolloHooks.Provider>
-    </AwsAppSync.Rehydrated>
+    <AwsAppSync.Rehydrated
+      render={({rehydrated}) =>
+        <ApolloHooks.Provider client>
+          {render(~rehydrated)}
+        </ApolloHooks.Provider>
+      }
+    />
   </ReasonApollo.Provider>;
