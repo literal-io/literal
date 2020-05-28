@@ -54,7 +54,7 @@ let default = () => {
         {React.string("Literal is a textual annotation management system.")}
       </h1>
       <a
-        href={waitlistFormUrl}
+        href=waitlistFormUrl
         className={cn([
           "text-white",
           "text-lg",
@@ -73,7 +73,7 @@ let default = () => {
       </a>
       {manifesto
        ->Belt.Array.map(((header, body)) =>
-           <>
+           <React.Fragment key=header>
              <h2
                className={cn([
                  "text-white",
@@ -87,7 +87,7 @@ let default = () => {
              <p className={cn(["text-white", "font-sans", "mb-14", "block"])}>
                {React.string(body)}
              </p>
-           </>
+           </React.Fragment>
          )
        ->React.array}
       <hr className={cn(["bg-white", "opacity-50"])} />
@@ -105,7 +105,7 @@ let default = () => {
       <ul className={cn(["list-none", "list-inside"])}>
         {howItWorks
          ->Belt.Array.map(text =>
-             <li className={cn(["mb-6"])}>
+             <li key=text className={cn(["mb-6"])}>
                <div className={cn(["flex", "flex-row"])}>
                  <div
                    className={cn([
@@ -129,7 +129,7 @@ let default = () => {
     </div>
     <div className={cn(["p-8", "bg-white", "max-w-lg", "w-full", "m-auto"])}>
       <a
-        href={waitlistFormUrl}
+        href=waitlistFormUrl
         className={cn([
           "text-black",
           "underline",
