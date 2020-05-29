@@ -37,6 +37,30 @@ input CreateHighlightInput {
   highlightScreenshotId: ID
 }
 
+input CreateTagInput {
+  id: ID
+  createdAt: String
+  text: String!
+}
+
+type Tag
+  @model
+  @key(fields: ["id"])
+  @auth(
+    rules: [
+      {
+        allow: owner
+        ownerField: "owner"
+        operations: [create, read, update, delete]
+      }
+    ]
+  ) {
+  id: ID!
+  createdAt: String!
+  text: String!
+  owner: String!
+}
+
 type Highlight
   @model
   @key(fields: ["id"])
@@ -55,6 +79,26 @@ type Highlight
   note: String
   screenshot: Screenshot @connection
   owner: String
+}
+
+type HighlightTag
+  @model(queries: null)
+  @key(name: "byHighlight", fields: ["highlightId", "tagId"])
+  @key(name: "byTag", fields: ["tagId", "highlightId"])
+  @auth(
+    rules: [
+      {
+        allow: owner
+        ownerField: "owner"
+        operations: [create, read, update, delete]
+      }
+    ]
+  ) {
+  id: ID!
+  highlightId: ID!
+  tagId: ID!
+  highlight: Highlight! @connection(fields: ["highlightId"])
+  tag: Tag! @connection(fields: ["tagId"])
 }
 
 type Profile
