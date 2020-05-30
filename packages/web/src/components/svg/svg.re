@@ -8,6 +8,8 @@ let delete: string = [%raw "require('./delete.svg')"];
 let logo: string = [%raw "require('./logo.svg')"];
 let arrowRight: string = [%raw "require('./arrow-right.svg')"];
 let add: string = [%raw "require('./add.svg')"];
+let textFields: string = [%raw "require('./text-fields.svg')"];
+let textSnippet: string = [%raw "require('./text-snippet.svg')"];
 
 type state = {
   isLoading: bool,

@@ -40,6 +40,9 @@ module.exports = {
       listStyleType: {
         square: "square",
       },
+      borderColor: {
+        "white-o50": "rgba(255, 255, 255, 0.5)",
+      },
     },
   },
 };
