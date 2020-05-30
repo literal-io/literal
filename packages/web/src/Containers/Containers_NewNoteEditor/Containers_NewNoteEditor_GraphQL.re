@@ -1,18 +1,10 @@
-module UpdateHighlightMutation = [%graphql
+module CreateHighlightMutation = [%graphql
   {|
-    mutation UpdateHighlight($input: UpdateHighlightInput!) {
-      updateHighlight(input: $input) {
+    mutation CreateHighlight($input: CreateHighlightInput!) {
+      createHighlight(input: $input) {
         id
+        createdAt
       }
-    }
-  |}
-];
-
-module GetHighlightFragment = [%graphql
-  {|
-    fragment editorHighlightFragment on Highlight {
-      id
-      text
     }
   |}
 ];

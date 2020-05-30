@@ -2,18 +2,19 @@ open Styles;
 open Containers_NewNoteEditor_GraphQL;
 
 [@react.component]
-let make = (~highlightFragment as highlight) => {
-  let (updateHighlightMutation, _s, _f) =
-    ApolloHooks.useMutation(UpdateHighlightMutation.definition);
+let make = (~currentUser) => {
+  let (createHighlightMutation, _s, _f) =
+    ApolloHooks.useMutation(CreateHighlightMutation.definition);
 
-  let (textState, setTextState) = React.useState(() => {highlight##text});
+  let (textState, setTextState) = React.useState(() => "");
 
   let handleSave = () => {
+    let highlightId = Uuid.makeV4();
     let variables =
-      UpdateHighlightMutation.makeVariables(
+      CreateHighlightMutation.makeVariables(
         ~input={
-          "id": highlight##id,
-          "text": textState->Js.Option.some,
+          "id": highlightId,
+          "text": textState,
           "createdAt": None,
           "note": None,
           "highlightScreenshotId": None,
@@ -21,13 +22,65 @@ let make = (~highlightFragment as highlight) => {
         },
         (),
       );
+    let _ = createHighlightMutation(~variables, ());
+    let cacheQuery =
+      QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
+        ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+        (),
+      );
     let _ =
-      updateHighlightMutation(~variables, ())
-      |> Js.Promise.then_(_ => {
-           let _ =
-             Webview.(postMessage(WebEvent.make(~type_="ACTIVITY_FINISH")));
-           Js.Promise.resolve();
-         });
+      switch (
+        QueryRenderers_Notes_GraphQL.ListHighlights.readCache(
+          ~query=cacheQuery,
+          ~client=Provider.client,
+          (),
+        )
+      ) {
+      | None => ()
+      | Some(cachedQuery) =>
+        let updatedListHighlights =
+          QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
+            cachedQuery
+            ->listHighlights
+            ->Belt.Option.flatMap(items)
+            ->Belt.Option.map(items => {
+                let updatedItems =
+                  Js.Array.concat(
+                    [|
+                      Some({
+                        id: highlightId,
+                        createdAt: Js.Date.(make()->toISOString),
+                        text: textState,
+                        typename: highlightTypename,
+                      }),
+                    |],
+                    items,
+                  );
+                {
+                  ...cachedQuery,
+                  listHighlights:
+                    Some({
+                      ...cachedQuery->listHighlights->Belt.Option.getExn,
+                      items: Some(updatedItems),
+                    }),
+                };
+              })
+          );
+        let _ =
+          switch (updatedListHighlights) {
+          | Some(updatedListHighlights) =>
+            QueryRenderers_Notes_GraphQL.ListHighlights.writeCache(
+              ~client=Provider.client,
+              ~data=updatedListHighlights,
+              ~query=cacheQuery,
+              (),
+            )
+          | None => ()
+          };
+        ();
+      };
+
+    let _ = Next.Router.back();
     ();
   };
 

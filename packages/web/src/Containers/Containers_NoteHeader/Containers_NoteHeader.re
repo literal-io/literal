@@ -11,6 +11,11 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
       Containers_NoteHeader_GraphQL.DeleteHighlightMutation.definition,
     );
 
+  let handleCreate = () => {
+    let _ = Next.Router.push("/notes/new");
+    ();
+  };
+
   let handleDelete = () => {
     let variables =
       Containers_NoteHeader_GraphQL.DeleteHighlightMutation.makeVariables(
@@ -109,28 +114,52 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
         ])}>
         {React.string("#recent")}
       </h1>
-      <MaterialUi.IconButton
-        size=`Small
-        edge=`End
-        onClick={_ => handleDelete()}
-        _TouchRippleProps={
-          "classes": {
-            "child": cn(["bg-white"]),
-            "rippleVisible": cn(["opacity-50"]),
-          },
-        }
-        classes=[Root(cn(["p-0", "ml-1"]))]>
-        <Svg
-          placeholderViewBox="0 0 24 24"
-          className={cn(["pointer-events-none", "opacity-75"])}
-          style={ReactDOMRe.Style.make(
-            ~width="1.75rem",
-            ~height="1.75rem",
-            (),
-          )}
-          icon=Svg.delete
-        />
-      </MaterialUi.IconButton>
+      <div className={cn(["flex", "flex-row"])}>
+        <MaterialUi.IconButton
+          size=`Small
+          edge=`End
+          onClick={_ => handleDelete()}
+          _TouchRippleProps={
+            "classes": {
+              "child": cn(["bg-white"]),
+              "rippleVisible": cn(["opacity-50"]),
+            },
+          }
+          classes=[Root(cn(["p-0", "ml-1"]))]>
+          <Svg
+            placeholderViewBox="0 0 24 24"
+            className={cn(["pointer-events-none", "opacity-75"])}
+            style={ReactDOMRe.Style.make(
+              ~width="1.75rem",
+              ~height="1.75rem",
+              (),
+            )}
+            icon=Svg.delete
+          />
+        </MaterialUi.IconButton>
+        <MaterialUi.IconButton
+          size=`Small
+          edge=`End
+          onClick={_ => handleCreate()}
+          _TouchRippleProps={
+            "classes": {
+              "child": cn(["bg-white"]),
+              "rippleVisible": cn(["opacity-50"]),
+            },
+          }
+          classes=[Root(cn(["p-0", "ml-4"]))]>
+          <Svg
+            placeholderViewBox="0 0 24 24"
+            className={cn(["pointer-events-none", "opacity-75"])}
+            style={ReactDOMRe.Style.make(
+              ~width="1.75rem",
+              ~height="1.75rem",
+              (),
+            )}
+            icon=Svg.add
+          />
+        </MaterialUi.IconButton>
+      </div>
     </div>
   </Header>;
 };

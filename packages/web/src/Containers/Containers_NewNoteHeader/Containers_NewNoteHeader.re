@@ -1,88 +1,9 @@
 open Styles;
 
-external castToListHighlights:
-  Js.Json.t => QueryRenderers_Notes_GraphQL.ListHighlights.Query.t =
-  "%identity";
-
 [@react.component]
-let make = (~highlightFragment as highlight, ~currentUser) => {
-  let (deleteHighlightMutation, _s, _f) =
-    ApolloHooks.useMutation(
-      Containers_NoteHeader_GraphQL.DeleteHighlightMutation.definition,
-    );
-
+let make = () => {
   let handleClose = () => {
-    let variables =
-      Containers_NoteHeader_GraphQL.DeleteHighlightMutation.makeVariables(
-        ~input={"id": highlight##id},
-        (),
-      );
-
-    let _ =
-      deleteHighlightMutation(~variables, ())
-      |> Js.Promise.then_(_ => {
-           let cacheQuery =
-             QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
-               ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-               (),
-             );
-           let _ =
-             switch (
-               QueryRenderers_Notes_GraphQL.ListHighlights.readCache(
-                 ~query=cacheQuery,
-                 ~client=Provider.client,
-                 (),
-               )
-             ) {
-             | None => ()
-             | Some(cachedQuery) =>
-               let updatedListHighlights =
-                 QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
-                   cachedQuery
-                   ->listHighlights
-                   ->Belt.Option.flatMap(items)
-                   ->Belt.Option.map(items => {
-                       let updatedItems =
-                         items
-                         ->Belt.Array.keep(
-                             fun
-                             | Some(h) => h.id !== highlight##id
-                             | None => false,
-                           )
-                         ->Js.Option.some;
-                       {
-                         ...cachedQuery,
-                         listHighlights:
-                           Some({
-                             ...
-                               cachedQuery->listHighlights->Belt.Option.getExn,
-                             items: updatedItems,
-                           }),
-                       };
-                     })
-                 );
-               let _ =
-                 switch (updatedListHighlights) {
-                 | Some(updatedListHighlights) =>
-                   QueryRenderers_Notes_GraphQL.ListHighlights.(
-                     writeCache(
-                       ~query=cacheQuery,
-                       ~client=Provider.client,
-                       ~data=updatedListHighlights,
-                       (),
-                     )
-                   )
-                 | None => ()
-                 };
-               ();
-             };
-           Js.Promise.resolve();
-         })
-      |> Js.Promise.then_(_ => {
-           let _ =
-             Webview.(postMessage(WebEvent.make(~type_="ACTIVITY_FINISH")));
-           Js.Promise.resolve();
-         });
+    let _ = Next.Router.back();
     ();
   };
 

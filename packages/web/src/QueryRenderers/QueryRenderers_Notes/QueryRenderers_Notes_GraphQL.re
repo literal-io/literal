@@ -24,6 +24,8 @@ module ListHighlights = {
    * graphql_ppx generates.
    */
   module Raw = {
+    let highlightTypename = "Highlight";
+
     [@decco]
     type highlight = {
       id: string,
