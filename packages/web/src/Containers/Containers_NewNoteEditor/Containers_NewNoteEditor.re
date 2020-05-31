@@ -17,7 +17,10 @@ module PhaseTextInput = {
   let make = (~currentUser) => {
     let (createHighlightMutation, _s, _f) =
       ApolloHooks.useMutation(CreateHighlightMutation.definition);
+
     let (textState, setTextState) = React.useState(() => "");
+    let (tagsState, setTagsState) =
+      React.useState(() => TextInput.Tags.Value.empty());
 
     let handleSave = () => {
       let highlightId = Uuid.makeV4();
@@ -96,6 +99,7 @@ module PhaseTextInput = {
     };
 
     let handleTextChange = s => setTextState(_ => s);
+    let handleTagsChange = s => setTagsState(_ => s);
 
     <>
       <div className={cn(["px-6", "pt-4", "pb-24"])}>
@@ -108,6 +112,7 @@ module PhaseTextInput = {
             Underline(styles##textInputUnderline),
           ]
         />
+        <TextInput.Tags onChange=handleTagsChange value=tagsState />
       </div>
       {Js.String.length(textState) > 0
          ? <FloatingActionButton
