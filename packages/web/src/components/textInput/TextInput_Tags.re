@@ -10,7 +10,7 @@ module Value = {
 };
 
 [@react.component]
-let make = (~value, ~onChange) => {
+let make = (~value, ~onChange, ~onFocus=?, ~onBlur=?) => {
   let keyEventHandled = React.useRef(false);
 
   let handleChange = ev => {
@@ -100,17 +100,43 @@ let make = (~value, ~onChange) => {
              "italic",
              "underline",
              "font-medium",
+             "mr-3",
            ])}>
-           {React.string(text)}
+           {React.string("#" ++ text)}
          </span>
        )
      ->React.array}
+    <span
+      className={cn([
+        "font-sans",
+        "text-white",
+        "font-medium",
+        "italic",
+        "underline",
+      ])}>
+      {React.string("#")}
+    </span>
     <input
       type_="text"
+      className={cn([
+        "font-sans",
+        "text-white",
+        "font-medium",
+        "italic",
+        "bg-black",
+        "underline",
+      ])}
+      style={style(
+        ~width=
+          string_of_int(max(Js.String2.length(value.partial), 1)) ++ "ch",
+        (),
+      )}
       value={value.partial}
       onChange=handleChange
       onKeyUp=handleKeyUp
       onKeyDown=handleKeyDown
+      ?onFocus
+      ?onBlur
     />
   </div>;
 };

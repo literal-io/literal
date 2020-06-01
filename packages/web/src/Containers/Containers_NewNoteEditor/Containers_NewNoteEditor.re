@@ -103,16 +103,14 @@ module PhaseTextInput = {
 
     <>
       <div className={cn(["px-6", "pt-4", "pb-24"])}>
-        <TextInput.Basic
-          onChange=handleTextChange
-          value=textState
+        <TextInput_Highlight
+          onTextChange=handleTextChange
+          textValue=textState
+          onTagsChange=handleTagsChange
+          tagsValue=tagsState
           placeholder="Lorem ipsum"
           autoFocus=true
-          inputClasses=MaterialUi.Input.Classes.[
-            Underline(styles##textInputUnderline),
-          ]
         />
-        <TextInput.Tags onChange=handleTagsChange value=tagsState />
       </div>
       {Js.String.length(textState) > 0
          ? <FloatingActionButton
