@@ -1,7 +1,7 @@
 module CreateHighlightMutation = [%graphql
   {|
-    mutation CreateHighlight($input: CreateHighlightInput!) {
-      createHighlight(input: $input) {
+    mutation CreateHighlight($createHighlightInput: CreateHighlightInput!) {
+      createHighlight(input: $createHighlightInput) {
         id
         createdAt
       }

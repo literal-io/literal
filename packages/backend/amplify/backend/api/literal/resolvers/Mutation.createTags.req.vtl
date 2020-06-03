@@ -1,0 +1,46 @@
+#if($util.isNullOrEmpty($authMode) && !$util.isNull($ctx.identity) && !$util.isNull($ctx.identity.sub) && !$util.isNull($ctx.identity.issuer) && !$util.isNull($ctx.identity.username) && !$util.isNull($ctx.identity.claims) && !$util.isNull($ctx.identity.sourceIp) && !$util.isNull($ctx.identity.defaultAuthStrategy) )
+  #set( $authMode = "userPools" )
+#end
+
+#if( $authMode == "userPools" )
+
+  #set( $isOwnerAuthorized = false )
+
+  #set( $identityValue = $util.defaultIfNull($ctx.identity.claims.get("username"), $util.defaultIfNull($ctx.identity.claims.get("cognito:username"), "___xamznone____")) )
+
+  ## Set any missing owners and verify already set owners
+  #set( $isOwnerAuthorized = true )
+  #foreach( $item in $ctx.args.input )
+    #if (! $item.containsKey("owner"))
+      $item.put("owner", $identityValue)
+      $util.qr($ctx.args.input.set($foreach.count, $item)
+    #elseif ($item.get("owner") != $identityValue)
+      #set( $isOwnerAuthorized = false ) 
+    #end 
+  #end
+
+
+  ## [Start] Throw if unauthorized **
+  #if( !($isStaticGroupAuthorized == true || $isDynamicGroupAuthorized == true || $isOwnerAuthorized == true) )
+    $util.unauthorized()
+  #end
+  ## [End] Throw if unauthorized **
+#end
+
+## [Start] Prepare DynamoDB PutItem Request. **
+#set ( $batchPutItemData = [] )
+#foreach ( $item in $ctx.args.input )
+  $util.qr($item.put("createdAt", $util.defaultIfNull($item.createdAt, $util.time.nowISO8601())))
+  $util.qr($item.put("updatedAt", $util.defaultIfNull($item.updatedAt, $util.time.nowISO8601())))
+  $util.qr($item.put("__typename", "Tag"))
+  $util.qr($batchPutItemData.add($util.dynamodb.toMapValues($item)))
+#end
+
+## FIXME: shouldn't hardcode table name - env dependent - derive from context?
+{
+  "version": "2018-05-29",
+  "operation": "BatchPutItem",
+  "tables": {
+    "Tag-rkihsloeqbdabdpebem3fqqjuy-production": $utils.toJson($batchPutItemData)
+  }
+}

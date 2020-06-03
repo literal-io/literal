@@ -1,8 +1,6 @@
 open Styles;
 open Containers_NewNoteEditor_GraphQL;
 
-let styles = [%raw "require('./Containers_NewNoteEditor.module.css')"];
-
 [@bs.deriving accessors]
 type phase =
   | PhasePrompt
