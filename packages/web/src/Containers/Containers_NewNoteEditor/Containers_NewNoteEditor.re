@@ -21,17 +21,24 @@ module PhaseTextInput = {
       React.useState(() => TextInput.Tags.Value.empty());
 
     let handleSave = () => {
-      let highlightId = Uuid.makeV4();
+      let createHighlightInput = {
+        "id": Uuid.makeV4(),
+        "text": textState,
+        "createdAt": None,
+        "note": None,
+        "highlightScreenshotId": None,
+        "owner": None,
+      };
+      let createTagsInput =
+        tagsState.commits
+        ->Belt.Array.map(tagText =>
+            {"id": Uuid.makeV4(), "text": tagText, "createdAt": None}
+          );
+
       let variables =
         CreateHighlightMutation.makeVariables(
-          ~input={
-            "id": highlightId,
-            "text": textState,
-            "createdAt": None,
-            "note": None,
-            "highlightScreenshotId": None,
-            "owner": None,
-          },
+          ~createHighlightInput,
+          ~createTagsInput,
           (),
         );
       let _ = createHighlightMutation(~variables, ());
@@ -60,7 +67,7 @@ module PhaseTextInput = {
                     Js.Array.concat(
                       [|
                         Some({
-                          id: highlightId,
+                          id: createHighlightInput##id,
                           createdAt: Js.Date.(make()->toISOString),
                           text: textState,
                           typename: highlightTypename,

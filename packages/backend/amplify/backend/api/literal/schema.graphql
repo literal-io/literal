@@ -43,6 +43,12 @@ input CreateTagInput {
   text: String!
 }
 
+input CreateHighlightTagInput {
+  id: ID
+  highlightId: ID!
+  tagId: ID!
+}
+
 type Tag
   @model
   @key(fields: ["id"])
@@ -136,4 +142,8 @@ type Mutation {
   ): Highlight
     @function(name: "GraphQLResolver-${env}")
     @auth(rules: [{ allow: private }])
+
+  createTags(input: [CreateTagInput!]!): [Tag!]!
+
+  createHighlightTags(input: [CreateHighlightTagInput!]!): [HighlightTag!]!
 }

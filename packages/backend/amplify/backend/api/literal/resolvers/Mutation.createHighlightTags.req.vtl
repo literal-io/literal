@@ -32,7 +32,7 @@
 #foreach ( $item in $ctx.args.input )
   $util.qr($item.put("createdAt", $util.defaultIfNull($item.createdAt, $util.time.nowISO8601())))
   $util.qr($item.put("updatedAt", $util.defaultIfNull($item.updatedAt, $util.time.nowISO8601())))
-  $util.qr($item.put("__typename", "Tag"))
+  $util.qr($item.put("__typename", "HighlightTag"))
   $util.qr($batchPutItemData.add($util.dynamodb.toMapValues($item)))
 #end
 
@@ -41,6 +41,6 @@
   "version": "2018-05-29",
   "operation": "BatchPutItem",
   "tables": {
-    "Tag-rkihsloeqbdabdpebem3fqqjuy-production": $utils.toJson($batchPutItemData)
+    "HighlightTag-rkihsloeqbdabdpebem3fqqjuy-production": $utils.toJson($batchPutItemData)
   }
 }
