@@ -65,7 +65,10 @@ let make = (~highlightFragment as highlight) => {
       "overflow-y-auto",
     ])}>
     <div className={cn(["px-6", "pb-4", "pt-16"])}>
-      <TextInput.Basic onChange=handleTextChange value=textState />
+      <TextInput.Highlight
+        onTextChange={handleTextChange}
+        textValue={textState}
+      />
     </div>
   </div>;
 };

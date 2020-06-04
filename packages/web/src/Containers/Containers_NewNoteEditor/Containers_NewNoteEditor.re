@@ -34,11 +34,20 @@ module PhaseTextInput = {
         ->Belt.Array.map(tagText =>
             {"id": Uuid.makeV4(), "text": tagText, "createdAt": None}
           );
+      let createHighlightTagsInput =
+        createTagsInput->Belt.Array.map(tag =>
+          {
+            "id": Some(Uuid.makeV4()),
+            "highlightId": createHighlightInput##id,
+            "tagId": tag##id,
+          }
+        );
 
       let variables =
         CreateHighlightMutation.makeVariables(
           ~createHighlightInput,
           ~createTagsInput,
+          ~createHighlightTagsInput,
           (),
         );
       let _ = createHighlightMutation(~variables, ());

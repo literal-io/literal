@@ -65,6 +65,7 @@ type Tag
   createdAt: String!
   text: String!
   owner: String!
+  highlights: [HighlightTag!]! @connection(keyName: "byTag", fields: ["id"])
 }
 
 type Highlight
@@ -85,6 +86,7 @@ type Highlight
   note: String
   screenshot: Screenshot @connection
   owner: String
+  tags: [HighlightTag!]! @connection(keyName: "byHighlight", fields: ["id"])
 }
 
 type HighlightTag
@@ -144,6 +146,5 @@ type Mutation {
     @auth(rules: [{ allow: private }])
 
   createTags(input: [CreateTagInput!]!): [Tag!]!
-
   createHighlightTags(input: [CreateHighlightTagInput!]!): [HighlightTag!]!
 }
