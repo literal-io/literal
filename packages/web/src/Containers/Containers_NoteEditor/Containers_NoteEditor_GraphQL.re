@@ -5,6 +5,7 @@ module GetHighlightFragment = [%graphql
       text
       tags {
         items {
+          id
           tag {
             text
           }
@@ -16,10 +17,25 @@ module GetHighlightFragment = [%graphql
 
 module UpdateHighlightMutation = [%graphql
   {|
-  mutation UpdateHighlight($input: UpdateHighlightInput!) {
-    updateHighlight(input: $input) {
+  mutation UpdateHighlight(
+    $updateHighlightInput: UpdateHighlightInput!
+    $createTagsInput: [CreateTagInput!]!
+    $createHighlightTagsInput: [CreateHighlightTagInput!]!
+    $deleteHighlightTagsInput: [DeleteHighlightTagsInput!]!
+  ) {
+    updateHighlight(input: $updateHighlightInput) {
       id
       text
+    }
+    createTags(input: $createTagsInput) {
+      id
+      createdAt
+    }
+    createHighlightTags(input: $createHighlightTagsInput) {
+      id
+    }
+    deleteHighlightTags(input: $deleteHighlightTagsInput) {
+      id 
     }
   }
 |}

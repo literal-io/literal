@@ -49,6 +49,10 @@ input CreateHighlightTagInput {
   tagId: ID!
 }
 
+input DeleteHighlightTagInput {
+  id: ID!
+}
+
 type Tag
   @model
   @key(fields: ["id"])
@@ -147,4 +151,5 @@ type Mutation {
 
   createTags(input: [CreateTagInput!]!): [Tag!]!
   createHighlightTags(input: [CreateHighlightTagInput!]!): [HighlightTag!]!
+  deleteHighlightTags(input: [DeleteHighlightTagInput!]!): [HighlightTag!]!
 }
