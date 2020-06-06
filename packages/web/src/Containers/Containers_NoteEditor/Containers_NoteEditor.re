@@ -71,6 +71,17 @@ let make = (~highlightFragment as highlight) => {
           (createTagsInput, createHighlightTagsInput);
         };
 
+        let deleteHighlightTagsInput =
+          highlightTags
+          ->Belt.Array.keep(highlightTag => {
+              let retained =
+                Belt.Array.some(tagsState.commits, tagText =>
+                  highlightTag##tag##text === tagText
+                );
+              !retained;
+            })
+          ->Belt.Array.map(highlightTag => {"id": highlightTag##id});
+
         let variables =
           UpdateHighlightMutation.makeVariables(
             ~updateHighlightInput={
@@ -83,6 +94,7 @@ let make = (~highlightFragment as highlight) => {
             },
             ~createTagsInput,
             ~createHighlightTagsInput,
+            ~deleteHighlightTagsInput,
             (),
           );
 

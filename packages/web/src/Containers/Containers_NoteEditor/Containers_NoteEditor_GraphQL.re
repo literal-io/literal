@@ -21,7 +21,7 @@ module UpdateHighlightMutation = [%graphql
     $updateHighlightInput: UpdateHighlightInput!
     $createTagsInput: [CreateTagInput!]!
     $createHighlightTagsInput: [CreateHighlightTagInput!]!
-    $deleteHighlightTagsInput: [DeleteHighlightTagsInput!]!
+    $deleteHighlightTagsInput: [DeleteHighlightTagInput!]!
   ) {
     updateHighlight(input: $updateHighlightInput) {
       id
