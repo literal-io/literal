@@ -50,6 +50,28 @@ let make =
       xmlns="http://www.w3.org/2000/svg"
     />;
 
+  let handleObjectElem = el => {
+    let rawHandler = [%raw
+      {|
+      function(el, cb) {
+        if (
+          el &&
+          el.contentWindow &&
+          el.contentWindow.document &&
+          el.contentWindow.document.readyState === "complete"
+        ) {
+          cb()
+        }
+      }
+    |}
+    ];
+    let _ =
+      if (isLoading) {
+        rawHandler(el, () => setState(_ => {src, isLoading: false}));
+      };
+    ();
+  };
+
   let base =
     <>
       {isLoading ? renderPlaceholder() : React.null}
@@ -63,6 +85,7 @@ let make =
         }
         style=?{isLoading ? None : style}
         data=src
+        ref={ReactDOMRe.Ref.callbackDomRef(handleObjectElem)}
       />
     </>;
   switch (onClick) {
@@ -74,6 +97,7 @@ let make =
         onClick={_ => onClick()}
       />
     </div>
-  | None => base
+  | None =>
+    <div className={cn([className->Cn.unpack, "relative"])}> base </div>
   };
 };
