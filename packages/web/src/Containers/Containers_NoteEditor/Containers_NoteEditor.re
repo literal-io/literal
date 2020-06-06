@@ -37,7 +37,7 @@ let make = (~highlightFragment as highlight) => {
     );
 
   let _ =
-    React.useEffect1(
+    React.useEffect2(
       () => {
         let highlightTags =
           highlight##tags
@@ -102,7 +102,7 @@ let make = (~highlightFragment as highlight) => {
 
         None;
       },
-      [|textState|],
+      (textState, tagsState),
     );
 
   let _ =

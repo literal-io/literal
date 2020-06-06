@@ -1,5 +1,6 @@
 #if( $ctx.args.input.size() == 0 )
-  #return
+  #set( $empty = [] )
+  #return( $empty )
 #end
 
 #if($util.isNullOrEmpty($authMode) && !$util.isNull($ctx.identity) && !$util.isNull($ctx.identity.sub) && !$util.isNull($ctx.identity.issuer) && !$util.isNull($ctx.identity.username) && !$util.isNull($ctx.identity.claims) && !$util.isNull($ctx.identity.sourceIp) && !$util.isNull($ctx.identity.defaultAuthStrategy) )

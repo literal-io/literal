@@ -1,5 +1,6 @@
 #if( $ctx.args.input.size() == 0 )
-  #return
+  #set( $empty = [] )
+  #return( $empty )
 #end
 
 ## [Start] Determine request authentication mode **
@@ -146,17 +147,23 @@
 } )
 #end
 
-#set ( $transactItems = [] )
-#foreach ( $item in $ctx.args.input )
-  #set ( $operation = {
+#set( $transactItems = [] )
+#foreach( $item in $ctx.args.input )
+  #if( $modelObjectKey )
+    #set( $operationKey = $modelObjectKey )
+  #else 
+    #set( $operationKey = {
+      "id": $util.dynamodb.toDynamoDB($item.id)
+    } )
+  #end
+  #set( $operation = {
     "table": "HighlightTag-rkihsloeqbdabdpebem3fqqjuy-production",
     "operation": "DeleteItem",
-    "key": #if( $modelObjectKey ) $util.toJson($modelObjectKey) #else {
-    "id": $util.dynamodb.toDynamoDBJson($item.id)
-  } #end,
-    "condition": $util.toJson($condition)
-    } )
-    $util.qr($transactItems.add($util.dynamodb.toMapValues($operation)))
+    "key": $operationKey,
+    "condition": $condition
+  } )
+
+  $util.qr($transactItems.add($operation))
 #end
 
 {
