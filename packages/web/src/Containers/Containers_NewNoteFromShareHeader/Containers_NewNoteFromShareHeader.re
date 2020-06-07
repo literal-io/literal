@@ -36,7 +36,7 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
                  QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
                    cachedQuery
                    ->listHighlights
-                   ->Belt.Option.flatMap(items)
+                   ->Belt.Option.flatMap(highlightConnectionItems)
                    ->Belt.Option.map(items => {
                        let updatedItems =
                          items

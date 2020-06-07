@@ -3,13 +3,15 @@ open Containers_NoteEditor_GraphQL;
 let styles = [%raw "require('./Containers_NoteEditor.module.css')"];
 
 let handleSave =
-  Lodash.debounce2(
+  Lodash.debounce3(
     (.
       variables,
+      updateCache,
       updateHighlightMutation:
         ApolloHooks.Mutation.mutation(UpdateHighlightMutation.t),
     ) => {
       let _ = updateHighlightMutation(~variables, ());
+      let _ = updateCache();
       ();
     },
     500,
@@ -26,7 +28,7 @@ type tagState = {
 };
 
 [@react.component]
-let make = (~highlightFragment as highlight, ~isActive) => {
+let make = (~highlightFragment as highlight, ~isActive, ~currentUser) => {
   let (updateHighlightMutation, _s, _f) =
     ApolloHooks.useMutation(UpdateHighlightMutation.definition);
 
@@ -109,7 +111,126 @@ let make = (~highlightFragment as highlight, ~isActive) => {
             (),
           );
 
-        let _ = handleSave(. variables, updateHighlightMutation);
+        let updateCache = () => {
+          let cacheQuery =
+            QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
+              ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+              (),
+            );
+          let _ =
+            switch (
+              QueryRenderers_Notes_GraphQL.ListHighlights.readCache(
+                ~query=cacheQuery,
+                ~client=Provider.client,
+                (),
+              )
+            ) {
+            | None => ()
+            | Some(cachedQuery) =>
+              let updatedListHighlights =
+                QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
+                  cachedQuery
+                  ->listHighlights
+                  ->Belt.Option.flatMap(highlightConnectionItems)
+                  ->Belt.Option.flatMap(items => {
+                      switch (
+                        items->Belt.Array.getIndexBy(
+                          fun
+                          | Some(h) when h.id === highlight##id => true
+                          | _ => false,
+                        )
+                      ) {
+                      | Some(idx) => Some((idx, items))
+                      | None => None
+                      }
+                    })
+                  ->Belt.Option.map(((itemIdx, items)) => {
+                      let highlight =
+                        items
+                        ->Belt.Array.get(itemIdx)
+                        ->Belt.Option.flatMap(i => i)
+                        ->Belt.Option.getExn;
+                      let existingTags =
+                        highlight.tags
+                        ->Belt.Option.flatMap(highlightTagConnectionItems)
+                        ->Belt.Option.getWithDefault([||]);
+                      let highlightTags =
+                        createHighlightTagsInput->Belt.Array.map(
+                          highlightTagInput => {
+                          let committedTag =
+                            tagsState.commits
+                            ->Belt.Array.getBy(t =>
+                                t##id === highlightTagInput##tagId
+                              )
+                            ->Belt.Option.getExn;
+                          makeHighlightTag(
+                            ~id=highlightTagInput##id->Belt.Option.getExn,
+                            ~createdAt=Js.Date.(make()->toISOString),
+                            ~tag=
+                              makeTag(
+                                ~id=highlightTagInput##tagId,
+                                ~text=committedTag##text,
+                              ),
+                          )
+                          ->Js.Option.some;
+                        });
+                      let updatedHighlight = {
+                        ...highlight,
+                        text: textState,
+                        tags:
+                          Some(
+                            makeHighlightTagsConnection(
+                              ~tags=
+                                Some(
+                                  Belt.Array.concat(
+                                    existingTags,
+                                    highlightTags,
+                                  ),
+                                ),
+                            ),
+                          ),
+                      };
+                      let updatedHighlights =
+                        Belt.Array.concatMany([|
+                          Belt.Array.slice(
+                            items,
+                            ~offset=0,
+                            ~len=itemIdx - 1,
+                          ),
+                          [|Some(updatedHighlight)|],
+                          Belt.Array.sliceToEnd(
+                            items,
+                            max(itemIdx + 1, Js.Array2.length(items) - 1),
+                          ),
+                        |]);
+                      {
+                        ...cachedQuery,
+                        listHighlights:
+                          Some(
+                            makeHighlightConnection(
+                              ~highlights=Some(updatedHighlights),
+                            ),
+                          ),
+                      };
+                    })
+                );
+              let _ =
+                switch (updatedListHighlights) {
+                | Some(updatedListHighlights) =>
+                  QueryRenderers_Notes_GraphQL.ListHighlights.writeCache(
+                    ~client=Provider.client,
+                    ~data=updatedListHighlights,
+                    ~query=cacheQuery,
+                    (),
+                  )
+                | None => ()
+                };
+              ();
+            };
+          ();
+        };
+
+        let _ = handleSave(. variables, updateCache, updateHighlightMutation);
 
         None;
       },
@@ -120,7 +241,7 @@ let make = (~highlightFragment as highlight, ~isActive) => {
     React.useEffect0(() => {
       Some(
         () => {
-          let _ = Lodash.flush2(handleSave);
+          let _ = Lodash.flush3(handleSave);
           ();
         },
       )

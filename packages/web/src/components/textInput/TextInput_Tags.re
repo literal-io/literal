@@ -165,6 +165,7 @@ let make =
 
     <div
       onClick=handleContainerClick
+      style={style(~minHeight="5rem", ())}
       className={cn(["flex", "flex-row", "flex-wrap", Cn.unpack(className)])}>
       {value.commits
        ->Belt.Array.map(text =>

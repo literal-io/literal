@@ -43,6 +43,7 @@ module Data = {
              <Containers_NoteEditor
                highlightFragment={h##editorHighlightFragment}
                isActive={h##id === activeHighlight##id}
+               currentUser
              />
            </ScrollSnapList.Item>
          )}

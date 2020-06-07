@@ -71,17 +71,20 @@ module PhaseTextInput = {
             QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
               cachedQuery
               ->listHighlights
-              ->Belt.Option.flatMap(items)
+              ->Belt.Option.flatMap(highlightConnectionItems)
               ->Belt.Option.map(items => {
+                  /** FIXME: add tags **/
                   let updatedItems =
                     Js.Array.concat(
                       [|
-                        Some({
-                          id: createHighlightInput##id,
-                          createdAt: Js.Date.(make()->toISOString),
-                          text: textState,
-                          typename: highlightTypename,
-                        }),
+                        Some(
+                          makeHighlight(
+                            ~id=createHighlightInput##id,
+                            ~createdAt=Js.Date.(make()->toISOString),
+                            ~text=textState,
+                            ~tags=None,
+                          ),
+                        ),
                       |],
                       items,
                     );
