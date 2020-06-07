@@ -47,6 +47,7 @@ input CreateHighlightTagInput {
   id: ID
   highlightId: ID!
   tagId: ID!
+  createdAt: String
 }
 
 input DeleteHighlightTagInput {
@@ -109,6 +110,7 @@ type HighlightTag
   id: ID!
   highlightId: ID!
   tagId: ID!
+  createdAt: String!
   highlight: Highlight! @connection(fields: ["highlightId"])
   tag: Tag! @connection(fields: ["tagId"])
 }

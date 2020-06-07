@@ -42,6 +42,7 @@ module Data = {
              key={h##id} direction=ScrollSnapList.Horizontal>
              <Containers_NoteEditor
                highlightFragment={h##editorHighlightFragment}
+               isActive={h##id === activeHighlight##id}
              />
            </ScrollSnapList.Item>
          )}

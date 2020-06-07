@@ -8,6 +8,7 @@ let make =
       ~textValue,
       ~tagsValue,
       ~onTagsChange,
+      ~className=?,
       ~inputClasses=[],
       ~autoFocus=?,
       ~placeholder=?,
@@ -81,6 +82,7 @@ let make =
 
   <div
     className={cn([
+      Cn.unpack(className),
       styles##underline,
       Cn.ifTrue(styles##underlineFocused, isFocused),
     ])}>
@@ -94,7 +96,7 @@ let make =
       inputProps={
         "disableUnderline": true,
         "onKeyDown": handleTextKeyDown,
-        "inputRef": textInputRef->ReactDOMRe.Ref.domRef->Js.Option.some
+        "inputRef": textInputRef->ReactDOMRe.Ref.domRef->Js.Option.some,
       }
     />
     <TextInput_Tags
@@ -103,6 +105,7 @@ let make =
       onChange=onTagsChange
       onKeyDown=handleTagsKeyDown
       value=tagsValue
+      className={cn(["pt-8", "pb-6"])}
       ref={tagsInputRef->ReactDOMRe.Ref.domRef}
     />
   </div>;

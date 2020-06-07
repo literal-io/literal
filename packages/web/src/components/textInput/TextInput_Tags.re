@@ -12,7 +12,15 @@ module Value = {
 [@react.component]
 let make =
   React.forwardRef(
-    (~value, ~onChange, ~onFocus=?, ~onBlur=?, ~onKeyDown=?, ref_) => {
+    (
+      ~value,
+      ~onChange,
+      ~onFocus=?,
+      ~onBlur=?,
+      ~onKeyDown=?,
+      ~className=?,
+      ref_,
+    ) => {
     let keyEventHandled = React.useRef(false);
     let (isFocused, setFocused) = React.useState(() => false);
 
@@ -116,7 +124,13 @@ let make =
     };
 
     let handleBlur = ev => {
+      let _ = ReactEvent.Focus.persist(ev);
       let _ = setFocused(_ => false);
+      let _ =
+        if (Js.String.length(value.partial) > 0) {
+          let _ = onChange({...value, partial: ""});
+          ();
+        };
       let _ =
         switch (onBlur) {
         | Some(onBlur) => onBlur(ev)
@@ -125,7 +139,33 @@ let make =
       ();
     };
 
-    <div className={cn(["flex", "flex-row", "flex-wrap"])}>
+    /** Reuse the ref prop if one was passed in, otherwise use our own **/
+    let inputRef = {
+      let ownRef = React.useRef(Js.Nullable.null);
+      switch (ref_->Js.Nullable.toOption) {
+      | Some(inputRef) => inputRef
+      | None => ownRef
+      };
+    };
+
+    let handleContainerClick = _ => {
+      let _ =
+        inputRef
+        ->React.Ref.current
+        ->Js.Nullable.toOption
+        ->Belt.Option.map(inputElem => {
+            let _ =
+              inputElem
+              ->Webapi.Dom.Element.unsafeAsHtmlElement
+              ->Webapi.Dom.HtmlElement.focus;
+            ();
+          });
+      ();
+    };
+
+    <div
+      onClick=handleContainerClick
+      className={cn(["flex", "flex-row", "flex-wrap", Cn.unpack(className)])}>
       {value.commits
        ->Belt.Array.map(text =>
            <span
@@ -145,7 +185,7 @@ let make =
       <span
         className={cn([
           "font-sans",
-          "text-white",
+          "text-lightPrimary",
           "font-medium",
           "italic",
           "underline",
@@ -158,12 +198,10 @@ let make =
       </span>
       <input
         type_="text"
-        ref=?{
-          ref_->Js.Nullable.toOption->Belt.Option.map(ReactDOMRe.Ref.domRef)
-        }
+        ref={inputRef->ReactDOMRe.Ref.domRef}
         className={cn([
           "font-sans",
-          "text-white",
+          "text-lightPrimary",
           "font-medium",
           "italic",
           "bg-black",

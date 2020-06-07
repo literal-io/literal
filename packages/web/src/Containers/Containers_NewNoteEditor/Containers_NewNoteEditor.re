@@ -40,6 +40,7 @@ module PhaseTextInput = {
             "id": Some(Uuid.makeV4()),
             "highlightId": createHighlightInput##id,
             "tagId": tag##id,
+            "createdAt": None,
           }
         );
 

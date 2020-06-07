@@ -17,11 +17,72 @@ let make =
          .
          "disableUnderline": bool,
          "onKeyDown": ReactEvent.Keyboard.t => unit,
-         "inputRef": option(ReactDOMRe.domRef)
+         "inputRef": option(ReactDOMRe.domRef),
        }=Js.Obj.empty(),
       ref_,
-    ) =>
+    ) => {
+    let (fontFaceLoaded, setFontFaceLoaded) =
+      React.useState(() =>
+        FontFaceSet.(inst->check("normal 1rem " ++ Constants.serifFontFace))
+      );
+
+    let _ =
+      React.useEffect0(() => {
+        let onLoadingDone = ref(None);
+        onLoadingDone :=
+          Some(
+            ev => {
+              let isLoaded =
+                FontFaceSet.LoadingDoneEvent.(
+                  ev
+                  ->unsafeOfEvent
+                  ->fontfaces
+                  ->Belt.Array.getBy(fontface =>
+                      family(fontface) === Constants.serifFontFace
+                    )
+                  ->Belt.Option.map(fontface => status(fontface) === "loaded")
+                  ->Belt.Option.getWithDefault(false)
+                );
+              let _ =
+                if (isLoaded && !fontFaceLoaded) {
+                  let _ = setFontFaceLoaded(_ => isLoaded);
+                  let _ =
+                    FontFaceSet.inst
+                    |> FontFaceSet.removeEventListener(
+                         "loadingdone",
+                         Belt.Option.getExn(onLoadingDone^),
+                       );
+                  ();
+                };
+              ();
+            },
+          );
+        let _ =
+          if (!fontFaceLoaded) {
+            let _ =
+              FontFaceSet.inst
+              |> FontFaceSet.addEventListener(
+                   "loadingdone",
+                   Belt.Option.getExn(onLoadingDone^),
+                 );
+
+            ();
+          };
+        Some(
+          () => {
+            let _ =
+              FontFaceSet.inst
+              |> FontFaceSet.removeEventListener(
+                   "loadingdone",
+                   Belt.Option.getExn(onLoadingDone^),
+                 );
+            ();
+          },
+        );
+      });
+
     <MaterialUi.TextField
+      key={fontFaceLoaded ? "loaded" : "loading"}
       ?label
       ?placeholder
       ?autoFocus
@@ -66,5 +127,5 @@ let make =
             [Root("text-white"), Focused("text-white")]->to_obj
           ),
       }
-    />
-  );
+    />;
+  });

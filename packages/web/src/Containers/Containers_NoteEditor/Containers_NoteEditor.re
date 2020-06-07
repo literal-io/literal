@@ -1,5 +1,6 @@
 open Styles;
 open Containers_NoteEditor_GraphQL;
+let styles = [%raw "require('./Containers_NoteEditor.module.css')"];
 
 let handleSave =
   Lodash.debounce2(
@@ -14,8 +15,18 @@ let handleSave =
     500,
   );
 
+type tagState = {
+  commits:
+    array({
+      .
+      "id": string,
+      "text": string,
+    }),
+  partial: string,
+};
+
 [@react.component]
-let make = (~highlightFragment as highlight) => {
+let make = (~highlightFragment as highlight, ~isActive) => {
   let (updateHighlightMutation, _s, _f) =
     ApolloHooks.useMutation(UpdateHighlightMutation.definition);
 
@@ -25,16 +36,15 @@ let make = (~highlightFragment as highlight) => {
       highlight##tags
       ->Belt.Option.flatMap(t => t##items)
       ->Belt.Option.map(t =>
-          TextInput.Tags.Value.{
-            commits:
-              t->Belt.Array.keepMap(t => t)->Belt.Array.map(t => t##tag##text),
+          {
             partial: "",
+            commits:
+              t->Belt.Array.keepMap(t => t)->Belt.Array.map(t => t##tag),
           }
         )
-      ->Belt.Option.getWithDefault(
-          TextInput.Tags.Value.{commits: [||], partial: ""},
-        )
+      ->Belt.Option.getWithDefault({partial: "", commits: [||]})
     );
+  let (tagsFilterResults, setTagsFilterResults) = React.useState(() => None);
 
   let _ =
     React.useEffect2(
@@ -48,17 +58,17 @@ let make = (~highlightFragment as highlight) => {
         let (createTagsInput, createHighlightTagsInput) = {
           let tagsToCreate =
             tagsState.commits
-            ->Belt.Array.keep(tagText => {
+            ->Belt.Array.keep(tag => {
                 let alreadyExists =
                   Belt.Array.some(highlightTags, highlightTag =>
-                    highlightTag##tag##text === tagText
+                    highlightTag##tag##id === tag##id
                   );
                 !alreadyExists;
               });
 
           let createTagsInput =
-            tagsToCreate->Belt.Array.map(text =>
-              {"id": Uuid.makeV4(), "text": text, "createdAt": None}
+            tagsToCreate->Belt.Array.map(tag =>
+              {"id": tag##id, "text": tag##text, "createdAt": None}
             );
           let createHighlightTagsInput =
             createTagsInput->Belt.Array.map(tag =>
@@ -66,6 +76,7 @@ let make = (~highlightFragment as highlight) => {
                 "id": Some(Uuid.makeV4()),
                 "highlightId": highlight##id,
                 "tagId": tag##id,
+                "createdAt": None,
               }
             );
           (createTagsInput, createHighlightTagsInput);
@@ -75,8 +86,8 @@ let make = (~highlightFragment as highlight) => {
           highlightTags
           ->Belt.Array.keep(highlightTag => {
               let retained =
-                Belt.Array.some(tagsState.commits, tagText =>
-                  highlightTag##tag##text === tagText
+                Belt.Array.some(tagsState.commits, tag =>
+                  highlightTag##tag##id === tag##id
                 );
               !retained;
             })
@@ -116,7 +127,30 @@ let make = (~highlightFragment as highlight) => {
     });
 
   let handleTextChange = s => setTextState(_ => s);
-  let handleTagsChange = s => setTagsState(_ => s);
+  let handleTagsChange = (s: TextInput_Tags.Value.t) =>
+    setTagsState(tagsState => {
+      let updatedCommits =
+        s.commits
+        ->Belt.Array.map(text => {
+            switch (
+              Belt.Array.getBy(tagsState.commits, tag => tag##text === text),
+              tagsFilterResults->Belt.Option.flatMap(r =>
+                r->Belt.Array.getBy(tag => tag##text === text)
+              ),
+            ) {
+            | (Some(tag), _) => tag
+            | (_, Some(tag)) => tag
+            | _ => {"id": Uuid.makeV4(), "text": text}
+            }
+          });
+
+      {partial: s.partial, commits: updatedCommits};
+    });
+  let handleTagsFilterResults = s => setTagsFilterResults(_ => s);
+  let handleTagsFilterClicked = tag =>
+    setTagsState(tagsState => {
+      {partial: "", commits: Belt.Array.concat(tagsState.commits, [|tag|])}
+    });
 
   <div
     className={cn([
@@ -129,11 +163,22 @@ let make = (~highlightFragment as highlight) => {
     ])}>
     <div className={cn(["px-6", "pb-4", "pt-16"])}>
       <TextInput.Highlight
+        className={cn([styles##underline])}
         onTextChange=handleTextChange
         textValue=textState
-        tagsValue=tagsState
+        tagsValue={
+          TextInput_Tags.Value.partial: tagsState.partial,
+          commits: tagsState.commits->Belt.Array.map(t => t##text),
+        }
         onTagsChange=handleTagsChange
       />
+      {isActive && Js.String.length(tagsState.partial) > 0
+         ? <QueryRenderers_TagsFilter
+             text={tagsState.partial}
+             onTagResults=handleTagsFilterResults
+             onTagClicked=handleTagsFilterClicked
+           />
+         : React.null}
     </div>
   </div>;
 };

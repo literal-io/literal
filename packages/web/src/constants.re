@@ -28,3 +28,5 @@ let browser = () =>
   ->Bowser.userAgentGet
   ->Bowser.make
   ->Bowser.getBrowser;
+
+let serifFontFace = "Prata"

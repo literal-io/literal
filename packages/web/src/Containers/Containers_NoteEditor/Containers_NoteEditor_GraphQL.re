@@ -6,7 +6,9 @@ module GetHighlightFragment = [%graphql
       tags {
         items {
           id
+          createdAt
           tag {
+            id
             text
           }
         }
