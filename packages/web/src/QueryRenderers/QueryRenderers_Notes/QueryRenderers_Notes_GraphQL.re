@@ -95,7 +95,7 @@ module ListHighlights = {
 
     let makeHighlightConnection = (~highlights) => {
       items: highlights,
-      typename: "ModelHighlightConnection"
+      typename: "ModelHighlightConnection",
     };
 
     [@decco]
@@ -122,13 +122,12 @@ module ListHighlights = {
       cachedResponse
       ->Js.Nullable.toOption
       ->Belt.Option.flatMap(j => {
-          Js.log2("cachedQuery", j);
           switch (Raw.decode(j)) {
           | Ok(c) => Some(c)
           | Error(e) =>
             let _ = Error.report(Error.DeccoDecodeError(e));
             None;
-          };
+          }
         })
     };
   };

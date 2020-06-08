@@ -150,45 +150,65 @@ let make = (~highlightFragment as highlight, ~isActive, ~currentUser) => {
                         ->Belt.Array.get(itemIdx)
                         ->Belt.Option.flatMap(i => i)
                         ->Belt.Option.getExn;
-                      let existingTags =
-                        highlight.tags
-                        ->Belt.Option.flatMap(highlightTagConnectionItems)
-                        ->Belt.Option.getWithDefault([||]);
-                      let highlightTags =
-                        createHighlightTagsInput->Belt.Array.map(
-                          highlightTagInput => {
-                          let committedTag =
-                            tagsState.commits
-                            ->Belt.Array.getBy(t =>
-                                t##id === highlightTagInput##tagId
+
+                      let updatedTags =
+                        tagsState.commits
+                        ->Belt.Array.map(committedTag => {
+                            switch (
+                              highlightTags->Belt.Array.getBy(tag =>
+                                tag##tag##id === committedTag##id
                               )
-                            ->Belt.Option.getExn;
-                          makeHighlightTag(
-                            ~id=highlightTagInput##id->Belt.Option.getExn,
-                            ~createdAt=Js.Date.(make()->toISOString),
-                            ~tag=
-                              makeTag(
-                                ~id=highlightTagInput##tagId,
-                                ~text=committedTag##text,
-                              ),
-                          )
-                          ->Js.Option.some;
-                        });
+                            ) {
+                            | Some(existingTag) =>
+                              makeHighlightTag(
+                                ~id=existingTag##id,
+                                ~createdAt=existingTag##createdAt,
+                                ~tag=
+                                  makeTag(
+                                    ~id=existingTag##tag##id,
+                                    ~text=existingTag##tag##text,
+                                  ),
+                              )
+                              ->Js.Option.some
+                            | None =>
+                              switch (
+                                createHighlightTagsInput->Belt.Array.getBy(
+                                  input =>
+                                  input##tagId === committedTag##id
+                                )
+                              ) {
+                              | Some(input) =>
+                                makeHighlightTag(
+                                  ~id=input##id->Js.Option.getExn,
+                                  ~createdAt=Js.Date.(make()->toISOString),
+                                  ~tag=
+                                    makeTag(
+                                      ~id=input##tagId,
+                                      ~text=committedTag##text,
+                                    ),
+                                )
+                                ->Js.Option.some
+                              | None =>
+                                let _ =
+                                  Error.(
+                                    report(
+                                      InvalidState(
+                                        "Expected highlight tag in cache or created, but found none.",
+                                      ),
+                                    )
+                                  );
+                                None;
+                              }
+                            }
+                          });
                       let updatedHighlight = {
                         ...highlight,
                         text: textState,
                         tags:
-                          Some(
-                            makeHighlightTagsConnection(
-                              ~tags=
-                                Some(
-                                  Belt.Array.concat(
-                                    existingTags,
-                                    highlightTags,
-                                  ),
-                                ),
-                            ),
-                          ),
+                          makeHighlightTagsConnection(
+                            ~tags=updatedTags->Js.Option.some,
+                          )
+                          ->Js.Option.some,
                       };
                       let updatedHighlights =
                         Belt.Array.concatMany([|
