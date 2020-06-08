@@ -68,6 +68,10 @@ let make = (~highlightFragment as highlight, ~isActive, ~currentUser) => {
                 !alreadyExists;
               });
 
+          /**
+           * FIXME: this may recreate the tag if it isn't associated,
+           * but already exists?
+           */
           let createTagsInput =
             tagsToCreate->Belt.Array.map(tag =>
               {"id": tag##id, "text": tag##text, "createdAt": None}

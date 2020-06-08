@@ -11,6 +11,24 @@ type action =
   | SetPhase(phase);
 
 module PhaseTextInput = {
+  type tagState = {
+    commits:
+      array({
+        .
+        "id": string,
+        "text": string,
+      }),
+    partial: string,
+    filterResults:
+      option(
+        array({
+          .
+          "text": string,
+          "id": string,
+        }),
+      ),
+  };
+
   [@react.component]
   let make = (~currentUser) => {
     let (createHighlightMutation, _s, _f) =
@@ -18,7 +36,7 @@ module PhaseTextInput = {
 
     let (textState, setTextState) = React.useState(() => "");
     let (tagsState, setTagsState) =
-      React.useState(() => TextInput.Tags.Value.empty());
+      React.useState(() => {partial: "", commits: [||], filterResults: None});
 
     let handleSave = () => {
       let createHighlightInput = {
@@ -31,8 +49,8 @@ module PhaseTextInput = {
       };
       let createTagsInput =
         tagsState.commits
-        ->Belt.Array.map(tagText =>
-            {"id": Uuid.makeV4(), "text": tagText, "createdAt": None}
+        ->Belt.Array.map(tag =>
+            {"id": tag##id, "text": tag##text, "createdAt": None}
           );
       let createHighlightTagsInput =
         createTagsInput->Belt.Array.map(tag =>
@@ -117,7 +135,29 @@ module PhaseTextInput = {
     };
 
     let handleTextChange = s => setTextState(_ => s);
-    let handleTagsChange = s => setTagsState(_ => s);
+    let handleTagsChange = (s: TextInput_Tags.Value.t) =>
+      setTagsState(tagsState => {
+        let updatedCommits =
+          s.commits
+          ->Belt.Array.map(text => {
+              switch (
+                Belt.Array.getBy(tagsState.commits, tag => tag##text === text),
+                tagsState.filterResults
+                ->Belt.Option.flatMap(r =>
+                    r->Belt.Array.getBy(tag => tag##text === text)
+                  ),
+              ) {
+              | (Some(tag), _) => tag
+              | (_, Some(tag)) => tag
+              | _ => {"id": Uuid.makeV4(), "text": text}
+              }
+            });
+        {
+          partial: s.partial,
+          commits: updatedCommits,
+          filterResults: tagsState.filterResults,
+        };
+      });
 
     <>
       <div className={cn(["px-6", "pt-4", "pb-24"])}>
@@ -125,10 +165,20 @@ module PhaseTextInput = {
           onTextChange=handleTextChange
           textValue=textState
           onTagsChange=handleTagsChange
-          tagsValue=tagsState
+          tagsValue={
+            TextInput_Tags.Value.partial: tagsState.partial,
+            commits: tagsState.commits->Belt.Array.map(t => t##text),
+          }
           placeholder="Lorem ipsum"
           autoFocus=true
         />
+        {Js.String.length(tagsState.partial) > 0
+           ? <QueryRenderers_TagsFilter
+               text={tagsState.partial}
+               onTagResults=handleTagsFilterResults
+               onTagClicked=handleTagsFilterClicked
+             />
+           : React.null}
       </div>
       {Js.String.length(textState) > 0
          ? <FloatingActionButton
