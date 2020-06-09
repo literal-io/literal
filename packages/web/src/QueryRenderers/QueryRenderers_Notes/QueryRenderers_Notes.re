@@ -40,7 +40,7 @@ module Data = {
         {highlights->Belt.Array.map(h =>
            <ScrollSnapList.Item
              key={h##id} direction=ScrollSnapList.Horizontal>
-             <Containers_NoteEditor
+             <Containers_NoteEditor_Notes
                highlightFragment={h##editorHighlightFragment}
                isActive={h##id === activeHighlight##id}
                currentUser

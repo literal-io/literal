@@ -1,6 +1,5 @@
 open Styles;
-open Containers_NoteEditor_GraphQL;
-let styles = [%raw "require('./Containers_NoteEditor.module.css')"];
+let styles = [%raw "require('./Containers_NoteEditor_Base.module.css')"];
 
 type tagState = {
   commits:
@@ -20,11 +19,18 @@ type tagState = {
     ),
 };
 
-[@react.component]
-let make = (~highlightFragment as highlight, ~isActive=true, ~currentUser) => {
-  let (updateHighlightMutation, _s, _f) =
-    ApolloHooks.useMutation(UpdateHighlightMutation.definition);
+type value = {
+  text: string,
+  tags:
+    array({
+      .
+      "id": string,
+      "text": string,
+    }),
+};
 
+[@react.component]
+let make = (~highlightFragment as highlight, ~isActive=true, ~onChange) => {
   let (textState, setTextState) = React.useState(() => {highlight##text});
   let (tagsState, setTagsState) =
     React.useState(() =>
@@ -46,10 +52,11 @@ let make = (~highlightFragment as highlight, ~isActive=true, ~currentUser) => {
     );
   let _ =
     React.useEffect2(
-      () => {/**
-     * FIXME - onValueChange callback
-     */ None},
-      (textState.commits, tagsState),
+      () => {
+        let _ = onChange({tags: tagsState.commits, text: textState});
+        None;
+      },
+      (textState, tagsState.commits),
     );
 
   let handleTextChange = s => setTextState(_ => s);

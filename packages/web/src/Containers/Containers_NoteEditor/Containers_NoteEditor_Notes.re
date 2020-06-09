@@ -1,5 +1,4 @@
-open Styles;
-open Containers_NoteEditor_GraphQL;
+open Containers_NoteEditor_Notes_GraphQL;
 
 let handleSave =
   Lodash.debounce3(
@@ -16,12 +15,24 @@ let handleSave =
     500,
   );
 
-let handleUpdateCache = (~highlight, ~editorValue, ~currentUser) => {
+let handleUpdateCache =
+    (
+      ~highlight,
+      ~editorValue: Containers_NoteEditor_Base.value,
+      ~createHighlightTagsInput,
+      ~currentUser,
+      (),
+    ) => {
   let cacheQuery =
     QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
       ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
       (),
     );
+  let highlightTags =
+    highlight##tags
+    ->Belt.Option.flatMap(t => t##items)
+    ->Belt.Option.map(t => t->Belt.Array.keepMap(t => t))
+    ->Belt.Option.getWithDefault([||]);
   let _ =
     switch (
       QueryRenderers_Notes_GraphQL.ListHighlights.readCache(
@@ -57,7 +68,7 @@ let handleUpdateCache = (~highlight, ~editorValue, ~currentUser) => {
                 ->Belt.Option.getExn;
 
               let updatedTags =
-                tagsState.commits
+                editorValue.tags
                 ->Belt.Array.map(committedTag => {
                     switch (
                       highlightTags->Belt.Array.getBy(tag =>
@@ -107,7 +118,7 @@ let handleUpdateCache = (~highlight, ~editorValue, ~currentUser) => {
                   });
               let updatedHighlight = {
                 ...highlight,
-                text: textState,
+                text: editorValue.text,
                 tags:
                   makeHighlightTagsConnection(
                     ~tags=updatedTags->Js.Option.some,
@@ -150,81 +161,85 @@ let handleUpdateCache = (~highlight, ~editorValue, ~currentUser) => {
   ();
 };
 
-let makeVariables = (~highlight, ~editorValue) => {
-  let highlightTags =
-    highlight##tags
-    ->Belt.Option.flatMap(t => t##items)
-    ->Belt.Option.map(t => t->Belt.Array.keepMap(t => t))
-    ->Belt.Option.getWithDefault([||]);
-
-  let (createTagsInput, createHighlightTagsInput) = {
-    let tagsToCreate =
-      tagsState.commits
-      ->Belt.Array.keep(tag => {
-          let alreadyExists =
-            Belt.Array.some(highlightTags, highlightTag =>
-              highlightTag##tag##id === tag##id
-            );
-          !alreadyExists;
-        });
-    /**
-     * FIXME: this may recreate the tag if it isn't associated,
-     * but already exists?
-     */
-    let createTagsInput =
-      tagsToCreate->Belt.Array.map(tag =>
-        {"id": tag##id, "text": tag##text, "createdAt": None}
-      );
-    let createHighlightTagsInput =
-      createTagsInput->Belt.Array.map(tag =>
-        {
-          "id": Some(Uuid.makeV4()),
-          "highlightId": highlight##id,
-          "tagId": tag##id,
-          "createdAt": None,
-        }
-      );
-    (createTagsInput, createHighlightTagsInput);
-  };
-
-  let deleteHighlightTagsInput =
-    highlightTags
-    ->Belt.Array.keep(highlightTag => {
-        let retained =
-          Belt.Array.some(tagsState.commits, tag =>
-            highlightTag##tag##id === tag##id
-          );
-        !retained;
-      })
-    ->Belt.Array.map(highlightTag => {"id": highlightTag##id});
-
-  let variables =
-    UpdateHighlightMutation.makeVariables(
-      ~updateHighlightInput={
-        "id": highlight##id,
-        "text": textState->Js.Option.some,
-        "createdAt": None,
-        "note": None,
-        "highlightScreenshotId": None,
-        "owner": None,
-      },
-      ~createTagsInput,
-      ~createHighlightTagsInput,
-      ~deleteHighlightTagsInput,
-      (),
-    );
-  ();
-};
-
 [@react.component]
 let make = (~highlightFragment as highlight, ~isActive, ~currentUser) => {
   let (updateHighlightMutation, _s, _f) =
     ApolloHooks.useMutation(UpdateHighlightMutation.definition);
 
-  let handleValueChange = editorValue => {
-    let variables = makeVariables(~highlight, ~editorValue);
+  let handleChange = (editorValue: Containers_NoteEditor_Base.value) => {
+    let highlightTags =
+      highlight##tags
+      ->Belt.Option.flatMap(t => t##items)
+      ->Belt.Option.map(t => t->Belt.Array.keepMap(t => t))
+      ->Belt.Option.getWithDefault([||]);
+
+    let (createTagsInput, createHighlightTagsInput) = {
+      let tagsToCreate =
+        editorValue.tags
+        ->Belt.Array.keep(tag => {
+            let alreadyExists =
+              Belt.Array.some(highlightTags, highlightTag =>
+                highlightTag##tag##id === tag##id
+              );
+            !alreadyExists;
+          });
+      /**
+     * FIXME: this may recreate the tag if it isn't associated,
+     * but already exists?
+     */
+      let createTagsInput =
+        tagsToCreate->Belt.Array.map(tag =>
+          {"id": tag##id, "text": tag##text, "createdAt": None}
+        );
+      let createHighlightTagsInput =
+        createTagsInput->Belt.Array.map(tag =>
+          {
+            "id": Some(Uuid.makeV4()),
+            "highlightId": highlight##id,
+            "tagId": tag##id,
+            "createdAt": None,
+          }
+        );
+      (createTagsInput, createHighlightTagsInput);
+    };
+
+    let deleteHighlightTagsInput =
+      highlightTags
+      ->Belt.Array.keep(highlightTag => {
+          let retained =
+            Belt.Array.some(editorValue.tags, tag =>
+              highlightTag##tag##id === tag##id
+            );
+          !retained;
+        })
+      ->Belt.Array.map(highlightTag => {"id": highlightTag##id});
+
+    let variables =
+      UpdateHighlightMutation.makeVariables(
+        ~updateHighlightInput={
+          "id": highlight##id,
+          "text": editorValue.text->Js.Option.some,
+          "createdAt": None,
+          "note": None,
+          "highlightScreenshotId": None,
+          "owner": None,
+        },
+        ~createTagsInput,
+        ~createHighlightTagsInput,
+        ~deleteHighlightTagsInput,
+        (),
+      );
     let _ =
-      handleSave(. variables, handleUpdateCache, updateHighlightMutation);
+      handleSave(.
+        variables,
+        handleUpdateCache(
+          ~highlight,
+          ~editorValue,
+          ~createHighlightTagsInput,
+          ~currentUser,
+        ),
+        updateHighlightMutation,
+      );
     ();
   };
 
@@ -238,6 +253,8 @@ let make = (~highlightFragment as highlight, ~isActive, ~currentUser) => {
       )
     });
   <Containers_NoteEditor_Base
-    highlightFragment={highlight} 
-  />
+    highlightFragment=highlight
+    isActive
+    onChange=handleChange
+  />;
 };
