@@ -91,21 +91,52 @@ module PhaseTextInput = {
               ->listHighlights
               ->Belt.Option.flatMap(highlightConnectionItems)
               ->Belt.Option.map(items => {
-                  /** FIXME: add tags **/
-                  let updatedItems =
-                    Js.Array.concat(
-                      [|
-                        Some(
-                          makeHighlight(
-                            ~id=createHighlightInput##id,
+                  let updatedTags =
+                    tagsState.commits
+                    ->Belt.Array.map(committedTag =>
+                        switch (
+                          createHighlightTagsInput->Belt.Array.getBy(input =>
+                            input##tagId === committedTag##id
+                          )
+                        ) {
+                        | Some(input) =>
+                          makeHighlightTag(
+                            ~id=input##id->Js.Option.getExn,
                             ~createdAt=Js.Date.(make()->toISOString),
-                            ~text=textState,
-                            ~tags=None,
-                          ),
-                        ),
-                      |],
-                      items,
-                    );
+                            ~tag=
+                              makeTag(
+                                ~id=input##tagId,
+                                ~text=committedTag##text,
+                              ),
+                          )
+                          ->Js.Option.some
+                        | None =>
+                          let _ =
+                            Error.(
+                              report(
+                                InvalidState(
+                                  "Expected highlight tag in cache or created, but found none.",
+                                ),
+                              )
+                            );
+                          None;
+                        }
+                      );
+
+                  let updatedHighlight =
+                    makeHighlight(
+                      ~id=createHighlightInput##id,
+                      ~createdAt=Js.Date.(make()->toISOString),
+                      ~text=textState,
+                      ~tags=
+                        makeHighlightTagsConnection(
+                          ~tags=updatedTags->Js.Option.some,
+                        )
+                        ->Js.Option.some,
+                    )
+                    ->Js.Option.some;
+                  let updatedItems =
+                    Js.Array.concat([|updatedHighlight|], items);
                   {
                     ...cachedQuery,
                     listHighlights:
@@ -158,6 +189,18 @@ module PhaseTextInput = {
           filterResults: tagsState.filterResults,
         };
       });
+
+    let handleTagsFilterResults = s =>
+      setTagsState(tagsState => {...tagsState, filterResults: s});
+
+    let handleTagsFilterClicked = tag =>
+      setTagsState(tagsState =>
+        {
+          partial: "",
+          filterResults: tagsState.filterResults,
+          commits: Belt.Array.concat(tagsState.commits, [|tag|]),
+        }
+      );
 
     <>
       <div className={cn(["px-6", "pt-4", "pb-24"])}>

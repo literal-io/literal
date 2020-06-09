@@ -10,7 +10,8 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
   let handleClose = () => {
     let variables =
       Containers_NoteHeader_GraphQL.DeleteHighlightMutation.makeVariables(
-        ~input={"id": highlight##id},
+        ~deleteHighlightInput={"id": highlight##id},
+        ~deleteHighlightTagsInput=[||],
         (),
       );
 

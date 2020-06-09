@@ -1,3 +1,4 @@
+open Containers_NoteHeader_GraphQL;
 open Styles;
 
 external castToListHighlights:
@@ -17,9 +18,21 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
   };
 
   let handleDelete = () => {
+    let deleteHighlightInput = {"id": highlight##id};
+    let deleteHighlightTagsInput =
+      highlight##tags
+      ->Belt.Option.flatMap(t => t##items)
+      ->Belt.Option.map(t =>
+          t
+          ->Belt.Array.keepMap(ht => ht)
+          ->Belt.Array.map(ht => {"id": ht##id})
+        )
+      ->Belt.Option.getWithDefault([||]);
+
     let variables =
-      Containers_NoteHeader_GraphQL.DeleteHighlightMutation.makeVariables(
-        ~input={"id": highlight##id},
+      DeleteHighlightMutation.makeVariables(
+        ~deleteHighlightInput,
+        ~deleteHighlightTagsInput,
         (),
       );
 
