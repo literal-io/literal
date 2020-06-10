@@ -13,5 +13,5 @@ let make = (~currentUser) =>
       "overflow-y-auto",
     ])}>
     <Containers_NewNoteHeader />
-    <Containers_NewNoteEditor currentUser />
+    <Containers_NoteEditor_New currentUser />
   </div>;

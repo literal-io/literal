@@ -30,11 +30,26 @@ type value = {
 };
 
 [@react.component]
-let make = (~highlightFragment as highlight, ~isActive=true, ~onChange) => {
-  let (textState, setTextState) = React.useState(() => {highlight##text});
+let make =
+    (
+      ~highlightFragment as highlight=?,
+      ~isActive=true,
+      ~onChange,
+      ~autoFocus=?,
+      ~placeholder=?,
+    ) => {
+  let (textState, setTextState) =
+    React.useState(() =>
+      switch (highlight) {
+      | Some(highlight) => highlight##text
+      | None => ""
+      }
+    );
+
   let (tagsState, setTagsState) =
     React.useState(() =>
-      highlight##tags
+      highlight
+      ->Belt.Option.flatMap(h => h##tags)
       ->Belt.Option.flatMap(t => t##items)
       ->Belt.Option.map(t =>
           {
@@ -116,6 +131,8 @@ let make = (~highlightFragment as highlight, ~isActive=true, ~onChange) => {
           commits: tagsState.commits->Belt.Array.map(t => t##text),
         }
         onTagsChange=handleTagsChange
+        ?placeholder
+        ?autoFocus
       />
       {isActive && Js.String.length(tagsState.partial) > 0
          ? <QueryRenderers_TagsFilter
