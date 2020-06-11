@@ -1,5 +1,5 @@
 #if( $ctx.result.get("keys") )
-  $util.toJson($ctx.result.keys)
+  $util.toJson($ctx.stash.transactItems)
 #else
   $util.toJson($ctx.result)
 #end

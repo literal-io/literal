@@ -37,6 +37,8 @@
 ## [Start] Prepare DynamoDB PutItem Request. **
 
 #set( $transactItems = [] )
+$util.qr($ctx.stash.put("transactItems", []))
+
 #foreach( $item in $ctx.args.input )
   #set( $condition = {
     "expression": "attribute_not_exists(#id)",
@@ -56,6 +58,8 @@
   $util.qr($item.put("createdAt", $util.defaultIfNull($item.createdAt, $util.time.nowISO8601())))
   $util.qr($item.put("updatedAt", $util.defaultIfNull($item.updatedAt, $util.time.nowISO8601())))
   $util.qr($item.put("__typename", "Tag"))
+
+  $util.qr($ctx.stash.transactItems.add($item))
 
   #set( $operation = {
     "table": "Tag-rkihsloeqbdabdpebem3fqqjuy-production",
