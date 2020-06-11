@@ -1,4 +1,5 @@
 open Containers_NoteEditor_Notes_GraphQL;
+open Containers_NoteEditor_GraphQL_Util;
 
 let handleSave =
   Lodash.debounce3(
@@ -127,11 +128,11 @@ let handleUpdateCache =
               };
               let updatedHighlights =
                 Belt.Array.concatMany([|
-                  Belt.Array.slice(items, ~offset=0, ~len=itemIdx - 1),
+                  Belt.Array.slice(items, ~offset=0, ~len=itemIdx),
                   [|Some(updatedHighlight)|],
                   Belt.Array.sliceToEnd(
                     items,
-                    max(itemIdx + 1, Js.Array2.length(items) - 1),
+                    min(itemIdx + 1, Js.Array2.length(items) - 1),
                   ),
                 |]);
               {
@@ -194,7 +195,9 @@ let make = (~highlightFragment as highlight, ~isActive, ~currentUser) => {
       let createHighlightTagsInput =
         createTagsInput->Belt.Array.map(tag =>
           {
-            "id": Some(Uuid.makeV4()),
+            "id":
+              makeHighlightTagId(~highlightId=highlight##id, ~tagId=tag##id)
+              ->Js.Option.some,
             "highlightId": highlight##id,
             "tagId": tag##id,
             "createdAt": None,
@@ -256,5 +259,6 @@ let make = (~highlightFragment as highlight, ~isActive, ~currentUser) => {
     highlightFragment=highlight
     isActive
     onChange=handleChange
+    currentUser
   />;
 };

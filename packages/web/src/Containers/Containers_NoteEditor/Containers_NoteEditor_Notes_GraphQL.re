@@ -31,7 +31,6 @@ module UpdateHighlightMutation = [%graphql
     }
     createTags(input: $createTagsInput) {
       id
-      createdAt
     }
     createHighlightTags(input: $createHighlightTagsInput) {
       id

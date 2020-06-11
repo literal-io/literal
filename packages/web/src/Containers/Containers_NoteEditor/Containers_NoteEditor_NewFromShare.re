@@ -1,8 +1,9 @@
 open Styles;
 open Containers_NoteEditor_NewFromShare_GraphQL;
+open Containers_NoteEditor_GraphQL_Util;
 
 [@react.component]
-let make = (~highlightFragment as highlight) => {
+let make = (~highlightFragment as highlight, ~currentUser) => {
   let (editorValue, setEditorValue) =
     React.useState(() => Containers_NoteEditor_Base.{text: "", tags: [||]});
 
@@ -26,7 +27,12 @@ let make = (~highlightFragment as highlight) => {
     let createHighlightTagsInput =
       createTagsInput->Belt.Array.map(tag =>
         {
-          "id": Some(Uuid.makeV4()),
+          "id":
+            makeHighlightTagId(
+              ~highlightId=updateHighlightInput##id,
+              ~tagId=tag##id,
+            )
+            ->Js.Option.some,
           "highlightId": updateHighlightInput##id,
           "tagId": tag##id,
           "createdAt": None,
@@ -60,6 +66,7 @@ let make = (~highlightFragment as highlight) => {
         onChange=handleChange
         autoFocus=true
         placeholder="Lorem Ipsum"
+        currentUser
       />
     </div>
     <FloatingActionButton

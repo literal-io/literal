@@ -1,4 +1,6 @@
 open Styles;
+open Containers_NoteEditor_GraphQL_Util;
+
 let styles = [%raw "require('./Containers_NoteEditor_Base.module.css')"];
 
 type tagState = {
@@ -35,6 +37,7 @@ let make =
       ~highlightFragment as highlight=?,
       ~isActive=true,
       ~onChange,
+      ~currentUser,
       ~autoFocus=?,
       ~placeholder=?,
     ) => {
@@ -89,7 +92,15 @@ let make =
             ) {
             | (Some(tag), _) => tag
             | (_, Some(tag)) => tag
-            | _ => {"id": Uuid.makeV4(), "text": text}
+            | _ => {
+                "id":
+                  makeTagId(
+                    ~text,
+                    ~owner=
+                      currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                  ),
+                "text": text,
+              }
             }
           });
 

@@ -19,6 +19,7 @@ module Data = {
         highlightFragment={highlight##headerHighlightFragment}
       />
       <Containers_NoteEditor_NewFromShare
+        currentUser
         highlightFragment={highlight##editorHighlightFragment}
       />
     </div>;

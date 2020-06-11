@@ -33,19 +33,42 @@
 #end
 
 ## [Start] Prepare DynamoDB PutItem Request. **
-#set ( $batchPutItemData = [] )
-#foreach ( $item in $ctx.args.input )
+#set( $transactItems = [] )
+#foreach( $item in $ctx.args.input )
+
+  #set( $condition = {
+    "expression": "attribute_not_exists(#id)",
+    "expressionNames": {
+        "#id": "id"
+    }
+  } )
+
+  #if( $modelObjectKey )
+    #set( $operationKey = $modelObjectKey )
+  #else 
+    #set( $operationKey = {
+      "id": $util.dynamodb.toDynamoDB($item.id)
+    } )
+  #end
+
   $util.qr($item.put("createdAt", $util.defaultIfNull($item.createdAt, $util.time.nowISO8601())))
   $util.qr($item.put("updatedAt", $util.defaultIfNull($item.updatedAt, $util.time.nowISO8601())))
   $util.qr($item.put("__typename", "HighlightTag"))
-  $util.qr($batchPutItemData.add($util.dynamodb.toMapValues($item)))
+
+  #set( $operation = {
+    "table": "HighlightTag-rkihsloeqbdabdpebem3fqqjuy-production",
+    "operation": "PutItem",
+    "key": $operationKey,
+    "attributeValues": $util.dynamodb.toMapValues($item),
+    "condition": $condition
+  } )
+
+  $util.qr($transactItems.add($operation))
 #end
 
 ## FIXME: shouldn't hardcode table name - env dependent - derive from context?
 {
   "version": "2018-05-29",
-  "operation": "BatchPutItem",
-  "tables": {
-    "HighlightTag-rkihsloeqbdabdpebem3fqqjuy-production": $utils.toJson($batchPutItemData)
-  }
+  "operation": "TransactWriteItems",
+  "transactItems": $util.toJson($transactItems)
 }

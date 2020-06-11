@@ -1,5 +1,6 @@
 open Styles;
 open Containers_NoteEditor_New_GraphQL;
+open Containers_NoteEditor_GraphQL_Util;
 
 [@bs.deriving accessors]
 type phase =
@@ -132,7 +133,11 @@ module PhaseTextInput = {
       let createHighlightTagsInput =
         createTagsInput->Belt.Array.map(tag =>
           {
-            "id": Some(Uuid.makeV4()),
+            "id":
+              makeHighlightTagId(
+                ~highlightId=createHighlightInput##id,
+                ~tagId=tag##id,
+              )->Js.Option.some,
             "highlightId": createHighlightInput##id,
             "tagId": tag##id,
             "createdAt": None,
@@ -163,8 +168,9 @@ module PhaseTextInput = {
     <>
       <Containers_NoteEditor_Base
         onChange=handleChange
-        autoFocus={true}
+        autoFocus=true
         placeholder="Lorem Ipsum"
+        currentUser
       />
       {Js.String.length(editorValue.text) > 0
          ? <FloatingActionButton

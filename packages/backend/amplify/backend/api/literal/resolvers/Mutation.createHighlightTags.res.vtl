@@ -1,1 +1,5 @@
-$util.toJson($ctx.result.data.get("HighlightTag-rkihsloeqbdabdpebem3fqqjuy-production"))
+#if( $ctx.result.get("keys") )
+  $util.toJson($ctx.result.keys)
+#else
+  $util.toJson($ctx.result)
+#end
