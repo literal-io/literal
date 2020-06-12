@@ -130,10 +130,12 @@ let handleUpdateCache =
                 Belt.Array.concatMany([|
                   Belt.Array.slice(items, ~offset=0, ~len=itemIdx),
                   [|Some(updatedHighlight)|],
-                  Belt.Array.sliceToEnd(
-                    items,
-                    min(itemIdx + 1, Js.Array2.length(items) - 1),
-                  ),
+                  itemIdx === Js.Array2.length(items) - 1
+                    ? [||]
+                    : Belt.Array.sliceToEnd(
+                        items,
+                        min(itemIdx + 1, Js.Array2.length(items) - 1),
+                      ),
                 |]);
               {
                 ...cachedQuery,
