@@ -56,6 +56,6 @@ module Lambda = {
 }
 
 let handler: Lambda.handler = (event, ctx, cb) => {
-  Js.log(Js.Json.stringifyAny(event));
+  Js.log2("event", Js.Json.stringifyAny(event));
   Js.Promise.resolve(None); 
 };
