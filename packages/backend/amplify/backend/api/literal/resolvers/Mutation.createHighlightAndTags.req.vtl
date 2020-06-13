@@ -128,9 +128,9 @@ $util.qr($ctx.stash.put("createTags", []))
   "id": $util.dynamodb.toDynamoDB($ctx.args.input.createHighlight.id)
 } )
 
-$util.qr($item.put("createdAt", $util.defaultIfNull($ctx.args.input.createHighlight.createdAt, $util.time.nowISO8601())))
-$util.qr($item.put("updatedAt", $util.defaultIfNull($ctx.args.input.createHighlight.updatedAt, $util.time.nowISO8601())))
-$util.qr($item.put("__typename", "Highlight"))
+$util.qr($ctx.args.input.createHighlight.put("createdAt", $util.defaultIfNull($ctx.args.input.createHighlight.createdAt, $util.time.nowISO8601())))
+$util.qr($ctx.args.input.createHighlight.put("updatedAt", $util.defaultIfNull($ctx.args.input.createHighlight.updatedAt, $util.time.nowISO8601())))
+$util.qr($ctx.args.input.createHighlight.put("__typename", "Highlight"))
 
 $util.qr($ctx.stash.put("createHighlight", $ctx.args.input.createHighlight))
 

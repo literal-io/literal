@@ -1,0 +1,12 @@
+{
+    "permissions": {
+        "api": {
+            "literal": [
+                "create",
+                "read",
+                "update",
+                "delete"
+            ]
+        }
+    }
+}
