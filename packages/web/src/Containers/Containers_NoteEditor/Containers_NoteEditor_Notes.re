@@ -221,17 +221,26 @@ let make = (~highlightFragment as highlight, ~isActive, ~currentUser) => {
 
     let variables =
       UpdateHighlightMutation.makeVariables(
-        ~updateHighlightInput={
-          "id": highlight##id,
-          "text": editorValue.text->Js.Option.some,
-          "createdAt": None,
-          "note": None,
-          "highlightScreenshotId": None,
-          "owner": None,
+        ~input={
+          "updateHighlight":
+            Some({
+              "id": highlight##id,
+              "text": editorValue.text->Js.Option.some,
+              "createdAt": None,
+              "note": None,
+              "highlightScreenshotId": None,
+              "owner": None,
+            }),
+          "createHighlightTags":
+            Js.Array2.length(createHighlightTagsInput) > 0
+              ? Some(createHighlightTagsInput) : None,
+          "createTags":
+            Js.Array2.length(createTagsInput) > 0
+              ? Some(createTagsInput) : None,
+          "deleteHighlightTags":
+            Js.Array2.length(deleteHighlightTagsInput) > 0
+              ? Some(deleteHighlightTagsInput) : None,
         },
-        ~createTagsInput,
-        ~createHighlightTagsInput,
-        ~deleteHighlightTagsInput,
         (),
       );
     let _ =

@@ -144,6 +144,33 @@ input CreateHighlightFromScreenshotInput {
   note: String
 }
 
+input UpdateHighlightInput {
+  id: ID!
+  createdAt: String
+  text: String
+  note: String
+  owner: String
+  highlightScreenshotId: ID
+}
+
+input UpdateHighlightAndTagsInput {
+  updateHighlight: UpdateHighlightInput
+  createTags: [CreateTagInput!]
+  createHighlightTags: [CreateHighlightTagInput!]
+  deleteHighlightTags: [DeleteHighlightTagInput!]
+}
+
+type DeletionResult {
+  id: ID!
+}
+
+type UpdateHighlightAndTagsResult {
+  updateHighlight: Highlight
+  createTags: [Tag!]
+  createHighlightTags: [HighlightTag!]
+  deleteHighlightTags: [DeletionResult!]
+}
+
 type Mutation {
   createHighlightFromScreenshot(
     input: CreateHighlightFromScreenshotInput!
@@ -154,4 +181,8 @@ type Mutation {
   createTags(input: [CreateTagInput!]!): [Tag!]!
   createHighlightTags(input: [CreateHighlightTagInput!]!): [HighlightTag!]!
   deleteHighlightTags(input: [DeleteHighlightTagInput!]!): [HighlightTag!]!
+
+  updateHighlightAndTags(
+    input: UpdateHighlightAndTagsInput!
+  ): UpdateHighlightAndTagsResult!
 }
