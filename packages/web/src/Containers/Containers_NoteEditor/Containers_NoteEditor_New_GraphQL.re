@@ -1,20 +1,19 @@
 module CreateHighlightMutation = [%graphql
   {|
-    mutation CreateHighlight(
-      $createHighlightInput: CreateHighlightInput!
-      $createTagsInput: [CreateTagInput!]!
-      $createHighlightTagsInput: [CreateHighlightTagInput!]!
-    ) {
-      createHighlight(input: $createHighlightInput) {
-        id
-        createdAt
-      }
-      createTags(input: $createTagsInput) {
-        id
-        createdAt
-      }
-      createHighlightTags(input: $createHighlightTagsInput) {
-        id
+    mutation CreateHighlight($input: CreateHighlightAndTagsInput!) {
+      createHighlightAndTags(input: $input) {
+        createHighlight {
+          id
+          createdAt
+        }
+        createTags {
+          id
+          createdAt
+        }
+        createHighlightTags {
+          id
+          createdAt
+        }
       }
     }
   |}

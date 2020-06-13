@@ -137,7 +137,8 @@ module PhaseTextInput = {
               makeHighlightTagId(
                 ~highlightId=createHighlightInput##id,
                 ~tagId=tag##id,
-              )->Js.Option.some,
+              )
+              ->Js.Option.some,
             "highlightId": createHighlightInput##id,
             "tagId": tag##id,
             "createdAt": None,
@@ -146,9 +147,15 @@ module PhaseTextInput = {
 
       let variables =
         CreateHighlightMutation.makeVariables(
-          ~createHighlightInput,
-          ~createTagsInput,
-          ~createHighlightTagsInput,
+          ~input={
+            "createHighlight": createHighlightInput,
+            "createTags":
+              Js.Array2.length(createTagsInput) > 0
+                ? Some(createTagsInput) : None,
+            "createHighlightTags":
+              Js.Array2.length(createHighlightTagsInput) > 0
+                ? Some(createHighlightTagsInput) : None,
+          },
           (),
         );
       let _ = createHighlightMutation(~variables, ());

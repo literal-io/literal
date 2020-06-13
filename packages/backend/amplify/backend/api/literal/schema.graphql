@@ -171,6 +171,18 @@ type UpdateHighlightAndTagsResult {
   deleteHighlightTags: [DeletionResult!]
 }
 
+input CreateHighlightAndTagsInput {
+  createHighlight: CreateHighlightInput!
+  createTags: [CreateTagInput!]
+  createHighlightTags: [CreateHighlightTagInput!]
+}
+
+type CreateHighlightAndTagsResult {
+  createHighlight: Highlight!
+  createTags: [Tag!]
+  createHighlightTags: [HighlightTag!]
+}
+
 type Mutation {
   createHighlightFromScreenshot(
     input: CreateHighlightFromScreenshotInput!
@@ -185,4 +197,8 @@ type Mutation {
   updateHighlightAndTags(
     input: UpdateHighlightAndTagsInput!
   ): UpdateHighlightAndTagsResult!
+
+  createHighlightAndTags(
+    input: CreateHighlightAndTagsInput!
+  ): CreateHighlightAndTagsResult!
 }

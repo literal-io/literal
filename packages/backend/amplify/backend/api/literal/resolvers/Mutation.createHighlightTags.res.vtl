@@ -1,8 +1,5 @@
 #if ($ctx.error)
-  $util.appendError($ctx.error.message, $ctx.error.type, null, $ctx.result.cancellationReasons)
-  $util.toJson([])
-#elseif( $ctx.result.get("keys") )
-  $util.toJson($ctx.stash.transactItems)
+  $util.error($ctx.error.message, $ctx.error.type, null, $ctx.result.cancellationReasons)
 #else
-  $util.toJson($ctx.result)
+  $util.toJson($ctx.stash.transactItems)
 #end
