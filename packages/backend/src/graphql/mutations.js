@@ -42,17 +42,17 @@ export const createHighlightTags = /* GraphQL */ `
       highlightId
       tagId
       createdAt
+      tag {
+        id
+        createdAt
+        text
+        owner
+      }
       highlight {
         id
         createdAt
         text
         note
-        owner
-      }
-      tag {
-        id
-        createdAt
-        text
         owner
       }
     }
@@ -65,17 +65,17 @@ export const deleteHighlightTags = /* GraphQL */ `
       highlightId
       tagId
       createdAt
+      tag {
+        id
+        createdAt
+        text
+        owner
+      }
       highlight {
         id
         createdAt
         text
         note
-        owner
-      }
-      tag {
-        id
-        createdAt
-        text
         owner
       }
     }
@@ -105,6 +105,31 @@ export const updateHighlightAndTags = /* GraphQL */ `
       }
       deleteHighlightTags {
         id
+      }
+    }
+  }
+`;
+export const createHighlightAndTags = /* GraphQL */ `
+  mutation CreateHighlightAndTags($input: CreateHighlightAndTagsInput!) {
+    createHighlightAndTags(input: $input) {
+      createHighlight {
+        id
+        createdAt
+        text
+        note
+        owner
+      }
+      createTags {
+        id
+        createdAt
+        text
+        owner
+      }
+      createHighlightTags {
+        id
+        highlightId
+        tagId
+        createdAt
       }
     }
   }
@@ -192,22 +217,6 @@ export const updateTag = /* GraphQL */ `
     }
   }
 `;
-export const deleteTag = /* GraphQL */ `
-  mutation DeleteTag(
-    $input: DeleteTagInput!
-    $condition: ModelTagConditionInput
-  ) {
-    deleteTag(input: $input, condition: $condition) {
-      id
-      createdAt
-      text
-      owner
-      highlights {
-        nextToken
-      }
-    }
-  }
-`;
 export const createHighlight = /* GraphQL */ `
   mutation CreateHighlight(
     $input: CreateHighlightInput!
@@ -284,17 +293,17 @@ export const createHighlightTag = /* GraphQL */ `
       highlightId
       tagId
       createdAt
+      tag {
+        id
+        createdAt
+        text
+        owner
+      }
       highlight {
         id
         createdAt
         text
         note
-        owner
-      }
-      tag {
-        id
-        createdAt
-        text
         owner
       }
     }
@@ -310,17 +319,17 @@ export const updateHighlightTag = /* GraphQL */ `
       highlightId
       tagId
       createdAt
+      tag {
+        id
+        createdAt
+        text
+        owner
+      }
       highlight {
         id
         createdAt
         text
         note
-        owner
-      }
-      tag {
-        id
-        createdAt
-        text
         owner
       }
     }
@@ -336,17 +345,17 @@ export const deleteHighlightTag = /* GraphQL */ `
       highlightId
       tagId
       createdAt
+      tag {
+        id
+        createdAt
+        text
+        owner
+      }
       highlight {
         id
         createdAt
         text
         note
-        owner
-      }
-      tag {
-        id
-        createdAt
-        text
         owner
       }
     }
@@ -375,6 +384,22 @@ export const deleteProfile = /* GraphQL */ `
       owner
       createdAt
       isOnboarded
+    }
+  }
+`;
+export const deleteTag = /* GraphQL */ `
+  mutation DeleteTag(
+    $input: DeleteTagInput!
+    $condition: ModelTagConditionInput
+  ) {
+    deleteTag(input: $input, condition: $condition) {
+      id
+      createdAt
+      text
+      owner
+      highlights {
+        nextToken
+      }
     }
   }
 `;

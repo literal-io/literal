@@ -4,6 +4,7 @@ let _ = AwsAmplify.(inst->configure(Constants.awsAmplifyConfig));
 
 let handler: Lambda.handler =
   (event, ctx, cb) => {
+    Js.log(Js.Json.stringifyAny(event));
     switch (event->Lambda.event_decode) {
     | Belt.Result.Ok(event) =>
       event.records
@@ -22,6 +23,15 @@ let handler: Lambda.handler =
         )
       |> Js.Promise.all
       |> Js.Promise.then_(_ => {Js.Promise.resolve(None)})
+      |> Js.Promise.catch(err => {
+           Js.log(err);
+           let exn =
+             Error.EventHandlerError(
+               Js.Json.stringifyAny(err)
+               ->Belt.Option.getWithDefault("Promise exception"),
+             );
+           Js.Promise.reject(exn);
+         })
     | Belt.Result.Error(error) =>
       let exn = Error.DeccoDecodeError(error);
       Error.report(exn);

@@ -64,6 +64,7 @@ type Tag
         ownerField: "owner"
         operations: [create, read, update, delete]
       }
+      { allow: private, provider: iam, operations: [delete, read] }
     ]
   ) {
   id: ID!
@@ -83,6 +84,7 @@ type Highlight
         ownerField: "owner"
         operations: [create, read, update, delete]
       }
+      { allow: private, provider: iam, operations: [read] }
     ]
   ) {
   id: ID!
@@ -105,6 +107,7 @@ type HighlightTag
         ownerField: "owner"
         operations: [create, read, update, delete]
       }
+      { allow: private, provider: iam, operations: [read] }
     ]
   ) {
   id: ID!

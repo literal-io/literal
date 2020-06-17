@@ -13,8 +13,8 @@ type highlightTagAttributeMap = {
 
 [@decco]
 type dynamoStreamItem('a) = {
-  [@decco.key "ApproximateCreationTimeDate"]
-  approximateCreationTimeDate: string,
+  [@decco.key "ApproximateCreationDateTime"]
+  approximateCreationDateTime: float,
   [@decco.default None] [@decco.key "NewImage"]
   newImage: option('a),
   [@decco.default None] [@decco.key "OldImage"]
@@ -22,7 +22,7 @@ type dynamoStreamItem('a) = {
   [@decco.key "SequenceNumber"]
   sequenceNumber: string,
   [@decco.key "SizeBytes"]
-  sizeBytes: string,
+  sizeBytes: float,
   [@decco.key "StreamViewType"]
   streamViewType: string,
 };
@@ -36,7 +36,7 @@ let tableNameFromEventARN = arn =>
 type record = {
   eventName: string,
   eventSource: string,
-  eventId: string,
+  eventID: string,
   eventVersion: string,
   awsRegion: string,
   eventSourceARN: string,

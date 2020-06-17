@@ -56,7 +56,7 @@
 				"Timeout": "25",
 				"Code": {
 					"S3Bucket": "amplify-literal-production-114446-deployment",
-					"S3Key": "amplify-builds/CloudfrontOriginRequest-725a2f49323543536645-build.zip"
+					"S3Key": "amplify-builds/CloudfrontOriginRequest-6e4d5a6757545a36534b-build.zip"
 				}
 			}
 		},
