@@ -23,15 +23,14 @@ module DeleteTagMutation = [%graphql
 ];
 
 let onRemove = (db: Lambda.highlightTagAttributeMap) => {
-  let queryOp = {
-    let query = GetTagQuery.make(~id=db.tagId.string, ());
-    AwsAmplify.Api.graphqlOperation(
-      ~query=query##query,
-      ~variables=query##variables,
-    );
-  };
-  AwsAmplify.Api.(graphql(inst, queryOp))
+  let query = GetTagQuery.make(~id=db.tagId.string, ());
+  GraphQL.request(
+    ~query=query##query,
+    ~variables=query##variables,
+    ~operationName="GetTag",
+  )
   |> Js.Promise.then_(r => {
+        Js.log2("request result", Js.Json.stringify(r));
        let shouldRetainHighlight =
          r
          ->Js.Json.decodeObject
@@ -47,15 +46,16 @@ let onRemove = (db: Lambda.highlightTagAttributeMap) => {
          ->Belt.Option.getWithDefault(false);
 
        if (!shouldRetainHighlight) {
-         let mutationOp = {
-           let mutation = DeleteTagMutation.make(~id=db.tagId.string, ());
-           AwsAmplify.Api.graphqlOperation(
-             ~query=mutation##query,
-             ~variables=mutation##variables,
-           );
-         };
-         AwsAmplify.Api.(graphql(inst, mutationOp))
-         |> Js.Promise.then_(r => r->Js.Option.some->Js.Promise.resolve);
+         let mutation = DeleteTagMutation.make(~id=db.tagId.string, ());
+         GraphQL.request(
+           ~query=mutation##query,
+           ~variables=mutation##variables,
+           ~operationName="DeleteTag",
+         )
+         |> Js.Promise.then_(r => {
+              Js.log2("deletion result", Js.Json.stringify(r));
+              r->Js.Option.some->Js.Promise.resolve;
+            });
        } else {
          Js.Promise.resolve(None);
        };

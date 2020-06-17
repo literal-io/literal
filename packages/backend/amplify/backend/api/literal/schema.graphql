@@ -64,7 +64,7 @@ type Tag
         ownerField: "owner"
         operations: [create, read, update, delete]
       }
-      { allow: private, provider: iam, operations: [delete, read] }
+      { allow: private, provider: iam, operations: [create, read, update, delete] }
     ]
   ) {
   id: ID!
@@ -84,7 +84,7 @@ type Highlight
         ownerField: "owner"
         operations: [create, read, update, delete]
       }
-      { allow: private, provider: iam, operations: [read] }
+      { allow: private, provider: iam, operations: [create, read, update, delete] }
     ]
   ) {
   id: ID!
@@ -107,7 +107,7 @@ type HighlightTag
         ownerField: "owner"
         operations: [create, read, update, delete]
       }
-      { allow: private, provider: iam, operations: [read] }
+      { allow: private, provider: iam, operations: [create, read, update, delete] }
     ]
   ) {
   id: ID!
@@ -124,7 +124,7 @@ type Profile
   @auth(
     rules: [
       { allow: owner, ownerField: "owner", operations: [read, update] }
-      { allow: private, provider: iam, operations: [create] }
+      { allow: private, provider: iam, operations: [create, read, update, delete] }
     ]
   ) {
   id: ID!

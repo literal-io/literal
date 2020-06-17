@@ -3,6 +3,7 @@ type request = {
   mutable method_: string,
   mutable body: string,
   mutable headers: Js.Dict.t(string),
+  mutable host: string
 };
 
 [@bs.new] [@bs.module "aws-sdk"]
@@ -24,10 +25,10 @@ module Util = {
 module Signer = {
   type t;
 
-  [@bs.val]
+  [@bs.send]
   external addAuthorization: (t, Config.credentials, Util.date) => unit =
     "addAuthorization";
+  [@bs.new] [@bs.scope "Signers"] [@bs.module "aws-sdk"]
+  external make: (request, string, bool) => t = "V4";
 };
 
-[@bs.new] [@bs.scope "Signer"] [@bs.module "aws-sdk"]
-external signer: (request, string, bool) => Signer.t = "V4";

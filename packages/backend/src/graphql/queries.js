@@ -31,41 +31,6 @@ export const listScreenshots = /* GraphQL */ `
     }
   }
 `;
-export const getProfile = /* GraphQL */ `
-  query GetProfile($owner: String!) {
-    getProfile(owner: $owner) {
-      id
-      owner
-      createdAt
-      isOnboarded
-    }
-  }
-`;
-export const listProfiles = /* GraphQL */ `
-  query ListProfiles(
-    $owner: String
-    $filter: ModelProfileFilterInput
-    $limit: Int
-    $nextToken: String
-    $sortDirection: ModelSortDirection
-  ) {
-    listProfiles(
-      owner: $owner
-      filter: $filter
-      limit: $limit
-      nextToken: $nextToken
-      sortDirection: $sortDirection
-    ) {
-      items {
-        id
-        owner
-        createdAt
-        isOnboarded
-      }
-      nextToken
-    }
-  }
-`;
 export const listTags = /* GraphQL */ `
   query ListTags(
     $id: ID
@@ -146,6 +111,41 @@ export const getHighlight = /* GraphQL */ `
       tags {
         nextToken
       }
+    }
+  }
+`;
+export const getProfile = /* GraphQL */ `
+  query GetProfile($owner: String!) {
+    getProfile(owner: $owner) {
+      id
+      owner
+      createdAt
+      isOnboarded
+    }
+  }
+`;
+export const listProfiles = /* GraphQL */ `
+  query ListProfiles(
+    $owner: String
+    $filter: ModelProfileFilterInput
+    $limit: Int
+    $nextToken: String
+    $sortDirection: ModelSortDirection
+  ) {
+    listProfiles(
+      owner: $owner
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      sortDirection: $sortDirection
+    ) {
+      items {
+        id
+        owner
+        createdAt
+        isOnboarded
+      }
+      nextToken
     }
   }
 `;

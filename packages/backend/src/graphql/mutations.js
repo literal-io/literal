@@ -217,6 +217,22 @@ export const updateTag = /* GraphQL */ `
     }
   }
 `;
+export const deleteTag = /* GraphQL */ `
+  mutation DeleteTag(
+    $input: DeleteTagInput!
+    $condition: ModelTagConditionInput
+  ) {
+    deleteTag(input: $input, condition: $condition) {
+      id
+      createdAt
+      text
+      owner
+      highlights {
+        nextToken
+      }
+    }
+  }
+`;
 export const createHighlight = /* GraphQL */ `
   mutation CreateHighlight(
     $input: CreateHighlightInput!
@@ -361,6 +377,19 @@ export const deleteHighlightTag = /* GraphQL */ `
     }
   }
 `;
+export const createProfile = /* GraphQL */ `
+  mutation CreateProfile(
+    $input: CreateProfileInput!
+    $condition: ModelProfileConditionInput
+  ) {
+    createProfile(input: $input, condition: $condition) {
+      id
+      owner
+      createdAt
+      isOnboarded
+    }
+  }
+`;
 export const updateProfile = /* GraphQL */ `
   mutation UpdateProfile(
     $input: UpdateProfileInput!
@@ -380,35 +409,6 @@ export const deleteProfile = /* GraphQL */ `
     $condition: ModelProfileConditionInput
   ) {
     deleteProfile(input: $input, condition: $condition) {
-      id
-      owner
-      createdAt
-      isOnboarded
-    }
-  }
-`;
-export const deleteTag = /* GraphQL */ `
-  mutation DeleteTag(
-    $input: DeleteTagInput!
-    $condition: ModelTagConditionInput
-  ) {
-    deleteTag(input: $input, condition: $condition) {
-      id
-      createdAt
-      text
-      owner
-      highlights {
-        nextToken
-      }
-    }
-  }
-`;
-export const createProfile = /* GraphQL */ `
-  mutation CreateProfile(
-    $input: CreateProfileInput!
-    $condition: ModelProfileConditionInput
-  ) {
-    createProfile(input: $input, condition: $condition) {
       id
       owner
       createdAt

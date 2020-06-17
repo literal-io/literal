@@ -69,6 +69,19 @@ export const onUpdateTag = /* GraphQL */ `
     }
   }
 `;
+export const onDeleteTag = /* GraphQL */ `
+  subscription OnDeleteTag($owner: String!) {
+    onDeleteTag(owner: $owner) {
+      id
+      createdAt
+      text
+      owner
+      highlights {
+        nextToken
+      }
+    }
+  }
+`;
 export const onCreateHighlight = /* GraphQL */ `
   subscription OnCreateHighlight($owner: String!) {
     onCreateHighlight(owner: $owner) {
@@ -195,6 +208,16 @@ export const onDeleteHighlightTag = /* GraphQL */ `
     }
   }
 `;
+export const onCreateProfile = /* GraphQL */ `
+  subscription OnCreateProfile {
+    onCreateProfile {
+      id
+      owner
+      createdAt
+      isOnboarded
+    }
+  }
+`;
 export const onUpdateProfile = /* GraphQL */ `
   subscription OnUpdateProfile($owner: String!) {
     onUpdateProfile(owner: $owner) {
@@ -208,29 +231,6 @@ export const onUpdateProfile = /* GraphQL */ `
 export const onDeleteProfile = /* GraphQL */ `
   subscription OnDeleteProfile {
     onDeleteProfile {
-      id
-      owner
-      createdAt
-      isOnboarded
-    }
-  }
-`;
-export const onDeleteTag = /* GraphQL */ `
-  subscription OnDeleteTag($owner: String!) {
-    onDeleteTag(owner: $owner) {
-      id
-      createdAt
-      text
-      owner
-      highlights {
-        nextToken
-      }
-    }
-  }
-`;
-export const onCreateProfile = /* GraphQL */ `
-  subscription OnCreateProfile {
-    onCreateProfile {
       id
       owner
       createdAt
