@@ -54,14 +54,18 @@ let make =
       highlight
       ->Belt.Option.flatMap(h => h##tags)
       ->Belt.Option.flatMap(t => t##items)
-      ->Belt.Option.map(t =>
-          {
-            partial: "",
-            commits:
-              t->Belt.Array.keepMap(t => t)->Belt.Array.map(t => t##tag),
-            filterResults: None,
-          }
-        )
+      ->Belt.Option.map(t => {
+          let commits =
+            (
+              Belt.Array.keepMap(t, t => t)
+              |> Ramda.sortBy(t =>
+                   -. t##createdAt->Js.Date.fromString->Js.Date.valueOf
+                 )
+            )
+            ->Belt.Array.map(t => t##tag);
+
+          {partial: "", commits, filterResults: None};
+        })
       ->Belt.Option.getWithDefault({
           partial: "",
           commits: [||],
