@@ -64,7 +64,11 @@ type Tag
         ownerField: "owner"
         operations: [create, read, update, delete]
       }
-      { allow: private, provider: iam, operations: [create, read, update, delete] }
+      {
+        allow: private
+        provider: iam
+        operations: [create, read, update, delete]
+      }
     ]
   ) {
   id: ID!
@@ -84,7 +88,11 @@ type Highlight
         ownerField: "owner"
         operations: [create, read, update, delete]
       }
-      { allow: private, provider: iam, operations: [create, read, update, delete] }
+      {
+        allow: private
+        provider: iam
+        operations: [create, read, update, delete]
+      }
     ]
   ) {
   id: ID!
@@ -97,7 +105,7 @@ type Highlight
 }
 
 type HighlightTag
-  @model(queries: null)
+  @model
   @key(name: "byHighlight", fields: ["highlightId", "tagId"])
   @key(name: "byTag", fields: ["tagId", "highlightId"])
   @auth(
@@ -107,7 +115,11 @@ type HighlightTag
         ownerField: "owner"
         operations: [create, read, update, delete]
       }
-      { allow: private, provider: iam, operations: [create, read, update, delete] }
+      {
+        allow: private
+        provider: iam
+        operations: [create, read, update, delete]
+      }
     ]
   ) {
   id: ID!
@@ -124,7 +136,11 @@ type Profile
   @auth(
     rules: [
       { allow: owner, ownerField: "owner", operations: [read, update] }
-      { allow: private, provider: iam, operations: [create, read, update, delete] }
+      {
+        allow: private
+        provider: iam
+        operations: [create, read, update, delete]
+      }
     ]
   ) {
   id: ID!
