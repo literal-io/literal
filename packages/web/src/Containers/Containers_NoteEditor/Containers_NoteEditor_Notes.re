@@ -1,6 +1,24 @@
 open Containers_NoteEditor_Notes_GraphQL;
 open Containers_NoteEditor_GraphQL_Util;
 
+let shouldCreateTag = tag => {
+  switch (
+    Apollo.Client.(
+      readFragment(
+        Provider.client,
+        {
+          id: "Tag:" ++ tag##id,
+          fragment: ApolloClient.gql(. GetTagFragment.GetTag.query),
+        },
+      )
+    )
+  ) {
+  | Some(_) => false
+  | None => true
+  | exception _ => true
+  };
+};
+
 let handleSave =
   Lodash.debounce3(
     (.
@@ -177,7 +195,7 @@ let make = (~highlightFragment as highlight, ~isActive, ~currentUser) => {
       ->Belt.Option.getWithDefault([||]);
 
     let (createTagsInput, createHighlightTagsInput) = {
-      let tagsToCreate =
+      let newTags =
         editorValue.tags
         ->Belt.Array.keep(tag => {
             let alreadyExists =
@@ -186,16 +204,15 @@ let make = (~highlightFragment as highlight, ~isActive, ~currentUser) => {
               );
             !alreadyExists;
           });
-      /**
-     * FIXME: this may recreate the tag if it isn't associated,
-     * but already exists?
-     */
       let createTagsInput =
-        tagsToCreate->Belt.Array.map(tag =>
-          {"id": tag##id, "text": tag##text, "createdAt": None}
+        newTags->Belt.Array.keepMap(tag =>
+          shouldCreateTag(tag)
+            ? Some({"id": tag##id, "text": tag##text, "createdAt": None})
+            : None
         );
+
       let createHighlightTagsInput =
-        createTagsInput->Belt.Array.map(tag =>
+        newTags->Belt.Array.map(tag =>
           {
             "id":
               makeHighlightTagId(~highlightId=highlight##id, ~tagId=tag##id)
