@@ -32,6 +32,8 @@ import com.amazonaws.amplify.generated.graphql.CreateHighlightFromScreenshotMuta
 import com.amazonaws.amplify.generated.graphql.CreateHighlightMutation;
 import com.amazonaws.amplify.generated.graphql.CreateScreenshotMutation;
 
+import com.amazonaws.mobile.client.Callback;
+import com.amazonaws.mobile.client.UserStateDetails;
 import com.apollographql.apollo.GraphQLCall;
 import com.apollographql.apollo.api.Response;
 import com.apollographql.apollo.exception.ApolloException;
@@ -47,16 +49,40 @@ public class ShareTargetHandler extends AppCompatActivity {
     private WebView webView;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_share_target_handler);
 
         webView = findViewById(R.id.webview);
 
-        AWSMobileClientFactory.initializeClient(this);
-        webView.initialize(this);
-        webView.requestFocus();
+        AWSMobileClientFactory.initializeClient(this, new Callback<UserStateDetails>() {
+            @Override
+            public void onResult(UserStateDetails result) {
+                switch (result.getUserState()) {
+                    case SIGNED_IN:
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                handleSignedIn(savedInstanceState);
+                            }
+                        });
+                        break;
+                    default:
+                        handleSignedOut();
+                }
+            }
 
+            @Override
+            public void onError(Exception e) {
+                Log.e(Constants.LOG_TAG, "Unable to initializeClient: ", e);
+                handleSignedOut();
+            }
+        });
+    }
+
+    private void handleSignedIn(Bundle savedInstanceState) {
+        webView.initialize(ShareTargetHandler.this);
+        webView.requestFocus();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel chan = new NotificationChannel(
                     Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_ID,
@@ -83,10 +109,16 @@ public class ShareTargetHandler extends AppCompatActivity {
                 handleSendNotSupported();
             }
         }
-
     }
 
-    void handleSendText(Intent intent) {
+    private void handleSignedOut() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_TASK_ON_HOME);
+        this.startActivity(intent);
+        this.finish();
+    }
+
+    private void handleSendText(Intent intent) {
         String text = intent.getStringExtra(Intent.EXTRA_TEXT);
 
         String highlightId = UUID.randomUUID().toString();
@@ -137,7 +169,7 @@ public class ShareTargetHandler extends AppCompatActivity {
         }
     }
 
-    void handleSendImage(Intent intent) {
+    private void handleSendImage(Intent intent) {
         JSONObject s3TransferUtilityJson = AppSyncClientFactory
                 .getConfiguration(this)
                 .optJsonObject("S3TransferUtility");
