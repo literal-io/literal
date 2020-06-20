@@ -66,15 +66,13 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
   let handleChange = value => setEditorValue(_ => value);
 
   <>
-    <div className={cn(["px-6", "pt-4", "pb-24"])}>
-      <Containers_NoteEditor_Base
-        highlightFragment=highlight
-        onChange=handleChange
-        autoFocus=true
-        placeholder="Lorem Ipsum"
-        currentUser
-      />
-    </div>
+    <Containers_NoteEditor_Base
+      highlightFragment=highlight
+      onChange=handleChange
+      autoFocus=true
+      placeholder="Lorem Ipsum"
+      currentUser
+    />
     <FloatingActionButton
       onClick={_ev => handleSave()}
       className={cn(["fixed", "right-0", "bottom-0", "m-6", "z-10"])}>
