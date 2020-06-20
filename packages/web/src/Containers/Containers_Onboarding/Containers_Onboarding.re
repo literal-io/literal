@@ -98,6 +98,7 @@ let make = (~profileFragment as profile, ~currentUser) => {
               "note": None,
               "highlightScreenshotId": None,
               "createdAt": baseTs |> Js.Date.toISOString |> Js.Option.some,
+              "owner": None
             };
           });
       let variables =

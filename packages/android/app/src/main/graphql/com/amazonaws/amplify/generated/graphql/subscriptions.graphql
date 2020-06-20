@@ -1,13 +1,4 @@
 # this is an auto generated file. This will be overwritten
-subscription OnCreateScreenshot {
-  onCreateScreenshot {
-    id
-    createdAt
-    file {
-      ...S3Object
-    }
-  }
-}
 subscription OnUpdateScreenshot {
   onUpdateScreenshot {
     id
@@ -15,6 +6,7 @@ subscription OnUpdateScreenshot {
     file {
       ...S3Object
     }
+    owner
   }
 }
 subscription OnDeleteScreenshot {
@@ -24,41 +16,187 @@ subscription OnDeleteScreenshot {
     file {
       ...S3Object
     }
+    owner
   }
 }
-subscription OnCreateHighlight {
-  onCreateHighlight {
+subscription OnCreateScreenshot($owner: String!) {
+  onCreateScreenshot(owner: $owner) {
+    id
+    createdAt
+    file {
+      ...S3Object
+    }
+    owner
+  }
+}
+subscription OnCreateTag($owner: String!) {
+  onCreateTag(owner: $owner) {
+    id
+    createdAt
+    text
+    owner
+    highlights {
+      nextToken
+    }
+  }
+}
+subscription OnUpdateTag($owner: String!) {
+  onUpdateTag(owner: $owner) {
+    id
+    createdAt
+    text
+    owner
+    highlights {
+      nextToken
+    }
+  }
+}
+subscription OnDeleteTag($owner: String!) {
+  onDeleteTag(owner: $owner) {
+    id
+    createdAt
+    text
+    owner
+    highlights {
+      nextToken
+    }
+  }
+}
+subscription OnCreateHighlight($owner: String!) {
+  onCreateHighlight(owner: $owner) {
     id
     createdAt
     text
     note
+    owner
     screenshot {
       id
       createdAt
+      owner
+    }
+    tags {
+      nextToken
     }
   }
 }
-subscription OnUpdateHighlight {
-  onUpdateHighlight {
+subscription OnUpdateHighlight($owner: String!) {
+  onUpdateHighlight(owner: $owner) {
     id
     createdAt
     text
     note
+    owner
     screenshot {
       id
       createdAt
+      owner
+    }
+    tags {
+      nextToken
     }
   }
 }
-subscription OnDeleteHighlight {
-  onDeleteHighlight {
+subscription OnDeleteHighlight($owner: String!) {
+  onDeleteHighlight(owner: $owner) {
     id
     createdAt
     text
     note
+    owner
     screenshot {
       id
       createdAt
+      owner
     }
+    tags {
+      nextToken
+    }
+  }
+}
+subscription OnCreateHighlightTag($owner: String!) {
+  onCreateHighlightTag(owner: $owner) {
+    id
+    highlightId
+    tagId
+    createdAt
+    tag {
+      id
+      createdAt
+      text
+      owner
+    }
+    highlight {
+      id
+      createdAt
+      text
+      note
+      owner
+    }
+  }
+}
+subscription OnUpdateHighlightTag($owner: String!) {
+  onUpdateHighlightTag(owner: $owner) {
+    id
+    highlightId
+    tagId
+    createdAt
+    tag {
+      id
+      createdAt
+      text
+      owner
+    }
+    highlight {
+      id
+      createdAt
+      text
+      note
+      owner
+    }
+  }
+}
+subscription OnDeleteHighlightTag($owner: String!) {
+  onDeleteHighlightTag(owner: $owner) {
+    id
+    highlightId
+    tagId
+    createdAt
+    tag {
+      id
+      createdAt
+      text
+      owner
+    }
+    highlight {
+      id
+      createdAt
+      text
+      note
+      owner
+    }
+  }
+}
+subscription OnCreateProfile {
+  onCreateProfile {
+    id
+    owner
+    createdAt
+    isOnboarded
+  }
+}
+subscription OnUpdateProfile($owner: String!) {
+  onUpdateProfile(owner: $owner) {
+    id
+    owner
+    createdAt
+    isOnboarded
+  }
+}
+subscription OnDeleteProfile {
+  onDeleteProfile {
+    id
+    owner
+    createdAt
+    isOnboarded
   }
 }

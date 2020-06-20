@@ -6,7 +6,7 @@ input S3ObjectInput {
   mimeType: String
 }
 
-type S3Object @aws_iam {
+type S3Object @aws_iam @aws_cognito_user_pools {
   bucket: String!
   key: String!
   region: String!
@@ -15,7 +15,10 @@ type S3Object @aws_iam {
 type Screenshot
   @model
   @auth(
-    rules: [{ allow: owner, ownerField: "owner", operations: [create, read] }]
+    rules: [
+      { allow: owner, ownerField: "owner", operations: [create, read] }
+      { allow: private, provider: iam, operations: [create, read] }
+    ]
   ) {
   id: ID!
   createdAt: String!
@@ -27,6 +30,7 @@ input CreateScreenshotInput {
   id: ID
   createdAt: String
   file: S3ObjectInput!
+  owner: String
 }
 
 input CreateHighlightInput {
@@ -34,6 +38,7 @@ input CreateHighlightInput {
   createdAt: String
   text: String!
   note: String
+  owner: String
   highlightScreenshotId: ID
 }
 
@@ -161,6 +166,7 @@ input CreateHighlightFromScreenshotInput {
   createdAt: String
   screenshotId: String!
   note: String
+  owner: String
 }
 
 input UpdateHighlightInput {

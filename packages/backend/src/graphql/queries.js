@@ -1,20 +1,6 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-export const getScreenshot = /* GraphQL */ `
-  query GetScreenshot($id: ID!) {
-    getScreenshot(id: $id) {
-      id
-      createdAt
-      file {
-        bucket
-        key
-        region
-      }
-      owner
-    }
-  }
-`;
 export const listScreenshots = /* GraphQL */ `
   query ListScreenshots(
     $filter: ModelScreenshotFilterInput
@@ -28,6 +14,20 @@ export const listScreenshots = /* GraphQL */ `
         owner
       }
       nextToken
+    }
+  }
+`;
+export const getScreenshot = /* GraphQL */ `
+  query GetScreenshot($id: ID!) {
+    getScreenshot(id: $id) {
+      id
+      createdAt
+      file {
+        bucket
+        key
+        region
+      }
+      owner
     }
   }
 `;
@@ -102,15 +102,55 @@ export const getHighlight = /* GraphQL */ `
       createdAt
       text
       note
+      owner
       screenshot {
         id
         createdAt
         owner
       }
-      owner
       tags {
         nextToken
       }
+    }
+  }
+`;
+export const getHighlightTag = /* GraphQL */ `
+  query GetHighlightTag($id: ID!) {
+    getHighlightTag(id: $id) {
+      id
+      highlightId
+      tagId
+      createdAt
+      tag {
+        id
+        createdAt
+        text
+        owner
+      }
+      highlight {
+        id
+        createdAt
+        text
+        note
+        owner
+      }
+    }
+  }
+`;
+export const listHighlightTags = /* GraphQL */ `
+  query ListHighlightTags(
+    $filter: ModelHighlightTagFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listHighlightTags(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        highlightId
+        tagId
+        createdAt
+      }
+      nextToken
     }
   }
 `;

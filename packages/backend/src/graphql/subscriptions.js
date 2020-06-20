@@ -1,20 +1,6 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-export const onCreateScreenshot = /* GraphQL */ `
-  subscription OnCreateScreenshot($owner: String!) {
-    onCreateScreenshot(owner: $owner) {
-      id
-      createdAt
-      file {
-        bucket
-        key
-        region
-      }
-      owner
-    }
-  }
-`;
 export const onUpdateScreenshot = /* GraphQL */ `
   subscription OnUpdateScreenshot {
     onUpdateScreenshot {
@@ -32,6 +18,20 @@ export const onUpdateScreenshot = /* GraphQL */ `
 export const onDeleteScreenshot = /* GraphQL */ `
   subscription OnDeleteScreenshot {
     onDeleteScreenshot {
+      id
+      createdAt
+      file {
+        bucket
+        key
+        region
+      }
+      owner
+    }
+  }
+`;
+export const onCreateScreenshot = /* GraphQL */ `
+  subscription OnCreateScreenshot($owner: String!) {
+    onCreateScreenshot(owner: $owner) {
       id
       createdAt
       file {
@@ -89,12 +89,12 @@ export const onCreateHighlight = /* GraphQL */ `
       createdAt
       text
       note
+      owner
       screenshot {
         id
         createdAt
         owner
       }
-      owner
       tags {
         nextToken
       }
@@ -108,12 +108,12 @@ export const onUpdateHighlight = /* GraphQL */ `
       createdAt
       text
       note
+      owner
       screenshot {
         id
         createdAt
         owner
       }
-      owner
       tags {
         nextToken
       }
@@ -127,12 +127,12 @@ export const onDeleteHighlight = /* GraphQL */ `
       createdAt
       text
       note
+      owner
       screenshot {
         id
         createdAt
         owner
       }
-      owner
       tags {
         nextToken
       }

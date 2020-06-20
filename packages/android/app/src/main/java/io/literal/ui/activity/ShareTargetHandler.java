@@ -32,6 +32,7 @@ import com.amazonaws.amplify.generated.graphql.CreateHighlightFromScreenshotMuta
 import com.amazonaws.amplify.generated.graphql.CreateHighlightMutation;
 import com.amazonaws.amplify.generated.graphql.CreateScreenshotMutation;
 
+import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.UserStateDetails;
 import com.apollographql.apollo.GraphQLCall;
@@ -129,6 +130,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                                 .builder()
                                 .id(highlightId)
                                 .text(text)
+                                .owner(AWSMobileClient.getInstance().getUsername())
                                 .build()
                 )
                 .build();
@@ -138,10 +140,19 @@ public class ShareTargetHandler extends AppCompatActivity {
                 .enqueue(createHighlightCallback.getCallback());
 
         try {
-            final CreateHighlightMutation.Data highlightResult = createHighlightCallback.awaitResult();
-            if (highlightResult == null) {
-                // TODO: handle errors causing screenshot to not be created.
-                Log.i("Literal", "highlightResult is null");
+            Response<CreateHighlightMutation.Data> highlightResponse = createHighlightCallback.awaitResult();
+            if (highlightResponse.hasErrors()) {
+                // FIXME: handle errors causing screenshot to not be created.
+                Log.e(Constants.LOG_TAG, highlightResponse.errors().toString());
+                finish();
+                return;
+            }
+
+
+            final CreateHighlightMutation.Data highlightData = highlightResponse.data();
+            if (highlightData == null) {
+                // FIXME: handle errors causing screenshot to not be created.
+                Log.i(Constants.LOG_TAG, "highlightResult is null");
                 finish();
                 return;
             }
@@ -152,7 +163,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                     super.onWebEvent(event);
                     switch (event.getType()) {
                         case WebEvent.TYPE_ACTIVITY_FINISH:
-                            CreateHighlightMutation.CreateHighlight highlight = highlightResult.createHighlight();
+                            CreateHighlightMutation.CreateHighlight highlight = highlightData.createHighlight();
                             if (highlight != null) {
                                 handleDisplayNotification(highlight.id(), highlight.text());
                             }
@@ -186,6 +197,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                 .input(
                         CreateScreenshotInput.builder()
                                 .id(screenshotId)
+                                .owner(AWSMobileClient.getInstance().getUsername())
                                 .file(
                                         S3ObjectInput.builder()
                                                 .bucket(bucket)
@@ -202,13 +214,22 @@ public class ShareTargetHandler extends AppCompatActivity {
                 .mutate(createScreenshotMutation)
                 .enqueue(createScreenshotCallback.getCallback());
 
-        // TODO: handle errors causing screenshot to not be created.
-        CreateScreenshotMutation.Data screenshotResult = null;
+        Response<CreateScreenshotMutation.Data> screenshotResponse = null;
         try {
-            screenshotResult = createScreenshotCallback.awaitResult();
+            screenshotResponse = createScreenshotCallback.awaitResult();
         } catch (InterruptedException e) {}
-        if (screenshotResult == null) {
+
+        // FIXME: handle errors causing screenshot to not be created.
+        if (screenshotResponse.hasErrors()) {
+            Log.e(Constants.LOG_TAG, screenshotResponse.errors().toString());
+            finish();
+            return;
+        }
+        // FIXME: handle errors causing screenshot to not be created.
+        CreateScreenshotMutation.Data screenshotData = screenshotResponse.data();
+        if (screenshotData == null) {
             Log.i("Literal", "screenshotResult is null");
+            finish();
             return;
         }
 
@@ -218,6 +239,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                         CreateHighlightFromScreenshotInput.builder()
                                 .id(highlightId)
                                 .screenshotId(screenshotId)
+                                .owner(AWSMobileClient.getInstance().getUsername())
                                 .build()
                 )
                 .build();
@@ -227,10 +249,18 @@ public class ShareTargetHandler extends AppCompatActivity {
                 .enqueue(createHighlightFromScreenshotCallback.getCallback());
 
         try {
-            final CreateHighlightFromScreenshotMutation.Data highlightResult = createHighlightFromScreenshotCallback.awaitResult();
+            Response<CreateHighlightFromScreenshotMutation.Data> highlightResponse = createHighlightFromScreenshotCallback.awaitResult();
+
+            // FIXME: handle errors causing screenshot to not be created.
+            if (highlightResponse.hasErrors()) {
+                Log.e(Constants.LOG_TAG, highlightResponse.errors().toString());
+                finish();
+                return;
+            }
 
             // TODO: handle errors causing screenshot to not be created.
-            if (highlightResult == null) {
+            final CreateHighlightFromScreenshotMutation.Data highlightData = highlightResponse.data();
+            if (highlightData == null) {
                 Log.i("Literal", "highlightResult is null");
                 return;
             }
@@ -241,7 +271,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                     super.onWebEvent(event);
                     switch (event.getType()) {
                         case WebEvent.TYPE_ACTIVITY_FINISH:
-                            CreateHighlightFromScreenshotMutation.CreateHighlightFromScreenshot highlight = highlightResult.createHighlightFromScreenshot();
+                            CreateHighlightFromScreenshotMutation.CreateHighlightFromScreenshot highlight = highlightData.createHighlightFromScreenshot();
                             if (highlight != null) {
                                 handleDisplayNotification(highlight.id(), highlight.text());
                             }
@@ -308,7 +338,7 @@ public class ShareTargetHandler extends AppCompatActivity {
 
     private class LatchedGraphQLCallback<T> extends CountDownLatch {
 
-        private volatile T result;
+        private volatile Response<T> result;
 
         public LatchedGraphQLCallback() {
             super(1);
@@ -318,7 +348,7 @@ public class ShareTargetHandler extends AppCompatActivity {
             super(num);
         }
 
-        public T awaitResult() throws InterruptedException {
+        public Response<T> awaitResult() throws InterruptedException {
             this.await();
             return result;
         }
@@ -327,7 +357,7 @@ public class ShareTargetHandler extends AppCompatActivity {
             return new GraphQLCall.Callback<T>() {
                 @Override
                 public void onResponse(@Nonnull Response<T> response) {
-                    result = response.data();
+                    result = response;
                     countDown();
                 }
 

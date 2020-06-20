@@ -13,16 +13,3 @@ module Env = {
   external authLiteralAuthUserPooWebClientId: string =
     "process.env.AUTH_LITERALAUTH_USERPOOLWEBCLIENTID";
 };
-
-let awsAmplifyConfig =
-  AwsAmplify.Config.make(
-    ~projectRegion=Env.region,
-    ~userPoolsId=Env.authLiteralAuthUserPoolId,
-    ~userPoolsWebClientId=Env.authLiteralAuthUserPooWebClientId,
-    ~appSyncRegion=Env.region,
-    ~appSyncGraphqlEndpoint=Env.apiLiteralGraphQLAPIEndpointOutput,
-    ~appSyncAuthenticationType="AWS_IAM",
-    ~userFilesS3Bucket=Env.storageLiteralStorageBucketName,
-    ~userFilesS3BucketRegion=Env.region,
-    (),
-  );

@@ -30,7 +30,6 @@ let onRemove = (db: Lambda.highlightTagAttributeMap) => {
     ~operationName="GetTag",
   )
   |> Js.Promise.then_(r => {
-        Js.log2("request result", Js.Json.stringify(r));
        let shouldRetainHighlight =
          r
          ->Js.Json.decodeObject
@@ -52,10 +51,7 @@ let onRemove = (db: Lambda.highlightTagAttributeMap) => {
            ~variables=mutation##variables,
            ~operationName="DeleteTag",
          )
-         |> Js.Promise.then_(r => {
-              Js.log2("deletion result", Js.Json.stringify(r));
-              r->Js.Option.some->Js.Promise.resolve;
-            });
+         |> Js.Promise.then_(r => {r->Js.Option.some->Js.Promise.resolve});
        } else {
          Js.Promise.resolve(None);
        };

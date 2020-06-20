@@ -10,12 +10,12 @@ export const createHighlightFromScreenshot = /* GraphQL */ `
       createdAt
       text
       note
+      owner
       screenshot {
         id
         createdAt
         owner
       }
-      owner
       tags {
         nextToken
       }
@@ -134,23 +134,6 @@ export const createHighlightAndTags = /* GraphQL */ `
     }
   }
 `;
-export const createScreenshot = /* GraphQL */ `
-  mutation CreateScreenshot(
-    $input: CreateScreenshotInput!
-    $condition: ModelScreenshotConditionInput
-  ) {
-    createScreenshot(input: $input, condition: $condition) {
-      id
-      createdAt
-      file {
-        bucket
-        key
-        region
-      }
-      owner
-    }
-  }
-`;
 export const updateScreenshot = /* GraphQL */ `
   mutation UpdateScreenshot(
     $input: UpdateScreenshotInput!
@@ -174,6 +157,23 @@ export const deleteScreenshot = /* GraphQL */ `
     $condition: ModelScreenshotConditionInput
   ) {
     deleteScreenshot(input: $input, condition: $condition) {
+      id
+      createdAt
+      file {
+        bucket
+        key
+        region
+      }
+      owner
+    }
+  }
+`;
+export const createScreenshot = /* GraphQL */ `
+  mutation CreateScreenshot(
+    $input: CreateScreenshotInput!
+    $condition: ModelScreenshotConditionInput
+  ) {
+    createScreenshot(input: $input, condition: $condition) {
       id
       createdAt
       file {
@@ -243,12 +243,12 @@ export const createHighlight = /* GraphQL */ `
       createdAt
       text
       note
+      owner
       screenshot {
         id
         createdAt
         owner
       }
-      owner
       tags {
         nextToken
       }
@@ -265,12 +265,12 @@ export const updateHighlight = /* GraphQL */ `
       createdAt
       text
       note
+      owner
       screenshot {
         id
         createdAt
         owner
       }
-      owner
       tags {
         nextToken
       }
@@ -287,12 +287,12 @@ export const deleteHighlight = /* GraphQL */ `
       createdAt
       text
       note
+      owner
       screenshot {
         id
         createdAt
         owner
       }
-      owner
       tags {
         nextToken
       }

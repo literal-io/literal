@@ -1,7 +1,5 @@
 [%raw "require('isomorphic-fetch')"];
 
-let _ = AwsAmplify.(inst->configure(Constants.awsAmplifyConfig));
-
 let handler: Lambda.handler =
   (event, ctx, cb) => {
     Js.log(Js.Json.stringifyAny(event));

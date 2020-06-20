@@ -1,3 +1,5 @@
+open Service;
+
 module GetScreenshotQuery = [%graphql
   {|
     query GetScreenshot($screenshotId: ID!) {
@@ -97,12 +99,13 @@ let cropImageToHighlight = (predictions, imageBuffer) => {
 
 let parseTextFromScreenshot = screenshotId => {
   let query = GetScreenshotQuery.make(~screenshotId, ());
-  let op =
-    AwsAmplify.Api.graphqlOperation(
-      ~query=query##query,
-      ~variables=query##variables,
-    );
-  Lib_OptionPromise.fromPromise(AwsAmplify.Api.(graphql(inst, op)))
+
+  GraphQL.request(
+    ~query=query##query,
+    ~variables=query##variables,
+    ~operationName="GetScreenshot",
+  )
+  ->Lib_OptionPromise.fromPromise
   ->Lib_OptionPromise.mapOption(r => {
       r
       ->Js.Json.decodeObject
@@ -181,21 +184,23 @@ module CreateHighlightMutation = [%graphql
   |}
 ];
 
-let createHighlight = (text, screenshotId) => {
+let createHighlight = (~text, ~screenshotId, ~owner, ~id) => {
   let mutation =
     CreateHighlightMutation.make(
       ~input={
         "text": text,
         "note": None,
-        "id": Externals_UUID.makeV4(),
+        "id": id->Belt.Option.getWithDefault(Externals_UUID.makeV4()),
         "createdAt": None,
         "highlightScreenshotId": Some(screenshotId),
+        "owner": owner,
       },
       (),
     );
-  AwsAmplify.Api.(
-    graphqlOperation(~query=mutation##query, ~variables=mutation##variables)
-    |> graphql(inst)
+  GraphQL.request(
+    ~query=mutation##query,
+    ~variables=mutation##variables,
+    ~operationName="CreateHighlight",
   );
 };
 
@@ -206,6 +211,7 @@ type argumentsInput = {
   createdAt: option(string),
   screenshotId: string,
   note: option(string),
+  owner: option(string),
 };
 
 [@decco]
@@ -218,8 +224,21 @@ let resolver = (ctx: Lib_Lambda.event) =>
     input.screenshotId
     ->parseTextFromScreenshot
     ->Lib_OptionPromise.map(text =>
-        createHighlight(text, input.screenshotId)
-        ->Lib_OptionPromise.fromPromise
+        createHighlight(
+          ~text,
+          ~screenshotId=input.screenshotId,
+          ~owner=input.owner,
+          ~id=input.id,
+        )
+        |> Js.Promise.then_(r => {
+             r
+             ->Js.Json.decodeObject
+             ->Belt.Option.flatMap(o => o->Js.Dict.get("data"))
+             ->Belt.Option.flatMap(d =>
+                 d->CreateHighlightMutation.parse->(r => r##createHighlight)
+               )
+             ->Js.Promise.resolve
+           })
       )
   | Belt.Result.Error(e) =>
     Js.log2("Unable to decode arguments", e);

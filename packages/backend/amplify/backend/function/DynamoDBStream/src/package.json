@@ -16,13 +16,8 @@
     "graphql:sync-schema": "./scripts/graphql-sync-schema.sh"
   },
   "devDependencies": {
-    "@aws-amplify/api": "^2.2.1",
-    "@aws-amplify/auth": "^2.1.8",
-    "@aws-amplify/core": "^2.3.0",
-    "@aws-amplify/pubsub": "^2.1.9",
-    "@aws-amplify/storage": "^2.2.3",
     "@baransu/graphql_ppx_re": "^0.7.1",
-    "@trashed/bs-aws-amplify": "^1.0.0",
+    "aws-sdk": "^2.701.0",
     "bs-platform": "^7.3.2",
     "concurrently": "^5.2.0",
     "decco": "^1.2.1",
