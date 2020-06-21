@@ -7,14 +7,15 @@ module Data = {
       (~highlights, ~initialHighlightId, ~onHighlightIdChange, ~currentUser) => {
     let (activeIdx, setActiveIdx) =
       React.useState(() =>
-        switch (initialHighlightId) {
-        | Some(initialHighlightId) =>
-          highlights
-          ->Belt.Array.getIndexBy(h => h##id === initialHighlightId)
-          ->Belt.Option.getWithDefault(0)
-        | None => 0
-        }
+        initialHighlightId
+        ->Belt.Option.flatMap(initialHighlightId =>
+            highlights->Belt.Array.getIndexBy(h =>
+              h##id === initialHighlightId
+            )
+          )
+        ->Belt.Option.getWithDefault(0)
       );
+
     let activeHighlight = highlights->Belt.Array.getExn(activeIdx);
 
     let _ =
@@ -40,8 +41,10 @@ module Data = {
         {highlights->Belt.Array.map(h =>
            <ScrollSnapList.Item
              key={h##id} direction=ScrollSnapList.Horizontal>
-             <Containers_NoteEditor
+             <Containers_NoteEditor_Notes
                highlightFragment={h##editorHighlightFragment}
+               isActive={h##id === activeHighlight##id}
+               currentUser
              />
            </ScrollSnapList.Item>
          )}

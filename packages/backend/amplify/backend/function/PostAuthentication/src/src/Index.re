@@ -1,5 +1,3 @@
-let _ = AwsAmplify.(inst->configure(Constants.awsAmplifyConfig));
-
 module CreateProfileMutation = [%graphql
   {|
   mutation CreateProfile($input: CreateProfileInput!) {
@@ -14,25 +12,24 @@ let handleCreateProfile = username => {
   let mutation =
     CreateProfileMutation.make(
       ~input={
-        "id": UUID.makeV4(),
+        "id": External_UUID.makeV4(),
         "createdAt": None,
         "isOnboarded": false,
         "owner": username,
       },
       (),
     );
-  let op =
-    AwsAmplify.Api.graphqlOperation(
-      ~query=mutation##query,
-      ~variables=mutation##variables,
-    );
-  AwsAmplify.Api.(graphql(inst, op));
+  Service_GraphQL.request(
+    ~query=mutation##query,
+    ~variables=mutation##variables,
+    ~operationName="CreateProfile",
+  );
 };
 
 let handler = event => {
   Js.log(Js.Json.stringifyAny(event));
   let op =
-    switch (event->Lambda.event_decode) {
+    switch (event->External_Lambda.event_decode) {
     | Belt.Result.Ok(event) => handleCreateProfile(event.userName)
     | Belt.Result.Error(e) =>
       Js.log("Unable to decode event.");

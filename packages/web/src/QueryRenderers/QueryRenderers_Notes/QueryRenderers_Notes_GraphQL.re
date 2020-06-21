@@ -11,7 +11,7 @@ module ListHighlights = {
           items {
             id
             createdAt
-            ...Containers_NoteEditor_GraphQL.GetHighlightFragment.EditorHighlightFragment @bsField(name: "editorHighlightFragment")
+            ...Containers_NoteEditor_Notes_GraphQL.GetHighlightFragment.EditorHighlightFragment @bsField(name: "editorHighlightFragment")
             ...Containers_NoteHeader_GraphQL.GetHighlightFragment.HeaderHighlightFragment @bsField(name: "headerHighlightFragment")
           }
         }
@@ -25,20 +25,59 @@ module ListHighlights = {
    */
   module Raw = {
     [@decco]
-    type highlight = {
-      id: string,
-      createdAt: string,
-      text: string,
+    type connection('a) = {
+      items: option(array(option('a))),
       [@decco.key "__typename"]
       typename: string,
     };
 
     [@decco]
-    [@bs.deriving accessors]
-    type listHighlightsConnection = {
-      items: option(array(option(highlight))),
+    type tag = {
+      id: string,
+      text: string,
       [@decco.key "__typename"]
       typename: string,
+    };
+    let makeTag = (~id, ~text) => {id, text, typename: "Tag"};
+
+    [@decco]
+    type highlightTag = {
+      id: string,
+      createdAt: string,
+      tag,
+      [@decco.key "__typename"]
+      typename: string,
+    };
+    let makeHighlightTag = (~id, ~createdAt, ~tag) => {
+      id,
+      createdAt,
+      tag,
+      typename: "HighlightTag",
+    };
+
+    let highlightTagConnectionItems =
+        (highlightTagConnection: connection(highlightTag)) =>
+      highlightTagConnection.items;
+
+    [@decco]
+    type highlight = {
+      id: string,
+      createdAt: string,
+      text: string,
+      tags: option(connection(highlightTag)),
+      [@decco.key "__typename"]
+      typename: string,
+    };
+    let makeHighlight = (~id, ~createdAt, ~text, ~tags) => {
+      id,
+      createdAt,
+      text,
+      tags,
+      typename: "Highlight",
+    };
+    let makeHighlightTagsConnection = (~tags) => {
+      items: tags,
+      typename: "ModelHighlightTagConnection",
     };
 
     [@decco]
@@ -50,10 +89,19 @@ module ListHighlights = {
       typename: string,
     };
 
+    let highlightConnectionItems =
+        (highlightConnection: connection(highlight)) =>
+      highlightConnection.items;
+
+    let makeHighlightConnection = (~highlights) => {
+      items: highlights,
+      typename: "ModelHighlightConnection",
+    };
+
     [@decco]
     [@bs.deriving accessors]
     type t = {
-      listHighlights: option(listHighlightsConnection),
+      listHighlights: option(connection(highlight)),
       getProfile: option(profile),
     };
 

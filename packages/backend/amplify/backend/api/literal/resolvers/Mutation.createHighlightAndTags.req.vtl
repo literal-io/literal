@@ -1,0 +1,151 @@
+#if($util.isNullOrEmpty($authMode) && !$util.isNull($ctx.identity) && !$util.isNull($ctx.identity.sub) && !$util.isNull($ctx.identity.issuer) && !$util.isNull($ctx.identity.username) && !$util.isNull($ctx.identity.claims) && !$util.isNull($ctx.identity.sourceIp) && !$util.isNull($ctx.identity.defaultAuthStrategy) )
+  #set( $authMode = "userPools" )
+#end
+
+#if( $authMode == "userPools" )
+
+  #set( $isOwnerAuthorized = false )
+  #set( $identityValue = $util.defaultIfNull($ctx.identity.claims.get("username"), $util.defaultIfNull($ctx.identity.claims.get("cognito:username"), "___xamznone____")) )
+
+  #set( $idxDecrement = 1 )
+  #set( $isOwnerAuthorized = true )
+
+  ## createHighlightTags - Set any missing owners and verify already set owners
+  #if( ! $util.isNull($ctx.args.input.createHighlightTags) )
+    #foreach( $item in $ctx.args.input.createHighlightTags )
+      #if (! $item.containsKey("owner"))
+        $util.qr($item.put("owner", $identityValue))
+        $util.qr($ctx.args.createHighlightTags.set($foreach.count-idxDecrement, $item)) 
+      #elseif ($item.get("owner") != $identityValue)
+        #set( $isOwnerAuthorized = false ) 
+      #end 
+    #end
+  #end
+
+  ## createTags - Set any missing owners and verify already set owners
+  #if( ! $util.isNull($ctx.args.input.createTags) )
+    #foreach( $item in $ctx.args.input.createTags )
+      #if (! $item.containsKey("owner"))
+        $util.qr($item.put("owner", $identityValue))
+        $util.qr($ctx.args.createTags.set($foreach.count-idxDecrement, $item)) 
+      #elseif ($item.get("owner") != $identityValue)
+        #set( $isOwnerAuthorized = false ) 
+      #end 
+    #end
+  #end
+
+  ## createHighlight - Set missing owner and verify already set owner
+  #if (! $ctx.args.input.createHighlight.containsKey("owner"))
+    $util.qr($ctx.args.input.createHighlight.put("owner", $identityValue))
+  #elseif ($item.get("owner") != $identityValue)
+    #set( $isOwnerAuthorized = false ) 
+  #end 
+
+  ## [Start] Throw if unauthorized **
+  #if( !($isStaticGroupAuthorized == true || $isDynamicGroupAuthorized == true || $isOwnerAuthorized == true) )
+    $util.unauthorized()
+  #end
+  ## [End] Throw if unauthorized **
+#else
+  $util.unauthorized()
+#end
+
+## [Start] Prepare DynamoDB TransactWriteItems Request. **
+#set( $transactItems = [] )
+
+## createHighlightTags - prepare transaction operations
+$util.qr($ctx.stash.put("createHighlightTags", []))
+#if( ! $util.isNull($ctx.args.input.createHighlightTags) )
+  #foreach( $item in $ctx.args.input.createHighlightTags )
+    #set( $condition = {
+      "expression": "attribute_not_exists(#id)",
+      "expressionNames": {
+          "#id": "id"
+      }
+    } )
+    #set( $operationKey = {
+      "id": $util.dynamodb.toDynamoDB($item.id)
+    } )
+
+    $util.qr($item.put("createdAt", $util.defaultIfNull($item.createdAt, $util.time.nowISO8601())))
+    $util.qr($item.put("updatedAt", $util.defaultIfNull($item.updatedAt, $util.time.nowISO8601())))
+    $util.qr($item.put("__typename", "HighlightTag"))
+
+    $util.qr($ctx.stash.createHighlightTags.add($item))
+
+    #set( $operation = {
+      "table": "HighlightTag-rkihsloeqbdabdpebem3fqqjuy-production",
+      "operation": "PutItem",
+      "key": $operationKey,
+      "attributeValues": $util.dynamodb.toMapValues($item),
+      "condition": $condition
+    } )
+
+    $util.qr($transactItems.add($operation))
+  #end
+#end
+
+## createTags - prepare transaction operations
+$util.qr($ctx.stash.put("createTags", []))
+#if( ! $util.isNull($ctx.args.input.createTags) )
+  #foreach( $item in $ctx.args.input.createTags )
+    #set( $condition = {
+      "expression": "attribute_not_exists(#id)",
+      "expressionNames": {
+          "#id": "id"
+      }
+    } )
+    #set( $operationKey = {
+      "id": $util.dynamodb.toDynamoDB($item.id)
+    } )
+
+    $util.qr($item.put("createdAt", $util.defaultIfNull($item.createdAt, $util.time.nowISO8601())))
+    $util.qr($item.put("updatedAt", $util.defaultIfNull($item.updatedAt, $util.time.nowISO8601())))
+    $util.qr($item.put("__typename", "Tag"))
+
+    $util.qr($ctx.stash.createTags.add($item))
+
+    #set( $operation = {
+      "table": "Tag-rkihsloeqbdabdpebem3fqqjuy-production",
+      "operation": "PutItem",
+      "key": $operationKey,
+      "attributeValues": $util.dynamodb.toMapValues($item),
+      "condition": $condition
+    } )
+
+    $util.qr($transactItems.add($operation))
+  #end
+#end
+
+## createHighlight - prepare transaction operation
+#set( $condition = {
+  "expression": "attribute_not_exists(#id)",
+  "expressionNames": {
+      "#id": "id"
+  }
+} )
+#set( $operationKey = {
+  "id": $util.dynamodb.toDynamoDB($ctx.args.input.createHighlight.id)
+} )
+
+$util.qr($ctx.args.input.createHighlight.put("createdAt", $util.defaultIfNull($ctx.args.input.createHighlight.createdAt, $util.time.nowISO8601())))
+$util.qr($ctx.args.input.createHighlight.put("updatedAt", $util.defaultIfNull($ctx.args.input.createHighlight.updatedAt, $util.time.nowISO8601())))
+$util.qr($ctx.args.input.createHighlight.put("__typename", "Highlight"))
+
+$util.qr($ctx.stash.put("createHighlight", $ctx.args.input.createHighlight))
+
+#set( $operation = {
+  "table": "Highlight-rkihsloeqbdabdpebem3fqqjuy-production",
+  "operation": "PutItem",
+  "key": $operationKey,
+  "attributeValues": $util.dynamodb.toMapValues($ctx.args.input.createHighlight),
+  "condition": $condition
+} )
+
+$util.qr($transactItems.add($operation))
+
+{
+  "version": "2018-05-29",
+  "operation": "TransactWriteItems",
+  "transactItems": $util.toJson($transactItems)
+}

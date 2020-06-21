@@ -18,6 +18,9 @@ module Router = {
 
   [@bs.module "next/router"] [@bs.scope "default"]
   external back: unit => unit = "back";
+
+  [@bs.module "next/router"] [@bs.scope "default"]
+  external push: string => unit = "push";
 };
 
 module Link = {

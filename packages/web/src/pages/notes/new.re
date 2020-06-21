@@ -29,12 +29,14 @@ let default = () => {
 
   <Provider
     render={(~rehydrated) =>
-      switch (authentication) {
-      | Loading => <Loading />
-      | Unauthenticated => <Loading />
+      switch (authentication, highlightId) {
+      | (Loading, _) => <Loading />
+      | (Unauthenticated, _) => <Loading />
       | _ when !rehydrated => <Loading />
-      | Authenticated(currentUser) =>
-        <QueryRenderers_NewNote highlightId currentUser />
+      | (Authenticated(currentUser), Some(highlightId)) =>
+        <QueryRenderers_NewNoteFromShare highlightId currentUser />
+      | (Authenticated(currentUser), None) =>
+        <QueryRenderers_NewNote currentUser />
       }
     }
   />;

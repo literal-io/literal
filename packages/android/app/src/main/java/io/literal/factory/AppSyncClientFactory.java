@@ -1,17 +1,22 @@
 package io.literal.factory;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
+import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.config.AWSConfiguration;
 import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient;
 import com.amazonaws.mobileconnectors.appsync.S3ObjectManagerImplementation;
+import com.amazonaws.mobileconnectors.appsync.sigv4.CognitoUserPoolsAuthProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3Client;
 
 import org.json.JSONObject;
+
+import io.literal.lib.Constants;
 
 public class AppSyncClientFactory {
 
@@ -26,7 +31,17 @@ public class AppSyncClientFactory {
                     .context(context)
                     .awsConfiguration(getConfiguration(context))
                     .s3ObjectManager(getS3ObjectManager(context, getConfiguration(context)))
-                    .credentialsProvider(getCredentialsProvider(context, getConfiguration(context)))
+                    .cognitoUserPoolsAuthProvider(new CognitoUserPoolsAuthProvider() {
+                        @Override
+                        public String getLatestAuthToken() {
+                            try {
+                                return AWSMobileClient.getInstance().getTokens().getIdToken().getTokenString();
+                            } catch (Exception e) {
+                                Log.e(Constants.LOG_TAG, e.getLocalizedMessage());
+                                return e.getLocalizedMessage();
+                            }
+                        }
+                    })
                     .build();
         }
         return client;

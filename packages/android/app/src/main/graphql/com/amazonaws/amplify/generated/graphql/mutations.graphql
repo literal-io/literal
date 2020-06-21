@@ -7,21 +7,116 @@ mutation CreateHighlightFromScreenshot(
     createdAt
     text
     note
+    owner
     screenshot {
       id
       createdAt
+      owner
+    }
+    tags {
+      nextToken
     }
   }
 }
-mutation CreateScreenshot(
-  $input: CreateScreenshotInput!
-  $condition: ModelScreenshotConditionInput
-) {
-  createScreenshot(input: $input, condition: $condition) {
+mutation CreateTags($input: [CreateTagInput!]!) {
+  createTags(input: $input) {
     id
     createdAt
-    file {
-      ...S3Object
+    text
+    owner
+    highlights {
+      nextToken
+    }
+  }
+}
+mutation CreateHighlightTags($input: [CreateHighlightTagInput!]!) {
+  createHighlightTags(input: $input) {
+    id
+    highlightId
+    tagId
+    createdAt
+    tag {
+      id
+      createdAt
+      text
+      owner
+    }
+    highlight {
+      id
+      createdAt
+      text
+      note
+      owner
+    }
+  }
+}
+mutation DeleteHighlightTags($input: [DeleteHighlightTagInput!]!) {
+  deleteHighlightTags(input: $input) {
+    id
+    highlightId
+    tagId
+    createdAt
+    tag {
+      id
+      createdAt
+      text
+      owner
+    }
+    highlight {
+      id
+      createdAt
+      text
+      note
+      owner
+    }
+  }
+}
+mutation UpdateHighlightAndTags($input: UpdateHighlightAndTagsInput!) {
+  updateHighlightAndTags(input: $input) {
+    updateHighlight {
+      id
+      createdAt
+      text
+      note
+      owner
+    }
+    createTags {
+      id
+      createdAt
+      text
+      owner
+    }
+    createHighlightTags {
+      id
+      highlightId
+      tagId
+      createdAt
+    }
+    deleteHighlightTags {
+      id
+    }
+  }
+}
+mutation CreateHighlightAndTags($input: CreateHighlightAndTagsInput!) {
+  createHighlightAndTags(input: $input) {
+    createHighlight {
+      id
+      createdAt
+      text
+      note
+      owner
+    }
+    createTags {
+      id
+      createdAt
+      text
+      owner
+    }
+    createHighlightTags {
+      id
+      highlightId
+      tagId
+      createdAt
     }
   }
 }
@@ -35,6 +130,7 @@ mutation UpdateScreenshot(
     file {
       ...S3Object
     }
+    owner
   }
 }
 mutation DeleteScreenshot(
@@ -47,6 +143,62 @@ mutation DeleteScreenshot(
     file {
       ...S3Object
     }
+    owner
+  }
+}
+mutation CreateScreenshot(
+  $input: CreateScreenshotInput!
+  $condition: ModelScreenshotConditionInput
+) {
+  createScreenshot(input: $input, condition: $condition) {
+    id
+    createdAt
+    file {
+      ...S3Object
+    }
+    owner
+  }
+}
+mutation CreateTag(
+  $input: CreateTagInput!
+  $condition: ModelTagConditionInput
+) {
+  createTag(input: $input, condition: $condition) {
+    id
+    createdAt
+    text
+    owner
+    highlights {
+      nextToken
+    }
+  }
+}
+mutation UpdateTag(
+  $input: UpdateTagInput!
+  $condition: ModelTagConditionInput
+) {
+  updateTag(input: $input, condition: $condition) {
+    id
+    createdAt
+    text
+    owner
+    highlights {
+      nextToken
+    }
+  }
+}
+mutation DeleteTag(
+  $input: DeleteTagInput!
+  $condition: ModelTagConditionInput
+) {
+  deleteTag(input: $input, condition: $condition) {
+    id
+    createdAt
+    text
+    owner
+    highlights {
+      nextToken
+    }
   }
 }
 mutation CreateHighlight(
@@ -58,9 +210,14 @@ mutation CreateHighlight(
     createdAt
     text
     note
+    owner
     screenshot {
       id
       createdAt
+      owner
+    }
+    tags {
+      nextToken
     }
   }
 }
@@ -73,9 +230,14 @@ mutation UpdateHighlight(
     createdAt
     text
     note
+    owner
     screenshot {
       id
       createdAt
+      owner
+    }
+    tags {
+      nextToken
     }
   }
 }
@@ -88,9 +250,119 @@ mutation DeleteHighlight(
     createdAt
     text
     note
+    owner
     screenshot {
       id
       createdAt
+      owner
     }
+    tags {
+      nextToken
+    }
+  }
+}
+mutation CreateHighlightTag(
+  $input: CreateHighlightTagInput!
+  $condition: ModelHighlightTagConditionInput
+) {
+  createHighlightTag(input: $input, condition: $condition) {
+    id
+    highlightId
+    tagId
+    createdAt
+    tag {
+      id
+      createdAt
+      text
+      owner
+    }
+    highlight {
+      id
+      createdAt
+      text
+      note
+      owner
+    }
+  }
+}
+mutation UpdateHighlightTag(
+  $input: UpdateHighlightTagInput!
+  $condition: ModelHighlightTagConditionInput
+) {
+  updateHighlightTag(input: $input, condition: $condition) {
+    id
+    highlightId
+    tagId
+    createdAt
+    tag {
+      id
+      createdAt
+      text
+      owner
+    }
+    highlight {
+      id
+      createdAt
+      text
+      note
+      owner
+    }
+  }
+}
+mutation DeleteHighlightTag(
+  $input: DeleteHighlightTagInput!
+  $condition: ModelHighlightTagConditionInput
+) {
+  deleteHighlightTag(input: $input, condition: $condition) {
+    id
+    highlightId
+    tagId
+    createdAt
+    tag {
+      id
+      createdAt
+      text
+      owner
+    }
+    highlight {
+      id
+      createdAt
+      text
+      note
+      owner
+    }
+  }
+}
+mutation CreateProfile(
+  $input: CreateProfileInput!
+  $condition: ModelProfileConditionInput
+) {
+  createProfile(input: $input, condition: $condition) {
+    id
+    owner
+    createdAt
+    isOnboarded
+  }
+}
+mutation UpdateProfile(
+  $input: UpdateProfileInput!
+  $condition: ModelProfileConditionInput
+) {
+  updateProfile(input: $input, condition: $condition) {
+    id
+    owner
+    createdAt
+    isOnboarded
+  }
+}
+mutation DeleteProfile(
+  $input: DeleteProfileInput!
+  $condition: ModelProfileConditionInput
+) {
+  deleteProfile(input: $input, condition: $condition) {
+    id
+    owner
+    createdAt
+    isOnboarded
   }
 }

@@ -12,6 +12,7 @@ let handleUpdateCache = (~currentUser, ~mutationData) => {
       ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
       (),
     );
+  /** FIXME: add tags **/
   let updatedItems =
     Belt.Array.map(
       [|
@@ -27,6 +28,7 @@ let handleUpdateCache = (~currentUser, ~mutationData) => {
             createdAt: highlight##createdAt,
             text: highlight##editorHighlightFragment##text,
             typename: highlight##__typename,
+            tags: None
           },
         )
       | None => None,
@@ -46,7 +48,7 @@ let handleUpdateCache = (~currentUser, ~mutationData) => {
         QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
           cachedQuery
           ->listHighlights
-          ->Belt.Option.flatMap(items)
+          ->Belt.Option.flatMap(highlightConnectionItems)
           ->Belt.Option.map(items => {
               {
                 ...cachedQuery,
@@ -96,6 +98,7 @@ let make = (~profileFragment as profile, ~currentUser) => {
               "note": None,
               "highlightScreenshotId": None,
               "createdAt": baseTs |> Js.Date.toISOString |> Js.Option.some,
+              "owner": None
             };
           });
       let variables =

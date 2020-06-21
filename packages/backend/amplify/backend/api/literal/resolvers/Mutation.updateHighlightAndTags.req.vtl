@@ -1,0 +1,287 @@
+#if($util.isNullOrEmpty($authMode) && !$util.isNull($ctx.identity) && !$util.isNull($ctx.identity.sub) && !$util.isNull($ctx.identity.issuer) && !$util.isNull($ctx.identity.username) && !$util.isNull($ctx.identity.claims) && !$util.isNull($ctx.identity.sourceIp) && !$util.isNull($ctx.identity.defaultAuthStrategy) )
+  #set( $authMode = "userPools" )
+#end
+
+#if( $authMode == "userPools" )
+
+  #set( $isOwnerAuthorized = false )
+  #set( $identityValue = $util.defaultIfNull($ctx.identity.claims.get("username"), $util.defaultIfNull($ctx.identity.claims.get("cognito:username"), "___xamznone____")) )
+
+  #set( $idxDecrement = 1 )
+  #set( $isOwnerAuthorized = true )
+
+  ## createHighlightTags - Set any missing owners and verify already set owners
+  #if( ! $util.isNull($ctx.args.input.createHighlightTags) )
+    #foreach( $item in $ctx.args.input.createHighlightTags )
+      #if (! $item.containsKey("owner"))
+        $util.qr($item.put("owner", $identityValue))
+        $util.qr($ctx.args.createHighlightTags.set($foreach.count-idxDecrement, $item)) 
+      #elseif ($item.get("owner") != $identityValue)
+        #set( $isOwnerAuthorized = false ) 
+      #end 
+    #end
+  #end
+
+  ## createTags - Set any missing owners and verify already set owners
+  #if( ! $util.isNull($ctx.args.input.createTags) )
+    #foreach( $item in $ctx.args.input.createTags )
+      #if (! $item.containsKey("owner"))
+        $util.qr($item.put("owner", $identityValue))
+        $util.qr($ctx.args.createTags.set($foreach.count-idxDecrement, $item)) 
+      #elseif ($item.get("owner") != $identityValue)
+        #set( $isOwnerAuthorized = false ) 
+      #end 
+    #end
+  #end
+
+  ## updateHighlight and deleteHighlightTags authorization is verified via conditions
+
+  ## [Start] Owner Authorization Checks **
+  #set( $ownerAuthExpressions = [] )
+  #set( $ownerAuthExpressionValues = {} )
+  #set( $ownerAuthExpressionNames = {} )
+  ## Authorization rule: { allow: owner, ownerField: "owner", identityClaim: "cognito:username" } **
+  $util.qr($ownerAuthExpressions.add("#owner0 = :identity0"))
+  $util.qr($ownerAuthExpressionNames.put("#owner0", "owner"))
+  $util.qr($ownerAuthExpressionValues.put(":identity0", $util.dynamodb.toDynamoDB($util.defaultIfNull($ctx.identity.claims.get("username"), $util.defaultIfNull($ctx.identity.claims.get("cognito:username"), "___xamznone____")))))
+  ## [End] Owner Authorization Checks **
+
+  ## [Start] Collect Auth Condition **
+  #set( $authCondition = $util.defaultIfNull($authCondition, {
+    "expression": "",
+    "expressionNames": {},
+    "expressionValues": {}
+  }) )
+
+  #set( $totalAuthExpression = "" )
+  ## Add dynamic group auth conditions if they exist **
+  #if( $groupAuthExpressions )
+    #foreach( $authExpr in $groupAuthExpressions )
+      #set( $totalAuthExpression = "$totalAuthExpression $authExpr" )
+      #if( $foreach.hasNext )
+        #set( $totalAuthExpression = "$totalAuthExpression OR" )
+      #end
+    #end
+  #end
+  #if( $groupAuthExpressionNames )
+    $util.qr($authCondition.expressionNames.putAll($groupAuthExpressionNames))
+  #end
+  #if( $groupAuthExpressionValues )
+    $util.qr($authCondition.expressionValues.putAll($groupAuthExpressionValues))
+  #end
+  ## Add owner auth conditions if they exist **
+  #if( $totalAuthExpression != "" && $ownerAuthExpressions && $ownerAuthExpressions.size() > 0 )
+    #set( $totalAuthExpression = "$totalAuthExpression OR" )
+  #end
+  #if( $ownerAuthExpressions )
+    #foreach( $authExpr in $ownerAuthExpressions )
+      #set( $totalAuthExpression = "$totalAuthExpression $authExpr" )
+      #if( $foreach.hasNext )
+        #set( $totalAuthExpression = "$totalAuthExpression OR" )
+      #end
+    #end
+  #end
+  #if( $ownerAuthExpressionNames )
+    $util.qr($authCondition.expressionNames.putAll($ownerAuthExpressionNames))
+  #end
+  #if( $ownerAuthExpressionValues )
+    $util.qr($authCondition.expressionValues.putAll($ownerAuthExpressionValues))
+  #end
+  ## Set final expression if it has changed. **
+  #if( $totalAuthExpression != "" )
+    #if( $util.isNullOrEmpty($authCondition.expression) )
+      #set( $authCondition.expression = "($totalAuthExpression)" )
+    #else
+      #set( $authCondition.expression = "$authCondition.expression AND ($totalAuthExpression)" )
+    #end
+  #end
+  ## [End] Collect Auth Condition **
+
+  ## [Start] Throw if unauthorized **
+  #if( !($isStaticGroupAuthorized == true || $isDynamicGroupAuthorized == true || $isOwnerAuthorized == true) )
+    $util.unauthorized()
+  #end
+  ## [End] Throw if unauthorized **
+#else
+  $util.unauthorized()
+#end
+
+## [Start] Prepare DynamoDB TransactWriteItems Request. **
+#set( $transactItems = [] )
+
+## createHighlightTags - prepare transaction operations
+$util.qr($ctx.stash.put("createHighlightTags", []))
+#if( ! $util.isNull($ctx.args.input.createHighlightTags) )
+  #foreach( $item in $ctx.args.input.createHighlightTags )
+    #set( $condition = {
+      "expression": "attribute_not_exists(#id)",
+      "expressionNames": {
+          "#id": "id"
+      }
+    } )
+    #set( $operationKey = {
+      "id": $util.dynamodb.toDynamoDB($item.id)
+    } )
+
+    $util.qr($item.put("createdAt", $util.defaultIfNull($item.createdAt, $util.time.nowISO8601())))
+    $util.qr($item.put("updatedAt", $util.defaultIfNull($item.updatedAt, $util.time.nowISO8601())))
+    $util.qr($item.put("__typename", "HighlightTag"))
+
+    $util.qr($ctx.stash.createHighlightTags.add($item))
+
+    #set( $operation = {
+      "table": "HighlightTag-rkihsloeqbdabdpebem3fqqjuy-production",
+      "operation": "PutItem",
+      "key": $operationKey,
+      "attributeValues": $util.dynamodb.toMapValues($item),
+      "condition": $condition
+    } )
+
+    $util.qr($transactItems.add($operation))
+  #end
+#end
+
+## createTags - prepare transaction operations
+$util.qr($ctx.stash.put("createTags", []))
+#if( ! $util.isNull($ctx.args.input.createTags) )
+  #foreach( $item in $ctx.args.input.createTags )
+    #set( $condition = {
+      "expression": "attribute_not_exists(#id)",
+      "expressionNames": {
+          "#id": "id"
+      }
+    } )
+    #set( $operationKey = {
+      "id": $util.dynamodb.toDynamoDB($item.id)
+    } )
+
+    $util.qr($item.put("createdAt", $util.defaultIfNull($item.createdAt, $util.time.nowISO8601())))
+    $util.qr($item.put("updatedAt", $util.defaultIfNull($item.updatedAt, $util.time.nowISO8601())))
+    $util.qr($item.put("__typename", "Tag"))
+
+    $util.qr($ctx.stash.createTags.add($item))
+
+    #set( $operation = {
+      "table": "Tag-rkihsloeqbdabdpebem3fqqjuy-production",
+      "operation": "PutItem",
+      "key": $operationKey,
+      "attributeValues": $util.dynamodb.toMapValues($item),
+      "condition": $condition
+    } )
+
+    $util.qr($transactItems.add($operation))
+  #end
+#end
+
+#set( $condition = $authCondition )
+$util.qr($condition.put("expression", "$condition.expression AND attribute_exists(#id)"))
+$util.qr($condition.expressionNames.put("#id", "id"))
+
+## deleteHighlightTags - prepare transaction operations
+$util.qr($ctx.stash.put("deleteHighlightTags", []))
+#if( ! $util.isNull($ctx.args.input.deleteHighlightTags) )
+  #foreach( $item in $ctx.args.input.deleteHighlightTags )
+
+    #set( $operationKey = {
+      "id": $util.dynamodb.toDynamoDB($item.id)
+    } )
+
+    $util.qr($ctx.stash.deleteHighlightTags.add($item))
+
+    #set( $operation = {
+      "table": "HighlightTag-rkihsloeqbdabdpebem3fqqjuy-production",
+      "operation": "DeleteItem",
+      "key": $operationKey,
+      "condition": $condition
+    } )
+
+    $util.qr($transactItems.add($operation))
+  #end
+#end
+
+## updateHighlight
+#if( ! $util.isNull($ctx.args.input.updateHighlight) )
+  $util.qr($context.args.input.updateHighlight.put("updatedAt", $util.defaultIfNull($ctx.args.input.updateHighlight.updatedAt, $util.time.nowISO8601())))
+  $util.qr($context.args.input.updateHighlight.put("__typename", "Highlight"))
+  #set( $operationKey = {
+    "id": {
+      "S": $ctx.args.input.updateHighlight.id
+    }
+  } )
+  #set( $expNames = {} )
+  #set( $expValues = {} )
+  #set( $expSet = {} )
+  #set( $expAdd = {} )
+  #set( $expRemove = [] )
+  #set( $keyFields = ["id"] )
+
+  #foreach( $entry in $util.map.copyAndRemoveAllKeys($context.args.input.updateHighlight, $keyFields).entrySet() )
+    #if( !$util.isNull($dynamodbNameOverrideMap) && $dynamodbNameOverrideMap.containsKey("$entry.key") )
+      #set( $entryKeyAttributeName = $dynamodbNameOverrideMap.get("$entry.key") )
+    #else
+      #set( $entryKeyAttributeName = $entry.key )
+    #end
+    #if( $util.isNull($entry.value) )
+      #set( $discard = $expRemove.add("#$entryKeyAttributeName") )
+      $util.qr($expNames.put("#$entryKeyAttributeName", "$entry.key"))
+    #else
+      $util.qr($expSet.put("#$entryKeyAttributeName", ":$entryKeyAttributeName"))
+      $util.qr($expNames.put("#$entryKeyAttributeName", "$entry.key"))
+      $util.qr($expValues.put(":$entryKeyAttributeName", $util.dynamodb.toDynamoDB($entry.value)))
+    #end
+  #end
+  #set( $expression = "" )
+  #if( !$expSet.isEmpty() )
+    #set( $expression = "SET" )
+    #foreach( $entry in $expSet.entrySet() )
+      #set( $expression = "$expression $entry.key = $entry.value" )
+      #if( $foreach.hasNext() )
+        #set( $expression = "$expression," )
+      #end
+    #end
+  #end
+  #if( !$expAdd.isEmpty() )
+    #set( $expression = "$expression ADD" )
+    #foreach( $entry in $expAdd.entrySet() )
+      #set( $expression = "$expression $entry.key $entry.value" )
+      #if( $foreach.hasNext() )
+        #set( $expression = "$expression," )
+      #end
+    #end
+  #end
+  #if( !$expRemove.isEmpty() )
+    #set( $expression = "$expression REMOVE" )
+    #foreach( $entry in $expRemove )
+      #set( $expression = "$expression $entry" )
+      #if( $foreach.hasNext() )
+        #set( $expression = "$expression," )
+      #end
+    #end
+  #end
+  #set( $update = {} )
+
+  $util.qr($update.put("expression", "$expression"))
+  #if( !$expNames.isEmpty() )
+    $util.qr($update.put("expressionNames", $expNames))
+  #end
+  #if( !$expValues.isEmpty() )
+    $util.qr($update.put("expressionValues", $expValues))
+  #end
+
+  $util.qr($ctx.stash.put("updateHighlight", $ctx.args.input.updateHighlight))
+
+  #set( $operation = {
+    "table": "Highlight-rkihsloeqbdabdpebem3fqqjuy-production",
+    "operation": "UpdateItem",
+    "key": $operationKey,
+    "condition": $condition,
+    "update": $update
+  } )
+  $util.qr($transactItems.add($operation))
+#end
+
+{
+  "version": "2018-05-29",
+  "operation": "TransactWriteItems",
+  "transactItems": $util.toJson($transactItems)
+}

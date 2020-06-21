@@ -6,7 +6,7 @@ input S3ObjectInput {
   mimeType: String
 }
 
-type S3Object @aws_iam {
+type S3Object @aws_iam @aws_cognito_user_pools {
   bucket: String!
   key: String!
   region: String!
@@ -15,7 +15,10 @@ type S3Object @aws_iam {
 type Screenshot
   @model
   @auth(
-    rules: [{ allow: owner, ownerField: "owner", operations: [create, read] }]
+    rules: [
+      { allow: owner, ownerField: "owner", operations: [create, read] }
+      { allow: private, provider: iam, operations: [create, read] }
+    ]
   ) {
   id: ID!
   createdAt: String!
@@ -27,6 +30,7 @@ input CreateScreenshotInput {
   id: ID
   createdAt: String
   file: S3ObjectInput!
+  owner: String
 }
 
 input CreateHighlightInput {
@@ -34,7 +38,49 @@ input CreateHighlightInput {
   createdAt: String
   text: String!
   note: String
+  owner: String
   highlightScreenshotId: ID
+}
+
+input CreateTagInput {
+  id: ID
+  createdAt: String
+  text: String!
+}
+
+input CreateHighlightTagInput {
+  id: ID
+  highlightId: ID!
+  tagId: ID!
+  createdAt: String
+}
+
+input DeleteHighlightTagInput {
+  id: ID!
+}
+
+type Tag
+  @model
+  @key(fields: ["id"])
+  @auth(
+    rules: [
+      {
+        allow: owner
+        ownerField: "owner"
+        operations: [create, read, update, delete]
+      }
+      {
+        allow: private
+        provider: iam
+        operations: [create, read, update, delete]
+      }
+    ]
+  ) {
+  id: ID!
+  createdAt: String!
+  text: String!
+  owner: String!
+  highlights: [HighlightTag!]! @connection(keyName: "byTag", fields: ["id"])
 }
 
 type Highlight
@@ -47,6 +93,11 @@ type Highlight
         ownerField: "owner"
         operations: [create, read, update, delete]
       }
+      {
+        allow: private
+        provider: iam
+        operations: [create, read, update, delete]
+      }
     ]
   ) {
   id: ID!
@@ -55,6 +106,33 @@ type Highlight
   note: String
   screenshot: Screenshot @connection
   owner: String
+  tags: [HighlightTag!]! @connection(keyName: "byHighlight", fields: ["id"])
+}
+
+type HighlightTag
+  @model
+  @key(name: "byHighlight", fields: ["highlightId", "tagId"])
+  @key(name: "byTag", fields: ["tagId", "highlightId"])
+  @auth(
+    rules: [
+      {
+        allow: owner
+        ownerField: "owner"
+        operations: [create, read, update, delete]
+      }
+      {
+        allow: private
+        provider: iam
+        operations: [create, read, update, delete]
+      }
+    ]
+  ) {
+  id: ID!
+  highlightId: ID!
+  tagId: ID!
+  createdAt: String!
+  highlight: Highlight! @connection(fields: ["highlightId"])
+  tag: Tag! @connection(fields: ["tagId"])
 }
 
 type Profile
@@ -63,7 +141,11 @@ type Profile
   @auth(
     rules: [
       { allow: owner, ownerField: "owner", operations: [read, update] }
-      { allow: private, provider: iam, operations: [create] }
+      {
+        allow: private
+        provider: iam
+        operations: [create, read, update, delete]
+      }
     ]
   ) {
   id: ID!
@@ -84,6 +166,46 @@ input CreateHighlightFromScreenshotInput {
   createdAt: String
   screenshotId: String!
   note: String
+  owner: String
+}
+
+input UpdateHighlightInput {
+  id: ID!
+  createdAt: String
+  text: String
+  note: String
+  owner: String
+  highlightScreenshotId: ID
+}
+
+input UpdateHighlightAndTagsInput {
+  updateHighlight: UpdateHighlightInput
+  createTags: [CreateTagInput!]
+  createHighlightTags: [CreateHighlightTagInput!]
+  deleteHighlightTags: [DeleteHighlightTagInput!]
+}
+
+type DeletionResult {
+  id: ID!
+}
+
+type UpdateHighlightAndTagsResult {
+  updateHighlight: Highlight
+  createTags: [Tag!]
+  createHighlightTags: [HighlightTag!]
+  deleteHighlightTags: [DeletionResult!]
+}
+
+input CreateHighlightAndTagsInput {
+  createHighlight: CreateHighlightInput!
+  createTags: [CreateTagInput!]
+  createHighlightTags: [CreateHighlightTagInput!]
+}
+
+type CreateHighlightAndTagsResult {
+  createHighlight: Highlight!
+  createTags: [Tag!]
+  createHighlightTags: [HighlightTag!]
 }
 
 type Mutation {
@@ -92,4 +214,16 @@ type Mutation {
   ): Highlight
     @function(name: "GraphQLResolver-${env}")
     @auth(rules: [{ allow: private }])
+
+  createTags(input: [CreateTagInput!]!): [Tag!]!
+  createHighlightTags(input: [CreateHighlightTagInput!]!): [HighlightTag!]!
+  deleteHighlightTags(input: [DeleteHighlightTagInput!]!): [HighlightTag!]!
+
+  updateHighlightAndTags(
+    input: UpdateHighlightAndTagsInput!
+  ): UpdateHighlightAndTagsResult!
+
+  createHighlightAndTags(
+    input: CreateHighlightAndTagsInput!
+  ): CreateHighlightAndTagsResult!
 }

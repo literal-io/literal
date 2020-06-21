@@ -9,7 +9,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 
 import io.literal.ui.view.WebView;
 
@@ -25,11 +24,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         AWSMobileClientFactory.initializeClient(this);
+
         this.webView = findViewById(R.id.webview);
         this.webView.initialize(this);
         this.webView.requestFocus();
-
-        Log.d(Constants.LOG_TAG, "MainActivity onCreate: " + (savedInstanceState == null ? "null" : savedInstanceState.toString()));
 
         if (savedInstanceState == null) {
             Intent intent = getIntent();

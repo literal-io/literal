@@ -1,13 +1,4 @@
 # this is an auto generated file. This will be overwritten
-query GetScreenshot($id: ID!) {
-  getScreenshot(id: $id) {
-    id
-    createdAt
-    file {
-      ...S3Object
-    }
-  }
-}
 query ListScreenshots(
   $filter: ModelScreenshotFilterInput
   $limit: Int
@@ -17,6 +8,75 @@ query ListScreenshots(
     items {
       id
       createdAt
+      owner
+    }
+    nextToken
+  }
+}
+query GetScreenshot($id: ID!) {
+  getScreenshot(id: $id) {
+    id
+    createdAt
+    file {
+      ...S3Object
+    }
+    owner
+  }
+}
+query ListTags(
+  $id: ID
+  $filter: ModelTagFilterInput
+  $limit: Int
+  $nextToken: String
+  $sortDirection: ModelSortDirection
+) {
+  listTags(
+    id: $id
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+    sortDirection: $sortDirection
+  ) {
+    items {
+      id
+      createdAt
+      text
+      owner
+    }
+    nextToken
+  }
+}
+query GetTag($id: ID!) {
+  getTag(id: $id) {
+    id
+    createdAt
+    text
+    owner
+    highlights {
+      nextToken
+    }
+  }
+}
+query ListHighlights(
+  $id: ID
+  $filter: ModelHighlightFilterInput
+  $limit: Int
+  $nextToken: String
+  $sortDirection: ModelSortDirection
+) {
+  listHighlights(
+    id: $id
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+    sortDirection: $sortDirection
+  ) {
+    items {
+      id
+      createdAt
+      text
+      note
+      owner
     }
     nextToken
   }
@@ -27,23 +87,80 @@ query GetHighlight($id: ID!) {
     createdAt
     text
     note
+    owner
     screenshot {
       id
       createdAt
+      owner
+    }
+    tags {
+      nextToken
     }
   }
 }
-query ListHighlights(
-  $filter: ModelHighlightFilterInput
-  $limit: Int
-  $nextToken: String
-) {
-  listHighlights(filter: $filter, limit: $limit, nextToken: $nextToken) {
-    items {
+query GetHighlightTag($id: ID!) {
+  getHighlightTag(id: $id) {
+    id
+    highlightId
+    tagId
+    createdAt
+    tag {
+      id
+      createdAt
+      text
+      owner
+    }
+    highlight {
       id
       createdAt
       text
       note
+      owner
+    }
+  }
+}
+query ListHighlightTags(
+  $filter: ModelHighlightTagFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listHighlightTags(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      id
+      highlightId
+      tagId
+      createdAt
+    }
+    nextToken
+  }
+}
+query GetProfile($owner: String!) {
+  getProfile(owner: $owner) {
+    id
+    owner
+    createdAt
+    isOnboarded
+  }
+}
+query ListProfiles(
+  $owner: String
+  $filter: ModelProfileFilterInput
+  $limit: Int
+  $nextToken: String
+  $sortDirection: ModelSortDirection
+) {
+  listProfiles(
+    owner: $owner
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+    sortDirection: $sortDirection
+  ) {
+    items {
+      id
+      owner
+      createdAt
+      isOnboarded
     }
     nextToken
   }

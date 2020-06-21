@@ -20,22 +20,29 @@ public class AWSMobileClientFactory {
 
     static CountDownLatch initializationLatch = new CountDownLatch(1);
 
-    public static void initializeClient(Context context) {
+    public static void initializeClient(Context context, final Callback<UserStateDetails> callback) {
         AWSMobileClient.getInstance().initialize(context, getConfiguration(context), new Callback<UserStateDetails>() {
             @Override
             public void onResult(UserStateDetails result) {
+                if (callback != null) {
+                    callback.onResult(result);
+                }
                 initializationLatch.countDown();
             }
 
             @Override
             public void onError(Exception e) {
-
+                if (callback != null) {
+                    callback.onError(e);
+                }
             }
         });
     }
 
+    public static void initializeClient(Context context) { initializeClient(context, null); }
+
     public static void initializeClientBlocking(Context context) throws InterruptedException {
-        initializeClient(context);
+        initializeClient(context, null);
         initializationLatch.await();
     }
 

@@ -1,0 +1,12 @@
+#if( $ctx.error )
+  $util.error($ctx.error.message, $ctx.error.type, null, $ctx.result.cancellationReasons)
+#else
+  #set( $result = {
+    "updateHighlight": $ctx.stash.updateHighlight,
+    "createHighlightTags": $ctx.stash.createHighlightTags,
+    "createTags": $ctx.stash.createTags,
+    "deleteHighlightTags": $ctx.stash.deleteHighlightTags
+  } )
+
+  $util.toJson($result)
+#end

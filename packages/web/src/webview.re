@@ -160,8 +160,6 @@ let initialize = () => {
       window
       |> Webapi.Dom.Window.addEventListener("message", ev => {
            let message = ev->MessageEvent.unsafeOfEvent;
-           Js.log2("webview message", ev);
-
            /**
             * When page is loaded, WebView will postMessage with the
             * MessagePort to use for communication.

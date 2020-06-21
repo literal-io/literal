@@ -40,6 +40,14 @@ module.exports = {
       listStyleType: {
         square: "square",
       },
+      borderColor: {
+        "white-o50": "rgba(255, 255, 255, 0.5)",
+      },
+      textColor: {
+        lightPrimary: "rgba(255, 255, 255, .87)",
+        lightSecondary: "rgba(255, 255, 255, .50)",
+        lightDisabled: "rgba(255, 255, 255, .38)"
+      }
     },
   },
 };

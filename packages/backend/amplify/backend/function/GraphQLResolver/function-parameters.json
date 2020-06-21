@@ -1,28 +1,18 @@
 {
-    "permissions": {
-        "auth": {
-            "literalAuth": [
-                "create",
-                "read",
-                "update",
-                "delete"
-            ]
-        },
-        "api": {
-            "literal": [
-                "create",
-                "read",
-                "update",
-                "delete"
-            ]
-        },
-        "storage": {
-            "literalStorage": [
-                "create",
-                "read",
-                "update",
-                "delete"
-            ]
-        }
+  "permissions": {
+    "auth": {
+      "literalAuth": ["create", "read", "update", "delete"]
+    },
+    "api": {
+      "literal": ["create", "read", "update", "delete"]
+    },
+    "storage": {
+      "literalStorage": ["create", "read", "update", "delete"]
     }
+  },
+  "authliteralAuthUserPoolId": "us-east-1_EWCESLVzL",
+  "apiliteralGraphQLAPIIdOutput": "rkihsloeqbdabdpebem3fqqjuy",
+  "apiliteralGraphQLAPIEndpointOutput": "https://2dxxqoarong2jd4ukbeugsg5t4.appsync-api.us-east-1.amazonaws.com/graphql",
+  "storageliteralStorageBucketName": "literal-storage114446-production"
 }
+

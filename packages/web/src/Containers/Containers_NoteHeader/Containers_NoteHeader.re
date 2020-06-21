@@ -1,3 +1,4 @@
+open Containers_NoteHeader_GraphQL;
 open Styles;
 
 external castToListHighlights:
@@ -11,10 +12,27 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
       Containers_NoteHeader_GraphQL.DeleteHighlightMutation.definition,
     );
 
+  let handleCreate = () => {
+    let _ = Next.Router.push("/notes/new");
+    ();
+  };
+
   let handleDelete = () => {
+    let deleteHighlightInput = {"id": highlight##id};
+    let deleteHighlightTagsInput =
+      highlight##tags
+      ->Belt.Option.flatMap(t => t##items)
+      ->Belt.Option.map(t =>
+          t
+          ->Belt.Array.keepMap(ht => ht)
+          ->Belt.Array.map(ht => {"id": ht##id})
+        )
+      ->Belt.Option.getWithDefault([||]);
+
     let variables =
-      Containers_NoteHeader_GraphQL.DeleteHighlightMutation.makeVariables(
-        ~input={"id": highlight##id},
+      DeleteHighlightMutation.makeVariables(
+        ~deleteHighlightInput,
+        ~deleteHighlightTagsInput,
         (),
       );
 
@@ -40,7 +58,7 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
                  QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
                    cachedQuery
                    ->listHighlights
-                   ->Belt.Option.flatMap(items)
+                   ->Belt.Option.flatMap(highlightConnectionItems)
                    ->Belt.Option.map(items => {
                        let updatedItems =
                          items
@@ -103,34 +121,59 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
         className={cn([
           "text-white",
           "font-sans",
+          "font-semibold",
           "italic",
           "leading-none",
           "text-xl",
         ])}>
         {React.string("#recent")}
       </h1>
-      <MaterialUi.IconButton
-        size=`Small
-        edge=`End
-        onClick={_ => handleDelete()}
-        _TouchRippleProps={
-          "classes": {
-            "child": cn(["bg-white"]),
-            "rippleVisible": cn(["opacity-50"]),
-          },
-        }
-        classes=[Root(cn(["p-0", "ml-1"]))]>
-        <Svg
-          placeholderViewBox="0 0 24 24"
-          className={cn(["pointer-events-none", "opacity-75"])}
-          style={ReactDOMRe.Style.make(
-            ~width="1.75rem",
-            ~height="1.75rem",
-            (),
-          )}
-          icon=Svg.delete
-        />
-      </MaterialUi.IconButton>
+      <div className={cn(["flex", "flex-row"])}>
+        <MaterialUi.IconButton
+          size=`Small
+          edge=`End
+          onClick={_ => handleDelete()}
+          _TouchRippleProps={
+            "classes": {
+              "child": cn(["bg-white"]),
+              "rippleVisible": cn(["opacity-50"]),
+            },
+          }
+          classes=[Root(cn(["p-0", "ml-1"]))]>
+          <Svg
+            placeholderViewBox="0 0 24 24"
+            className={cn(["pointer-events-none", "opacity-75"])}
+            style={ReactDOMRe.Style.make(
+              ~width="1.75rem",
+              ~height="1.75rem",
+              (),
+            )}
+            icon=Svg.delete
+          />
+        </MaterialUi.IconButton>
+        <MaterialUi.IconButton
+          size=`Small
+          edge=`End
+          onClick={_ => handleCreate()}
+          _TouchRippleProps={
+            "classes": {
+              "child": cn(["bg-white"]),
+              "rippleVisible": cn(["opacity-50"]),
+            },
+          }
+          classes=[Root(cn(["p-0", "ml-4"]))]>
+          <Svg
+            placeholderViewBox="0 0 24 24"
+            className={cn(["pointer-events-none", "opacity-75"])}
+            style={ReactDOMRe.Style.make(
+              ~width="1.75rem",
+              ~height="1.75rem",
+              (),
+            )}
+            icon=Svg.add
+          />
+        </MaterialUi.IconButton>
+      </div>
     </div>
   </Header>;
 };
