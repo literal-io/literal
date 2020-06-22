@@ -1,11 +1,3 @@
-module GetTagFragment = [%graphql
-  {|
-    fragment GetTag on Tag {
-      id
-    }
-  |}
-];
-
 module GetHighlightFragment = [%graphql
   {|
     fragment editorHighlightFragment on Highlight {

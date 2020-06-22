@@ -59,7 +59,7 @@ let make =
             (
               Belt.Array.keepMap(t, t => t)
               |> Ramda.sortBy(t =>
-                   -. t##createdAt->Js.Date.fromString->Js.Date.valueOf
+                   t##createdAt->Js.Date.fromString->Js.Date.valueOf
                  )
             )
             ->Belt.Array.map(t => t##tag);

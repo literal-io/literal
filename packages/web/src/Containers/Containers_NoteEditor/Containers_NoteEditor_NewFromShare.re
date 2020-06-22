@@ -21,23 +21,26 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
     };
     let createTagsInput =
       editorValue.tags
-      ->Belt.Array.map(tag =>
-          {"id": tag##id, "text": tag##text, "createdAt": None}
+      ->Belt.Array.keepMap(tag =>
+          shouldCreateTag(tag)
+            ? Some({"id": tag##id, "text": tag##text, "createdAt": None})
+            : None
         );
     let createHighlightTagsInput =
-      createTagsInput->Belt.Array.map(tag =>
-        {
-          "id":
-            makeHighlightTagId(
-              ~highlightId=updateHighlightInput##id,
-              ~tagId=tag##id,
-            )
-            ->Js.Option.some,
-          "highlightId": updateHighlightInput##id,
-          "tagId": tag##id,
-          "createdAt": None,
-        }
-      );
+      editorValue.tags
+      ->Belt.Array.map(tag =>
+          {
+            "id":
+              makeHighlightTagId(
+                ~highlightId=updateHighlightInput##id,
+                ~tagId=tag##id,
+              )
+              ->Js.Option.some,
+            "highlightId": updateHighlightInput##id,
+            "tagId": tag##id,
+            "createdAt": None,
+          }
+        );
 
     let variables =
       UpdateHighlightMutation.makeVariables(

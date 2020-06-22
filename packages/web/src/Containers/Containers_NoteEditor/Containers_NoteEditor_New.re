@@ -117,8 +117,9 @@ module PhaseTextInput = {
       ApolloHooks.useMutation(CreateHighlightMutation.definition);
 
     let handleSave = () => {
+      let highlightId = Uuid.makeV4();
       let createHighlightInput = {
-        "id": Uuid.makeV4(),
+        "id": highlightId,
         "text": editorValue.text,
         "createdAt": None,
         "note": None,
@@ -127,23 +128,26 @@ module PhaseTextInput = {
       };
       let createTagsInput =
         editorValue.tags
-        ->Belt.Array.map(tag =>
-            {"id": tag##id, "text": tag##text, "createdAt": None}
+        ->Belt.Array.keepMap(tag =>
+            shouldCreateTag(tag)
+              ? Some({"id": tag##id, "text": tag##text, "createdAt": None})
+              : None
           );
       let createHighlightTagsInput =
-        createTagsInput->Belt.Array.map(tag =>
-          {
-            "id":
-              makeHighlightTagId(
-                ~highlightId=createHighlightInput##id,
-                ~tagId=tag##id,
-              )
-              ->Js.Option.some,
-            "highlightId": createHighlightInput##id,
-            "tagId": tag##id,
-            "createdAt": None,
-          }
-        );
+        editorValue.tags
+        ->Belt.Array.map(tag =>
+            {
+              "id":
+                makeHighlightTagId(
+                  ~highlightId=createHighlightInput##id,
+                  ~tagId=tag##id,
+                )
+                ->Js.Option.some,
+              "highlightId": createHighlightInput##id,
+              "tagId": tag##id,
+              "createdAt": None,
+            }
+          );
 
       let variables =
         CreateHighlightMutation.makeVariables(
@@ -166,7 +170,8 @@ module PhaseTextInput = {
           ~createHighlightTagsInput,
           ~createHighlightInput,
         );
-      let _ = Next.Router.back();
+      // FIXME: This should really do something like "back and replace"
+      let _ = Next.Router.push("/notes?id=" ++ highlightId);
       ();
     };
 

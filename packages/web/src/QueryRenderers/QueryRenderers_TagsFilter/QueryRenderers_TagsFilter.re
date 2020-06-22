@@ -34,7 +34,7 @@ let make = (~text, ~onTagResults, ~onTagClicked) => {
                 let _ = onTagClicked(tag);
                 ();
               }}
-              key=text
+              key=tag##text
               className={cn([
                 "z-10",
                 "font-sans",
@@ -42,6 +42,7 @@ let make = (~text, ~onTagResults, ~onTagClicked) => {
                 "italic",
                 "underline",
                 "font-medium",
+                "pa-2",
                 "mr-3",
               ])}>
               {React.string("#" ++ tag##text)}
