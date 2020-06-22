@@ -165,7 +165,11 @@ let parseTextFromScreenshot = screenshotId => {
       ->Belt.Array.get(0)
       ->Belt.Option.map(r =>
           Externals_GoogleCloud.Vision.(
-            r->fullTextAnnotation->text->Js.Promise.resolve
+            r
+            ->fullTextAnnotation
+            ->text
+            ->Js.String2.replaceByRe([%re "/\\n/g"], " ")
+            ->Js.Promise.resolve
           )
         )
     });
