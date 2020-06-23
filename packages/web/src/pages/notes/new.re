@@ -32,9 +32,13 @@ let default = () => {
       switch (authentication, highlightId) {
       | (Loading, _) => <Loading />
       | (Unauthenticated, _) => <Loading />
-      | _ when !rehydrated => <Loading />
       | (Authenticated(currentUser), Some(highlightId)) =>
-        <QueryRenderers_NewNoteFromShare highlightId currentUser />
+        <QueryRenderers_NewNoteFromShare
+          highlightId
+          currentUser
+          rehydrated
+        />
+      | _ when !rehydrated => <Loading />
       | (Authenticated(currentUser), None) =>
         <QueryRenderers_NewNote currentUser />
       }
