@@ -30,14 +30,10 @@ let default = () => {
   <Provider
     render={(~rehydrated) =>
       switch (authentication, highlightId) {
-      | (Loading, _) => <Loading />
       | (Unauthenticated, _) => <Loading />
-      | (Authenticated(currentUser), Some(highlightId)) =>
-        <QueryRenderers_NewNoteFromShare
-          highlightId
-          currentUser
-          rehydrated
-        />
+      | (_, Some(highlightId)) =>
+        <QueryRenderers_NewNoteFromShare highlightId authentication rehydrated />
+      | (Loading, _) => <Loading />
       | _ when !rehydrated => <Loading />
       | (Authenticated(currentUser), None) =>
         <QueryRenderers_NewNote currentUser />

@@ -35,7 +35,7 @@ module Loading = {
   let make = () => {
     let (margins, _setMargins) =
       React.useState(_ => {
-        let margins = [|"", "", "mr-1", "mr-2", "mr-3", "mr-4"|];
+        let margins = [|"", "mr-1", "mr-2", "mr-3", "mr-4", "mr-5"|];
         Belt.Array.make(lineCount, 0)
         ->Belt.Array.map(_ =>
             margins[Js.Math.random_int(0, Js.Array2.length(margins))]
@@ -59,11 +59,10 @@ module Loading = {
       </div>
       <FloatingActionButton
         className={cn(["fixed", "right-0", "bottom-0", "m-6", "z-10"])}
-        disabled={true}>
-        <Svg
-          placeholderViewBox="0 0 24 24"
-          className={cn(["w-10", "h-10", "pointer-events-none"])}
-          icon=Svg.done_
+        disabled=true>
+        <MaterialUi.CircularProgress
+          size={`Int(26)}
+          classes=[ColorPrimary(cn(["text-black"]))]
         />
       </FloatingActionButton>
     </>;
@@ -76,13 +75,19 @@ module Empty = {
 };
 
 [@react.component]
-let make = (~highlightId, ~currentUser, ~rehydrated) => {
+let make = (~highlightId, ~authentication: CurrentUserInfo.state, ~rehydrated) => {
   let (isLoaded, setIsLoaded) = React.useState(_ => false);
   let (query, _fullQuery) =
     ApolloHooks.useQuery(
       ~variables=GetNoteQuery.makeVariables(~id=highlightId, ()),
       ~pollInterval=isLoaded ? 0 : 500,
-      ~skip=!rehydrated,
+      ~skip=
+        switch (authentication) {
+        | Authenticated(_) when rehydrated => false
+        | _ when !rehydrated => true
+        | Loading
+        | Unauthenticated => true
+        },
       GetNoteQuery.definition,
     );
 
@@ -99,15 +104,17 @@ let make = (~highlightId, ~currentUser, ~rehydrated) => {
       [|query|],
     );
 
-  switch (query, /*rehydrated*/ false) {
-  | (Loading, _)
-  | (_, false) => <Loading />
-  | (Data(data), _) =>
+  switch (query, rehydrated, authentication) {
+  | (Loading, _, _)
+  | (_, false, _)
+  | (_, _, Loading) => <Loading />
+  | (Data(data), _, Authenticated(currentUser)) =>
     switch (data##getHighlight) {
     | Some(highlight) => <Data highlight currentUser />
     | None => <Empty />
     }
-  | (NoData, true)
-  | (Error(_), true) => <Empty />
+  | (NoData, true, _)
+  | (Error(_), true, _)
+  | (_, _, Unauthenticated) => <Empty />
   };
 };

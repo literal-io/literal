@@ -7,8 +7,11 @@ import io.literal.lib.Constants;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
 
 import io.literal.ui.view.WebView;
 
@@ -23,9 +26,21 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        this.webView = findViewById(R.id.webview);
+        ViewGroup splash = findViewById(R.id.splash);
+        ViewGroup layout = (ViewGroup) splash.getParent();
+
+        this.webView.setVisibility(View.INVISIBLE);
+        this.webView.onPageFinished(new WebView.PageFinishedCallback() {
+            @Override
+            public void onPageFinished(android.webkit.WebView view, String Url) {
+                view.setVisibility(View.VISIBLE);
+                layout.removeView(splash);
+            }
+        });
+
         AWSMobileClientFactory.initializeClient(this);
 
-        this.webView = findViewById(R.id.webview);
         this.webView.initialize(this);
         this.webView.requestFocus();
 

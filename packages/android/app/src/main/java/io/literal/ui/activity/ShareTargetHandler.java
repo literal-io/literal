@@ -27,6 +27,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 
 import com.amazonaws.amplify.generated.graphql.CreateHighlightFromScreenshotMutation;
 import com.amazonaws.amplify.generated.graphql.CreateHighlightMutation;
@@ -48,6 +50,8 @@ import java.util.concurrent.CountDownLatch;
 public class ShareTargetHandler extends AppCompatActivity {
 
     private WebView webView;
+    private ViewGroup splash;
+    private ViewGroup layout;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -55,6 +59,9 @@ public class ShareTargetHandler extends AppCompatActivity {
         setContentView(R.layout.activity_share_target_handler);
 
         webView = findViewById(R.id.webview);
+        webView.setVisibility(View.INVISIBLE);
+        splash = findViewById(R.id.splash);
+        layout = (ViewGroup) splash.getParent();
 
         AWSMobileClientFactory.initializeClient(this, new Callback<UserStateDetails>() {
             @Override
@@ -181,6 +188,27 @@ public class ShareTargetHandler extends AppCompatActivity {
     }
 
     private void handleSendImage(Intent intent) {
+        // Show WebView with loading indicator before starting any work.
+        String highlightId = UUID.randomUUID().toString();
+        webView.onWebEvent(new WebEvent.Callback(this, webView) {
+            @Override
+            public void onWebEvent(WebEvent event) {
+                super.onWebEvent(event);
+                switch (event.getType()) {
+                    case WebEvent.TYPE_ACTIVITY_FINISH:
+                        finish();
+                }
+            }
+        });
+        webView.onPageFinished(new WebView.PageFinishedCallback() {
+            @Override
+            public void onPageFinished(android.webkit.WebView view, String Url) {
+                view.setVisibility(View.VISIBLE);
+                layout.removeView(splash);
+            }
+        });
+        webView.loadUrl(Constants.WEB_HOST + "/notes/new?id=" + highlightId);
+
         JSONObject s3TransferUtilityJson = AppSyncClientFactory
                 .getConfiguration(this)
                 .optJsonObject("S3TransferUtility");
@@ -233,7 +261,6 @@ public class ShareTargetHandler extends AppCompatActivity {
             return;
         }
 
-        String highlightId = UUID.randomUUID().toString();
         CreateHighlightFromScreenshotMutation createHighlightMutation = CreateHighlightFromScreenshotMutation.builder()
                 .input(
                         CreateHighlightFromScreenshotInput.builder()
@@ -264,7 +291,6 @@ public class ShareTargetHandler extends AppCompatActivity {
                 Log.i("Literal", "highlightResult is null");
                 return;
             }
-
             webView.onWebEvent(new WebEvent.Callback(this, webView) {
                 @Override
                 public void onWebEvent(WebEvent event) {
@@ -279,14 +305,11 @@ public class ShareTargetHandler extends AppCompatActivity {
                     }
                 }
             });
-
-            webView.loadUrl(Constants.WEB_HOST + "/notes/new?id=" + highlightId);
         } catch (InterruptedException ex) {
             // TODO: handle errors causing screenshot to not be created.
             Log.e(Constants.LOG_TAG, "createHighlightFromScreenshot failed", ex);
             finish();
         }
-
     }
 
     private void handleSendNotSupported() {
