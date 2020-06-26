@@ -1,23 +1,5 @@
 package io.literal.ui.activity;
 
-import io.literal.R;
-import io.literal.factory.AWSMobileClientFactory;
-import io.literal.factory.AppSyncClientFactory;
-import io.literal.lib.Constants;
-import io.literal.lib.ContentResolverLib;
-import io.literal.ui.view.WebView;
-import io.literal.lib.WebEvent;
-
-import type.CreateHighlightFromScreenshotInput;
-import type.CreateHighlightInput;
-import type.CreateScreenshotInput;
-import type.S3ObjectInput;
-
-import javax.annotation.Nonnull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
-
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -30,13 +12,19 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+
 import com.amazonaws.amplify.generated.graphql.CreateHighlightFromScreenshotMutation;
 import com.amazonaws.amplify.generated.graphql.CreateHighlightMutation;
 import com.amazonaws.amplify.generated.graphql.CreateScreenshotMutation;
-
+import com.amazonaws.amplify.generated.graphql.GetHighlightQuery;
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.UserStateDetails;
+import com.amazonaws.mobileconnectors.appsync.ClearCacheException;
+import com.amazonaws.mobileconnectors.appsync.ClearCacheOptions;
 import com.apollographql.apollo.GraphQLCall;
 import com.apollographql.apollo.api.Response;
 import com.apollographql.apollo.exception.ApolloException;
@@ -46,6 +34,20 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+
+import javax.annotation.Nonnull;
+
+import io.literal.R;
+import io.literal.factory.AWSMobileClientFactory;
+import io.literal.factory.AppSyncClientFactory;
+import io.literal.lib.Constants;
+import io.literal.lib.ContentResolverLib;
+import io.literal.lib.WebEvent;
+import io.literal.ui.view.WebView;
+import type.CreateHighlightFromScreenshotInput;
+import type.CreateHighlightInput;
+import type.CreateScreenshotInput;
+import type.S3ObjectInput;
 
 public class ShareTargetHandler extends AppCompatActivity {
 
@@ -109,6 +111,25 @@ public class ShareTargetHandler extends AppCompatActivity {
             String action = intent.getAction();
             String type = intent.getType();
 
+            // Start initializing the WebView while we're processing the share data.
+            webView.onWebEvent(new WebEvent.Callback(this, webView) {
+                @Override
+                public void onWebEvent(WebEvent event) {
+                    super.onWebEvent(event);
+                    switch (event.getType()) {
+                        case WebEvent.TYPE_ACTIVITY_FINISH:
+                            finish();
+                    }
+                }
+            });
+            webView.onPageFinished(new WebView.PageFinishedCallback() {
+                @Override
+                public void onPageFinished(android.webkit.WebView view, String Url) {
+                    view.setVisibility(View.VISIBLE);
+                    layout.removeView(splash);
+                }
+            });
+
             if (Intent.ACTION_SEND.equals(action) && type != null && type.startsWith("image/")) {
                 handleSendImage(intent);
             } else if (Intent.ACTION_SEND.equals(action) && type != null && type.equals("text/plain")) {
@@ -121,15 +142,16 @@ public class ShareTargetHandler extends AppCompatActivity {
 
     private void handleSignedOut() {
         Intent intent = new Intent(this, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_TASK_ON_HOME);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
         this.startActivity(intent);
         this.finish();
     }
 
     private void handleSendText(Intent intent) {
-        String text = intent.getStringExtra(Intent.EXTRA_TEXT);
-
         String highlightId = UUID.randomUUID().toString();
+        webView.loadUrl(Constants.WEB_HOST + "/notes/new?id=" + highlightId);
+
+        String text = intent.getStringExtra(Intent.EXTRA_TEXT);
         CreateHighlightMutation createHighlightMutation = CreateHighlightMutation
                 .builder()
                 .input(
@@ -144,69 +166,50 @@ public class ShareTargetHandler extends AppCompatActivity {
 
         AppSyncClientFactory.getInstance(this)
                 .mutate(createHighlightMutation)
-                .enqueue(createHighlightCallback.getCallback());
-
-        try {
-            Response<CreateHighlightMutation.Data> highlightResponse = createHighlightCallback.awaitResult();
-            if (highlightResponse.hasErrors()) {
-                // FIXME: handle errors causing screenshot to not be created.
-                Log.e(Constants.LOG_TAG, highlightResponse.errors().toString());
-                finish();
-                return;
-            }
-
-
-            final CreateHighlightMutation.Data highlightData = highlightResponse.data();
-            if (highlightData == null) {
-                // FIXME: handle errors causing screenshot to not be created.
-                Log.i(Constants.LOG_TAG, "highlightResult is null");
-                finish();
-                return;
-            }
-
-            webView.onWebEvent(new WebEvent.Callback(this, webView) {
-                @Override
-                public void onWebEvent(WebEvent event) {
-                    super.onWebEvent(event);
-                    switch (event.getType()) {
-                        case WebEvent.TYPE_ACTIVITY_FINISH:
-                            CreateHighlightMutation.CreateHighlight highlight = highlightData.createHighlight();
-                            if (highlight != null) {
-                                handleDisplayNotification(highlight.id(), highlight.text());
-                            }
+                .enqueue(new GraphQLCall.Callback<CreateHighlightMutation.Data>() {
+                    @Override
+                    public void onResponse(@Nonnull Response<CreateHighlightMutation.Data> highlightResponse) {
+                        if (highlightResponse.hasErrors()) {
+                            // FIXME: handle errors causing screenshot to not be created.
+                            Log.e(Constants.LOG_TAG, highlightResponse.errors().toString());
                             finish();
-                    }
-                }
-            });
+                            return;
+                        }
 
-            webView.loadUrl(Constants.WEB_HOST + "/notes/new?id=" + highlightId);
-        } catch (InterruptedException ex) {
-            // TODO: handle errors causing screenshot to not be created.
-            Log.e(Constants.LOG_TAG, "createHighlight failed", ex);
-            finish();
-        }
+
+                        final CreateHighlightMutation.Data highlightData = highlightResponse.data();
+                        if (highlightData == null) {
+                            // FIXME: handle errors causing screenshot to not be created.
+                            Log.i(Constants.LOG_TAG, "highlightResult is null");
+                            finish();
+                            return;
+                        }
+
+                        webView.onWebEvent(new WebEvent.Callback(ShareTargetHandler.this, webView) {
+                            @Override
+                            public void onWebEvent(WebEvent event) {
+                                super.onWebEvent(event);
+                                switch (event.getType()) {
+                                    case WebEvent.TYPE_ACTIVITY_FINISH:
+                                        CreateHighlightMutation.CreateHighlight highlight = highlightData.createHighlight();
+                                        if (highlight != null) {
+                                            handleDisplayNotification(highlight.id());
+                                        }
+                                        finish();
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(@Nonnull ApolloException e) {
+
+                    }
+                });
     }
 
     private void handleSendImage(Intent intent) {
-        // Show WebView with loading indicator before starting any work.
         String highlightId = UUID.randomUUID().toString();
-        webView.onWebEvent(new WebEvent.Callback(this, webView) {
-            @Override
-            public void onWebEvent(WebEvent event) {
-                super.onWebEvent(event);
-                switch (event.getType()) {
-                    case WebEvent.TYPE_ACTIVITY_FINISH:
-                        finish();
-                }
-            }
-        });
-        webView.onPageFinished(new WebView.PageFinishedCallback() {
-            @Override
-            public void onPageFinished(android.webkit.WebView view, String Url) {
-                view.setVisibility(View.VISIBLE);
-                layout.removeView(splash);
-            }
-        });
         webView.loadUrl(Constants.WEB_HOST + "/notes/new?id=" + highlightId);
 
         JSONObject s3TransferUtilityJson = AppSyncClientFactory
@@ -240,106 +243,140 @@ public class ShareTargetHandler extends AppCompatActivity {
                 .build();
         AppSyncClientFactory.getInstance(this)
                 .mutate(createScreenshotMutation)
-                .enqueue(createScreenshotCallback.getCallback());
-
-        Response<CreateScreenshotMutation.Data> screenshotResponse = null;
-        try {
-            screenshotResponse = createScreenshotCallback.awaitResult();
-        } catch (InterruptedException e) {}
-
-        // FIXME: handle errors causing screenshot to not be created.
-        if (screenshotResponse.hasErrors()) {
-            Log.e(Constants.LOG_TAG, screenshotResponse.errors().toString());
-            finish();
-            return;
-        }
-        // FIXME: handle errors causing screenshot to not be created.
-        CreateScreenshotMutation.Data screenshotData = screenshotResponse.data();
-        if (screenshotData == null) {
-            Log.i("Literal", "screenshotResult is null");
-            finish();
-            return;
-        }
-
-        CreateHighlightFromScreenshotMutation createHighlightMutation = CreateHighlightFromScreenshotMutation.builder()
-                .input(
-                        CreateHighlightFromScreenshotInput.builder()
-                                .id(highlightId)
-                                .screenshotId(screenshotId)
-                                .owner(AWSMobileClient.getInstance().getUsername())
-                                .build()
-                )
-                .build();
-
-        AppSyncClientFactory.getInstance(this)
-                .mutate(createHighlightMutation)
-                .enqueue(createHighlightFromScreenshotCallback.getCallback());
-
-        try {
-            Response<CreateHighlightFromScreenshotMutation.Data> highlightResponse = createHighlightFromScreenshotCallback.awaitResult();
-
-            // FIXME: handle errors causing screenshot to not be created.
-            if (highlightResponse.hasErrors()) {
-                Log.e(Constants.LOG_TAG, highlightResponse.errors().toString());
-                finish();
-                return;
-            }
-
-            // TODO: handle errors causing screenshot to not be created.
-            final CreateHighlightFromScreenshotMutation.Data highlightData = highlightResponse.data();
-            if (highlightData == null) {
-                Log.i("Literal", "highlightResult is null");
-                return;
-            }
-            webView.onWebEvent(new WebEvent.Callback(this, webView) {
-                @Override
-                public void onWebEvent(WebEvent event) {
-                    super.onWebEvent(event);
-                    switch (event.getType()) {
-                        case WebEvent.TYPE_ACTIVITY_FINISH:
-                            CreateHighlightFromScreenshotMutation.CreateHighlightFromScreenshot highlight = highlightData.createHighlightFromScreenshot();
-                            if (highlight != null) {
-                                handleDisplayNotification(highlight.id(), highlight.text());
-                            }
+                .enqueue(new GraphQLCall.Callback<CreateScreenshotMutation.Data>() {
+                    @Override
+                    public void onResponse(@Nonnull Response<CreateScreenshotMutation.Data> screenshotResponse) {
+                        // FIXME: handle errors causing screenshot to not be created.
+                        if (screenshotResponse.hasErrors()) {
+                            Log.e(Constants.LOG_TAG, screenshotResponse.errors().toString());
                             finish();
+                            return;
+                        }
+                        // FIXME: handle errors causing screenshot to not be created.
+                        CreateScreenshotMutation.Data screenshotData = screenshotResponse.data();
+                        if (screenshotData == null) {
+                            Log.i("Literal", "screenshotResult is null");
+                            finish();
+                            return;
+                        }
+
+                        CreateHighlightFromScreenshotMutation createHighlightMutation = CreateHighlightFromScreenshotMutation.builder()
+                                .input(
+                                        CreateHighlightFromScreenshotInput.builder()
+                                                .id(highlightId)
+                                                .screenshotId(screenshotId)
+                                                .owner(AWSMobileClient.getInstance().getUsername())
+                                                .build()
+                                )
+                                .build();
+
+                        AppSyncClientFactory.getInstance(ShareTargetHandler.this)
+                                .mutate(createHighlightMutation)
+                                .enqueue(new GraphQLCall.Callback<CreateHighlightFromScreenshotMutation.Data>() {
+                                    @Override
+                                    public void onResponse(@Nonnull Response<CreateHighlightFromScreenshotMutation.Data> highlightResponse) {
+                                        // FIXME: handle errors causing highlight to not be created.
+                                        if (highlightResponse.hasErrors()) {
+                                            Log.e(Constants.LOG_TAG, highlightResponse.errors().toString());
+                                            finish();
+                                            return;
+                                        }
+
+                                        // TODO: handle errors causing highlight to not be created.
+                                        final CreateHighlightFromScreenshotMutation.Data highlightData = highlightResponse.data();
+                                        if (highlightData == null) {
+                                            Log.i("Literal", "highlightResult is null");
+                                            return;
+                                        }
+                                        webView.onWebEvent(new WebEvent.Callback(ShareTargetHandler.this, webView) {
+                                            @Override
+                                            public void onWebEvent(WebEvent event) {
+                                                super.onWebEvent(event);
+                                                switch (event.getType()) {
+                                                    case WebEvent.TYPE_ACTIVITY_FINISH:
+                                                        CreateHighlightFromScreenshotMutation.CreateHighlightFromScreenshot highlight = highlightData.createHighlightFromScreenshot();
+                                                        if (highlight != null) {
+                                                            handleDisplayNotification(highlight.id());
+                                                        }
+                                                        finish();
+                                                }
+                                            }
+                                        });
+                                    }
+
+                                    @Override
+                                    public void onFailure(@Nonnull ApolloException e) {
+                                        // FIXME: handle errors causing highlight to not be created
+                                    }
+                                });
                     }
-                }
-            });
-        } catch (InterruptedException ex) {
-            // TODO: handle errors causing screenshot to not be created.
-            Log.e(Constants.LOG_TAG, "createHighlightFromScreenshot failed", ex);
-            finish();
-        }
+
+                    @Override
+                    public void onFailure(@Nonnull ApolloException e) {
+                        // FIXME: handle errors causing screenshot to not be created
+                    }
+                });
+
     }
 
     private void handleSendNotSupported() {
-
         // TODO: implement fallback handling, e.g. display a "This does not look like a screenshot" UI
     }
 
-    private void handleDisplayNotification(String noteId, String noteText) {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.setData(Uri.parse(Constants.WEB_HOST + "/notes?id=" + noteId));
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+    private void handleDisplayNotification(String noteId) {
+        try {
+            // NewHighlightFromShare may have deleted or changed the highlight.
+            AppSyncClientFactory.getInstance(this).clearCaches(ClearCacheOptions.builder().clearQueries().build());
+        } catch (ClearCacheException ex) {
+            Log.e(Constants.LOG_TAG, "Unable to clear cache: ", ex);
+        }
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(ShareTargetHandler.this, Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_ID)
-                .setSmallIcon(R.drawable.ic_stat_name)
-                .setColor(Color.BLACK)
-                .setContentTitle(Constants.NOTIFICATION_NOTE_CREATED_TITLE)
-                .setStyle(
-                        new NotificationCompat.BigTextStyle().bigText(noteText)
-                )
-                .setContentText(noteText)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true);
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-        notificationManager.notify(noteId.hashCode(), builder.build());
+        AppSyncClientFactory.getInstance(this)
+                .query(GetHighlightQuery.builder().id(noteId).build())
+                .enqueue(new GraphQLCall.Callback<GetHighlightQuery.Data>() {
+                    @Override
+                    public void onResponse(@Nonnull Response<GetHighlightQuery.Data> response) {
+                        if (response.hasErrors()) {
+                            Log.e(Constants.LOG_TAG, response.errors().toString());
+                            return;
+                        }
+                        GetHighlightQuery.Data data = response.data();
+                        if (data == null) {
+                            return;
+                        }
+                        GetHighlightQuery.GetHighlight highlight = data.getHighlight();
+                        if (highlight == null) {
+                            return;
+                        }
+
+                        Intent intent = new Intent(ShareTargetHandler.this, MainActivity.class);
+                        intent.setData(Uri.parse(Constants.WEB_HOST + "/notes?id=" + highlight.id()));
+                        PendingIntent pendingIntent = PendingIntent.getActivity(ShareTargetHandler.this, 0, intent, 0);
+
+                        NotificationCompat.Builder builder = new NotificationCompat.Builder(ShareTargetHandler.this, Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_ID)
+                                .setSmallIcon(R.drawable.ic_stat_name)
+                                .setColor(Color.BLACK)
+                                .setContentTitle(Constants.NOTIFICATION_NOTE_CREATED_TITLE)
+                                .setStyle(
+                                        new NotificationCompat.BigTextStyle().bigText(highlight.text())
+                                )
+                                .setContentText(highlight.text())
+                                .setPriority(NotificationCompat.PRIORITY_LOW)
+                                .setContentIntent(pendingIntent)
+                                .setAutoCancel(true);
+                        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(ShareTargetHandler.this);
+                        notificationManager.notify(highlight.id().hashCode(), builder.build());
+                    }
+
+                    @Override
+                    public void onFailure(@Nonnull ApolloException e) {
+
+                    }
+                });
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState)
-    {
+    protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         if (this.webView != null) {
             webView.saveState(outState);
@@ -347,49 +384,10 @@ public class ShareTargetHandler extends AppCompatActivity {
     }
 
     @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState)
-    {
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         if (this.webView != null) {
             this.webView.restoreState(savedInstanceState);
-        }
-    }
-
-    private LatchedGraphQLCallback<CreateScreenshotMutation.Data> createScreenshotCallback = new LatchedGraphQLCallback<>();
-    private LatchedGraphQLCallback<CreateHighlightFromScreenshotMutation.Data> createHighlightFromScreenshotCallback = new LatchedGraphQLCallback<>();
-    private LatchedGraphQLCallback<CreateHighlightMutation.Data> createHighlightCallback = new LatchedGraphQLCallback<>();
-
-    private class LatchedGraphQLCallback<T> extends CountDownLatch {
-
-        private volatile Response<T> result;
-
-        public LatchedGraphQLCallback() {
-            super(1);
-        }
-
-        public LatchedGraphQLCallback(int num) {
-            super(num);
-        }
-
-        public Response<T> awaitResult() throws InterruptedException {
-            this.await();
-            return result;
-        }
-
-        public GraphQLCall.Callback<T> getCallback() {
-            return new GraphQLCall.Callback<T>() {
-                @Override
-                public void onResponse(@Nonnull Response<T> response) {
-                    result = response;
-                    countDown();
-                }
-
-                @Override
-                public void onFailure(@Nonnull ApolloException e) {
-                    Log.e("Literal", "LatchedGraphQLCallback", e);
-                    countDown();
-                }
-            };
         }
     }
 }
