@@ -1,8 +1,6 @@
 open Styles;
 open QueryRenderers_NewNoteFromShare_GraphQL;
 
-let styles = [%raw "require('./QueryRenderers_NewNoteFromShare.module.css')"];
-
 module Data = {
   [@react.component]
   let make = (~highlight, ~currentUser) => {
@@ -29,34 +27,11 @@ module Data = {
 };
 
 module Loading = {
-  let lineCount = 8;
-
   [@react.component]
   let make = () => {
-    let (margins, _setMargins) =
-      React.useState(_ => {
-        let margins = [|"", "mr-1", "mr-2", "mr-3", "mr-4", "mr-5"|];
-        Belt.Array.make(lineCount, 0)
-        ->Belt.Array.map(_ =>
-            margins[Js.Math.random_int(0, Js.Array2.length(margins))]
-          );
-      });
-
     <>
       <Containers_NewNoteFromShareHeader />
-      <div className={cn(["px-6", "pb-4", "pt-16"])}>
-        {Belt.Array.make(lineCount, 0)
-         ->Belt.Array.mapWithIndex((idx, _) => {
-             <MaterialUiLab.Skeleton
-               key={string_of_int(idx)}
-               variant=`text
-               classes={
-                 "root": cn([styles##skeleton, "mb-1", "h-8", margins[idx]]),
-               }
-             />
-           })
-         ->React.array}
-      </div>
+      <TextInput_Loading className={cn(["px-6", "pb-4", "pt-16"])} />
       <FloatingActionButton
         className={cn(["fixed", "right-0", "bottom-0", "m-6", "z-10"])}
         disabled=true>
