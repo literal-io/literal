@@ -67,11 +67,22 @@ let make = (~highlightId, ~authentication: CurrentUserInfo.state, ~rehydrated) =
     );
 
   let _ =
+    React.useEffect0(() => {
+      let timeoutId =
+        Js.Global.setTimeout(() => setIsLoaded(_ => true), 20 * 1000);
+      Some(() => {Js.Global.clearTimeout(timeoutId)});
+    });
+
+  let _ =
     React.useEffect1(
       () => {
         let _ =
           switch (query) {
-          | Data(_) => setIsLoaded(_ => true)
+          | Data(data) =>
+            switch (data##getHighlight) {
+            | Some(_) => setIsLoaded(_ => true)
+            | _ => ()
+            }
           | _ => ()
           };
         None;
@@ -79,17 +90,18 @@ let make = (~highlightId, ~authentication: CurrentUserInfo.state, ~rehydrated) =
       [|query|],
     );
 
-  switch (query, rehydrated, authentication) {
-  | (Loading, _, _)
-  | (_, false, _)
-  | (_, _, Loading) => <Loading />
-  | (Data(data), _, Authenticated(currentUser)) =>
+  switch (query, rehydrated, authentication, isLoaded) {
+  | (Loading, _, _, _)
+  | (_, false, _, _)
+  | (_, _, Loading, _)
+  | (_, _, _, false) => <Loading />
+  | (Data(data), _, Authenticated(currentUser), true) =>
     switch (data##getHighlight) {
     | Some(highlight) => <Data highlight currentUser />
     | None => <Empty />
     }
-  | (NoData, true, _)
-  | (Error(_), true, _)
-  | (_, _, Unauthenticated) => <Empty />
+  | (NoData, true, _, _)
+  | (Error(_), true, _, _)
+  | (_, _, Unauthenticated, _) => <Empty />
   };
 };
