@@ -1,8 +1,5 @@
 let _ = AwsAmplify.(inst->configure(Constants.awsAmplifyConfig));
 
-[@decco]
-type routeParams = {id: string};
-
 [@react.component]
 let default = () => {
   let router = Next.Router.useRouter();
@@ -21,23 +18,32 @@ let default = () => {
       [|authentication|],
     );
 
-  let highlightId =
-    switch (routeParams_decode(router.Next.query)) {
-    | Ok(p) => Some(p.id)
-    | _ => None
-    };
-
-  <Provider
-    render={(~rehydrated) =>
-      switch (authentication, highlightId) {
-      | (Unauthenticated, _) => <Loading />
-      | (_, Some(highlightId)) =>
-        <QueryRenderers_NewNoteFromShare highlightId authentication rehydrated />
-      | (Loading, _) => <Loading />
-      | _ when !rehydrated => <Loading />
-      | (Authenticated(currentUser), None) =>
-        <QueryRenderers_NewNote currentUser />
+  <>
+    <Provider
+      render={(~rehydrated) =>
+        <>
+          {switch (
+             authentication,
+             Routes.New.params_decode(router.Next.query),
+           ) {
+           | (Unauthenticated, _) => <Loading />
+           | (_, Ok({id: Some(highlightId)}))
+               when Js.String.length(highlightId) > 0 =>
+             <QueryRenderers_NewNoteFromShare
+               highlightId
+               authentication
+               rehydrated
+             />
+           | (Loading, _) => <Loading />
+           | _ when !rehydrated => <Loading />
+           | (Authenticated(currentUser), Ok({initialPhaseState})) =>
+             <QueryRenderers_NewNote currentUser ?initialPhaseState />
+           | (Authenticated(currentUser), _) =>
+             <QueryRenderers_NewNote currentUser />
+           }}
+          <Alert query={router.query} />
+        </>
       }
-    }
-  />;
+    />
+  </>;
 };

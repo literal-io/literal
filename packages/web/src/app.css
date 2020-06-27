@@ -21,6 +21,8 @@ html {
   width: 100vw;
   height: var(--root-height);
   background-color: black;
+  position: relative;
+  overflow-y: hidden;
 }
 
 .awsappsync {

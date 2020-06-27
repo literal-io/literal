@@ -170,18 +170,16 @@ public class ShareTargetHandler extends AppCompatActivity {
                     @Override
                     public void onResponse(@Nonnull Response<CreateHighlightMutation.Data> highlightResponse) {
                         if (highlightResponse.hasErrors()) {
-                            // FIXME: handle errors causing screenshot to not be created.
+                            // Error is handled in WebView.
                             Log.e(Constants.LOG_TAG, highlightResponse.errors().toString());
-                            finish();
                             return;
                         }
 
 
                         final CreateHighlightMutation.Data highlightData = highlightResponse.data();
                         if (highlightData == null) {
-                            // FIXME: handle errors causing screenshot to not be created.
+                            // Error is handled in WebView
                             Log.i(Constants.LOG_TAG, "highlightResult is null");
-                            finish();
                             return;
                         }
 
@@ -246,17 +244,15 @@ public class ShareTargetHandler extends AppCompatActivity {
                 .enqueue(new GraphQLCall.Callback<CreateScreenshotMutation.Data>() {
                     @Override
                     public void onResponse(@Nonnull Response<CreateScreenshotMutation.Data> screenshotResponse) {
-                        // FIXME: handle errors causing screenshot to not be created.
                         if (screenshotResponse.hasErrors()) {
+                            // Error is handled in WebView
                             Log.e(Constants.LOG_TAG, screenshotResponse.errors().toString());
-                            finish();
                             return;
                         }
-                        // FIXME: handle errors causing screenshot to not be created.
                         CreateScreenshotMutation.Data screenshotData = screenshotResponse.data();
                         if (screenshotData == null) {
+                            // Error is handled in WebView
                             Log.i("Literal", "screenshotResult is null");
-                            finish();
                             return;
                         }
 
@@ -275,16 +271,15 @@ public class ShareTargetHandler extends AppCompatActivity {
                                 .enqueue(new GraphQLCall.Callback<CreateHighlightFromScreenshotMutation.Data>() {
                                     @Override
                                     public void onResponse(@Nonnull Response<CreateHighlightFromScreenshotMutation.Data> highlightResponse) {
-                                        // FIXME: handle errors causing highlight to not be created.
                                         if (highlightResponse.hasErrors()) {
+                                            // Error is handled in WebView.
                                             Log.e(Constants.LOG_TAG, highlightResponse.errors().toString());
-                                            finish();
                                             return;
                                         }
 
-                                        // TODO: handle errors causing highlight to not be created.
                                         final CreateHighlightFromScreenshotMutation.Data highlightData = highlightResponse.data();
                                         if (highlightData == null) {
+                                            // Error is handled in WebView.
                                             Log.i("Literal", "highlightResult is null");
                                             return;
                                         }
@@ -306,14 +301,16 @@ public class ShareTargetHandler extends AppCompatActivity {
 
                                     @Override
                                     public void onFailure(@Nonnull ApolloException e) {
-                                        // FIXME: handle errors causing highlight to not be created
+                                        // Error is handled in WebView.
+                                        Log.e(Constants.LOG_TAG, "ApolloException", e);
                                     }
                                 });
                     }
 
                     @Override
                     public void onFailure(@Nonnull ApolloException e) {
-                        // FIXME: handle errors causing screenshot to not be created
+                        // Error is handled in WebView.
+                        Log.e(Constants.LOG_TAG, "ApolloException", e);
                     }
                 });
 

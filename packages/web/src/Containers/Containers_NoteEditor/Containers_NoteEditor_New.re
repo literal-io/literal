@@ -2,10 +2,16 @@ open Styles;
 open Containers_NoteEditor_New_GraphQL;
 open Containers_NoteEditor_GraphQL_Util;
 
-[@bs.deriving accessors]
-type phase =
-  | PhasePrompt
-  | PhaseTextInput;
+[@bs.deriving jsConverter]
+type phase = [ | `PhasePrompt | `PhaseTextInput];
+
+let phase_encode = p => p->phaseToJs->Js.Json.string;
+let phase_decode = json =>
+  switch (json->Js.Json.decodeString->Belt.Option.flatMap(phaseFromJs)) {
+  | Some(p) => Ok(p)
+  | None =>
+    Error(Decco.{path: "", message: "Not a phase value.", value: json})
+  };
 
 [@bs.deriving accessors]
 type action =
@@ -262,7 +268,7 @@ module PhasePrompt = {
 };
 
 [@react.component]
-let make = (~currentUser) => {
+let make = (~currentUser, ~initialPhaseState=`PhasePrompt) => {
   let (phaseState, dispatchPhaseAction) =
     React.useReducer(
       (state, action) => {
@@ -270,11 +276,11 @@ let make = (~currentUser) => {
         | SetPhase(nextPhase) => nextPhase
         }
       },
-      PhasePrompt,
+      initialPhaseState,
     );
 
   let handleCreateFromText = () => {
-    let _ = phaseTextInput->setPhase->dispatchPhaseAction;
+    let _ = `PhaseTextInput->setPhase->dispatchPhaseAction;
     ();
   };
   let handleCreateFromFile = () =>
@@ -284,11 +290,11 @@ let make = (~currentUser) => {
     };
 
   switch (phaseState) {
-  | PhasePrompt =>
+  | `PhasePrompt =>
     <PhasePrompt
       onCreateFromFile=handleCreateFromFile
       onCreateFromText=handleCreateFromText
     />
-  | PhaseTextInput => <PhaseTextInput currentUser />
+  | `PhaseTextInput => <PhaseTextInput currentUser />
   };
 };

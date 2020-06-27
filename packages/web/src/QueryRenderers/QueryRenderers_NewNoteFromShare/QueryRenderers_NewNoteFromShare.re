@@ -1,6 +1,10 @@
 open Styles;
 open QueryRenderers_NewNoteFromShare_GraphQL;
 
+let pollInterval = 500;
+let pollTimeout = 15 * 1000;
+let noDataAlert = "Unable to parse image. Make sure the text is clearly highlighted and try again, or enter the text manually.";
+
 module Data = {
   [@react.component]
   let make = (~highlight, ~currentUser) => {
@@ -55,7 +59,7 @@ let make = (~highlightId, ~authentication: CurrentUserInfo.state, ~rehydrated) =
   let (query, _fullQuery) =
     ApolloHooks.useQuery(
       ~variables=GetNoteQuery.makeVariables(~id=highlightId, ()),
-      ~pollInterval=isLoaded ? 0 : 500,
+      ~pollInterval=isLoaded ? 0 : pollInterval,
       ~skip=
         switch (authentication) {
         | Authenticated(_) when rehydrated => false
@@ -69,7 +73,7 @@ let make = (~highlightId, ~authentication: CurrentUserInfo.state, ~rehydrated) =
   let _ =
     React.useEffect0(() => {
       let timeoutId =
-        Js.Global.setTimeout(() => setIsLoaded(_ => true), 20 * 1000);
+        Js.Global.setTimeout(() => setIsLoaded(_ => true), pollTimeout);
       Some(() => {Js.Global.clearTimeout(timeoutId)});
     });
 
@@ -98,10 +102,30 @@ let make = (~highlightId, ~authentication: CurrentUserInfo.state, ~rehydrated) =
   | (Data(data), _, Authenticated(currentUser), true) =>
     switch (data##getHighlight) {
     | Some(highlight) => <Data highlight currentUser />
-    | None => <Empty />
+    | None =>
+      <Redirect
+        path="/notes/new"
+        query={Raw.merge(
+          Alert.(query_encode({alert: noDataAlert})),
+          Routes.New.params_encode({
+            id: None,
+            initialPhaseState: Some(`PhaseTextInput),
+          }),
+        )}
+      />
     }
   | (NoData, true, _, _)
-  | (Error(_), true, _, _)
-  | (_, _, Unauthenticated, _) => <Empty />
+  | (Error(_), true, _, _) =>
+    <Redirect
+      path="/notes/new"
+      query={Raw.merge(
+        Alert.(query_encode({alert: noDataAlert})),
+        Routes.New.params_encode({
+          id: None,
+          initialPhaseState: Some(`PhaseTextInput),
+        }),
+      )}
+    />
+  | (_, _, Unauthenticated, _) => <Loading />
   };
 };
