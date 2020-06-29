@@ -74,6 +74,7 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
       onChange=handleChange
       autoFocus=true
       placeholder="Lorem Ipsum"
+      isActive=true
       currentUser
     />
     <FloatingActionButton
