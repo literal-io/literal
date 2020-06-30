@@ -6,7 +6,7 @@ external castToListHighlights:
   "%identity";
 
 [@react.component]
-let make = (~highlightFragment as highlight, ~currentUser) => {
+let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
   let (deleteHighlightMutation, _s, _f) =
     ApolloHooks.useMutation(
       Containers_NoteHeader_GraphQL.DeleteHighlightMutation.definition,
@@ -17,7 +17,7 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
     ();
   };
 
-  let handleDelete = () => {
+  let handleDelete = (~highlight, ~currentUser) => {
     let deleteHighlightInput = {"id": highlight##id};
     let deleteHighlightTagsInput =
       highlight##tags
@@ -132,7 +132,13 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
         <MaterialUi.IconButton
           size=`Small
           edge=`End
-          onClick={_ => handleDelete()}
+          onClick={_ =>
+            switch (highlight, currentUser) {
+            | (Some(highlight), Some(currentUser)) =>
+              handleDelete(~highlight, ~currentUser)
+            | _ => ()
+            }
+          }
           _TouchRippleProps={
             "classes": {
               "child": cn(["bg-white"]),
@@ -154,7 +160,12 @@ let make = (~highlightFragment as highlight, ~currentUser) => {
         <MaterialUi.IconButton
           size=`Small
           edge=`End
-          onClick={_ => handleCreate()}
+          onClick={_ =>
+            switch (highlight, currentUser) {
+            | (Some(_), Some(_)) => handleCreate()
+            | _ => ()
+            }
+          }
           _TouchRippleProps={
             "classes": {
               "child": cn(["bg-white"]),

@@ -1,5 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<io.literal.ui.view.WebView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/webview"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"/>
+    android:layout_height="match_parent">
+    <io.literal.ui.view.WebView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/webview"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentLeft="true"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:focusable="true" />
+    <RelativeLayout
+        android:id="@+id/splash"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentTop="true"
+        android:background="@color/colorPrimaryDark">
+        <ImageView
+            android:layout_width="142dp"
+            android:layout_height="142dp"
+            android:layout_centerInParent="true"
+            android:src="@drawable/ic_logo"/>
+    </RelativeLayout>
+</RelativeLayout>

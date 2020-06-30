@@ -25,18 +25,23 @@ let make =
     let (isFocused, setFocused) = React.useState(() => false);
 
     let handleChange = ev => {
+      let _ = ev->ReactEvent.Form.persist;
+
       let data =
         ev
         ->ReactEvent.Form.nativeEvent
         ->(ev => ev##data)
         ->Js.Nullable.toOption;
       let inputType = ev->ReactEvent.Form.nativeEvent->(ev => ev##inputType);
+      let os = Constants.bowser()->Bowser.getOS->Bowser.getOSName;
 
       let newValue =
-        switch (inputType, data) {
-        | ("insertText", Some(insertedText)) =>
+        switch (inputType, data, os) {
+        | ("insertText", Some(insertedText), _) =>
           Some(Value.{...value, partial: value.partial ++ insertedText})
-        | ("deleteContentBackward", _)
+        | ("insertCompositionText", Some(insertedText), Some(`Android)) =>
+          Some(Value.{...value, partial: insertedText})
+        | ("deleteContentBackward", _, _)
             when Js.String.length(value.partial) > 0 =>
           let newPartial =
             Js.String2.slice(

@@ -165,7 +165,11 @@ let parseTextFromScreenshot = screenshotId => {
       ->Belt.Array.get(0)
       ->Belt.Option.map(r =>
           Externals_GoogleCloud.Vision.(
-            r->fullTextAnnotation->text->Js.Promise.resolve
+            r
+            ->fullTextAnnotation
+            ->text
+            ->Js.String2.replaceByRe([%re "/\\n/g"], " ")
+            ->Js.Promise.resolve
           )
         )
     });
@@ -218,7 +222,7 @@ type argumentsInput = {
 [@bs.deriving accessors]
 type arguments = {input: argumentsInput};
 
-let resolver = (ctx: Lib_Lambda.event) =>
+let resolver = (ctx: Lib_Lambda.event) => {
   switch (ctx.arguments->arguments_decode->Belt.Result.map(input)) {
   | Belt.Result.Ok(input) =>
     input.screenshotId
@@ -244,3 +248,4 @@ let resolver = (ctx: Lib_Lambda.event) =>
     Js.log2("Unable to decode arguments", e);
     Js.Promise.resolve(None);
   };
+};

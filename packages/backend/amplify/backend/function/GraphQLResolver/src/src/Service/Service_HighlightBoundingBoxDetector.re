@@ -50,7 +50,7 @@ type prediction = {
 let sizeX = 512;
 let sizeY = 512;
 
-let request = r =>
+let request = r => {
   Fetch.(
     fetchWithInit(
       Lib_Constants.Env.highlightBoundingBoxDetectorAPI,
@@ -102,3 +102,4 @@ let request = r =>
          Js.Promise.resolve(None);
        }
      });
+};

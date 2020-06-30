@@ -1,85 +1,95 @@
 open Styles;
 
+let handleUpdateCache = (~currentUser, ~highlight) => {
+  let cacheQuery =
+    QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
+      ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+      (),
+    );
+  let _ =
+    switch (
+      QueryRenderers_Notes_GraphQL.ListHighlights.readCache(
+        ~query=cacheQuery,
+        ~client=Provider.client,
+        (),
+      )
+    ) {
+    | None => ()
+    | Some(cachedQuery) =>
+      let updatedListHighlights =
+        QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
+          cachedQuery
+          ->listHighlights
+          ->Belt.Option.flatMap(highlightConnectionItems)
+          ->Belt.Option.map(items => {
+              let updatedItems =
+                items
+                ->Belt.Array.keep(
+                    fun
+                    | Some(h) => h.id !== highlight##id
+                    | None => false,
+                  )
+                ->Js.Option.some;
+              {
+                ...cachedQuery,
+                listHighlights:
+                  Some({
+                    ...cachedQuery->listHighlights->Belt.Option.getExn,
+                    items: updatedItems,
+                  }),
+              };
+            })
+        );
+      let _ =
+        switch (updatedListHighlights) {
+        | Some(updatedListHighlights) =>
+          QueryRenderers_Notes_GraphQL.ListHighlights.(
+            writeCache(
+              ~query=cacheQuery,
+              ~client=Provider.client,
+              ~data=updatedListHighlights,
+              (),
+            )
+          )
+        | None => ()
+        };
+      ();
+    };
+  Js.Promise.resolve();
+};
+
 [@react.component]
-let make = (~highlightFragment as highlight, ~currentUser) => {
+let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
   let (deleteHighlightMutation, _s, _f) =
     ApolloHooks.useMutation(
       Containers_NoteHeader_GraphQL.DeleteHighlightMutation.definition,
     );
 
   let handleClose = () => {
-    let variables =
-      Containers_NoteHeader_GraphQL.DeleteHighlightMutation.makeVariables(
-        ~deleteHighlightInput={"id": highlight##id},
-        ~deleteHighlightTagsInput=[||],
-        (),
-      );
+    switch (highlight, currentUser) {
+    | (Some(highlight), Some(currentUser)) =>
+      let variables =
+        Containers_NoteHeader_GraphQL.DeleteHighlightMutation.makeVariables(
+          ~deleteHighlightInput={"id": highlight##id},
+          ~deleteHighlightTagsInput=[||],
+          (),
+        );
 
-    let _ =
-      deleteHighlightMutation(~variables, ())
-      |> Js.Promise.then_(_ => {
-           let cacheQuery =
-             QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
-               ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-               (),
-             );
-           let _ =
-             switch (
-               QueryRenderers_Notes_GraphQL.ListHighlights.readCache(
-                 ~query=cacheQuery,
-                 ~client=Provider.client,
-                 (),
-               )
-             ) {
-             | None => ()
-             | Some(cachedQuery) =>
-               let updatedListHighlights =
-                 QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
-                   cachedQuery
-                   ->listHighlights
-                   ->Belt.Option.flatMap(highlightConnectionItems)
-                   ->Belt.Option.map(items => {
-                       let updatedItems =
-                         items
-                         ->Belt.Array.keep(
-                             fun
-                             | Some(h) => h.id !== highlight##id
-                             | None => false,
-                           )
-                         ->Js.Option.some;
-                       {
-                         ...cachedQuery,
-                         listHighlights:
-                           Some({
-                             ...
-                               cachedQuery->listHighlights->Belt.Option.getExn,
-                             items: updatedItems,
-                           }),
-                       };
-                     })
-                 );
-               let _ =
-                 switch (updatedListHighlights) {
-                 | Some(updatedListHighlights) =>
-                   QueryRenderers_Notes_GraphQL.ListHighlights.(
-                     writeCache(
-                       ~query=cacheQuery,
-                       ~client=Provider.client,
-                       ~data=updatedListHighlights,
-                       (),
-                     )
-                   )
-                 | None => ()
-                 };
-               ();
-             };
-           Js.Promise.resolve();
-         })
-      |> Js.Promise.then_(_ => {
-           let _ =
-             Webview.(postMessage(WebEvent.make(~type_="ACTIVITY_FINISH")));
-           Js.Promise.resolve();
-         });
+      let _ =
+        deleteHighlightMutation(~variables, ())
+        |> Js.Promise.then_(_ => handleUpdateCache(~highlight, ~currentUser))
+        |> Js.Promise.then_(_ => {
+             let _ =
+               Webview.(
+                 postMessage(WebEvent.make(~type_="ACTIVITY_FINISH"))
+               );
+             Js.Promise.resolve();
+           });
+      ();
+    | _ =>
+      let _ = Webview.(postMessage(WebEvent.make(~type_="ACTIVITY_FINISH")));
+      ();
+    };
     ();
   };
 

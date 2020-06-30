@@ -1,7 +1,7 @@
 open Styles;
 
 [@react.component]
-let make = (~currentUser) =>
+let make = (~currentUser, ~initialPhaseState=?) =>
   <div
     className={cn([
       "w-full",
@@ -13,5 +13,5 @@ let make = (~currentUser) =>
       "overflow-y-auto",
     ])}>
     <Containers_NewNoteHeader />
-    <Containers_NoteEditor_New currentUser />
+    <Containers_NoteEditor_New currentUser ?initialPhaseState />
   </div>;

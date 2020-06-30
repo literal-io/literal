@@ -2,10 +2,16 @@ open Styles;
 open Containers_NoteEditor_New_GraphQL;
 open Containers_NoteEditor_GraphQL_Util;
 
-[@bs.deriving accessors]
-type phase =
-  | PhasePrompt
-  | PhaseTextInput;
+[@bs.deriving jsConverter]
+type phase = [ | `PhasePrompt | `PhaseTextInput];
+
+let phase_encode = p => p->phaseToJs->Js.Json.string;
+let phase_decode = json =>
+  switch (json->Js.Json.decodeString->Belt.Option.flatMap(phaseFromJs)) {
+  | Some(p) => Ok(p)
+  | None =>
+    Error(Decco.{path: "", message: "Not a phase value.", value: json})
+  };
 
 [@bs.deriving accessors]
 type action =
@@ -117,8 +123,9 @@ module PhaseTextInput = {
       ApolloHooks.useMutation(CreateHighlightMutation.definition);
 
     let handleSave = () => {
+      let highlightId = Uuid.makeV4();
       let createHighlightInput = {
-        "id": Uuid.makeV4(),
+        "id": highlightId,
         "text": editorValue.text,
         "createdAt": None,
         "note": None,
@@ -127,23 +134,26 @@ module PhaseTextInput = {
       };
       let createTagsInput =
         editorValue.tags
-        ->Belt.Array.map(tag =>
-            {"id": tag##id, "text": tag##text, "createdAt": None}
+        ->Belt.Array.keepMap(tag =>
+            shouldCreateTag(tag)
+              ? Some({"id": tag##id, "text": tag##text, "createdAt": None})
+              : None
           );
       let createHighlightTagsInput =
-        createTagsInput->Belt.Array.map(tag =>
-          {
-            "id":
-              makeHighlightTagId(
-                ~highlightId=createHighlightInput##id,
-                ~tagId=tag##id,
-              )
-              ->Js.Option.some,
-            "highlightId": createHighlightInput##id,
-            "tagId": tag##id,
-            "createdAt": None,
-          }
-        );
+        editorValue.tags
+        ->Belt.Array.map(tag =>
+            {
+              "id":
+                makeHighlightTagId(
+                  ~highlightId=createHighlightInput##id,
+                  ~tagId=tag##id,
+                )
+                ->Js.Option.some,
+              "highlightId": createHighlightInput##id,
+              "tagId": tag##id,
+              "createdAt": None,
+            }
+          );
 
       let variables =
         CreateHighlightMutation.makeVariables(
@@ -166,7 +176,8 @@ module PhaseTextInput = {
           ~createHighlightTagsInput,
           ~createHighlightInput,
         );
-      let _ = Next.Router.back();
+      // FIXME: This should really do something like "back and replace"
+      let _ = Next.Router.push("/notes?id=" ++ highlightId);
       ();
     };
 
@@ -257,7 +268,7 @@ module PhasePrompt = {
 };
 
 [@react.component]
-let make = (~currentUser) => {
+let make = (~currentUser, ~initialPhaseState=`PhasePrompt) => {
   let (phaseState, dispatchPhaseAction) =
     React.useReducer(
       (state, action) => {
@@ -265,11 +276,11 @@ let make = (~currentUser) => {
         | SetPhase(nextPhase) => nextPhase
         }
       },
-      PhasePrompt,
+      initialPhaseState,
     );
 
   let handleCreateFromText = () => {
-    let _ = phaseTextInput->setPhase->dispatchPhaseAction;
+    let _ = `PhaseTextInput->setPhase->dispatchPhaseAction;
     ();
   };
   let handleCreateFromFile = () =>
@@ -279,11 +290,11 @@ let make = (~currentUser) => {
     };
 
   switch (phaseState) {
-  | PhasePrompt =>
+  | `PhasePrompt =>
     <PhasePrompt
       onCreateFromFile=handleCreateFromFile
       onCreateFromText=handleCreateFromText
     />
-  | PhaseTextInput => <PhaseTextInput currentUser />
+  | `PhaseTextInput => <PhaseTextInput currentUser />
   };
 };

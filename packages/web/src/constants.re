@@ -2,7 +2,7 @@
 external awsAmplifyConfig: AwsAmplify.Config.t = "default";
 
 type window;
-[@bs.val] [@bs.scope ("globalThis")] [@bs.return nullable]
+[@bs.val] [@bs.scope "globalThis"] [@bs.return nullable]
 external window: option(window) = "window";
 let isBrowser = window->Js.Option.isSome;
 
@@ -21,12 +21,13 @@ let isBrowser = window->Js.Option.isSome;
   awsAmplifyConfig.oauth.redirectSignOut = domain
 |};
 
-let browser = () =>
+let bowser = () =>
   Webapi.Dom.window
   ->Webapi.Dom.Window.navigator
   ->Bowser.asNavigator
   ->Bowser.userAgentGet
-  ->Bowser.make
-  ->Bowser.getBrowser;
+  ->Bowser.make;
 
-let serifFontFace = "Prata"
+let browser = () => bowser()->Bowser.getBrowser;
+
+let serifFontFace = "Prata";

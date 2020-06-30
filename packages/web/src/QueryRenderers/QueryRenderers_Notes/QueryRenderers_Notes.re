@@ -29,7 +29,8 @@ module Data = {
 
     let handleIdxChange = idx => setActiveIdx(_ => idx);
 
-    <>
+    <div
+      className={cn(["w-full", "h-full", "bg-black", "overflow-y-scroll"])}>
       <Containers_NoteHeader
         highlightFragment={activeHighlight##headerHighlightFragment}
         currentUser
@@ -49,17 +50,20 @@ module Data = {
            </ScrollSnapList.Item>
          )}
       </ScrollSnapList.Container>
-    </>;
+    </div>;
   };
 };
 
 module Onboarding = {
   [@react.component]
   let make = (~onboardingProfileFragment, ~currentUser) => {
-    <Containers_Onboarding
-      profileFragment=onboardingProfileFragment
-      currentUser
-    />;
+    <div
+      className={cn(["w-full", "h-full", "bg-black", "overflow-y-scroll"])}>
+      <Containers_Onboarding
+        profileFragment=onboardingProfileFragment
+        currentUser
+      />
+    </div>;
   };
 };
 
@@ -68,47 +72,75 @@ module Empty = {
   let make = () => React.string("Empty...");
 };
 
+module Loading = {
+  [@react.component]
+  let make = () => {
+    <>
+      <Containers_NoteHeader />
+      <TextInput_Loading className={cn(["px-6", "pb-4", "pt-16"])} />
+    </>;
+  };
+};
+
 [@react.component]
-let make = (~highlightId, ~onHighlightIdChange, ~currentUser) => {
+let make =
+    (
+      ~highlightId,
+      ~onHighlightIdChange,
+      ~authentication: CurrentUserInfo.state,
+      ~rehydrated,
+    ) => {
   let (query, _fullQuery) =
     ApolloHooks.useQuery(
+      ~skip=
+        switch (authentication) {
+        | Authenticated(_) when rehydrated => false
+        | _ when !rehydrated => true
+        | Loading
+        | Unauthenticated => true
+        },
       ~variables=
-        ListHighlights.Query.makeVariables(
-          ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-          (),
-        ),
+        switch (authentication) {
+        | Authenticated(currentUser) when rehydrated =>
+          ListHighlights.Query.makeVariables(
+            ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+            (),
+          )
+        | _ => Js.Json.null
+        },
       ListHighlights.Query.definition,
     );
 
-  <div className={cn(["w-full", "h-full", "bg-black", "overflow-y-scroll"])}>
-    {switch (query) {
-     | Data(data) =>
-       switch (
-         data##listHighlights->Belt.Option.flatMap(h => h##items),
-         data##getProfile,
-       ) {
-       | (Some(highlights), _) when Array.length(highlights) > 0 =>
-         <Data
-           onHighlightIdChange
-           initialHighlightId=highlightId
-           currentUser
-           highlights={
-             highlights->Belt.Array.keepMap(i => i)
-             |> Ramda.sortBy(h => {
-                  -. h##createdAt->Js.Date.fromString->Js.Date.valueOf
-                })
-           }
-         />
-       | (_, Some(profile)) when !profile##isOnboarded =>
-         <Onboarding
-           onboardingProfileFragment={profile##onboardingProfileFragment}
-           currentUser
-         />
-       | _ => <Empty />
-       }
-     | Loading => <Loading />
-     | NoData
-     | Error(_) => <Empty />
-     }}
-  </div>;
+  switch (query, rehydrated, authentication) {
+  | (Loading, _, _)
+  | (_, false, _)
+  | (_, _, Loading) => <Loading />
+  | (Data(data), _, Authenticated(currentUser)) =>
+    switch (
+      data##listHighlights->Belt.Option.flatMap(h => h##items),
+      data##getProfile,
+    ) {
+    | (Some(highlights), _) when Array.length(highlights) > 0 =>
+      <Data
+        onHighlightIdChange
+        initialHighlightId=highlightId
+        currentUser
+        highlights={
+          highlights->Belt.Array.keepMap(i => i)
+          |> Ramda.sortBy(h => {
+               -. h##createdAt->Js.Date.fromString->Js.Date.valueOf
+             })
+        }
+      />
+    | (_, Some(profile)) when !profile##isOnboarded =>
+      <Onboarding
+        onboardingProfileFragment={profile##onboardingProfileFragment}
+        currentUser
+      />
+    | _ => <Empty />
+    }
+  | (NoData, true, _)
+  | (Error(_), true, _)
+  | (_, _, Unauthenticated) => <Empty />
+  };
 };

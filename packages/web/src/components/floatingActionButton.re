@@ -1,9 +1,9 @@
 open Styles;
 
 [@react.component]
-let make = (~onClick=?, ~className=?, ~children) =>
+let make = (~onClick=?, ~className=?, ~disabled=?, ~children) =>
   <div ?className>
-    <MaterialUi.Fab ?onClick classes=[Root(cn(["bg-white"]))]>
+    <MaterialUi.Fab ?onClick classes=[Root(cn(["bg-white"]))] ?disabled>
       children
       <div
         className={cn([

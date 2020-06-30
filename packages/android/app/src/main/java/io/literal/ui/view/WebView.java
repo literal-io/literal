@@ -37,6 +37,7 @@ import io.literal.lib.WebEvent;
 public class WebView extends android.webkit.WebView {
 
     private WebEvent.Callback webEventCallback;
+    private PageFinishedCallback pageFinishedCallback;
     private ArrayDeque<String> baseHistory;
 
     public WebView(Context context) {
@@ -62,6 +63,9 @@ public class WebView extends android.webkit.WebView {
             @Override
             public void onPageFinished(android.webkit.WebView webview, String url) {
                 initializeWebMessageChannel();
+                if (WebView.this.pageFinishedCallback != null) {
+                    pageFinishedCallback.onPageFinished(webview, url);
+                }
             }
         });
     }
@@ -81,6 +85,10 @@ public class WebView extends android.webkit.WebView {
 
     public void onWebEvent(WebEvent.Callback cb) {
         this.webEventCallback = cb;
+    }
+
+    public void onPageFinished(PageFinishedCallback cb) {
+        this.pageFinishedCallback = cb;
     }
 
     public void loadUrlWithHistory(String url, String[] history) {
@@ -159,5 +167,9 @@ public class WebView extends android.webkit.WebView {
     private class JavascriptInterface {
         @android.webkit.JavascriptInterface
         public boolean isWebview() { return true; }
+    }
+
+    public interface PageFinishedCallback {
+        public void onPageFinished(android.webkit.WebView view, String Url);
     }
 }
