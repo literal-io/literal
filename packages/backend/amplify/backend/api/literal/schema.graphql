@@ -1,229 +1,247 @@
-input S3ObjectInput {
-  bucket: String!
-  key: String!
-  region: String!
-  localUri: String
-  mimeType: String
+enum TextDirection {
+  TR
+  RTL
+  AUTO
 }
 
-type S3Object @aws_iam @aws_cognito_user_pools {
-  bucket: String!
-  key: String!
-  region: String!
+# https://www.iana.org/assignments/media-types/media-types.xhtml
+enum Format {
+  TEXT_PLAIN
 }
 
-type Screenshot
-  @model
-  @auth(
-    rules: [
-      { allow: owner, ownerField: "owner", operations: [create, read] }
-      { allow: private, provider: iam, operations: [create, read] }
-    ]
-  ) {
-  id: ID!
-  createdAt: String!
-  file: S3Object!
-  owner: String
+enum ResourceType {
+  DATASET
+  IMAGE
+  VIDEO
+  SOUND
+  TEXT
 }
 
-input CreateScreenshotInput {
-  id: ID
-  createdAt: String
-  file: S3ObjectInput!
-  owner: String
+enum TextualBodyType {
+  TEXTUAL_BODY
 }
 
-input CreateHighlightInput {
-  id: ID
-  createdAt: String
-  text: String!
-  note: String
-  owner: String
-  highlightScreenshotId: ID
+enum SpecificResourceType {
+  SPECIFIC_RESOURCE
 }
 
-input CreateTagInput {
-  id: ID
-  createdAt: String
-  text: String!
+enum FragmentSelectorType {
+  FRAGMENT_SELECTOR
 }
 
-input CreateHighlightTagInput {
-  id: ID
-  highlightId: ID!
-  tagId: ID!
-  createdAt: String
+enum CssSelectorType {
+  CSS_SELECTOR
 }
 
-input DeleteHighlightTagInput {
-  id: ID!
+enum XPathSelectorType {
+  XPATH_SELECTOR
 }
 
-type Tag
-  @model
-  @key(fields: ["id"])
-  @auth(
-    rules: [
-      {
-        allow: owner
-        ownerField: "owner"
-        operations: [create, read, update, delete]
-      }
-      {
-        allow: private
-        provider: iam
-        operations: [create, read, update, delete]
-      }
-    ]
-  ) {
-  id: ID!
-  createdAt: String!
-  text: String!
-  owner: String!
-  highlights: [HighlightTag!]! @connection(keyName: "byTag", fields: ["id"])
+enum TextQuoteSelectorType {
+  TEXT_QUOTE_SELECTOR
 }
 
-type Highlight
-  @model
-  @key(fields: ["id"])
-  @auth(
-    rules: [
-      {
-        allow: owner
-        ownerField: "owner"
-        operations: [create, read, update, delete]
-      }
-      {
-        allow: private
-        provider: iam
-        operations: [create, read, update, delete]
-      }
-    ]
-  ) {
-  id: ID!
-  createdAt: String!
-  text: String!
-  note: String
-  screenshot: Screenshot @connection
-  owner: String
-  tags: [HighlightTag!]! @connection(keyName: "byHighlight", fields: ["id"])
+enum Language {
+  EN_US
 }
 
-type HighlightTag
-  @model
-  @key(name: "byHighlight", fields: ["highlightId", "tagId"])
-  @key(name: "byTag", fields: ["tagId", "highlightId"])
-  @auth(
-    rules: [
-      {
-        allow: owner
-        ownerField: "owner"
-        operations: [create, read, update, delete]
-      }
-      {
-        allow: private
-        provider: iam
-        operations: [create, read, update, delete]
-      }
-    ]
-  ) {
-  id: ID!
-  highlightId: ID!
-  tagId: ID!
-  createdAt: String!
-  highlight: Highlight! @connection(fields: ["highlightId"])
-  tag: Tag! @connection(fields: ["tagId"])
+enum ChoiceType {
+  CHOICE
 }
 
-type Profile
-  @model
-  @key(fields: ["owner"])
-  @auth(
-    rules: [
-      { allow: owner, ownerField: "owner", operations: [read, update] }
-      {
-        allow: private
-        provider: iam
-        operations: [create, read, update, delete]
-      }
-    ]
-  ) {
-  id: ID!
-  owner: String!
-  createdAt: String!
-  isOnboarded: Boolean!
+enum Motivation {
+  ACCESSING
+  BOOKMARKING
+  CLASSIFYING
+  COMMENTING
+  DESCRIBING
+  EDITING
+  HIGHLIGHTING
+  IDENTIFYING
+  LINKING
+  MODERATING
+  QUESTIONING
+  REPLYING
+  TAGGING
 }
 
-input CreateProfileInput {
-  id: ID!
-  owner: String!
-  createdAt: String
-  isOnboarded: Boolean!
+interface Resource {
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  #https://schema.org/accessibilityFeature
+  accessibility: [String!]
+  rights: [AWSURL!]
 }
 
-input CreateHighlightFromScreenshotInput {
-  id: ID
-  createdAt: String
-  screenshotId: String!
-  note: String
-  owner: String
+type Target implements Resource {
+  id: AWSURL!
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  type: ResourceType
+  accessibility: [String!]
+  rights: [AWSURL!]
 }
 
-input UpdateHighlightInput {
-  id: ID!
-  createdAt: String
-  text: String
-  note: String
-  owner: String
-  highlightScreenshotId: ID
+type TextualBody implements Resource {
+  id: AWSURL
+  value: String!
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  type: TextualBodyType
+  accessibility: [String!]
+  purpose: [Motivation!]
+  rights: [AWSURL!]
 }
 
-input UpdateHighlightAndTagsInput {
-  updateHighlight: UpdateHighlightInput
-  createTags: [CreateTagInput!]
-  createHighlightTags: [CreateHighlightTagInput!]
-  deleteHighlightTags: [DeleteHighlightTagInput!]
+type ExternalBody implements Resource {
+  id: AWSURL!
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  type: ResourceType
+  accessibility: [String!]
+  rights: [AWSURL!]
 }
 
-type DeletionResult {
-  id: ID!
+type ChoiceBody {
+  type: ChoiceType
+  items: [AnnotationBody!]!
 }
 
-type UpdateHighlightAndTagsResult {
-  updateHighlight: Highlight
-  createTags: [Tag!]
-  createHighlightTags: [HighlightTag!]
-  deleteHighlightTags: [DeletionResult!]
+type FragmentSelector {
+  type: FragmentSelectorType!
+  value: String!
+  conformsTo: AWSURL
+  refinedBy: [Selector!]
 }
 
-input CreateHighlightAndTagsInput {
-  createHighlight: CreateHighlightInput!
-  createTags: [CreateTagInput!]
-  createHighlightTags: [CreateHighlightTagInput!]
+type CssSelector {
+  type: CssSelectorType!
+  value: String!
+  refinedBy: [Selector!]
 }
 
-type CreateHighlightAndTagsResult {
-  createHighlight: Highlight!
-  createTags: [Tag!]
-  createHighlightTags: [HighlightTag!]
+type XPathSelector {
+  type: XPathSelectorType!
+  value: String!
+  refinedBy: [Selector!]
 }
 
-type Mutation {
-  createHighlightFromScreenshot(
-    input: CreateHighlightFromScreenshotInput!
-  ): Highlight
-    @function(name: "GraphQLResolver-${env}")
-    @auth(rules: [{ allow: private }])
+type TextQuoteSelector {
+  type: TextQuoteSelectorType!
+  exact: String!
+  prefix: String
+  suffix: String
+  refinedBy: [Selector!]
+}
 
-  createTags(input: [CreateTagInput!]!): [Tag!]!
-  createHighlightTags(input: [CreateHighlightTagInput!]!): [HighlightTag!]!
-  deleteHighlightTags(input: [DeleteHighlightTagInput!]!): [HighlightTag!]!
+enum TextPositionSelectorType {
+  TEXT_POSITION_SELECTOR
+}
+type TextPositionSelector {
+  type: TextPositionSelectorType!
+  start: Int!
+  end: Int!
+  refinedBy: [Selector!]
+}
 
-  updateHighlightAndTags(
-    input: UpdateHighlightAndTagsInput!
-  ): UpdateHighlightAndTagsResult!
+enum DataPositionSelectorType {
+  DATA_POSITION_SELECTOR
+}
+type DataPositionSelector {
+  type: DataPositionSelectorType!
+  start: Int!
+  end: Int!
+  refinedBy: [Selector!]
+}
 
-  createHighlightAndTags(
-    input: CreateHighlightAndTagsInput!
-  ): CreateHighlightAndTagsResult!
+enum SvgSelectorType {
+  SVG_SELECTOR
+}
+type SvgSelector {
+  type: SvgSelectorType!
+  value: String!
+  refinedBy: [Selector!]
+}
+
+enum RangeSelector {
+  RANGE_SELECTOR 
+}
+type RangeSelector {
+  type: RangeSelectorType!
+  startSelector: Selector!
+  endSelector: Selector!
+  refinedBy: [Selector!]
+}
+
+union Selector =
+    FragmentSelector
+  | CssSelector
+  | XPathSelector
+  | TextQuoteSelector
+  | TextPositionSelector
+  | DataPositionSelector
+  | SvgSelector
+  | RangeSelector
+
+type SpecificBody {
+  id: AWSURL
+  type: SpecificResourceType
+  purpose: [Motivation!]
+  source: AnnotationBody!
+  selector: [Selector!]
+}
+
+union AnnotationBody = ExternalBody | TextualBody | ChoiceBody | SpecificBody
+
+enum AgentType {
+  PERSON
+  ORGANIZATION
+  SOFTWARE
+}
+
+type Agent @model {
+  id: AWSURL!
+  type: AgentType!
+  name: String
+  nickname: String
+  email_sha1: [String]
+  email: [String]
+  homepage: [String]
+}
+
+# https://schema.org/Audience
+#
+# TODO: should probably be a union type of all possible Audience types in order to handle metadata
+type Audience {
+  id: AWSURL
+  type: [String!]
+}
+
+enum AnnotationType {
+  ANNOTATION
+}
+
+type Annotation @model {
+  context: [String!]!
+  type: [AnnotationType!]!
+  id: AWSURL!
+  body: [AnnotationBody!]
+  target: [Target!]!
+  creator: Agent @connection
+  created: AWSDateTime
+  generator: Agent @connection
+  generated: AWSDateTime
+  modified: AWSDateTime
+  audience: [Audience!]
+  motivation: [Motivation!]
+  via: [AWSURL!]
+  canonical: AWSURL
 }
