@@ -171,8 +171,8 @@ type SvgSelector {
   refinedBy: [Selector!]
 }
 
-enum RangeSelector {
-  RANGE_SELECTOR 
+enum RangeSelectorType {
+  RANGE_SELECTOR
 }
 type RangeSelector {
   type: RangeSelectorType!
@@ -191,15 +191,67 @@ union Selector =
   | SvgSelector
   | RangeSelector
 
+enum TimeStateType {
+  TIME_STATE
+}
+type TimeState {
+  type: TimeStateType!
+  sourceDate: [AWSDateTime!]
+  sourceDateStart: AWSDateTime
+  sourceDateEnd: AWSDateTime
+  cached: [AWSURL!]
+  refinedBy: [StateOrSelector!]
+}
+
+enum HttpRequestStateType {
+  HTTP_REQUEST_STATE
+}
+
+type HttpRequestState {
+  type: HttpRequestStateType!
+  value: String!
+  refinedBy: [StateOrSelector!]
+}
+
+type RenderedVia {
+  id: AWSURL!
+}
+
+union State = TimeState | HttpRequestState
+union StateOrSelector =
+    TimeState
+  | HttpRequestState
+  | FragmentSelector
+  | CssSelector
+  | XPathSelector
+  | TextQuoteSelector
+  | TextPositionSelector
+  | DataPositionSelector
+  | SvgSelector
+  | RangeSelector
+
 type SpecificBody {
   id: AWSURL
   type: SpecificResourceType
   purpose: [Motivation!]
   source: AnnotationBody!
   selector: [Selector!]
+  state: [State!]
+  styleClass: [String!]
+  renderedVia: [RenderedVia!]
+  scope: [AWSURL!]
 }
 
 union AnnotationBody = ExternalBody | TextualBody | ChoiceBody | SpecificBody
+
+enum CssStylesheetType {
+  CSS_STYLESHEET
+}
+
+type CssStylesheet {
+  type: CssStylesheetType!
+  value: String!
+}
 
 enum AgentType {
   PERSON
@@ -244,4 +296,44 @@ type Annotation @model {
   motivation: [Motivation!]
   via: [AWSURL!]
   canonical: AWSURL
+  stylesheet: CssStylesheet
+}
+
+enum AnnotationCollectionType {
+  ANNOTATION_COLLECTION
+}
+type AnnotationCollection @model {
+  context: [String!]!
+  id: AWSURL!
+  type: [AnnotationCollectionType!]!
+  label: [String!]
+  total: Int
+  first: AnnotationPage @connection
+  last: AnnotationPage @connection
+}
+
+type AnnotationPageItem
+  @model
+  @key(name: "byAnnotationPage", fields: ["annotationPageId", "annotationId"])
+  @key(name: "byAnnotation", fields: ["annotationId", "annotationPageId"]) {
+  id: ID!
+  annotationPageId: AWSURL!
+  annotationId: AWSURL!
+  annotation: Annotation! @connection(fields: ["annotationId"])
+  annotationPage: AnnotationPage! @connection(fields: ["annotationPageId"])
+}
+
+enum AnnotationPageType {
+  ANNOTATION_PAGE
+}
+type AnnotationPage @model {
+  context: [String!]!
+  id: AWSURL!
+  type: [AnnotationPageType!]!
+  partOf: AnnotationCollection @connection
+  items: [AnnotationPageItem!]!
+    @connection(keyName: "byAnnotationPage", fields: ["id"])
+  next: AnnotationPage @connection
+  prev: AnnotationPage @connection
+  startIndex: Int
 }
