@@ -259,7 +259,18 @@ enum AgentType {
   SOFTWARE
 }
 
-type Agent @model {
+type Agent
+  @model
+  @auth(
+    rules: [
+      { allow: owner, ownerField: "id", operations: [read, update] }
+      {
+        allow: private
+        provider: iam
+        operations: [create, read, update, delete]
+      }
+    ]
+  ) {
   id: AWSURL!
   type: AgentType!
   name: String
@@ -281,7 +292,22 @@ enum AnnotationType {
   ANNOTATION
 }
 
-type Annotation @model {
+type Annotation
+  @model(
+    queries: { get: "getAnnotation", list: "listAnnotations" }
+    mutations: null
+    subscriptions: null
+    timestamps: { createdAt: "created", updatedAt: "modified" }
+  )
+  @auth(
+    rules: [
+      {
+        allow: owner
+        ownerField: "creator"
+        operations: [create, read, update, delete]
+      }
+    ]
+  ) {
   context: [String!]!
   type: [AnnotationType!]!
   id: AWSURL!
@@ -302,7 +328,17 @@ type Annotation @model {
 enum AnnotationCollectionType {
   ANNOTATION_COLLECTION
 }
-type AnnotationCollection @model {
+type AnnotationCollection
+  @model
+  @auth(
+    rules: [
+      {
+        allow: owner
+        ownerField: "creator"
+        operations: [create, read, update, delete]
+      }
+    ]
+  ) {
   context: [String!]!
   id: AWSURL!
   type: [AnnotationCollectionType!]!
@@ -310,23 +346,46 @@ type AnnotationCollection @model {
   total: Int
   first: AnnotationPage @connection
   last: AnnotationPage @connection
+  creator: Agent @connection
+  created: AWSDateTime
 }
 
 type AnnotationPageItem
   @model
   @key(name: "byAnnotationPage", fields: ["annotationPageId", "annotationId"])
-  @key(name: "byAnnotation", fields: ["annotationId", "annotationPageId"]) {
+  @key(name: "byAnnotation", fields: ["annotationId", "annotationPageId"])
+  @auth(
+    rules: [
+      {
+        allow: owner
+        ownerField: "creator"
+        operations: [create, read, update, delete]
+      }
+    ]
+  ) {
   id: ID!
   annotationPageId: AWSURL!
   annotationId: AWSURL!
   annotation: Annotation! @connection(fields: ["annotationId"])
   annotationPage: AnnotationPage! @connection(fields: ["annotationPageId"])
+  creator: Agent @connection
+  created: AWSDateTime
 }
 
 enum AnnotationPageType {
   ANNOTATION_PAGE
 }
-type AnnotationPage @model {
+type AnnotationPage
+  @model
+  @auth(
+    rules: [
+      {
+        allow: owner
+        ownerField: "creator"
+        operations: [create, read, update, delete]
+      }
+    ]
+  ) {
   context: [String!]!
   id: AWSURL!
   type: [AnnotationPageType!]!
@@ -336,4 +395,6 @@ type AnnotationPage @model {
   next: AnnotationPage @connection
   prev: AnnotationPage @connection
   startIndex: Int
+  creator: Agent @connection
+  created: AWSDateTime
 }
