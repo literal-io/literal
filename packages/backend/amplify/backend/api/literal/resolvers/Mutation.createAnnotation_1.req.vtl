@@ -1,0 +1,66 @@
+## [Start] Determine request authentication mode **
+#if( $util.isNullOrEmpty($authMode) && !$util.isNull($ctx.identity) && !$util.isNull($ctx.identity.sub) && !$util.isNull($ctx.identity.issuer) && !$util.isNull($ctx.identity.username) && !$util.isNull($ctx.identity.claims) && !$util.isNull($ctx.identity.sourceIp) && !$util.isNull($ctx.identity.defaultAuthStrategy) )
+  #set( $authMode = "userPools" )
+#end
+## [End] Determine request authentication mode **
+## [Start] Check authMode and execute owner/group checks **
+#if( $authMode == "userPools" )
+  ## No Static Group Authorization Rules **
+
+
+  ## No Dynamic Group Authorization Rules **
+
+
+  ## [Start] Owner Authorization Checks **
+  #set( $isOwnerAuthorized = false )
+  ## Authorization rule: { allow: owner, ownerField: "creator", identityClaim: "cognito:username" } **
+  #set( $allowedOwners0 = $util.defaultIfNull($ctx.stash.input.creator, null) )
+  #set( $identityValue = $util.defaultIfNull($ctx.identity.claims.get("username"), $util.defaultIfNull($ctx.identity.claims.get("cognito:username"), "___xamznone____")) )
+  #if( $util.isList($allowedOwners0) )
+    #foreach( $allowedOwner in $allowedOwners0 )
+      #if( $allowedOwner == $identityValue )
+        #set( $isOwnerAuthorized = true )
+      #end
+    #end
+  #end
+  #if( $util.isString($allowedOwners0) )
+    #if( $allowedOwners0 == $identityValue )
+      #set( $isOwnerAuthorized = true )
+    #end
+  #end
+  #if( $util.isNull($allowedOwners0) && (! $ctx.stash.input.containsKey("creator")) )
+    $util.qr($ctx.stash.input.put("creator", $identityValue))
+    #set( $isOwnerAuthorized = true )
+  #end
+  ## [End] Owner Authorization Checks **
+
+
+  ## [Start] Throw if unauthorized **
+  #if( !($isStaticGroupAuthorized == true || $isDynamicGroupAuthorized == true || $isOwnerAuthorized == true) )
+    $util.unauthorized()
+  #end
+  ## [End] Throw if unauthorized **
+#end
+## [End] Check authMode and execute owner/group checks **
+
+## [Start] Prepare DynamoDB PutItem Request. **
+$util.qr($context.stash.input.put("created", $util.defaultIfNull($ctx.stash.input.created, $util.time.nowISO8601())))
+$util.qr($context.stash.input.put("updatedAt", $util.defaultIfNull($ctx.stash.input.motivated, $util.time.nowISO8601())))
+$util.qr($context.stash.input.put("__typename", "Annotation"))
+
+#set( $condition = {
+  "expression": "attribute_not_exists(#id)",
+  "expressionNames": {
+      "#id": "id"
+  }
+} )
+
+{
+  "version": "2017-02-28",
+  "operation": "PutItem",
+  "key": #if( $modelObjectKey ) $util.toJson($modelObjectKey) #else {
+  "id":   $util.dynamodb.toDynamoDBJson($util.defaultIfNullOrBlank($ctx.stash.input.id, $util.autoId()))
+} #end,
+  "attributeValues": $util.dynamodb.toMapValuesJson($ctx.stash.input),
+  "condition": $util.toJson($condition)
+}

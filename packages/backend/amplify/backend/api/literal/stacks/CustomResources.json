@@ -24,44 +24,139 @@
     "S3DeploymentRootKey": {
       "Type": "String",
       "Description": "An S3 key relative to the S3DeploymentBucket that points to the root\nof the deployment directory."
+    },
+    "functionSyncAnnotationCollectionArn": {
+      "Type": "String",
+      "Description": "The ARN of the SyncAnnotationLambda function."
+    },
+    "functionSyncAnnotationCollectionName": {
+      "Type": "String",
+      "Description": "The name of the SyncAnnotationLambda function."
     }
   },
   "Resources": {
-    "HighlightDataSourceDynamoDBPolicy": {
-      "Type": "AWS::IAM::ManagedPolicy",
+    "CreateAnnotationMutation": {
+      "Type": "AWS::AppSync::Resolver",
       "Properties": {
-        "Roles": [
-          {
-            "Fn::If": [
-              "HasEnvironmentParameter",
-              {
-                "Fn::Join": [
-                  "-",
-                  [
-                    "Highlight",
-                    "role",
-                    {
-                      "Ref": "AppSyncApiId"
-                    },
-                    {
-                      "Ref": "env"
-                    }
-                  ]
-                ]
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Mutation",
+        "FieldName": "createAnnotation",
+        "Kind": "PIPELINE",
+        "RequestMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.createAnnotation_before.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
               },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        },
+        "ResponseMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.createAnnotation_after.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        },
+        "PipelineConfig": {
+          "Functions": [
+            {
+              "Fn::GetAtt": ["CreateAnnotationMutationStep1", "FunctionId"]
+            },
+            {
+              "Fn::GetAtt": ["CreateAnnotationMutationStep2", "FunctionId"]
+            }
+          ]
+        }
+      }
+    },
+    "CreateAnnotationMutationStep1": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "DataSourceName": "AnnotationTable",
+        "Description": "Step 1 of CreateAnnotationMutation pipeline.",
+        "FunctionVersion": "2018-05-29",
+        "Name": "CreateAnnotationMutation Step 1",
+        "RequestMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.createAnnotation_1.req.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        },
+        "ResponseMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.createAnnotation_1.res.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "SyncAnnotationCollectionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Fn::Join": [
+            "",
+            [
+              "SyncAnnotationCollectionAppSyncRole",
+              "-",
               {
-                "Fn::Join": [
-                  "-",
-                  [
-                    "Highlight",
-                    "role",
-                    {
-                      "Ref": "AppSyncApiId"
-                    }
-                  ]
-                ]
+                "Ref": "env"
               }
             ]
+          ]
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": ["appsync.amazonaws.com"]
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "SyncAnnotationCollectionPolicy": {
+      "DependsOn": ["SyncAnnotationCollectionRole"],
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "SyncAnnotationCollectionAppSyncPolicy",
+        "Roles": [
+          {
+            "Ref": "SyncAnnotationCollectionRole"
           }
         ],
         "PolicyDocument": {
@@ -69,146 +164,56 @@
           "Statement": [
             {
               "Effect": "Allow",
-              "Action": [
-                "dynamodb:BatchGetItem",
-                "dynamodb:BatchWriteItem",
-                "dynamodb:PutItem",
-                "dynamodb:DeleteItem",
-                "dynamodb:GetItem",
-                "dynamodb:Scan",
-                "dynamodb:Query",
-                "dynamodb:UpdateItem"
-              ],
-              "Resource": [
-                {
-                  "Fn::Sub": [
-                    "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tablename}",
-                    {
-                      "tablename": {
-                        "Fn::If": [
-                          "HasEnvironmentParameter",
-                          {
-                            "Fn::Join": [
-                              "-",
-                              [
-                                "Highlight",
-                                {
-                                  "Ref": "AppSyncApiId"
-                                },
-                                {
-                                  "Ref": "env"
-                                }
-                              ]
-                            ]
-                          },
-                          {
-                            "Fn::Join": [
-                              "-",
-                              [
-                                "Highlight",
-                                {
-                                  "Ref": "AppSyncApiId"
-                                }
-                              ]
-                            ]
-                          }
-                        ]
-                      }
+              "Action": ["lambda:InvokeFunction"],
+              "Resource": {
+                "Fn::Sub": [
+                  "arn:aws:lambda:${region}:${account}:function/${lambdaName}",
+                  {
+                    "region": {
+                      "Ref": "AWS::Region"
+                    },
+                    "account": {
+                      "Ref": "AWS::AccountId"
+                    },
+                    "lambdaName": {
+                      "Ref": "functionSyncAnnotationCollectionName"
                     }
-                  ]
-                },
-                {
-                  "Fn::Sub": [
-                    "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tablename}",
-                    {
-                      "tablename": {
-                        "Fn::If": [
-                          "HasEnvironmentParameter",
-                          {
-                            "Fn::Join": [
-                              "-",
-                              [
-                                "HighlightTag",
-                                {
-                                  "Ref": "AppSyncApiId"
-                                },
-                                {
-                                  "Ref": "env"
-                                }
-                              ]
-                            ]
-                          },
-                          {
-                            "Fn::Join": [
-                              "-",
-                              [
-                                "HighlightTag",
-                                {
-                                  "Ref": "AppSyncApiId"
-                                }
-                              ]
-                            ]
-                          }
-                        ]
-                      }
-                    }
-                  ]
-                },
-                {
-                  "Fn::Sub": [
-                    "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tablename}",
-                    {
-                      "tablename": {
-                        "Fn::If": [
-                          "HasEnvironmentParameter",
-                          {
-                            "Fn::Join": [
-                              "-",
-                              [
-                                "Tag",
-                                {
-                                  "Ref": "AppSyncApiId"
-                                },
-                                {
-                                  "Ref": "env"
-                                }
-                              ]
-                            ]
-                          },
-                          {
-                            "Fn::Join": [
-                              "-",
-                              [
-                                "Tag",
-                                {
-                                  "Ref": "AppSyncApiId"
-                                }
-                              ]
-                            ]
-                          }
-                        ]
-                      }
-                    }
-                  ]
-                }
-              ]
+                  }
+                ]
+              }
             }
           ]
         }
       }
     },
-    "UpdateHighlightAndTagsResolver": {
-      "Type": "AWS::AppSync::Resolver",
+    "SyncAnnotationCollectionLambdaDataSource": {
+      "Type": "AWS::AppSync::DataSource",
       "Properties": {
         "ApiId": {
           "Ref": "AppSyncApiId"
         },
-        "DataSourceName": "HighlightTable",
-        "TypeName": "Mutation",
-        "FieldName": "updateHighlightAndTags",
+        "Name": "SyncAnnotationCollectionLambda",
+        "LambdaConfig": {
+          "LambdaFunctionArn": {
+            "Ref": "functionSyncAnnotationCollectionArn"
+          }
+        },
+        "Type": "AWS_LAMBDA"
+      }
+    },
+    "CreateAnnotationMutationStep2": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "DataSourceName": "AnnotationTable",
+        "Description": "Step 2 of CreateAnnotationMutation pipeline.",
+        "FunctionVersion": "2018-05-29",
+        "Name": "CreateAnnotationMutation Step 2",
         "RequestMappingTemplateS3Location": {
           "Fn::Sub": [
-            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.updateHighlightAndTags.req.vtl",
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.createAnnotation_2.req.vtl",
             {
               "S3DeploymentBucket": {
                 "Ref": "S3DeploymentBucket"
@@ -221,155 +226,7 @@
         },
         "ResponseMappingTemplateS3Location": {
           "Fn::Sub": [
-            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.updateHighlightAndTags.res.vtl",
-            {
-              "S3DeploymentBucket": {
-                "Ref": "S3DeploymentBucket"
-              },
-              "S3DeploymentRootKey": {
-                "Ref": "S3DeploymentRootKey"
-              }
-            }
-          ]
-        }
-      }
-    },
-    "CreateHighlightAndTagsResolver": {
-      "Type": "AWS::AppSync::Resolver",
-      "Properties": {
-        "ApiId": {
-          "Ref": "AppSyncApiId"
-        },
-        "DataSourceName": "HighlightTable",
-        "TypeName": "Mutation",
-        "FieldName": "createHighlightAndTags",
-        "RequestMappingTemplateS3Location": {
-          "Fn::Sub": [
-            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.createHighlightAndTags.req.vtl",
-            {
-              "S3DeploymentBucket": {
-                "Ref": "S3DeploymentBucket"
-              },
-              "S3DeploymentRootKey": {
-                "Ref": "S3DeploymentRootKey"
-              }
-            }
-          ]
-        },
-        "ResponseMappingTemplateS3Location": {
-          "Fn::Sub": [
-            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.createHighlightAndTags.res.vtl",
-            {
-              "S3DeploymentBucket": {
-                "Ref": "S3DeploymentBucket"
-              },
-              "S3DeploymentRootKey": {
-                "Ref": "S3DeploymentRootKey"
-              }
-            }
-          ]
-        }
-      }
-    },
-    "CreateTagsResolver": {
-      "Type": "AWS::AppSync::Resolver",
-      "Properties": {
-        "ApiId": {
-          "Ref": "AppSyncApiId"
-        },
-        "DataSourceName": "TagTable",
-        "TypeName": "Mutation",
-        "FieldName": "createTags",
-        "RequestMappingTemplateS3Location": {
-          "Fn::Sub": [
-            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.createTags.req.vtl",
-            {
-              "S3DeploymentBucket": {
-                "Ref": "S3DeploymentBucket"
-              },
-              "S3DeploymentRootKey": {
-                "Ref": "S3DeploymentRootKey"
-              }
-            }
-          ]
-        },
-        "ResponseMappingTemplateS3Location": {
-          "Fn::Sub": [
-            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.createTags.res.vtl",
-            {
-              "S3DeploymentBucket": {
-                "Ref": "S3DeploymentBucket"
-              },
-              "S3DeploymentRootKey": {
-                "Ref": "S3DeploymentRootKey"
-              }
-            }
-          ]
-        }
-      }
-    },
-    "CreateHighlightTagsResolver": {
-      "Type": "AWS::AppSync::Resolver",
-      "Properties": {
-        "ApiId": {
-          "Ref": "AppSyncApiId"
-        },
-        "DataSourceName": "HighlightTagTable",
-        "TypeName": "Mutation",
-        "FieldName": "createHighlightTags",
-        "RequestMappingTemplateS3Location": {
-          "Fn::Sub": [
-            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.createHighlightTags.req.vtl",
-            {
-              "S3DeploymentBucket": {
-                "Ref": "S3DeploymentBucket"
-              },
-              "S3DeploymentRootKey": {
-                "Ref": "S3DeploymentRootKey"
-              }
-            }
-          ]
-        },
-        "ResponseMappingTemplateS3Location": {
-          "Fn::Sub": [
-            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.createHighlightTags.res.vtl",
-            {
-              "S3DeploymentBucket": {
-                "Ref": "S3DeploymentBucket"
-              },
-              "S3DeploymentRootKey": {
-                "Ref": "S3DeploymentRootKey"
-              }
-            }
-          ]
-        }
-      }
-    },
-    "DeleteHighlightTagsResolver": {
-      "Type": "AWS::AppSync::Resolver",
-      "Properties": {
-        "ApiId": {
-          "Ref": "AppSyncApiId"
-        },
-        "DataSourceName": "HighlightTagTable",
-        "TypeName": "Mutation",
-        "FieldName": "deleteHighlightTags",
-        "RequestMappingTemplateS3Location": {
-          "Fn::Sub": [
-            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.deleteHighlightTags.req.vtl",
-            {
-              "S3DeploymentBucket": {
-                "Ref": "S3DeploymentBucket"
-              },
-              "S3DeploymentRootKey": {
-                "Ref": "S3DeploymentRootKey"
-              }
-            }
-          ]
-        },
-        "ResponseMappingTemplateS3Location": {
-          "Fn::Sub": [
-            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.deleteHighlightTags.res.vtl",
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.createAnnotation_2.res.vtl",
             {
               "S3DeploymentBucket": {
                 "Ref": "S3DeploymentBucket"
