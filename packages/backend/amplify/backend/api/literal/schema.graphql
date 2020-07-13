@@ -270,7 +270,8 @@ type Agent
         operations: [create, read, update, delete]
       }
     ]
-  ) {
+  )
+  @key(fields: ["id"]) {
   id: AWSURL!
   type: AgentType!
   name: String
@@ -307,13 +308,15 @@ type Annotation
         operations: [create, read, update, delete]
       }
     ]
-  ) {
+  )
+  @key(fields: ["creatorId", "id"]) {
   context: [String!]!
   type: [AnnotationType!]!
   id: AWSURL!
   body: [AnnotationBody!]
   target: [Target!]!
-  creator: Agent @connection
+  creatorId: AWSURL!
+  creator: Agent! @connection(fields: ["creatorId"])
   created: AWSDateTime
   generator: Agent @connection
   generated: AWSDateTime
@@ -334,11 +337,12 @@ type AnnotationCollection
     rules: [
       {
         allow: owner
-        ownerField: "creator"
+        ownerField: "creatorId"
         operations: [create, read, update, delete]
       }
     ]
-  ) {
+  )
+  @key(fields: ["creatorId", "id"]) {
   context: [String!]!
   id: AWSURL!
   type: [AnnotationCollectionType!]!
@@ -346,19 +350,21 @@ type AnnotationCollection
   total: Int
   first: AnnotationPage @connection
   last: AnnotationPage @connection
-  creator: Agent @connection
+  creator: Agent! @connection(fields: ["creatorId"])
+  creatorId: AWSURL!
   created: AWSDateTime
 }
 
 type AnnotationPageItem
   @model
+  @key(fields: ["creatorId", "id"])
   @key(name: "byAnnotationPage", fields: ["annotationPageId", "annotationId"])
   @key(name: "byAnnotation", fields: ["annotationId", "annotationPageId"])
   @auth(
     rules: [
       {
         allow: owner
-        ownerField: "creator"
+        ownerField: "creatorId"
         operations: [create, read, update, delete]
       }
     ]
@@ -368,7 +374,8 @@ type AnnotationPageItem
   annotationId: AWSURL!
   annotation: Annotation! @connection(fields: ["annotationId"])
   annotationPage: AnnotationPage! @connection(fields: ["annotationPageId"])
-  creator: Agent @connection
+  creatorId: AWSURL!
+  creator: Agent! @connection(fields: ["creatorId"])
   created: AWSDateTime
 }
 
@@ -381,7 +388,7 @@ type AnnotationPage
     rules: [
       {
         allow: owner
-        ownerField: "creator"
+        ownerField: "creatorId"
         operations: [create, read, update, delete]
       }
     ]
@@ -395,6 +402,7 @@ type AnnotationPage
   next: AnnotationPage @connection
   prev: AnnotationPage @connection
   startIndex: Int
-  creator: Agent @connection
+  creator: Agent! @connection(fields: ["creatorId"])
+  creatorId: AWSURL!
   created: AWSDateTime
 }

@@ -1,0 +1,25 @@
+{
+  "name": "SyncAnnotationCollection",
+  "version": "1.0.0",
+  "sources": [
+    {
+      "dir": "src",
+      "subdirs": true
+    }
+  ],
+  "package-specs": {
+    "module": "commonjs",
+    "in-source": true
+  },
+  "suffix": ".bs.js",
+  "bs-dependencies": ["decco"],
+  "ppx-flags": [
+    "decco/ppx",
+    ["@baransu/graphql_ppx_re/ppx", "-schema ./graphql-schema.json"]
+  ],
+  "warnings": {
+    "error": "+101"
+  },
+  "namespace": true,
+  "refmt": 3
+}
