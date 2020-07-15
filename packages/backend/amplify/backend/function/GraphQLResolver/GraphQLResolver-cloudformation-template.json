@@ -93,7 +93,7 @@
 				"Timeout": "25",
 				"Code": {
 					"S3Bucket": "amplify-literal-production-114446-deployment",
-					"S3Key": "amplify-builds/GraphQLResolver-373669724b2f334b334d-build.zip"
+					"S3Key": "amplify-builds/GraphQLResolver-484c35326a474267674d-build.zip"
 				},
 				"Layers": [
 					{

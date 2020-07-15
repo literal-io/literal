@@ -392,7 +392,8 @@ type AnnotationPage
         operations: [create, read, update, delete]
       }
     ]
-  ) {
+  )
+  @key(fields: ["creatorId", "id"]) {
   context: [String!]!
   id: AWSURL!
   type: [AnnotationPageType!]!

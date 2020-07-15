@@ -10,7 +10,8 @@ module.exports = {
   },
   output: {
     filename: "bundle.js",
-    libraryTarget: "umd"
+    libraryTarget: "umd",
+    path: path.resolve(__dirname, 'dist')
   },
   externals: {
     "@google-cloud/vision": "@google-cloud/vision"

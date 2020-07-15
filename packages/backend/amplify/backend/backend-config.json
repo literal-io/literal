@@ -36,14 +36,6 @@
 				}
 			},
       "dependsOn": [
-        {
-          "category": "function",
-          "resourceName": "SyncAnnotationCollection",
-          "attributes": [
-            "Arn",
-            "Name"
-          ]
-        }
       ]
 		}
 	},
@@ -123,11 +115,25 @@
 			"build": true,
 			"dependsOn": [
 				{
+					"category": "auth",
+					"resourceName": "literalAuth",
+					"attributes": [
+						"UserPoolId"
+					]
+				},
+				{
 					"category": "api",
 					"resourceName": "literal",
 					"attributes": [
 						"GraphQLAPIIdOutput",
 						"GraphQLAPIEndpointOutput"
+					]
+				},
+				{
+					"category": "storage",
+					"resourceName": "literalStorage",
+					"attributes": [
+						"BucketName"
 					]
 				}
 			]

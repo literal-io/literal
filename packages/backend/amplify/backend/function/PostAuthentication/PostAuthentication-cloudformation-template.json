@@ -63,7 +63,7 @@
 				"Timeout": "25",
 				"Code": {
 					"S3Bucket": "amplify-literal-production-114446-deployment",
-					"S3Key": "amplify-builds/PostAuthentication-6939503933796b544131-build.zip"
+					"S3Key": "amplify-builds/PostAuthentication-7a6d46434d5756657344-build.zip"
 				}
 			}
 		},

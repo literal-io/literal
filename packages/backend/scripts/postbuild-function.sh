@@ -11,18 +11,13 @@ POST_AUTHENTICATION_SRC_DIR="$FUNCTION_DIR/PostAuthentication/src"
 DYNAMODB_STREAM_SRC_DIR="$FUNCTION_DIR/DynamoDBStream/src"
 SYNC_ANNOTATION_COLLECTION_SRC_DIR="$FUNCTION_DIR/SyncAnnotationCollection/src"
 
-# Prune unneeded deps that are too large for lambda.
-(cd $GRAPHQL_RESOLVER_SRC_DIR && \
-  rm -rf node_modules && npm install --production)
+# Install any required runtime deps.
+(cd $GRAPHQL_RESOLVER_SRC_DIR && npm install --production)
 
-(cd $CLOUDFRONT_ORIGIN_REQUEST_SRC_DIR && \
-  rm -rf node_modules && npm install --production)
+(cd $CLOUDFRONT_ORIGIN_REQUEST_SRC_DIR && npm install --production)
 
-(cd $POST_AUTHENTICATION_SRC_DIR && \
-  rm -rf node_modules && npm install --production)
+(cd $POST_AUTHENTICATION_SRC_DIR && npm install --production)
 
-(cd $DYNAMODB_STREAM_SRC_DIR && \
-  rm -rf node_modules && npm install --production)
+(cd $DYNAMODB_STREAM_SRC_DIR && npm install --production)
 
-(cd $SYNC_ANNOTATION_COLLECTION_SRC_DIR && \
-  rm -rf node_modules && npm install --production)
+(cd $SYNC_ANNOTATION_COLLECTION_SRC_DIR && npm install --production)
