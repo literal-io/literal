@@ -1,2 +1,29 @@
+$util.qr($ctx.stash.put("constants", {
+  "ORIGIN": "https://literal.io",
+  "ANNOTATION_COLLECTION_TABLE": "AnnotationCollection-rkihsloeqbdabdpebem3fqqjuy-production",
+  "ANNOTATION_PAGE_TABLE": "AnnotationPage-rkihsloeqbdabdpebem3fqqjuy-production",
+  "ANNOTATION_PAGE_ITEM_TABLE": "AnnotationPageItem-rkihsloeqbdabdpebem3fqqjuy-production"
+  "ANNOTATION_TABLE": "Annotation-rkihsloeqbdabdpebem3fqqjuy-production"
+}))
+
+$util.qr($ctx.stash.put("identity", $util.defaultIfNull($ctx.identity.claims.get("username"), $util.defaultIfNull($ctx.identity.claims.get("cognito:username"), "___xamznone____")))
+$util.qr($ctx.stash.put("creatorId", "${ctx.stash.constants.ORIGIN}/creator/${ctx.stash.identity}"))
+
 $util.qr($ctx.stash.put("input", $ctx.args.input))
+
+#set( $isOwnerAuthorized = false )
+
+#if( !$util.isNull($ctx.stash.identity) && $ctx.stash.input.creatorId == $ctx.stash.identity )
+  #set( $isOwnerAuthorized = true )
+#end
+
+#if( ! $util.isNull($ctx.stash.identity) && (! $ctx.stash.input.containsKey("creatorId")) )
+  $util.qr($ctx.stash.input.put("creatorId", $ctx.stash.identity))
+  #set( $isOwnerAuthorized = true )
+#end
+
+#if( !$isOwnerAuthorized )
+  $util.unauthorized()
+#end
+
 {}

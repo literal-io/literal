@@ -1,0 +1,145 @@
+#if( $ctx.error )
+  $util.error($ctx.error.message, $ctx.error.type, null, $ctx.result.cancellationReasons)
+#else
+
+  $util.qr($ctx.stash.output.put("annotationPageItems", []))
+  $util.qr($ctx.stash.output.put("annotationPages", []))
+  $util.qr($ctx.stash.output.put("annotationCollections", []))
+
+  #set( $ctx.stash.transactWriteItems = [] )
+  #foreach( $item in $ctx.result.items )
+    #set( $transactGetItem = $ctx.stash.transactGetItems[$foreach.index] )
+    #set( $bodyId = $transactGetItem.key.id )
+    #set( $annotationId = $ctx.stash.input.id )
+    #set( $annotationPageId = "${ctx.stash.constants.ORIGIN}/creator/${ctx.stash.identity}/annotation-page/${bodyId}" )
+    #set( $annotationCollectionId = "${ctx.stash.constants.ORIGIN}/creator/${ctx.stash.identity}/annotation-collection/${bodyId}" )
+    #set( $annotationPageItemId = "${ctx.stash.constants.ORIGIN}/creator/${ctx.stash.identity}/annotation-collection/${bodyId}/item/${annotationId}" )
+
+    #set( $createAnnotationPageItem = {
+      "id": $annotationPageItemId,
+      "annotationPageId": $annotationPageId,
+      "annotationId": $annotationId,
+      "creatorId": $ctx.stash.creatorId,
+      "created": $util.time.nowISO8601(),
+      "modified": $util.time.nowISO8601(),
+      "__typename": "AnnotationPageItem"
+    } )
+
+    ## Create the AnnotationPageItem
+    #set( $createAnnotationPageItemOperation = {
+      "table": ${ctx.stash.constants.ANNOTATION_PAGE_ITEM_TABLE},
+      "operation": "PutItem",
+      "key": {
+        "creatorId": $util.dynamodb.toDynamoDB($ctx.stash.creatorId),
+        "id": $util.dynamodb.toDynamoDB($annotationPageItemId)
+      },
+      "condition": {
+        "expression": "attribute_not_exists(#creatorId) and attribute_not_exists(#id)"
+        "expressionNames": {
+          "#id": "id",
+          "#creatorId": "creatorId" 
+        }
+      },
+      "attributeValues": $util.dynamodb.toMapValues($createAnnotationPageItem)
+    } )
+    $util.qr($ctx.stash.transactWriteItems.add($createAnnotationPageItemOperation))
+    $util.qr($ctx.stash.output.annotationPageItems.add($createAnnotationPageItem))
+
+    #if( $util.isNull($item) )
+
+      ## Create the AnnotationPage
+      #set( $createAnnotationPageItem = {
+        "context": ["http://www.w3.org/ns/anno.jsonld"],
+        "id": $annotationPageId,
+        "type": ["ANNOTATION_PAGE"],
+        "partOf": $annotationCollectionId,
+        "startIndex": 0,
+        "creatorId": $ctx.stash.creatorId,
+        "created": $util.time.nowISO8601(),
+        "modified": $util.time.nowISO8601(),
+        "__typename": "AnnotationPage"
+      } )
+      #set( $createAnnotationPageOperation = {
+        "table": ${ctx.stash.constants.ANNOTATION_PAGE_TABLE},
+        "operation": "PutItem",
+        "key": {
+          "creatorId": $util.dynamodb.toDynamoDB($ctx.stash.creatorId),
+          "id": $util.dynamodb.toDynamoDB($annotationPageId)
+        },
+        "condition": {
+          "expression": "attribute_not_exists(#creatorId) and attribute_not_exists(#id)"
+          "expressionNames": {
+            "#id": "id",
+            "#creatorId": "creatorId" 
+          }
+        },
+        "attributeValues": $util.dynamodb.toMapValues($createAnnotationPageItem)
+      } )
+
+      ## Create the AnnotationCollection
+      #set( $createAnnotationCollectionItem = {
+        "context": ["http://www.w3.org/ns/anno.jsonld"],
+        "id": $annotationCollectionId,
+        "type": ["ANNOTATION_COLLECTION"],
+        "label": [$body.value],
+        "total": 1,
+        "first": $annotationPageId,
+        "last": $annotationPageId,
+        "creatorId": $identity,
+        "created": $util.time.nowISO8601(),
+        "modified": $util.time.nowISO8601()
+        "__typename": "AnnotationCollection"
+      } )
+      #set( $createAnnotationCollectionOperation = {
+        "table": ${ctx.stash.constants.ANNOTATION_COLLECTION_TABLE},
+        "operation": "PutItem",
+        "key": {
+          "creatorId": $util.dynamodb.toDynamoDB($ctx.stash.creatorId),
+          "id": $util.dynamodb.toDynamoDB($annotationCollectionId)
+        }
+        "condition": {
+          "expression": "attribute_not_exists(#creatorId) and attribute_not_exists(#id)"
+          "expressionNames": {
+            "#id": "id",
+            "#creatorId": "creatorId" 
+          }
+        }
+        "attributeValues": $util.dynamodb.toMapValues($createAnnotationCollectionItem)
+      } )
+
+      $util.qr($ctx.stash.transactWriteItems.add($createAnnotationPageOperation))
+      $util.qr($ctx.stash.transactWriteItems.add($createAnnotationCollectionOperation))
+      $util.qr($ctx.stash.output.annotationPages.add($createAnnotationPageItem))
+      $util.qr($ctx.stash.output.annotationCollections.add($createAnnotationCollectionItem))
+    #else
+
+      ## Update AnnotationCollection total, modified
+      #set( $updateAnnotationCollectionOperation = {
+        "table": ${ctx.stash.constants.ANNOTATION_COLLECTION_TABLE},
+        "operation": "UpdateItem",
+        "key": {
+          "creatorId": $util.dynamodb.toDynamoDB($ctx.stash.creatorId),
+          "id": $util.dynamodb.toDynamoDB($annotationCollectionId)
+        },
+        "update": {
+          "expression": "ADD #total :increment SET #modified = :modified",
+          "expressionNames": {
+            "#total": "total",
+            "#modified": "modified"
+          },
+          "expressionValues": {
+            ":increment": $util.dynamodb.toDynamoDB(1),
+            ":modified": $util.dynamodb.toDynamoDB($util.time.nowISO8601)
+          }
+        }
+      } )
+
+      $util.qr($ctx.stash.transactWriteItems.add($updateAnnotationCollectionOperation))
+      ## FIXME: we should also query for the AnnotationPageItem and include 
+      ## it here
+      $util.qr($ctx.stash.output.annotationCollections.add($item))
+    #end
+  #end
+#end
+
+{}

@@ -332,7 +332,15 @@ enum AnnotationCollectionType {
   ANNOTATION_COLLECTION
 }
 type AnnotationCollection
-  @model
+  @model(
+    queries: {
+      get: "getAnnotationCollection"
+      list: "listAnnotationCollections"
+    }
+    mutations: null
+    subscriptions: null
+    timestamps: { createdAt: "created", updatedAt: "modified" }
+  )
   @auth(
     rules: [
       {
@@ -356,7 +364,12 @@ type AnnotationCollection
 }
 
 type AnnotationPageItem
-  @model
+  @model(
+    queries: { get: "getAnnotationPageItem", list: "listAnnotationPageItems" }
+    mutations: null
+    subscriptions: null
+    timestamps: { createdAt: "created", updatedAt: "modified" }
+  )
   @key(fields: ["creatorId", "id"])
   @key(name: "byAnnotationPage", fields: ["annotationPageId", "annotationId"])
   @key(name: "byAnnotation", fields: ["annotationId", "annotationPageId"])
@@ -377,13 +390,19 @@ type AnnotationPageItem
   creatorId: AWSURL!
   creator: Agent! @connection(fields: ["creatorId"])
   created: AWSDateTime
+  modified: AWSDateTime
 }
 
 enum AnnotationPageType {
   ANNOTATION_PAGE
 }
 type AnnotationPage
-  @model
+  @model(
+    queries: { get: "getAnnotationPage", list: "listAnnotationPages" }
+    mutations: null
+    subscriptions: null
+    timestamps: { createdAt: "created", updatedAt: "modified" }
+  )
   @auth(
     rules: [
       {
@@ -406,4 +425,5 @@ type AnnotationPage
   creator: Agent! @connection(fields: ["creatorId"])
   creatorId: AWSURL!
   created: AWSDateTime
+  modified: AWSDateTime
 }

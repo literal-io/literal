@@ -1,240 +1,501 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-export const onUpdateScreenshot = /* GraphQL */ `
-  subscription OnUpdateScreenshot {
-    onUpdateScreenshot {
+export const onCreateAnnotationCollection = /* GraphQL */ `
+  subscription OnCreateAnnotationCollection($creatorId: String!) {
+    onCreateAnnotationCollection(creatorId: $creatorId) {
+      context
       id
-      createdAt
-      file {
-        bucket
-        key
-        region
+      type
+      label
+      total
+      first {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
       }
-      owner
+      last {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      creatorId
+      created
+      createdAt
+      updatedAt
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        createdAt
+        updatedAt
+      }
     }
   }
 `;
-export const onDeleteScreenshot = /* GraphQL */ `
-  subscription OnDeleteScreenshot {
-    onDeleteScreenshot {
+export const onUpdateAnnotationCollection = /* GraphQL */ `
+  subscription OnUpdateAnnotationCollection($creatorId: String!) {
+    onUpdateAnnotationCollection(creatorId: $creatorId) {
+      context
       id
-      createdAt
-      file {
-        bucket
-        key
-        region
+      type
+      label
+      total
+      first {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
       }
-      owner
+      last {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      creatorId
+      created
+      createdAt
+      updatedAt
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        createdAt
+        updatedAt
+      }
     }
   }
 `;
-export const onCreateScreenshot = /* GraphQL */ `
-  subscription OnCreateScreenshot($owner: String!) {
-    onCreateScreenshot(owner: $owner) {
+export const onDeleteAnnotationCollection = /* GraphQL */ `
+  subscription OnDeleteAnnotationCollection($creatorId: String!) {
+    onDeleteAnnotationCollection(creatorId: $creatorId) {
+      context
       id
-      createdAt
-      file {
-        bucket
-        key
-        region
+      type
+      label
+      total
+      first {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
       }
-      owner
+      last {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      creatorId
+      created
+      createdAt
+      updatedAt
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        createdAt
+        updatedAt
+      }
     }
   }
 `;
-export const onCreateTag = /* GraphQL */ `
-  subscription OnCreateTag($owner: String!) {
-    onCreateTag(owner: $owner) {
+export const onCreateAnnotationPageItem = /* GraphQL */ `
+  subscription OnCreateAnnotationPageItem($creatorId: String!) {
+    onCreateAnnotationPageItem(creatorId: $creatorId) {
       id
+      annotationPageId
+      annotationId
+      annotation {
+        context
+        type
+        id
+        creatorId
+        created
+        generated
+        modified
+        motivation
+        via
+        canonical
+      }
+      annotationPage {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      creatorId
+      created
       createdAt
-      text
-      owner
-      highlights {
+      updatedAt
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+export const onUpdateAnnotationPageItem = /* GraphQL */ `
+  subscription OnUpdateAnnotationPageItem($creatorId: String!) {
+    onUpdateAnnotationPageItem(creatorId: $creatorId) {
+      id
+      annotationPageId
+      annotationId
+      annotation {
+        context
+        type
+        id
+        creatorId
+        created
+        generated
+        modified
+        motivation
+        via
+        canonical
+      }
+      annotationPage {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      creatorId
+      created
+      createdAt
+      updatedAt
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+export const onDeleteAnnotationPageItem = /* GraphQL */ `
+  subscription OnDeleteAnnotationPageItem($creatorId: String!) {
+    onDeleteAnnotationPageItem(creatorId: $creatorId) {
+      id
+      annotationPageId
+      annotationId
+      annotation {
+        context
+        type
+        id
+        creatorId
+        created
+        generated
+        modified
+        motivation
+        via
+        canonical
+      }
+      annotationPage {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      creatorId
+      created
+      createdAt
+      updatedAt
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+export const onCreateAnnotationPage = /* GraphQL */ `
+  subscription OnCreateAnnotationPage($creatorId: String!) {
+    onCreateAnnotationPage(creatorId: $creatorId) {
+      context
+      id
+      type
+      partOf {
+        context
+        id
+        type
+        label
+        total
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      items {
         nextToken
       }
+      next {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      prev {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      startIndex
+      creatorId
+      created
+      createdAt
+      updatedAt
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        createdAt
+        updatedAt
+      }
     }
   }
 `;
-export const onUpdateTag = /* GraphQL */ `
-  subscription OnUpdateTag($owner: String!) {
-    onUpdateTag(owner: $owner) {
+export const onUpdateAnnotationPage = /* GraphQL */ `
+  subscription OnUpdateAnnotationPage($creatorId: String!) {
+    onUpdateAnnotationPage(creatorId: $creatorId) {
+      context
       id
-      createdAt
-      text
-      owner
-      highlights {
+      type
+      partOf {
+        context
+        id
+        type
+        label
+        total
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      items {
         nextToken
       }
+      next {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      prev {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      startIndex
+      creatorId
+      created
+      createdAt
+      updatedAt
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        createdAt
+        updatedAt
+      }
     }
   }
 `;
-export const onDeleteTag = /* GraphQL */ `
-  subscription OnDeleteTag($owner: String!) {
-    onDeleteTag(owner: $owner) {
+export const onDeleteAnnotationPage = /* GraphQL */ `
+  subscription OnDeleteAnnotationPage($creatorId: String!) {
+    onDeleteAnnotationPage(creatorId: $creatorId) {
+      context
       id
-      createdAt
-      text
-      owner
-      highlights {
+      type
+      partOf {
+        context
+        id
+        type
+        label
+        total
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      items {
         nextToken
       }
-    }
-  }
-`;
-export const onCreateHighlight = /* GraphQL */ `
-  subscription OnCreateHighlight($owner: String!) {
-    onCreateHighlight(owner: $owner) {
-      id
-      createdAt
-      text
-      note
-      owner
-      screenshot {
+      next {
+        context
         id
+        type
+        startIndex
+        creatorId
+        created
         createdAt
-        owner
+        updatedAt
       }
-      tags {
-        nextToken
-      }
-    }
-  }
-`;
-export const onUpdateHighlight = /* GraphQL */ `
-  subscription OnUpdateHighlight($owner: String!) {
-    onUpdateHighlight(owner: $owner) {
-      id
-      createdAt
-      text
-      note
-      owner
-      screenshot {
+      prev {
+        context
         id
+        type
+        startIndex
+        creatorId
+        created
         createdAt
-        owner
+        updatedAt
       }
-      tags {
-        nextToken
-      }
-    }
-  }
-`;
-export const onDeleteHighlight = /* GraphQL */ `
-  subscription OnDeleteHighlight($owner: String!) {
-    onDeleteHighlight(owner: $owner) {
-      id
+      startIndex
+      creatorId
+      created
       createdAt
-      text
-      note
-      owner
-      screenshot {
+      updatedAt
+      creator {
         id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
         createdAt
-        owner
-      }
-      tags {
-        nextToken
+        updatedAt
       }
     }
   }
 `;
-export const onCreateHighlightTag = /* GraphQL */ `
-  subscription OnCreateHighlightTag($owner: String!) {
-    onCreateHighlightTag(owner: $owner) {
+export const onCreateAgent = /* GraphQL */ `
+  subscription OnCreateAgent($id: String!) {
+    onCreateAgent(id: $id) {
       id
-      highlightId
-      tagId
+      type
+      name
+      nickname
+      email_sha1
+      email
+      homepage
       createdAt
-      tag {
-        id
-        createdAt
-        text
-        owner
-      }
-      highlight {
-        id
-        createdAt
-        text
-        note
-        owner
-      }
+      updatedAt
     }
   }
 `;
-export const onUpdateHighlightTag = /* GraphQL */ `
-  subscription OnUpdateHighlightTag($owner: String!) {
-    onUpdateHighlightTag(owner: $owner) {
+export const onUpdateAgent = /* GraphQL */ `
+  subscription OnUpdateAgent($id: String!) {
+    onUpdateAgent(id: $id) {
       id
-      highlightId
-      tagId
+      type
+      name
+      nickname
+      email_sha1
+      email
+      homepage
       createdAt
-      tag {
-        id
-        createdAt
-        text
-        owner
-      }
-      highlight {
-        id
-        createdAt
-        text
-        note
-        owner
-      }
+      updatedAt
     }
   }
 `;
-export const onDeleteHighlightTag = /* GraphQL */ `
-  subscription OnDeleteHighlightTag($owner: String!) {
-    onDeleteHighlightTag(owner: $owner) {
+export const onDeleteAgent = /* GraphQL */ `
+  subscription OnDeleteAgent($id: String!) {
+    onDeleteAgent(id: $id) {
       id
-      highlightId
-      tagId
+      type
+      name
+      nickname
+      email_sha1
+      email
+      homepage
       createdAt
-      tag {
-        id
-        createdAt
-        text
-        owner
-      }
-      highlight {
-        id
-        createdAt
-        text
-        note
-        owner
-      }
-    }
-  }
-`;
-export const onCreateProfile = /* GraphQL */ `
-  subscription OnCreateProfile {
-    onCreateProfile {
-      id
-      owner
-      createdAt
-      isOnboarded
-    }
-  }
-`;
-export const onUpdateProfile = /* GraphQL */ `
-  subscription OnUpdateProfile($owner: String!) {
-    onUpdateProfile(owner: $owner) {
-      id
-      owner
-      createdAt
-      isOnboarded
-    }
-  }
-`;
-export const onDeleteProfile = /* GraphQL */ `
-  subscription OnDeleteProfile {
-    onDeleteProfile {
-      id
-      owner
-      createdAt
-      isOnboarded
+      updatedAt
     }
   }
 `;

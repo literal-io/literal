@@ -1,45 +1,264 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-export const listScreenshots = /* GraphQL */ `
-  query ListScreenshots(
-    $filter: ModelScreenshotFilterInput
+export const getAnnotation = /* GraphQL */ `
+  query GetAnnotation($creatorId: AWSURL!, $id: AWSURL!) {
+    getAnnotation(creatorId: $creatorId, id: $id) {
+      context
+      type
+      id
+      body {
+        ... on ExternalBody {
+          id
+          format
+          language
+          processingLanguage
+          textDirection
+          type
+          accessibility
+          rights
+        }
+        ... on TextualBody {
+          id
+          value
+          format
+          language
+          processingLanguage
+          textDirection
+          type
+          accessibility
+          purpose
+          rights
+        }
+        ... on ChoiceBody {
+          type
+        }
+        ... on SpecificBody {
+          id
+          type
+          purpose
+          styleClass
+          scope
+        }
+      }
+      target {
+        id
+        format
+        language
+        processingLanguage
+        textDirection
+        type
+        accessibility
+        rights
+      }
+      creatorId
+      created
+      generated
+      modified
+      audience {
+        id
+        type
+      }
+      motivation
+      via
+      canonical
+      stylesheet {
+        type
+        value
+      }
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        createdAt
+        updatedAt
+      }
+      generator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+export const listAnnotations = /* GraphQL */ `
+  query ListAnnotations(
+    $creatorId: AWSURL
+    $id: ModelStringKeyConditionInput
+    $filter: ModelAnnotationFilterInput
     $limit: Int
     $nextToken: String
+    $sortDirection: ModelSortDirection
   ) {
-    listScreenshots(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    listAnnotations(
+      creatorId: $creatorId
+      id: $id
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      sortDirection: $sortDirection
+    ) {
       items {
+        context
+        type
         id
-        createdAt
-        owner
+        creatorId
+        created
+        generated
+        modified
+        motivation
+        via
+        canonical
       }
       nextToken
     }
   }
 `;
-export const getScreenshot = /* GraphQL */ `
-  query GetScreenshot($id: ID!) {
-    getScreenshot(id: $id) {
+export const getAnnotationCollection = /* GraphQL */ `
+  query GetAnnotationCollection($creatorId: AWSURL!, $id: AWSURL!) {
+    getAnnotationCollection(creatorId: $creatorId, id: $id) {
+      context
       id
-      createdAt
-      file {
-        bucket
-        key
-        region
+      type
+      label
+      total
+      first {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
       }
-      owner
+      last {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      creatorId
+      created
+      createdAt
+      updatedAt
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        createdAt
+        updatedAt
+      }
     }
   }
 `;
-export const listTags = /* GraphQL */ `
-  query ListTags(
-    $id: ID
-    $filter: ModelTagFilterInput
+export const listAnnotationCollections = /* GraphQL */ `
+  query ListAnnotationCollections(
+    $creatorId: AWSURL
+    $id: ModelStringKeyConditionInput
+    $filter: ModelAnnotationCollectionFilterInput
     $limit: Int
     $nextToken: String
     $sortDirection: ModelSortDirection
   ) {
-    listTags(
+    listAnnotationCollections(
+      creatorId: $creatorId
+      id: $id
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      sortDirection: $sortDirection
+    ) {
+      items {
+        context
+        id
+        type
+        label
+        total
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+export const getAnnotationPageItem = /* GraphQL */ `
+  query GetAnnotationPageItem($creatorId: AWSURL!, $id: ID!) {
+    getAnnotationPageItem(creatorId: $creatorId, id: $id) {
+      id
+      annotationPageId
+      annotationId
+      annotation {
+        context
+        type
+        id
+        creatorId
+        created
+        generated
+        modified
+        motivation
+        via
+        canonical
+      }
+      annotationPage {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      creatorId
+      created
+      createdAt
+      updatedAt
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+export const listAnnotationPageItems = /* GraphQL */ `
+  query ListAnnotationPageItems(
+    $creatorId: AWSURL
+    $id: ModelIDKeyConditionInput
+    $filter: ModelAnnotationPageItemFilterInput
+    $limit: Int
+    $nextToken: String
+    $sortDirection: ModelSortDirection
+  ) {
+    listAnnotationPageItems(
+      creatorId: $creatorId
       id: $id
       filter: $filter
       limit: $limit
@@ -48,36 +267,116 @@ export const listTags = /* GraphQL */ `
     ) {
       items {
         id
+        annotationPageId
+        annotationId
+        creatorId
+        created
         createdAt
-        text
-        owner
+        updatedAt
       }
       nextToken
     }
   }
 `;
-export const getTag = /* GraphQL */ `
-  query GetTag($id: ID!) {
-    getTag(id: $id) {
+export const getAnnotationPage = /* GraphQL */ `
+  query GetAnnotationPage($creatorId: AWSURL!, $id: AWSURL!) {
+    getAnnotationPage(creatorId: $creatorId, id: $id) {
+      context
       id
-      createdAt
-      text
-      owner
-      highlights {
+      type
+      partOf {
+        context
+        id
+        type
+        label
+        total
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      items {
         nextToken
+      }
+      next {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      prev {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      startIndex
+      creatorId
+      created
+      createdAt
+      updatedAt
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        createdAt
+        updatedAt
       }
     }
   }
 `;
-export const listHighlights = /* GraphQL */ `
-  query ListHighlights(
-    $id: ID
-    $filter: ModelHighlightFilterInput
+export const listAnnotationPages = /* GraphQL */ `
+  query ListAnnotationPages(
+    $creatorId: AWSURL
+    $id: ModelStringKeyConditionInput
+    $filter: ModelAnnotationPageFilterInput
     $limit: Int
     $nextToken: String
     $sortDirection: ModelSortDirection
   ) {
-    listHighlights(
+    listAnnotationPages(
+      creatorId: $creatorId
+      id: $id
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      sortDirection: $sortDirection
+    ) {
+      items {
+        context
+        id
+        type
+        startIndex
+        creatorId
+        created
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+export const listAgents = /* GraphQL */ `
+  query ListAgents(
+    $id: AWSURL
+    $filter: ModelAgentFilterInput
+    $limit: Int
+    $nextToken: String
+    $sortDirection: ModelSortDirection
+  ) {
+    listAgents(
       id: $id
       filter: $filter
       limit: $limit
@@ -86,106 +385,31 @@ export const listHighlights = /* GraphQL */ `
     ) {
       items {
         id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
         createdAt
-        text
-        note
-        owner
+        updatedAt
       }
       nextToken
     }
   }
 `;
-export const getHighlight = /* GraphQL */ `
-  query GetHighlight($id: ID!) {
-    getHighlight(id: $id) {
+export const getAgent = /* GraphQL */ `
+  query GetAgent($id: AWSURL!) {
+    getAgent(id: $id) {
       id
+      type
+      name
+      nickname
+      email_sha1
+      email
+      homepage
       createdAt
-      text
-      note
-      owner
-      screenshot {
-        id
-        createdAt
-        owner
-      }
-      tags {
-        nextToken
-      }
-    }
-  }
-`;
-export const getHighlightTag = /* GraphQL */ `
-  query GetHighlightTag($id: ID!) {
-    getHighlightTag(id: $id) {
-      id
-      highlightId
-      tagId
-      createdAt
-      tag {
-        id
-        createdAt
-        text
-        owner
-      }
-      highlight {
-        id
-        createdAt
-        text
-        note
-        owner
-      }
-    }
-  }
-`;
-export const listHighlightTags = /* GraphQL */ `
-  query ListHighlightTags(
-    $filter: ModelHighlightTagFilterInput
-    $limit: Int
-    $nextToken: String
-  ) {
-    listHighlightTags(filter: $filter, limit: $limit, nextToken: $nextToken) {
-      items {
-        id
-        highlightId
-        tagId
-        createdAt
-      }
-      nextToken
-    }
-  }
-`;
-export const getProfile = /* GraphQL */ `
-  query GetProfile($owner: String!) {
-    getProfile(owner: $owner) {
-      id
-      owner
-      createdAt
-      isOnboarded
-    }
-  }
-`;
-export const listProfiles = /* GraphQL */ `
-  query ListProfiles(
-    $owner: String
-    $filter: ModelProfileFilterInput
-    $limit: Int
-    $nextToken: String
-    $sortDirection: ModelSortDirection
-  ) {
-    listProfiles(
-      owner: $owner
-      filter: $filter
-      limit: $limit
-      nextToken: $nextToken
-      sortDirection: $sortDirection
-    ) {
-      items {
-        id
-        owner
-        createdAt
-        isOnboarded
-      }
-      nextToken
+      updatedAt
     }
   }
 `;
