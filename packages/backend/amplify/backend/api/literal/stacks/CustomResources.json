@@ -35,6 +35,213 @@
     }
   },
   "Resources": {
+    "AnnotationDataSourceDynamoDBPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "Roles": [
+          {
+            "Fn::If": [
+              "HasEnvironmentParameter",
+              {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "Annotation",
+                    "role",
+                    {
+                      "Ref": "AppSyncApiId"
+                    },
+                    {
+                      "Ref": "env"
+                    }
+                  ]
+                ]
+              },
+              {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "Annotation",
+                    "role",
+                    {
+                      "Ref": "AppSyncApiId"
+                    }
+                  ]
+                ]
+              }
+            ]
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:Query",
+                "dynamodb:UpdateItem"
+              ],
+              "Resource": [
+                {
+                  "Fn::Sub": [
+                    "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tablename}",
+                    {
+                      "tablename": {
+                        "Fn::If": [
+                          "HasEnvironmentParameter",
+                          {
+                            "Fn::Join": [
+                              "-",
+                              [
+                                "Annotation",
+                                {
+                                  "Ref": "AppSyncApiId"
+                                },
+                                {
+                                  "Ref": "env"
+                                }
+                              ]
+                            ]
+                          },
+                          {
+                            "Fn::Join": [
+                              "-",
+                              [
+                                "Annotation",
+                                {
+                                  "Ref": "AppSyncApiId"
+                                }
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "Fn::Sub": [
+                    "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tablename}",
+                    {
+                      "tablename": {
+                        "Fn::If": [
+                          "HasEnvironmentParameter",
+                          {
+                            "Fn::Join": [
+                              "-",
+                              [
+                                "AnnotationCollection",
+                                {
+                                  "Ref": "AppSyncApiId"
+                                },
+                                {
+                                  "Ref": "env"
+                                }
+                              ]
+                            ]
+                          },
+                          {
+                            "Fn::Join": [
+                              "-",
+                              [
+                                "AnnotationCollection",
+                                {
+                                  "Ref": "AppSyncApiId"
+                                }
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "Fn::Sub": [
+                    "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tablename}",
+                    {
+                      "tablename": {
+                        "Fn::If": [
+                          "HasEnvironmentParameter",
+                          {
+                            "Fn::Join": [
+                              "-",
+                              [
+                                "AnnotationPage",
+                                {
+                                  "Ref": "AppSyncApiId"
+                                },
+                                {
+                                  "Ref": "env"
+                                }
+                              ]
+                            ]
+                          },
+                          {
+                            "Fn::Join": [
+                              "-",
+                              [
+                                "AnnotationPage",
+                                {
+                                  "Ref": "AppSyncApiId"
+                                }
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "Fn::Sub": [
+                    "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tablename}",
+                    {
+                      "tablename": {
+                        "Fn::If": [
+                          "HasEnvironmentParameter",
+                          {
+                            "Fn::Join": [
+                              "-",
+                              [
+                                "AnnotationPageItem",
+                                {
+                                  "Ref": "AppSyncApiId"
+                                },
+                                {
+                                  "Ref": "env"
+                                }
+                              ]
+                            ]
+                          },
+                          {
+                            "Fn::Join": [
+                              "-",
+                              [
+                                "AnnotationPageItem",
+                                {
+                                  "Ref": "AppSyncApiId"
+                                }
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
     "CreateAnnotationMutation": {
       "Type": "AWS::AppSync::Resolver",
       "Properties": {
@@ -120,87 +327,6 @@
         }
       }
     },
-    "SyncAnnotationCollectionRole": {
-      "Type": "AWS::IAM::Role",
-      "Properties": {
-        "RoleName": {
-          "Fn::Join": [
-            "",
-            [
-              "SyncAnnotationCollectionAppSyncRole",
-              "-",
-              {
-                "Ref": "env"
-              }
-            ]
-          ]
-        },
-        "AssumeRolePolicyDocument": {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Principal": {
-                "Service": ["appsync.amazonaws.com"]
-              },
-              "Action": "sts:AssumeRole"
-            }
-          ]
-        }
-      }
-    },
-    "SyncAnnotationCollectionPolicy": {
-      "DependsOn": ["SyncAnnotationCollectionRole"],
-      "Type": "AWS::IAM::Policy",
-      "Properties": {
-        "PolicyName": "SyncAnnotationCollectionAppSyncPolicy",
-        "Roles": [
-          {
-            "Ref": "SyncAnnotationCollectionRole"
-          }
-        ],
-        "PolicyDocument": {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Action": ["lambda:InvokeFunction"],
-              "Resource": {
-                "Fn::Sub": [
-                  "arn:aws:lambda:${region}:${account}:function/${lambdaName}",
-                  {
-                    "region": {
-                      "Ref": "AWS::Region"
-                    },
-                    "account": {
-                      "Ref": "AWS::AccountId"
-                    },
-                    "lambdaName": {
-                      "Ref": "functionSyncAnnotationCollectionName"
-                    }
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      }
-    },
-    "SyncAnnotationCollectionLambdaDataSource": {
-      "Type": "AWS::AppSync::DataSource",
-      "Properties": {
-        "ApiId": {
-          "Ref": "AppSyncApiId"
-        },
-        "Name": "SyncAnnotationCollectionLambda",
-        "LambdaConfig": {
-          "LambdaFunctionArn": {
-            "Ref": "functionSyncAnnotationCollectionArn"
-          }
-        },
-        "Type": "AWS_LAMBDA"
-      }
-    },
     "CreateAnnotationMutationStep2": {
       "Type": "AWS::AppSync::FunctionConfiguration",
       "Properties": {
@@ -252,9 +378,6 @@
           ]
         }
       ]
-    },
-    "AlwaysFalse": {
-      "Fn::Equals": ["true", "false"]
     }
   },
   "Outputs": {

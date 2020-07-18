@@ -427,3 +427,33 @@ type AnnotationPage
   created: AWSDateTime
   modified: AWSDateTime
 }
+
+input CreateAnnotationInput {
+  context: [String!]!
+  type: [AnnotationType!]!
+  id: AWSURL!
+  body: [AnnotationBody!]
+  target: [Target!]!
+  creatorId: AWSURL!
+  created: AWSDateTime
+  generated: AWSDateTime
+  modified: AWSDateTime
+  audience: [Audience!]
+  motivation: [Motivation!]
+  via: [AWSURL!]
+  canonical: AWSURL
+  stylesheet: CssStylesheet
+  creatorId: AWSURL 
+  generator: AWSURL 
+}
+
+type CreateAnnotationOuput {
+  annotation: Annotation!
+  annotationCollections: [AnnotationCollection!]!
+  annotationPageItems: [AnnotationPageItem!]!
+  annotationPage: [AnnotationPage!]!
+}
+
+type Mutation {
+  createAnnotation(input: CreateAnnotationInput!): CreateAnnotationOutput
+}
