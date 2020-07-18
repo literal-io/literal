@@ -91,7 +91,7 @@
 				"Timeout": "25",
 				"Code": {
 					"S3Bucket": "amplify-literal-production-114446-deployment",
-					"S3Key": "amplify-builds/DynamoDBStream-6f2f504d5a364b526f4f-build.zip"
+					"S3Key": "amplify-builds/DynamoDBStream-3449785846744c6a5838-build.zip"
 				}
 			}
 		},

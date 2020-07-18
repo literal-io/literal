@@ -428,26 +428,46 @@ type AnnotationPage
   modified: AWSDateTime
 }
 
+input CssStylesheetInput {
+  type: CssStylesheetType!
+  value: String!
+}
+
+input AudienceInput {
+  id: AWSURL
+  type: [String!]
+}
+
+input TargetInput {
+  id: AWSURL!
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  type: ResourceType
+  accessibility: [String!]
+  rights: [AWSURL!]
+}
+
 input CreateAnnotationInput {
   context: [String!]!
   type: [AnnotationType!]!
   id: AWSURL!
   body: [AnnotationBody!]
-  target: [Target!]!
-  creatorId: AWSURL!
+  target: [TargetInput!]!
   created: AWSDateTime
   generated: AWSDateTime
   modified: AWSDateTime
-  audience: [Audience!]
+  audience: [AudienceInput!]
   motivation: [Motivation!]
   via: [AWSURL!]
   canonical: AWSURL
-  stylesheet: CssStylesheet
-  creatorId: AWSURL 
+  stylesheet: CssStylesheetInput
+  creatorId: AWSURL!
   generator: AWSURL 
 }
 
-type CreateAnnotationOuput {
+type CreateAnnotationOutput {
   annotation: Annotation!
   annotationCollections: [AnnotationCollection!]!
   annotationPageItems: [AnnotationPageItem!]!
