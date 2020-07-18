@@ -7218,6 +7218,107 @@
         "possibleTypes" : null
       }, {
         "kind" : "INPUT_OBJECT",
+        "name" : "TargetInput",
+        "description" : null,
+        "fields" : null,
+        "inputFields" : [ {
+          "name" : "id",
+          "description" : null,
+          "type" : {
+            "kind" : "NON_NULL",
+            "name" : null,
+            "ofType" : {
+              "kind" : "SCALAR",
+              "name" : "AWSURL",
+              "ofType" : null
+            }
+          },
+          "defaultValue" : null
+        }, {
+          "name" : "format",
+          "description" : null,
+          "type" : {
+            "kind" : "ENUM",
+            "name" : "Format",
+            "ofType" : null
+          },
+          "defaultValue" : null
+        }, {
+          "name" : "language",
+          "description" : null,
+          "type" : {
+            "kind" : "ENUM",
+            "name" : "Language",
+            "ofType" : null
+          },
+          "defaultValue" : null
+        }, {
+          "name" : "processingLanguage",
+          "description" : null,
+          "type" : {
+            "kind" : "ENUM",
+            "name" : "Language",
+            "ofType" : null
+          },
+          "defaultValue" : null
+        }, {
+          "name" : "textDirection",
+          "description" : null,
+          "type" : {
+            "kind" : "ENUM",
+            "name" : "TextDirection",
+            "ofType" : null
+          },
+          "defaultValue" : null
+        }, {
+          "name" : "type",
+          "description" : null,
+          "type" : {
+            "kind" : "ENUM",
+            "name" : "ResourceType",
+            "ofType" : null
+          },
+          "defaultValue" : null
+        }, {
+          "name" : "accessibility",
+          "description" : null,
+          "type" : {
+            "kind" : "LIST",
+            "name" : null,
+            "ofType" : {
+              "kind" : "NON_NULL",
+              "name" : null,
+              "ofType" : {
+                "kind" : "SCALAR",
+                "name" : "String",
+                "ofType" : null
+              }
+            }
+          },
+          "defaultValue" : null
+        }, {
+          "name" : "rights",
+          "description" : null,
+          "type" : {
+            "kind" : "LIST",
+            "name" : null,
+            "ofType" : {
+              "kind" : "NON_NULL",
+              "name" : null,
+              "ofType" : {
+                "kind" : "SCALAR",
+                "name" : "AWSURL",
+                "ofType" : null
+              }
+            }
+          },
+          "defaultValue" : null
+        } ],
+        "interfaces" : null,
+        "enumValues" : null,
+        "possibleTypes" : null
+      }, {
+        "kind" : "INPUT_OBJECT",
         "name" : "ModelBooleanInput",
         "description" : null,
         "fields" : null,
@@ -7361,107 +7462,6 @@
         "description" : "Built-in Float",
         "fields" : null,
         "inputFields" : null,
-        "interfaces" : null,
-        "enumValues" : null,
-        "possibleTypes" : null
-      }, {
-        "kind" : "INPUT_OBJECT",
-        "name" : "TargetInput",
-        "description" : null,
-        "fields" : null,
-        "inputFields" : [ {
-          "name" : "id",
-          "description" : null,
-          "type" : {
-            "kind" : "NON_NULL",
-            "name" : null,
-            "ofType" : {
-              "kind" : "SCALAR",
-              "name" : "AWSURL",
-              "ofType" : null
-            }
-          },
-          "defaultValue" : null
-        }, {
-          "name" : "format",
-          "description" : null,
-          "type" : {
-            "kind" : "ENUM",
-            "name" : "Format",
-            "ofType" : null
-          },
-          "defaultValue" : null
-        }, {
-          "name" : "language",
-          "description" : null,
-          "type" : {
-            "kind" : "ENUM",
-            "name" : "Language",
-            "ofType" : null
-          },
-          "defaultValue" : null
-        }, {
-          "name" : "processingLanguage",
-          "description" : null,
-          "type" : {
-            "kind" : "ENUM",
-            "name" : "Language",
-            "ofType" : null
-          },
-          "defaultValue" : null
-        }, {
-          "name" : "textDirection",
-          "description" : null,
-          "type" : {
-            "kind" : "ENUM",
-            "name" : "TextDirection",
-            "ofType" : null
-          },
-          "defaultValue" : null
-        }, {
-          "name" : "type",
-          "description" : null,
-          "type" : {
-            "kind" : "ENUM",
-            "name" : "ResourceType",
-            "ofType" : null
-          },
-          "defaultValue" : null
-        }, {
-          "name" : "accessibility",
-          "description" : null,
-          "type" : {
-            "kind" : "LIST",
-            "name" : null,
-            "ofType" : {
-              "kind" : "NON_NULL",
-              "name" : null,
-              "ofType" : {
-                "kind" : "SCALAR",
-                "name" : "String",
-                "ofType" : null
-              }
-            }
-          },
-          "defaultValue" : null
-        }, {
-          "name" : "rights",
-          "description" : null,
-          "type" : {
-            "kind" : "LIST",
-            "name" : null,
-            "ofType" : {
-              "kind" : "NON_NULL",
-              "name" : null,
-              "ofType" : {
-                "kind" : "SCALAR",
-                "name" : "AWSURL",
-                "ofType" : null
-              }
-            }
-          },
-          "defaultValue" : null
-        } ],
         "interfaces" : null,
         "enumValues" : null,
         "possibleTypes" : null

@@ -22,7 +22,8 @@
                 "GraphQLResolver": {},
                 "PostAuthentication": {},
                 "literalAuthPostAuthentication": {},
-                "DynamoDBStream": {}
+                "DynamoDBStream": {},
+                "SyncAnnotationCollection": {}
             }
         }
     }
