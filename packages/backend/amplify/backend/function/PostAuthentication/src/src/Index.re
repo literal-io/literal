@@ -1,3 +1,4 @@
+/**
 module CreateProfileMutation = [%graphql
   {|
   mutation CreateProfile($input: CreateProfileInput!) {
@@ -26,11 +27,12 @@ let handleCreateProfile = username => {
   );
 };
 
+**/
+
 let handler = event => {
   Js.log(Js.Json.stringifyAny(event));
   let op =
     switch (event->External_Lambda.event_decode) {
-    | Belt.Result.Ok(event) => handleCreateProfile(event.userName)
     | Belt.Result.Error(e) =>
       Js.log("Unable to decode event.");
       Js.Exn.raiseError(e.message);

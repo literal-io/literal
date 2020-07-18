@@ -12,8 +12,6 @@ let handler: Lambda.handler =
             Lambda.tableNameFromEventARN(r.eventSourceARN),
             r.dynamodb.oldImage,
           ) {
-          | ("REMOVE", Some(HighlightTag), Some(oldImage)) =>
-            HighlightTagEvent.onRemove(oldImage)
           | _ =>
             Js.log2("Unhandled record: ", Js.Json.stringifyAny(r));
             Js.Promise.resolve();

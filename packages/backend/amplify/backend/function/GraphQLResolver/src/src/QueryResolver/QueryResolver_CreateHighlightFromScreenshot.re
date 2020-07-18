@@ -1,3 +1,4 @@
+/**
 open Service;
 
 module GetScreenshotQuery = [%graphql
@@ -248,3 +249,4 @@ let resolver = (ctx: Lib_Lambda.event) =>
     Js.log2("Unable to decode arguments", e);
     Js.Promise.resolve(None);
   };
+**/
