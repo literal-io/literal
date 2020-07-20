@@ -87,27 +87,31 @@ type Target implements Resource {
 }
 
 type TextualBody implements Resource {
+  # Resource
   id: AWSURL
   value: String!
   format: Format
   language: Language
   processingLanguage: Language
   textDirection: TextDirection
-  type: TextualBodyType
   accessibility: [String!]
   purpose: [Motivation!]
   rights: [AWSURL!]
+
+  type: TextualBodyType
 }
 
 type ExternalBody implements Resource {
+  # Resource
   id: AWSURL!
   format: Format
   language: Language
   processingLanguage: Language
   textDirection: TextDirection
-  type: ResourceType
   accessibility: [String!]
   rights: [AWSURL!]
+
+  type: ResourceType
 }
 
 type ChoiceBody {
@@ -240,6 +244,160 @@ type SpecificBody {
   styleClass: [String!]
   renderedVia: [RenderedVia!]
   scope: [AWSURL!]
+}
+
+input ExternalBodyInput {
+  id: AWSURL!
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  accessibility: [String!]
+  rights: [AWSURL!]
+  type: ResourceType
+}
+
+input TextualBodyInput {
+  id: AWSURL
+  value: String!
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  accessibility: [String!]
+  purpose: [Motivation!]
+  rights: [AWSURL!]
+  type: TextualBodyType
+}
+
+input ChoiceBodyInput {
+  type: ChoiceType
+  items: [AnnotationBodyInput!]!
+}
+
+input RenderedViaInput {
+  id: AWSURL!
+}
+
+input FragmentSelectorInput {
+  type: FragmentSelectorType!
+  value: String!
+  conformsTo: AWSURL
+  refinedBy: [SelectorInput!]
+}
+
+input CssSelectorInput {
+  type: CssSelectorType!
+  value: String!
+  refinedBy: [SelectorInput!]
+}
+
+input XPathSelectorInput {
+  type: XPathSelectorType!
+  value: String!
+  refinedBy: [SelectorInput!]
+}
+
+input TextQuoteSelectorInput {
+  type: TextQuoteSelectorType!
+  exact: String!
+  prefix: String
+  suffix: String
+  refinedBy: [SelectorInput!]
+}
+
+input TextPositionSelectorInput {
+  type: TextPositionSelectorType!
+  start: Int!
+  end: Int!
+  refinedBy: [SelectorInput!]
+}
+
+input DataPositionSelectorInput {
+  type: DataPositionSelectorType!
+  start: Int!
+  end: Int!
+  refinedBy: [SelectorInput!]
+}
+
+input SvgSelectorInput {
+  type: SvgSelectorType!
+  value: String!
+  refinedBy: [SelectorInput!]
+}
+
+input RangeSelectorInput {
+  type: RangeSelectorType!
+  startSelector: SelectorInput!
+  endSelector: SelectorInput!
+  refinedBy: [SelectorInput!]
+}
+
+# TODO: enforce OneOf
+input SelectorInput {
+  fragmentSelectorInput: FragmentSelectorInput
+  cssSelectorInput: CssSelectorInput
+  xPathSelectorInput: XPathSelectorInput
+  textQuoteSelectorInput: TextQuoteSelectorInput
+  textPositionSelectorInput: TextPositionSelectorInput
+  dataPositionSelectorInput: DataPositionSelectorInput
+  svgSelectorInput: SvgSelectorInput
+  rangeSelectorInput: RangeSelectorInput
+}
+
+input HttpRequestStateInput {
+  type: HttpRequestStateType!
+  value: String!
+  refinedBy: [StateOrSelectorInput!]
+}
+
+input TimeStateInput {
+  type: TimeStateType!
+  sourceDate: [AWSDateTime!]
+  sourceDateStart: AWSDateTime
+  sourceDateEnd: AWSDateTime
+  cached: [AWSURL!]
+  refinedBy: [StateOrSelectorInput!]
+}
+
+# TODO: enforce OneOf
+input StateInput {
+  timeStateInput: TimeStateInput 
+  httpRequestStateInput: HttpRequestStateInput
+}
+
+# TODO: enforce OneOf
+input StateOrSelectorInput {
+  timeStateInput: TimeStateInput 
+  httpRequestStateInput: HttpRequestStateInput
+  fragmentSelectorInput: FragmentSelectorInput
+  cssSelectorInput: CssSelectorInput
+  xPathSelectorInput: XPathSelectorInput
+  textQuoteSelectorInput: TextQuoteSelectorInput
+  textPositionSelectorInput: TextPositionSelectorInput
+  dataPositionSelectorInput: DataPositionSelectorInput
+  svgSelectorInput: SvgSelectorInput
+  rangeSelectorInput: RangeSelectorInput
+}
+
+input SpecificBodyInput {
+  id: AWSURL
+  type: SpecificResourceType
+  purpose: [Motivation!]
+  source: AnnotationBodyInput!
+  selector: [SelectorInput!]
+  state: [StateInput!]
+  styleClass: [String!]
+  renderedVia: [RenderedViaInput!]
+  scope: [AWSURL!]
+}
+
+# TODO: enforce OneOf
+input AnnotationBodyInput {
+  externalBody: ExternalBodyInput
+  textualBody: TextualBodyInput
+  choiceBody: ChoiceBodyInput
+  specificBody: SpecificBodyInput
 }
 
 union AnnotationBody = ExternalBody | TextualBody | ChoiceBody | SpecificBody
@@ -453,7 +611,7 @@ input CreateAnnotationInput {
   context: [String!]!
   type: [AnnotationType!]!
   id: AWSURL!
-  body: [AnnotationBody!]
+  body: [ExternalBodyInput!]
   target: [TargetInput!]!
   created: AWSDateTime
   generated: AWSDateTime
