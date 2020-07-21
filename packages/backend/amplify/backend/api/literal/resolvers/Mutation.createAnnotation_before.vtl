@@ -26,7 +26,6 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
   $util.unauthorized()
 #end
 
-## resolve inputs
 #foreach( $annotationBodyInput in $util.defaultIfNull($ctx.stash.input.body, []) )
 
   ## TODO: enforce OneOf validation
@@ -66,7 +65,7 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
         #end
         $util.qr($choiceBodyInputItem.specificBody.set("source", $parsedSource))
 
-        #foreach( $selector in $choiceBodyInputItem.specificBody.selector )
+        #foreach( $selector in $util.defaultIfNull($choiceBodyInputItem.specificBody.selector, []) )
           #if( !$util.isNull($selector.fragmentSelector) )
             $util.qr($selector.fragmentSelector.put("__typename", "FragmentSelector"))
             #set( $parsedSelector = $selector.fragmentSelector ) 
@@ -89,14 +88,100 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
             $util.qr($selector.svgSelector.put("__typename", "SvgSelector"))
             #set( $parsedSelector = $selector.svgSelector ) 
           #elseif( !$util.isNull($selector.rangeSelector) )
-            ##TODO: parse rangeSelector 
+            $util.qr($selector.rangeSelector.put("__typename", "RangeSelector"))
+
+            #set( $parsedStartSelector = $selector.rangeSelector.startSelector ) 
+            #if( !$util.isNull($parsedStartSelector.fragmentSelector) )
+              $util.qr($parsedStartSelector.fragmentSelector.put("__typename", "FragmentSelector"))
+              #set( $parsedStartSelector = $parsedStartSelector.fragmentSelector ) 
+            #elseif( !$util.isNull($parsedStartSelector.cssSelector) )
+              $util.qr($parsedStartSelector.cssSelector.put("__typename", "CssSelector"))
+              #set( $parsedStartSelector = $parsedStartSelector.cssSelector ) 
+            #elseif( !$util.isNull($parsedStartSelector.xPathSelector) )
+              $util.qr($parsedStartSelector.xPathSelector.put("__typename", "XPathSelector"))
+              #set( $parsedStartSelector = $parsedStartSelector.xPathSelector ) 
+            #elseif( !$util.isNull($parsedStartSelector.textQuoteSelector) )
+              $util.qr($parsedStartSelector.textQuoteSelector.put("__typename", "TextQuoteSelector"))
+              #set( $parsedStartSelector = $parsedStartSelector.textQuoteSelector ) 
+            #elseif( !$util.isNull($parsedStartSelector.textPositionSelector) )
+              $util.qr($parsedStartSelector.textPositionSelector.put("__typename", "TextPositionSelector"))
+              #set( $parsedStartSelector = $parsedStartSelector.textPositionSelector ) 
+            #elseif( !$util.isNull($parsedStartSelector.dataPositionSelector) )
+              $util.qr($parsedStartSelector.dataPositionSelector.put("__typename", "DataPositionSelector"))
+              #set( $parsedStartSelector = $parsedStartSelector.dataPositionSelector ) 
+            #elseif( !$util.isNull($parsedStartSelector.svgSelector) )
+              $util.qr($parsedStartSelector.svgSelector.put("__typename", "SvgSelector"))
+              #set( $parsedStartSelector = $parsedStartSelector.svgSelector ) 
+            #elseif( !$util.isNull($parsedStartSelector.rangeSelector) )
+              $util.error("Not implemented: RangeSelectorInput -> SelectorInput -> RangeSelectorInput", "NotImplementedError")
+            #else
+              $util.error("At least one field of SelectorInput must be non-null.", "ValidationError")
+            #end
+            #if( !$util.isNull($parsedStartSelector.refinedBy) )
+              $util.error("Not implemented: SelectorInput -> SelectorInput", "NotImplementedError")
+            #end
+            $util.qr($selector.rangeSelector.put("startSelector", $parsedStartSelector))
+
+            #set( $parsedEndSelector = $selector.rangeSelector.endSelector ) 
+            #if( !$util.isNull($parsedEndSelector.fragmentSelector) )
+              $util.qr($parsedEndSelector.fragmentSelector.put("__typename", "FragmentSelector"))
+              #set( $parsedEndSelector = $parsedEndSelector.fragmentSelector ) 
+            #elseif( !$util.isNull($parsedEndSelector.cssSelector) )
+              $util.qr($parsedEndSelector.cssSelector.put("__typename", "CssSelector"))
+              #set( $parsedEndSelector = $parsedEndSelector.cssSelector ) 
+            #elseif( !$util.isNull($parsedStartSelector.xPathSelector) )
+              $util.qr($parsedStartSelector.xPathSelector.put("__typename", "XPathSelector"))
+              #set( $parsedEndSelector = $parsedEndSelector.xPathSelector ) 
+            #elseif( !$util.isNull($parsedEndSelector.textQuoteSelector) )
+              $util.qr($parsedEndSelector.textQuoteSelector.put("__typename", "TextQuoteSelector"))
+              #set( $parsedEndSelector = $parsedEndSelector.textQuoteSelector ) 
+            #elseif( !$util.isNull($parsedEndSelector.textPositionSelector) )
+              $util.qr($parsedEndSelector.textPositionSelector.put("__typename", "TextPositionSelector"))
+              #set( $parsedEndSelector = $parsedEndSelector.textPositionSelector ) 
+            #elseif( !$util.isNull($parsedEndSelector.dataPositionSelector) )
+              $util.qr($parsedEndSelector.dataPositionSelector.put("__typename", "DataPositionSelector"))
+              #set( $parsedEndSelector = $parsedEndSelector.dataPositionSelector ) 
+            #elseif( !$util.isNull($parsedEndSelector.svgSelector) )
+              $util.qr($parsedEndSelector.svgSelector.put("__typename", "SvgSelector"))
+              #set( $parsedEndSelector = $parsedEndSelector.svgSelector ) 
+            #elseif( !$util.isNull($parsedEndSelector.rangeSelector) )
+              $util.error("Not implemented: RangeSelectorInput -> SelectorInput -> RangeSelectorInput", "NotImplementedError")
+            #else
+              $util.error("At least one field of SelectorInput must be non-null.", "ValidationError")
+            #end
+            #if( !$util.isNull($parsedEndSelector.refinedBy) )
+              $util.error("Not implemented: SelectorInput -> SelectorInput", "NotImplementedError")
+            #end
+            $util.qr($selector.rangeSelector.put("endSelector", $parsedEndSelector))
+
+            #set( $parsedSelector = $selector.rangeSelector ) 
           #else
             $util.error("At least one field of SelectorInput must be non-null.", "ValidationError")
           #end
 
-          ##TODO: parse selector.refinedBy 
+          #if( !$util.isNull($parsedSelector.refinedBy) )
+            $util.error("Not implemented: SelectorInput -> SelectorInput", "NotImplementedError")
+          #end
 
           $util.qr($choiceBodyInputItem.specificBody.selector.set($foreach.index, $parsedSelector))
+        #end
+
+        #foreach( $state in $util.defaultIfNull($choiceBodyInputItem.specificBody.state, []) )
+          #if( !$util.isNull($state.timeState) )
+            $util.qr($state.timeState.set("__typename", "TimeState"))
+            #set( $parsedState = $state.timeState )
+          #elseif( !$util.isNull($state.httpRequestState) )
+            $util.qr($state.httpRequestState.set("__typename", "HttpRequestState"))
+            #set( $parsedState = $state.httpRequestState )
+          #else
+            $util.error("At least one field of StateInput must be non-null.", "ValidationError")
+          #end
+
+          #if( !$util.isNull($state.refinedBy) )
+            $util.error("Not Implemented: StateInput -> StateOrSelectorInput", "NotImplementedError")
+          #end
+
+          $util.qr($choiceBodyInputItem.specificBody.state.set($foreach.index, $parsedState))
         #end
 
         #set( $parsedChoiceBodyInputItem = $choiceBodyInputItem.specificBody )
@@ -109,8 +194,144 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
 
     #end
     #set( $annotationBody = $annotationBodyInput.choiceBody )
-  #elseif( !$util.isNull($annotationbodyInput.specificBody) )
-      ##TODO: parse specificBody
+  #elseif( !$util.isNull($annotationBodyInput.specificBody) )
+    $util.qr($annotationBodyInput.specificBody.put("__typename", "SpecificBody"))
+    
+    #set( $parsedSource = $annotationBodyInput.specificBody.source )
+    #if( !$util.isNull($parsedSource.externalBody) )
+      $util.qr($parsedSource.externalBody.put("__typename", "ExternalBody"))
+      #set( $parsedSource = $parsedSource.externalBody )
+    #elseif( !$util.isNull($parsedSource.textualBody) )
+      $util.qr($parsedSource.textualBody.put("__typename", "TextualBody"))
+      #set( $parsedSource = $parsedSource.textualBody )
+    #elseif( !$util.isNull($parsedSource.specificBody) )
+      $util.error("Not implemented: AnnotationBodyInput -> SpecificBodyInput -> SpecificBodyInput", "NotImplementedError")
+    #elseif( !$util.isNull($parsedSource.choiceBody) )
+      $util.error("Not implemented: AnnotationBodyInput -> SpecificBodyInput -> ChoiceBodyInput", "NotImplementedError")
+    #else
+      $util.error("At least one field of AnnotationBodyInput must be non-null.", "ValidationError")
+    #end
+    $util.qr($annotationBodyInput.specificBody.set("source", $parsedSource))
+
+    #foreach( $selector in $util.defaultIfNull($annotationBodyInput.specificBody.selector, []) )
+      #if( !$util.isNull($selector.fragmentSelector) )
+        $util.qr($selector.fragmentSelector.put("__typename", "FragmentSelector"))
+        #set( $parsedSelector = $selector.fragmentSelector ) 
+      #elseif( !$util.isNull($selector.cssSelector) )
+        $util.qr($selector.cssSelector.put("__typename", "CssSelector"))
+        #set( $parsedSelector = $selector.cssSelector ) 
+      #elseif( !$util.isNull($selector.xPathSelector) )
+        $util.qr($selector.xPathSelector.put("__typename", "XPathSelector"))
+        #set( $parsedSelector = $selector.xPathSelector ) 
+      #elseif( !$util.isNull($selector.textQuoteSelector) )
+        $util.qr($selector.textQuoteSelector.put("__typename", "TextQuoteSelector"))
+        #set( $parsedSelector = $selector.textQuoteSelector ) 
+      #elseif( !$util.isNull($selector.textPositionSelector) )
+        $util.qr($selector.textPositionSelector.put("__typename", "TextPositionSelector"))
+        #set( $parsedSelector = $selector.textPositionSelector ) 
+      #elseif( !$util.isNull($selector.dataPositionSelector) )
+        $util.qr($selector.dataPositionSelector.put("__typename", "DataPositionSelector"))
+        #set( $parsedSelector = $selector.dataPositionSelector ) 
+      #elseif( !$util.isNull($selector.svgSelector) )
+        $util.qr($selector.svgSelector.put("__typename", "SvgSelector"))
+        #set( $parsedSelector = $selector.svgSelector ) 
+      #elseif( !$util.isNull($selector.rangeSelector) )
+        $util.qr($selector.rangeSelector.put("__typename", "RangeSelector"))
+
+        #set( $parsedStartSelector = $selector.rangeSelector.startSelector ) 
+        #if( !$util.isNull($parsedStartSelector.fragmentSelector) )
+          $util.qr($parsedStartSelector.fragmentSelector.put("__typename", "FragmentSelector"))
+          #set( $parsedStartSelector = $parsedStartSelector.fragmentSelector ) 
+        #elseif( !$util.isNull($parsedStartSelector.cssSelector) )
+          $util.qr($parsedStartSelector.cssSelector.put("__typename", "CssSelector"))
+          #set( $parsedStartSelector = $parsedStartSelector.cssSelector ) 
+        #elseif( !$util.isNull($parsedStartSelector.xPathSelector) )
+          $util.qr($parsedStartSelector.xPathSelector.put("__typename", "XPathSelector"))
+          #set( $parsedStartSelector = $parsedStartSelector.xPathSelector ) 
+        #elseif( !$util.isNull($parsedStartSelector.textQuoteSelector) )
+          $util.qr($parsedStartSelector.textQuoteSelector.put("__typename", "TextQuoteSelector"))
+          #set( $parsedStartSelector = $parsedStartSelector.textQuoteSelector ) 
+        #elseif( !$util.isNull($parsedStartSelector.textPositionSelector) )
+          $util.qr($parsedStartSelector.textPositionSelector.put("__typename", "TextPositionSelector"))
+          #set( $parsedStartSelector = $parsedStartSelector.textPositionSelector ) 
+        #elseif( !$util.isNull($parsedStartSelector.dataPositionSelector) )
+          $util.qr($parsedStartSelector.dataPositionSelector.put("__typename", "DataPositionSelector"))
+          #set( $parsedStartSelector = $parsedStartSelector.dataPositionSelector ) 
+        #elseif( !$util.isNull($parsedStartSelector.svgSelector) )
+          $util.qr($parsedStartSelector.svgSelector.put("__typename", "SvgSelector"))
+          #set( $parsedStartSelector = $parsedStartSelector.svgSelector ) 
+        #elseif( !$util.isNull($parsedStartSelector.rangeSelector) )
+          $util.error("Not implemented: RangeSelectorInput -> SelectorInput -> RangeSelectorInput", "NotImplementedError")
+        #else
+          $util.error("At least one field of SelectorInput must be non-null.", "ValidationError")
+        #end
+        #if( !$util.isNull($parsedStartSelector.refinedBy) )
+          $util.error("Not implemented: SelectorInput -> SelectorInput", "NotImplementedError")
+        #end
+        $util.qr($selector.rangeSelector.put("startSelector", $parsedStartSelector))
+
+        #set( $parsedEndSelector = $selector.rangeSelector.endSelector ) 
+        #if( !$util.isNull($parsedEndSelector.fragmentSelector) )
+          $util.qr($parsedEndSelector.fragmentSelector.put("__typename", "FragmentSelector"))
+          #set( $parsedEndSelector = $parsedEndSelector.fragmentSelector ) 
+        #elseif( !$util.isNull($parsedEndSelector.cssSelector) )
+          $util.qr($parsedEndSelector.cssSelector.put("__typename", "CssSelector"))
+          #set( $parsedEndSelector = $parsedEndSelector.cssSelector ) 
+        #elseif( !$util.isNull($parsedStartSelector.xPathSelector) )
+          $util.qr($parsedStartSelector.xPathSelector.put("__typename", "XPathSelector"))
+          #set( $parsedEndSelector = $parsedEndSelector.xPathSelector ) 
+        #elseif( !$util.isNull($parsedEndSelector.textQuoteSelector) )
+          $util.qr($parsedEndSelector.textQuoteSelector.put("__typename", "TextQuoteSelector"))
+          #set( $parsedEndSelector = $parsedEndSelector.textQuoteSelector ) 
+        #elseif( !$util.isNull($parsedEndSelector.textPositionSelector) )
+          $util.qr($parsedEndSelector.textPositionSelector.put("__typename", "TextPositionSelector"))
+          #set( $parsedEndSelector = $parsedEndSelector.textPositionSelector ) 
+        #elseif( !$util.isNull($parsedEndSelector.dataPositionSelector) )
+          $util.qr($parsedEndSelector.dataPositionSelector.put("__typename", "DataPositionSelector"))
+          #set( $parsedEndSelector = $parsedEndSelector.dataPositionSelector ) 
+        #elseif( !$util.isNull($parsedEndSelector.svgSelector) )
+          $util.qr($parsedEndSelector.svgSelector.put("__typename", "SvgSelector"))
+          #set( $parsedEndSelector = $parsedEndSelector.svgSelector ) 
+        #elseif( !$util.isNull($parsedEndSelector.rangeSelector) )
+          $util.error("Not implemented: RangeSelectorInput -> SelectorInput -> RangeSelectorInput", "NotImplementedError")
+        #else
+          $util.error("At least one field of SelectorInput must be non-null.", "ValidationError")
+        #end
+        #if( !$util.isNull($parsedEndSelector.refinedBy) )
+          $util.error("Not implemented: SelectorInput -> SelectorInput", "NotImplementedError")
+        #end
+        $util.qr($selector.rangeSelector.put("endSelector", $parsedEndSelector))
+
+        #set( $parsedSelector = $selector.rangeSelector ) 
+      #else
+        $util.error("At least one field of SelectorInput must be non-null.", "ValidationError")
+      #end
+
+      #if( !$util.isNull($parsedSelector.refinedBy) )
+        $util.error("Not implemented: SelectorInput -> SelectorInput", "NotImplementedError")
+      #end
+
+      $util.qr($choiceBodyInputItem.specificBody.selector.set($foreach.index, $parsedSelector))
+    #end
+
+    #foreach( $state in $util.defaultIfNull($annotationBodyInput.specificBody.state, []) )
+      #if( !$util.isNull($state.timeState) )
+        $util.qr($state.timeState.set("__typename", "TimeState"))
+        #set( $parsedState = $state.timeState )
+      #elseif( !$util.isNull($state.httpRequestState) )
+        $util.qr($state.httpRequestState.set("__typename", "HttpRequestState"))
+        #set( $parsedState = $state.httpRequestState )
+      #else
+        $util.error("At least one field of StateInput must be non-null.", "ValidationError")
+      #end
+
+      #if( !$util.isNull($state.refinedBy) )
+        $util.error("Not Implemented: StateInput -> StateOrSelectorInput", "NotImplementedError")
+      #end
+
+      $util.qr($annotationBodyInput.specificBody.state.set($foreach.index, $parsedState))
+    #end
+    #set( $annotationBody = $annotationBodyInput.specificBody )
   #else
     $util.error("At least one field of AnnotationBodyInput must not be null.", "ValidationError")
   #end
