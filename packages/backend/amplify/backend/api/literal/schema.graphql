@@ -335,14 +335,14 @@ input RangeSelectorInput {
 
 # TODO: enforce OneOf
 input SelectorInput {
-  fragmentSelectorInput: FragmentSelectorInput
-  cssSelectorInput: CssSelectorInput
-  xPathSelectorInput: XPathSelectorInput
-  textQuoteSelectorInput: TextQuoteSelectorInput
-  textPositionSelectorInput: TextPositionSelectorInput
-  dataPositionSelectorInput: DataPositionSelectorInput
-  svgSelectorInput: SvgSelectorInput
-  rangeSelectorInput: RangeSelectorInput
+  fragmentSelector: FragmentSelectorInput
+  cssSelector: CssSelectorInput
+  xPathSelector: XPathSelectorInput
+  textQuoteSelector: TextQuoteSelectorInput
+  textPositionSelector: TextPositionSelectorInput
+  dataPositionSelector: DataPositionSelectorInput
+  svgSelector: SvgSelectorInput
+  rangeSelector: RangeSelectorInput
 }
 
 input HttpRequestStateInput {
@@ -362,22 +362,22 @@ input TimeStateInput {
 
 # TODO: enforce OneOf
 input StateInput {
-  timeStateInput: TimeStateInput 
-  httpRequestStateInput: HttpRequestStateInput
+  timeState: TimeStateInput 
+  httpRequestState: HttpRequestStateInput
 }
 
 # TODO: enforce OneOf
 input StateOrSelectorInput {
-  timeStateInput: TimeStateInput 
-  httpRequestStateInput: HttpRequestStateInput
-  fragmentSelectorInput: FragmentSelectorInput
-  cssSelectorInput: CssSelectorInput
-  xPathSelectorInput: XPathSelectorInput
-  textQuoteSelectorInput: TextQuoteSelectorInput
-  textPositionSelectorInput: TextPositionSelectorInput
-  dataPositionSelectorInput: DataPositionSelectorInput
-  svgSelectorInput: SvgSelectorInput
-  rangeSelectorInput: RangeSelectorInput
+  timeState: TimeStateInput 
+  httpRequestState: HttpRequestStateInput
+  fragmentSelector: FragmentSelectorInput
+  cssSelector: CssSelectorInput
+  xPathSelector: XPathSelectorInput
+  textQuoteSelector: TextQuoteSelectorInput
+  textPositionSelector: TextPositionSelectorInput
+  dataPositionSelector: DataPositionSelectorInput
+  svgSelector: SvgSelectorInput
+  rangeSelector: RangeSelectorInput
 }
 
 input SpecificBodyInput {
@@ -611,7 +611,7 @@ input CreateAnnotationInput {
   context: [String!]!
   type: [AnnotationType!]!
   id: AWSURL!
-  body: [ExternalBodyInput!]
+  body: [AnnotationBodyInput!]
   target: [TargetInput!]!
   created: AWSDateTime
   generated: AWSDateTime

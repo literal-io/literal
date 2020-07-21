@@ -26,4 +26,96 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
   $util.unauthorized()
 #end
 
+## resolve inputs
+#foreach( $annotationBodyInput in $util.defaultIfNull($ctx.stash.input.body, []) )
+
+  ## TODO: enforce OneOf validation
+
+  #if( !$util.isNull($annotationBodyInput.externalBody) )
+    $util.qr($annotationBodyInput.externalBody.put("__typename", "ExternalBody"))
+    #set( $annotationBody = $annotationBodyInput.externalBody )
+  #elseif( !$util.isNull($annotationbodyInput.textualBody) )
+    $util.qr($annotationBodyInput.externalBody.put("__typename", "TextualBody"))
+    #set( $annotationBody = $annotationBodyInput.textualBody )
+  #elseif( !$util.isNull($annotationbodyInput.choiceBodyInput) )
+    $util.qr($annotationBodyInput.externalBody.put("__typename", "ChoiceBody"))
+
+    #foreach( $choiceBodyInputItem in $annotationBodyInput.choiceBody.items )
+      #if( !$util.isNull($choiceBodyInputItem.externalBody) )
+        $util.qr($choiceBodyInputItem.externalBody.put("__typename", "ExternalBody"))
+        #set( $parsedChoiceBodyInputItem = $choiceBodyInputItem.externalBody )
+      #elseif( !$util.isNull($choiceBodyInputItem.textualBody) )
+        $util.qr($choiceBodyInputItem.textualBody.put("__typename", "TextualBody"))
+        #set( $parsedChoiceBodyInputItem = $choiceBodyInputItem.textualBody )
+      #elseif( !$util.isNull($choiceBodyInputItem.specificBody) )
+        $util.qr($choiceBodyInputItem.specificBody.put("__typename", "SpecificBody"))
+        
+        #set( $parsedSource = $choiceBodyInputItem.specificBody.source )
+        #if( !$util.isNull($parsedSource.externalBody) )
+          $util.qr($parsedSource.externalBody.put("__typename", "ExternalBody"))
+          #set( $parsedSource = $parsedSource.externalBody )
+        #elseif( !$util.isNull($parsedSource.textualBody) )
+          $util.qr($parsedSource.textualBody.put("__typename", "TextualBody"))
+          #set( $parsedSource = $parsedSource.textualBody )
+        #elseif( !$util.isNull($parsedSource.specificBody) )
+          $util.error("Not implemented: AnnotationBodyInput -> SpecificBodyInput -> SpecificBodyInput", "NotImplementedError")
+        #elseif( !$util.isNull($parsedSource.choiceBody) )
+          $util.error("Not implemented: ChoiceBodyInput -> AnnotationBodyInput -> SpecificBodyInput -> ChoiceBodyInput", "NotImplementedError")
+        #else
+          $util.error("At least one field of AnnotationBodyInput must be non-null.", "ValidationError")
+        #end
+        $util.qr($choiceBodyInputItem.specificBody.set("source", $parsedSource))
+
+        #foreach( $selector in $choiceBodyInputItem.specificBody.selector )
+          #if( !$util.isNull($selector.fragmentSelector) )
+            $util.qr($selector.fragmentSelector.put("__typename", "FragmentSelector"))
+            #set( $parsedSelector = $selector.fragmentSelector ) 
+          #elseif( !$util.isNull($selector.cssSelector) )
+            $util.qr($selector.cssSelector.put("__typename", "CssSelector"))
+            #set( $parsedSelector = $selector.cssSelector ) 
+          #elseif( !$util.isNull($selector.xPathSelector) )
+            $util.qr($selector.xPathSelector.put("__typename", "XPathSelector"))
+            #set( $parsedSelector = $selector.xPathSelector ) 
+          #elseif( !$util.isNull($selector.textQuoteSelector) )
+            $util.qr($selector.textQuoteSelector.put("__typename", "TextQuoteSelector"))
+            #set( $parsedSelector = $selector.textQuoteSelector ) 
+          #elseif( !$util.isNull($selector.textPositionSelector) )
+            $util.qr($selector.textPositionSelector.put("__typename", "TextPositionSelector"))
+            #set( $parsedSelector = $selector.textPositionSelector ) 
+          #elseif( !$util.isNull($selector.dataPositionSelector) )
+            $util.qr($selector.dataPositionSelector.put("__typename", "DataPositionSelector"))
+            #set( $parsedSelector = $selector.dataPositionSelector ) 
+          #elseif( !$util.isNull($selector.svgSelector) )
+            $util.qr($selector.svgSelector.put("__typename", "SvgSelector"))
+            #set( $parsedSelector = $selector.svgSelector ) 
+          #elseif( !$util.isNull($selector.rangeSelector) )
+            ##TODO: parse rangeSelector 
+          #else
+            $util.error("At least one field of SelectorInput must be non-null.", "ValidationError")
+          #end
+
+          ##TODO: parse selector.refinedBy 
+
+          $util.qr($choiceBodyInputItem.specificBody.selector.set($foreach.index, $parsedSelector))
+        #end
+
+        #set( $parsedChoiceBodyInputItem = $choiceBodyInputItem.specificBody )
+      #elseif( !$util.isNull($choiceBodyInputItem.choiceBody) )
+        $util.error("Not implemented: ChoiceBodyInput -> AnnotationBodyInput -> ChoiceBodyInput", "NotImplementedError") 
+      #else
+        $util.error("At least one field of AnnotationBodyInput must be non-null.", "ValidationError")
+      #end
+      $util.qr($annotationBodyInput.choiceBody.items.set($foreach.index, $parsedChoiceBodyInputItem))
+
+    #end
+    #set( $annotationBody = $annotationBodyInput.choiceBody )
+  #elseif( !$util.isNull($annotationbodyInput.specificBody) )
+      ##TODO: parse specificBody
+  #else
+    $util.error("At least one field of AnnotationBodyInput must not be null.", "ValidationError")
+  #end
+  
+  $util.qr($ctx.stash.input.body.set($foreach.index, $annotationBody))
+#end
+
 {}
