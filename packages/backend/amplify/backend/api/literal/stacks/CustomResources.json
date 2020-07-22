@@ -24,14 +24,6 @@
     "S3DeploymentRootKey": {
       "Type": "String",
       "Description": "An S3 key relative to the S3DeploymentBucket that points to the root\nof the deployment directory."
-    },
-    "functionSyncAnnotationCollectionArn": {
-      "Type": "String",
-      "Description": "The ARN of the SyncAnnotationLambda function."
-    },
-    "functionSyncAnnotationCollectionName": {
-      "Type": "String",
-      "Description": "The name of the SyncAnnotationLambda function."
     }
   },
   "Resources": {
