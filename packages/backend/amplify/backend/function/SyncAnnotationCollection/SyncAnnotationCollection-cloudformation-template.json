@@ -77,7 +77,7 @@
 				"Timeout": "25",
 				"Code": {
 					"S3Bucket": "amplify-literal-production-114446-deployment",
-					"S3Key": "amplify-builds/SyncAnnotationCollection-69676a47594e306e7175-build.zip"
+					"S3Key": "amplify-builds/SyncAnnotationCollection-556d503954434b324541-build.zip"
 				}
 			}
 		},

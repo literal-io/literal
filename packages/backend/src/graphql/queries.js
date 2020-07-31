@@ -14,9 +14,9 @@ export const getAnnotation = /* GraphQL */ `
           language
           processingLanguage
           textDirection
-          type
           accessibility
           rights
+          type
         }
         ... on TextualBody {
           id
@@ -25,10 +25,10 @@ export const getAnnotation = /* GraphQL */ `
           language
           processingLanguage
           textDirection
-          type
           accessibility
           purpose
           rights
+          type
         }
         ... on ChoiceBody {
           type
@@ -139,8 +139,7 @@ export const getAnnotationCollection = /* GraphQL */ `
         startIndex
         creatorId
         created
-        createdAt
-        updatedAt
+        modified
       }
       last {
         context
@@ -149,13 +148,11 @@ export const getAnnotationCollection = /* GraphQL */ `
         startIndex
         creatorId
         created
-        createdAt
-        updatedAt
+        modified
       }
       creatorId
       created
-      createdAt
-      updatedAt
+      modified
       creator {
         id
         type
@@ -195,8 +192,7 @@ export const listAnnotationCollections = /* GraphQL */ `
         total
         creatorId
         created
-        createdAt
-        updatedAt
+        modified
       }
       nextToken
     }
@@ -227,13 +223,11 @@ export const getAnnotationPageItem = /* GraphQL */ `
         startIndex
         creatorId
         created
-        createdAt
-        updatedAt
+        modified
       }
       creatorId
       created
-      createdAt
-      updatedAt
+      modified
       creator {
         id
         type
@@ -271,8 +265,7 @@ export const listAnnotationPageItems = /* GraphQL */ `
         annotationId
         creatorId
         created
-        createdAt
-        updatedAt
+        modified
       }
       nextToken
     }
@@ -292,8 +285,7 @@ export const getAnnotationPage = /* GraphQL */ `
         total
         creatorId
         created
-        createdAt
-        updatedAt
+        modified
       }
       items {
         nextToken
@@ -305,8 +297,7 @@ export const getAnnotationPage = /* GraphQL */ `
         startIndex
         creatorId
         created
-        createdAt
-        updatedAt
+        modified
       }
       prev {
         context
@@ -315,14 +306,12 @@ export const getAnnotationPage = /* GraphQL */ `
         startIndex
         creatorId
         created
-        createdAt
-        updatedAt
+        modified
       }
       startIndex
       creatorId
       created
-      createdAt
-      updatedAt
+      modified
       creator {
         id
         type
@@ -361,8 +350,7 @@ export const listAnnotationPages = /* GraphQL */ `
         startIndex
         creatorId
         created
-        createdAt
-        updatedAt
+        modified
       }
       nextToken
     }

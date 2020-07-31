@@ -19,7 +19,7 @@
       "id": $annotationPageItemId,
       "annotationPageId": $annotationPageId,
       "annotationId": $annotationId,
-      "creatorId": $ctx.stash.creatorId,
+      "creatorUsername": $ctx.stash.creatorUsername,
       "created": $util.time.nowISO8601(),
       "modified": $util.time.nowISO8601(),
       "__typename": "AnnotationPageItem"
@@ -30,14 +30,14 @@
       "table": ${ctx.stash.constants.ANNOTATION_PAGE_ITEM_TABLE},
       "operation": "PutItem",
       "key": {
-        "creatorId": $util.dynamodb.toDynamoDB($ctx.stash.creatorId),
+        "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
         "id": $util.dynamodb.toDynamoDB($annotationPageItemId)
       },
       "condition": {
-        "expression": "attribute_not_exists(#creatorId) and attribute_not_exists(#id)"
+        "expression": "attribute_not_exists(#creatorUsername) and attribute_not_exists(#id)"
         "expressionNames": {
           "#id": "id",
-          "#creatorId": "creatorId" 
+          "#creatorUsername": "creatorUsername" 
         }
       },
       "attributeValues": $util.dynamodb.toMapValues($createAnnotationPageItem)
@@ -54,7 +54,7 @@
         "type": ["ANNOTATION_PAGE"],
         "partOf": $annotationCollectionId,
         "startIndex": 0,
-        "creatorId": $ctx.stash.creatorId,
+        "creatorUsername": $ctx.stash.creatorUsername,
         "created": $util.time.nowISO8601(),
         "modified": $util.time.nowISO8601(),
         "__typename": "AnnotationPage"
@@ -63,14 +63,14 @@
         "table": ${ctx.stash.constants.ANNOTATION_PAGE_TABLE},
         "operation": "PutItem",
         "key": {
-          "creatorId": $util.dynamodb.toDynamoDB($ctx.stash.creatorId),
+          "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
           "id": $util.dynamodb.toDynamoDB($annotationPageId)
         },
         "condition": {
-          "expression": "attribute_not_exists(#creatorId) and attribute_not_exists(#id)"
+          "expression": "attribute_not_exists(#creatorUsername) and attribute_not_exists(#id)"
           "expressionNames": {
             "#id": "id",
-            "#creatorId": "creatorId" 
+            "#creatorUsername": "creatorUsername" 
           }
         },
         "attributeValues": $util.dynamodb.toMapValues($createAnnotationPageItem)
@@ -85,7 +85,7 @@
         "total": 1,
         "first": $annotationPageId,
         "last": $annotationPageId,
-        "creatorId": $identity,
+        "creatorUsername": $identity,
         "created": $util.time.nowISO8601(),
         "modified": $util.time.nowISO8601()
         "__typename": "AnnotationCollection"
@@ -94,14 +94,14 @@
         "table": ${ctx.stash.constants.ANNOTATION_COLLECTION_TABLE},
         "operation": "PutItem",
         "key": {
-          "creatorId": $util.dynamodb.toDynamoDB($ctx.stash.creatorId),
+          "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
           "id": $util.dynamodb.toDynamoDB($annotationCollectionId)
         }
         "condition": {
-          "expression": "attribute_not_exists(#creatorId) and attribute_not_exists(#id)"
+          "expression": "attribute_not_exists(#creatorUsername) and attribute_not_exists(#id)"
           "expressionNames": {
             "#id": "id",
-            "#creatorId": "creatorId" 
+            "#creatorUsername": "creatorUsername" 
           }
         }
         "attributeValues": $util.dynamodb.toMapValues($createAnnotationCollectionItem)
@@ -118,7 +118,7 @@
         "table": ${ctx.stash.constants.ANNOTATION_COLLECTION_TABLE},
         "operation": "UpdateItem",
         "key": {
-          "creatorId": $util.dynamodb.toDynamoDB($ctx.stash.creatorId),
+          "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
           "id": $util.dynamodb.toDynamoDB($annotationCollectionId)
         },
         "update": {

@@ -6,7 +6,7 @@ $util.qr($context.stash.input.put("__typename", "Annotation"))
   "table": ${ctx.stash.constants.ANNOTATION_TABLE},
   "operation": "PutItem",
   "key": {
-    "creatorId": $util.dynamodb.toDynamoDB($ctx.stash.creatorId),
+    "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
     "id": $util.dynamodb.toDynamoDB($ctx.stash.input.id)
   },
   "condition": {

@@ -15,7 +15,7 @@
       "table": $ANNOTATION_COLLECTION_TABLE,
       "operation": "GetItem",
       "key": {
-        "creatorId": $util.dynamodb.toDynamoDB($ctx.stash.creatorId),
+        "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
         "id": $util.dynamodb.toDynamoDB($annotationCollectionId)
       }
     } )
