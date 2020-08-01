@@ -3,7 +3,7 @@
   #set( $isTextualBody = $body.type == "TEXTUAL_BODY" )
   #set( $hasId = !$util.isNull($body.id) )
   #set( $hasTag = false )
-  #foreach( $motivation in $util.defaultIfNull($body.purpose, [])
+  #foreach( $motivation in $util.defaultIfNull($body.purpose, []) )
     #if( $motivation == "TAGGING" )
       #set( $isTag = true )
     #end
@@ -24,8 +24,12 @@
   #end
 #end
   
-{
-  "version": "2018-05-29",
-  "operation": "TransactGetItems",
-  "transactItems": $util.toJson($ctx.stash.transactGetItems)
-}
+#if( $ctx.stash.transactGetItems.size() > 0 )
+  {
+    "version": "2018-05-29",
+    "operation": "TransactGetItems",
+    "transactItems": $util.toJson($ctx.stash.transactGetItems)
+  }
+#else
+  #return
+#end

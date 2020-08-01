@@ -13,13 +13,12 @@ $util.qr($ctx.stash.put("constants", {
 #if( $authMode == "userPools" )
   $util.qr($ctx.stash.put("identity", $util.defaultIfNull($ctx.identity.claims.get("username"), $util.defaultIfNull($ctx.identity.claims.get("cognito:username"), "___xamznone____"))))
 #elseif( $util.isNull($ctx.args.input.creatorUsername) )
-  $util.error("unauthorized1")
-  ##util.unauthorized()
+  $util.unauthorized()
 #else
   $util.qr($ctx.stash.put("identity", $ctx.args.input.creatorUsername))
 #end
 
-$util.qr($ctx.stash.put("creatorUsername", "${ctx.stash.constants.ORIGIN}/creator/${ctx.stash.identity}"))
+$util.qr($ctx.stash.put("creatorUsername", $ctx.stash.identity))
 
 $util.qr($ctx.stash.put("input", $ctx.args.input))
 
@@ -35,8 +34,7 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
 #end
 
 #if( !$isOwnerAuthorized )
-  $util.error("unauthorized2")
-  ##util.unauthorized()
+  $util.unauthorized()
 #end
 
 #foreach( $annotationBodyInput in $util.defaultIfNull($ctx.stash.input.body, []) )
@@ -46,11 +44,11 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
   #if( !$util.isNull($annotationBodyInput.externalBody) )
     $util.qr($annotationBodyInput.externalBody.put("__typename", "ExternalBody"))
     #set( $annotationBody = $annotationBodyInput.externalBody )
-  #elseif( !$util.isNull($annotationbodyInput.textualBody) )
-    $util.qr($annotationBodyInput.externalBody.put("__typename", "TextualBody"))
+  #elseif( !$util.isNull($annotationBodyInput.textualBody) )
+    $util.qr($annotationBodyInput.textualBody.put("__typename", "TextualBody"))
     #set( $annotationBody = $annotationBodyInput.textualBody )
-  #elseif( !$util.isNull($annotationbodyInput.choiceBodyInput) )
-    $util.qr($annotationBodyInput.externalBody.put("__typename", "ChoiceBody"))
+  #elseif( !$util.isNull($annotationBodyInput.choiceBody) )
+    $util.qr($annotationBodyInput.choiceBody.put("__typename", "ChoiceBody"))
 
     #foreach( $choiceBodyInputItem in $annotationBodyInput.choiceBody.items )
       #if( !$util.isNull($choiceBodyInputItem.externalBody) )
@@ -351,5 +349,7 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
   
   $util.qr($ctx.stash.input.body.set($foreach.index, $annotationBody))
 #end
+
+#set( $ctx.stash.output = {} )
 
 {}

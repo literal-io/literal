@@ -1,5 +1,7 @@
 #if( $ctx.error )
   $util.error($ctx.error.message, $ctx.error.type, null, $ctx.result.cancellationReasons)
 #else
-  $util.qr($ctx.stash.output.put("annotation", $ctx.stash.input))
+  #set( $ctx.stash.output.annotation = $ctx.stash.input )
 #end
+
+{}

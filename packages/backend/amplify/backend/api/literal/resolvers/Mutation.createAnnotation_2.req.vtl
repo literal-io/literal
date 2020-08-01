@@ -2,6 +2,7 @@ $util.qr($context.stash.input.put("created", $util.defaultIfNull($ctx.stash.inpu
 $util.qr($context.stash.input.put("modified", $util.defaultIfNull($ctx.stash.input.motivated, $util.time.nowISO8601())))
 $util.qr($context.stash.input.put("__typename", "Annotation"))
 
+#set( $ctx.stash.transactWriteItems = [] )
 #set( $createAnnotationOperation = {
   "table": ${ctx.stash.constants.ANNOTATION_TABLE},
   "operation": "PutItem",
@@ -13,7 +14,7 @@ $util.qr($context.stash.input.put("__typename", "Annotation"))
     "expression": "attribute_not_exists(#id)",
     "expressionNames": {
       "#id": "id" 
-    },
+    }
   },
   "attributeValues": $util.dynamodb.toMapValues($ctx.stash.input)
 } )
