@@ -659,7 +659,34 @@ input CreateAnnotationInput {
   creatorUsername: String!
 }
 
+input UpdateAnnotationInput {
+  context: [String!]!
+  type: [AnnotationType!]!
+  id: AWSURL!
+  body: [AnnotationBodyInput!]
+  target: [TargetInput!]!
+  created: AWSDateTime
+  generated: AWSDateTime
+  modified: AWSDateTime
+  audience: [AudienceInput!]
+  motivation: [Motivation!]
+  via: [AWSURL!]
+  canonical: AWSURL
+  stylesheet: CssStylesheetInput
+  generator: AWSURL
+
+  # non-spec
+  creatorUsername: String!
+}
+
 type CreateAnnotationOutput {
+  annotation: Annotation!
+  annotationCollections: [AnnotationCollection!]!
+  annotationPageItems: [AnnotationPageItem!]!
+  annotationPage: [AnnotationPage!]!
+}
+
+type UpdateAnnotationOutput {
   annotation: Annotation!
   annotationCollections: [AnnotationCollection!]!
   annotationPageItems: [AnnotationPageItem!]!
@@ -668,4 +695,5 @@ type CreateAnnotationOutput {
 
 type Mutation {
   createAnnotation(input: CreateAnnotationInput!): CreateAnnotationOutput
+  updateAnnotation(input: UpdateAnnotationInput!): UpdateAnnotationOutput
 }

@@ -1,0 +1,9 @@
+{
+  "table": $ctx.stash.constants.ANNOTATION_TABLE,
+  "operation": "GetItem",
+  "key": {
+    "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername), 
+    "id": $util.dynamodb.toDynamoDB($ctx.stash.input.id)
+  },
+  "version": "2017-02-28"
+}

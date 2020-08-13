@@ -8,11 +8,21 @@
 
   #foreach( $item in $util.defaultIfNull($ctx.result.items, []) )
     #set( $transactGetItem = $ctx.stash.transactGetItems[$foreach.index] )
-    #set( $bodyId = $transactGetItem.key.id )
+    #set( $annotationCollectionId = $transactGetItem.key.id.S )
+
+    ## Use the last part of the AnnotationCollection ID IRI as the Tag ID.
+    #set( $annotationCollectionPathParts = $annotationCollectionId.split("/") )
+    #if( $annotationCollectionPathParts.size() < 1 )
+      $util.error("AnnotationCollection ID is not an IRI", "ValidationError")
+    #end
+
+    #set( $endIdx = $annotationCollectionPathParts.size() - 1 )
+    #set( $tagId = $annotationCollectionPathParts.get($endIdx) )
+
+
     #set( $annotationId = $ctx.stash.input.id )
-    #set( $annotationPageId = "${ctx.stash.constants.ORIGIN}/creator/${ctx.stash.identity}/annotation-page/${bodyId}" )
-    #set( $annotationCollectionId = "${ctx.stash.constants.ORIGIN}/creator/${ctx.stash.identity}/annotation-collection/${bodyId}" )
-    #set( $annotationPageItemId = "${ctx.stash.constants.ORIGIN}/creator/${ctx.stash.identity}/annotation-collection/${bodyId}/item/${annotationId}" )
+    #set( $annotationPageId = "${ctx.stash.constants.ORIGIN}/creators/${ctx.stash.identity}/annotation-pages/${tagId}" )
+    #set( $annotationPageItemId = "${ctx.stash.constants.ORIGIN}/creators/${ctx.stash.identity}/annotation-collections/${tagId}/items/${annotationId}" )
 
     #set( $createAnnotationPageItem = {
       "id": $annotationPageItemId,
@@ -33,7 +43,7 @@
         "id": $util.dynamodb.toDynamoDB($annotationPageItemId)
       },
       "condition": {
-        "expression": "attribute_not_exists(#creatorUsername) and attribute_not_exists(#id)"
+        "expression": "attribute_not_exists(#creatorUsername) and attribute_not_exists(#id)",
         "expressionNames": {
           "#id": "id",
           "#creatorUsername": "creatorUsername" 
@@ -44,7 +54,7 @@
     $util.qr($ctx.stash.transactWriteItems.add($createAnnotationPageItemOperation))
     $util.qr($ctx.stash.output.annotationPageItems.add($createAnnotationPageItem))
 
-    #if( $util.isNull($item) )
+    #if( $util.isNull($item) || $item.isEmpty() )
 
       ## Create the AnnotationPage
       #set( $createAnnotationPageItem = {
@@ -66,7 +76,7 @@
           "id": $util.dynamodb.toDynamoDB($annotationPageId)
         },
         "condition": {
-          "expression": "attribute_not_exists(#creatorUsername) and attribute_not_exists(#id)"
+          "expression": "attribute_not_exists(#creatorUsername) and attribute_not_exists(#id)",
           "expressionNames": {
             "#id": "id",
             "#creatorUsername": "creatorUsername" 
@@ -86,7 +96,7 @@
         "last": $annotationPageId,
         "creatorUsername": $identity,
         "created": $util.time.nowISO8601(),
-        "modified": $util.time.nowISO8601()
+        "modified": $util.time.nowISO8601(),
         "__typename": "AnnotationCollection"
       } )
       #set( $createAnnotationCollectionOperation = {
@@ -95,14 +105,14 @@
         "key": {
           "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
           "id": $util.dynamodb.toDynamoDB($annotationCollectionId)
-        }
+        },
         "condition": {
-          "expression": "attribute_not_exists(#creatorUsername) and attribute_not_exists(#id)"
+          "expression": "attribute_not_exists(#creatorUsername) and attribute_not_exists(#id)",
           "expressionNames": {
             "#id": "id",
             "#creatorUsername": "creatorUsername" 
           }
-        }
+        },
         "attributeValues": $util.dynamodb.toMapValues($createAnnotationCollectionItem)
       } )
 

@@ -1,19 +1,27 @@
 #set( $ctx.stash.transactGetItems = [] )
-#foreach( $body in $util.defaultIfNull($ctx.stash.input, []) )
+#foreach( $body in $util.defaultIfNull($ctx.stash.input.body, []) )
   #set( $isTextualBody = $body.type == "TEXTUAL_BODY" )
   #set( $hasId = !$util.isNull($body.id) )
   #set( $hasTag = false )
   #foreach( $motivation in $util.defaultIfNull($body.purpose, []) )
     #if( $motivation == "TAGGING" )
-      #set( $isTag = true )
+      #set( $hasTag = true )
     #end
   #end
 
   #if( $isTextualBody && $hasId && $hasTag )
-    #set( $annotationCollectionId = "${ORIGIN}/creator/${ctx.stash.identity}/annotation-collection/${body.id}" )
+
+    ## Use the last part of the body ID IRI as the base Tag ID.
+    #set( $tagPathParts = $body.id.split("/") )
+    #if( $tagPathParts.size() < 1 )
+      $util.error("Body ID is not an IRI", "ValidationError")
+    #end
+    #set( $endIdx = $tagPathParts.size() - 1 )
+    #set( $tagId = $tagPathParts.get($endIdx) )
+
+    #set( $annotationCollectionId = "${ctx.stash.constants.ORIGIN}/creators/${ctx.stash.identity}/annotation-collections/${tagId}" )
     #set( $operation = {
-      "table": $ANNOTATION_COLLECTION_TABLE,
-      "operation": "GetItem",
+      "table": $ctx.stash.constants.ANNOTATION_COLLECTION_TABLE,
       "key": {
         "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
         "id": $util.dynamodb.toDynamoDB($annotationCollectionId)
