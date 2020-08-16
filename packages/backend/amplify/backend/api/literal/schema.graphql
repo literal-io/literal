@@ -688,9 +688,20 @@ type CreateAnnotationOutput {
 
 type UpdateAnnotationOutput {
   annotation: Annotation!
-  annotationCollections: [AnnotationCollection!]!
-  annotationPageItems: [AnnotationPageItem!]!
-  annotationPage: [AnnotationPage!]!
+
+  "AnnotationCollections created as a result of new AnnotationBodyInput tags."
+  createdAnnotationCollections: [AnnotationCollection!]!
+  "AnnotationPageItems created as a result of new AnnotationBodyInput tags."
+  createdAnnotationPageItems: [AnnotationPageItem!]!
+  "AnnotationPages created as a result of new AnnotationBodyInput tags."
+  createdAnnotationPages: [AnnotationPage!]!
+
+  "AnnotationCollections deleted as a result of removed AnnotationBodyInput tags."
+  deletedAnnotationCollectionIds: [String!]!
+  "AnnotationPageItems deleted as a result of removed AnnotationBodyInput tags."
+  deletedAnnotationPageItemIds: [String!]!
+  "AnnotationPages deleted as a result of removed AnnotationBodyInput tags."
+  deletedAnnotationPageIds: [String!]!
 }
 
 type Mutation {

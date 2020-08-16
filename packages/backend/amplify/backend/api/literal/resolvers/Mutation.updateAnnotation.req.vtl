@@ -37,7 +37,6 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
   $util.unauthorized()
 #end
 
-## Parse the input into the native union format
 #foreach( $annotationBodyInput in $util.defaultIfNull($ctx.stash.input.body, []) )
 
   ## TODO: enforce OneOf validation

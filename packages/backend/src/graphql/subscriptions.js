@@ -2,8 +2,8 @@
 // this is an auto generated file. This will be overwritten
 
 export const onCreateAgent = /* GraphQL */ `
-  subscription OnCreateAgent($id: String!) {
-    onCreateAgent(id: $id) {
+  subscription OnCreateAgent($username: String!) {
+    onCreateAgent(username: $username) {
       id
       type
       name
@@ -11,14 +11,15 @@ export const onCreateAgent = /* GraphQL */ `
       email_sha1
       email
       homepage
+      username
       createdAt
       updatedAt
     }
   }
 `;
 export const onUpdateAgent = /* GraphQL */ `
-  subscription OnUpdateAgent($id: String!) {
-    onUpdateAgent(id: $id) {
+  subscription OnUpdateAgent($username: String!) {
+    onUpdateAgent(username: $username) {
       id
       type
       name
@@ -26,14 +27,15 @@ export const onUpdateAgent = /* GraphQL */ `
       email_sha1
       email
       homepage
+      username
       createdAt
       updatedAt
     }
   }
 `;
 export const onDeleteAgent = /* GraphQL */ `
-  subscription OnDeleteAgent($id: String!) {
-    onDeleteAgent(id: $id) {
+  subscription OnDeleteAgent($username: String!) {
+    onDeleteAgent(username: $username) {
       id
       type
       name
@@ -41,6 +43,7 @@ export const onDeleteAgent = /* GraphQL */ `
       email_sha1
       email
       homepage
+      username
       createdAt
       updatedAt
     }

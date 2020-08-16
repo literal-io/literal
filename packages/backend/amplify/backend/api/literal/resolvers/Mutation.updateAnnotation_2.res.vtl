@@ -1,28 +1,49 @@
 #if( $ctx.error )
   $util.error($ctx.error.message, $ctx.error.type, null, $ctx.result.cancellationReasons)
-#else
-  #set( $ctx.stash.transactWriteItems = [] )
-  #set( $ctx.stash.output.annotationPageItems = [] )
-  #set( $ctx.stash.output.annotationPages = [] )
-  #set( $ctx.stash.output.annotationCollections = [] )
+#end
 
-  #foreach( $item in $util.defaultIfNull($ctx.result.items, []) )
-    #set( $transactGetItem = $ctx.stash.transactGetItems[$foreach.index] )
-    #set( $annotationCollectionId = $transactGetItem.key.id.S )
+#set( $ctx.stash.oldAnnotationCollectionResults = [] )
+#foreach( $item in $util.defaultIfNull($ctx.result.items) )
+  ## Because we queried for AnnotationCollections for already persisted tags,
+  ## we expect all to already be created.
+  #if( $util.isNull($item) || $item.isEmpty() )
+    $util.error("AnnotationCollection for tag does not exist.", "ValidationError")
+  #end
 
-    ## Use the last part of the AnnotationCollection ID IRI as the Tag ID.
-    #set( $annotationCollectionPathParts = $annotationCollectionId.split("/") )
-    #if( $annotationCollectionPathParts.size() < 1 )
-      $util.error("AnnotationCollection ID is not an IRI", "ValidationError")
+  $util.qr($ctx.stash.newAnnotationCollectionResults.add($item))
+#end
+
+#set( $ctx.stash.transactWriteItems = [] )
+#set( $ctx.stash.output.createdAnnotationCollections = [] )
+#set( $ctx.stash.output.createdAnnotationPageItems = [] )
+#set( $ctx.stash.output.createdAnnotationPages = [] )
+#set( $ctx.stash.output.deletedAnnotationCollectionIds = [] )
+#set( $ctx.stash.output.deletedAnnotationPageItemIds = [] )
+#set( $ctx.stash.output.deletedAnnotationPageIds = [] )
+
+#foreach( $tag in $ctx.stash.newTags )
+  #set( $isAdded = true )
+  #foreach( $tag0 in $ctx.stash.oldTags )
+    #if( $tag0.id == $tag.id )
+      #set( $isAdded = false )
     #end
+  #end
 
-    #set( $endIdx = $annotationCollectionPathParts.size() - 1 )
-    #set( $tagId = $annotationCollectionPathParts.get($endIdx) )
+  ## Tag is newly added to the annotation.
+  #if( $isAdded )
 
+    ## Use the last part of the body ID IRI as the base Tag ID.
+    #set( $tagPathParts = $tag.id.split("/") )
+    #if( $tagPathParts.size() < 1 )
+      $util.error("Body ID is not an IRI", "ValidationError")
+    #end
+    #set( $endIdx = $tagPathParts.size() - 1 )
+    #set( $tagId = $tagPathParts.get($endIdx) )
 
     #set( $annotationId = $ctx.stash.input.id )
     #set( $annotationPageId = "${ctx.stash.constants.ORIGIN}/creators/${ctx.stash.identity}/annotation-pages/${tagId}" )
     #set( $annotationPageItemId = "${ctx.stash.constants.ORIGIN}/creators/${ctx.stash.identity}/annotation-collections/${tagId}/items/${annotationId}" )
+    #set( $annotationCollectionId = "${ctx.stash.constants.ORIGIN}/creators/${ctx.stash.identity}/annotation-collections/${tagId}" )
 
     #set( $createAnnotationPageItem = {
       "id": $annotationPageItemId,
@@ -52,10 +73,10 @@
       "attributeValues": $util.dynamodb.toMapValues($createAnnotationPageItem)
     } )
     $util.qr($ctx.stash.transactWriteItems.add($createAnnotationPageItemOperation))
-    $util.qr($ctx.stash.output.annotationPageItems.add($createAnnotationPageItem))
+    $util.qr($ctx.stash.output.createdAnnotationPageItems.add($createAnnotationPageItem))
 
-    #if( $util.isNull($item) || $item.isEmpty() )
-
+    #set( $annotationCollectionResult = $ctx.stash.newAnnotationCollectionResults.get($foreach.index) )
+    #if( $util.isNull($annotationCollectionResult) || $annotationCollectionResult.isEmpty() )
       ## Create the AnnotationPage
       #set( $createAnnotationPage = {
         "context": ["http://www.w3.org/ns/anno.jsonld"],
@@ -118,10 +139,9 @@
 
       $util.qr($ctx.stash.transactWriteItems.add($createAnnotationPageOperation))
       $util.qr($ctx.stash.transactWriteItems.add($createAnnotationCollectionOperation))
-      $util.qr($ctx.stash.output.annotationPages.add($createAnnotationPage))
-      $util.qr($ctx.stash.output.annotationCollections.add($createAnnotationCollectionItem))
+      $util.qr($ctx.stash.output.createdAnnotationPages.add($createAnnotationPage))
+      $util.qr($ctx.stash.output.createdAnnotationCollections.add($createAnnotationCollectionItem))
     #else
-
       ## Update AnnotationCollection total, modified
       #set( $updateAnnotationCollectionOperation = {
         "table": ${ctx.stash.constants.ANNOTATION_COLLECTION_TABLE},
@@ -144,9 +164,73 @@
       } )
 
       $util.qr($ctx.stash.transactWriteItems.add($updateAnnotationCollectionOperation))
-      ## FIXME: we should also query for the AnnotationPageItem and include 
-      ## it here
-      $util.qr($ctx.stash.output.annotationCollections.add($item))
+    #end
+
+  #end
+#end
+
+#foreach( $tag in $ctx.stash.oldTags )
+  #set( $isRemoved = true )
+  #foreach( $tag0 in $ctx.stash.newTags )
+    #if( $tag0.id == $tag.id )
+      #set( $isRemoved = false )
+    #end
+  #end
+
+  ## Tag is newly removed from the annotation.
+  #if( $isRemoved )
+    ## Use the last part of the body ID IRI as the base Tag ID.
+    #set( $tagPathParts = $tag.id.split("/") )
+    #if( $tagPathParts.size() < 1 )
+      $util.error("Body ID is not an IRI", "ValidationError")
+    #end
+    #set( $endIdx = $tagPathParts.size() - 1 )
+    #set( $tagId = $tagPathParts.get($endIdx) )
+
+    #set( $annotationId = $ctx.stash.input.id )
+    #set( $annotationPageId = "${ctx.stash.constants.ORIGIN}/creators/${ctx.stash.identity}/annotation-pages/${tagId}" )
+    #set( $annotationPageItemId = "${ctx.stash.constants.ORIGIN}/creators/${ctx.stash.identity}/annotation-collections/${tagId}/items/${annotationId}" )
+
+    #set( $deleteAnnotationPageItemOperation = {
+      "table": ${ctx.stash.constants.ANNOTATION_PAGE_ITEM_TABLE},
+      "operation": "DeleteItem",
+      "key": {
+        "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
+        "id": $util.dynamodb.toDynamoDB($annotationPageItemId)
+      },
+    } )
+    $util.qr($ctx.stash.transactWriteItems.add($deleteAnnotationPageItemOperation))
+    $util.qr($ctx.stash.output.deletedAnnotationPageItemIds.add($annotationPageItemId))
+
+    #set( $annotationCollectionResult = $ctx.stash.oldAnnotationCollectionResults.get($foreach.index) )
+    #if( $util.defaultIfNull($annotationCollectionResult.total, 0) == 1 )
+      #set( $deleteAnnotationCollectionOperation = {
+        "table": ${ctx.stash.constants.ANNOTATION_COLLECTION_TABLE},
+        "operation": "DeleteItem",
+        "key": {
+          "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
+          "id": $util.dynamodb.toDynamoDB($annotationCollectionResult.id)
+        },
+        "condition": {
+          "expression": "#total = 1",
+          "exressionNames": {
+            "#total": "total",
+          }
+        }
+      } )
+      #set( $deleteAnnotationPageOperation = {
+        "table": ${ctx.stash.constants.ANNOTATION_PAGE_TABLE},
+        "operation": "DeleteItem",
+        "key": {
+          "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
+          "id": $util.dynamodb.toDynamoDB($annotationPageId)
+        },
+      } )
+
+      $util.qr($ctx.stash.transactWriteItems.add($deleteAnnotationCollectionOperation))
+      $util.qr($ctx.stash.transactWriteItems.add($deleteAnnotationPageOperation))
+      $util.qr($ctx.stash.output.deletedAnnotationPageIds.add($annotationPageId))
+      $util.qr($ctx.stash.output.deletedAnnotationCollectionIds.add($annotationCollectionResult.id))
     #end
   #end
 #end

@@ -1,9 +1,89 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
+export const listAgents = /* GraphQL */ `
+  query ListAgents(
+    $username: String
+    $filter: ModelAgentFilterInput
+    $limit: Int
+    $nextToken: String
+    $sortDirection: ModelSortDirection
+  ) {
+    listAgents(
+      username: $username
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      sortDirection: $sortDirection
+    ) {
+      items {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        username
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+export const getAgent = /* GraphQL */ `
+  query GetAgent($username: String!) {
+    getAgent(username: $username) {
+      id
+      type
+      name
+      nickname
+      email_sha1
+      email
+      homepage
+      username
+      createdAt
+      updatedAt
+    }
+  }
+`;
+export const listAnnotations = /* GraphQL */ `
+  query ListAnnotations(
+    $creatorUsername: String
+    $id: ModelStringKeyConditionInput
+    $filter: ModelAnnotationFilterInput
+    $limit: Int
+    $nextToken: String
+    $sortDirection: ModelSortDirection
+  ) {
+    listAnnotations(
+      creatorUsername: $creatorUsername
+      id: $id
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      sortDirection: $sortDirection
+    ) {
+      items {
+        context
+        type
+        id
+        created
+        generated
+        modified
+        motivation
+        via
+        canonical
+        creatorUsername
+      }
+      nextToken
+    }
+  }
+`;
 export const getAnnotation = /* GraphQL */ `
-  query GetAnnotation($creatorId: AWSURL!, $id: AWSURL!) {
-    getAnnotation(creatorId: $creatorId, id: $id) {
+  query GetAnnotation($creatorUsername: String!, $id: AWSURL!) {
+    getAnnotation(creatorUsername: $creatorUsername, id: $id) {
       context
       type
       id
@@ -51,7 +131,6 @@ export const getAnnotation = /* GraphQL */ `
         accessibility
         rights
       }
-      creatorId
       created
       generated
       modified
@@ -66,6 +145,7 @@ export const getAnnotation = /* GraphQL */ `
         type
         value
       }
+      creatorUsername
       creator {
         id
         type
@@ -74,6 +154,7 @@ export const getAnnotation = /* GraphQL */ `
         email_sha1
         email
         homepage
+        username
         createdAt
         updatedAt
       }
@@ -85,82 +166,7 @@ export const getAnnotation = /* GraphQL */ `
         email_sha1
         email
         homepage
-        createdAt
-        updatedAt
-      }
-    }
-  }
-`;
-export const listAnnotations = /* GraphQL */ `
-  query ListAnnotations(
-    $creatorId: AWSURL
-    $id: ModelStringKeyConditionInput
-    $filter: ModelAnnotationFilterInput
-    $limit: Int
-    $nextToken: String
-    $sortDirection: ModelSortDirection
-  ) {
-    listAnnotations(
-      creatorId: $creatorId
-      id: $id
-      filter: $filter
-      limit: $limit
-      nextToken: $nextToken
-      sortDirection: $sortDirection
-    ) {
-      items {
-        context
-        type
-        id
-        creatorId
-        created
-        generated
-        modified
-        motivation
-        via
-        canonical
-      }
-      nextToken
-    }
-  }
-`;
-export const getAnnotationCollection = /* GraphQL */ `
-  query GetAnnotationCollection($creatorId: AWSURL!, $id: AWSURL!) {
-    getAnnotationCollection(creatorId: $creatorId, id: $id) {
-      context
-      id
-      type
-      label
-      total
-      first {
-        context
-        id
-        type
-        startIndex
-        creatorId
-        created
-        modified
-      }
-      last {
-        context
-        id
-        type
-        startIndex
-        creatorId
-        created
-        modified
-      }
-      creatorId
-      created
-      modified
-      creator {
-        id
-        type
-        name
-        nickname
-        email_sha1
-        email
-        homepage
+        username
         createdAt
         updatedAt
       }
@@ -169,7 +175,7 @@ export const getAnnotationCollection = /* GraphQL */ `
 `;
 export const listAnnotationCollections = /* GraphQL */ `
   query ListAnnotationCollections(
-    $creatorId: AWSURL
+    $creatorUsername: String
     $id: ModelStringKeyConditionInput
     $filter: ModelAnnotationCollectionFilterInput
     $limit: Int
@@ -177,7 +183,7 @@ export const listAnnotationCollections = /* GraphQL */ `
     $sortDirection: ModelSortDirection
   ) {
     listAnnotationCollections(
-      creatorId: $creatorId
+      creatorUsername: $creatorUsername
       id: $id
       filter: $filter
       limit: $limit
@@ -190,43 +196,24 @@ export const listAnnotationCollections = /* GraphQL */ `
         type
         label
         total
-        creatorId
         created
+        creatorUsername
         modified
       }
       nextToken
     }
   }
 `;
-export const getAnnotationPageItem = /* GraphQL */ `
-  query GetAnnotationPageItem($creatorId: AWSURL!, $id: ID!) {
-    getAnnotationPageItem(creatorId: $creatorId, id: $id) {
+export const getAnnotationCollection = /* GraphQL */ `
+  query GetAnnotationCollection($creatorUsername: String!, $id: AWSURL!) {
+    getAnnotationCollection(creatorUsername: $creatorUsername, id: $id) {
+      context
       id
-      annotationPageId
-      annotationId
-      annotation {
-        context
-        type
-        id
-        creatorId
-        created
-        generated
-        modified
-        motivation
-        via
-        canonical
-      }
-      annotationPage {
-        context
-        id
-        type
-        startIndex
-        creatorId
-        created
-        modified
-      }
-      creatorId
+      type
+      label
+      total
       created
+      creatorUsername
       modified
       creator {
         id
@@ -236,15 +223,79 @@ export const getAnnotationPageItem = /* GraphQL */ `
         email_sha1
         email
         homepage
+        username
         createdAt
         updatedAt
+      }
+      first {
+        context
+        id
+        type
+        startIndex
+        created
+        modified
+        creatorUsername
+      }
+      last {
+        context
+        id
+        type
+        startIndex
+        created
+        modified
+        creatorUsername
+      }
+    }
+  }
+`;
+export const getAnnotationPageItem = /* GraphQL */ `
+  query GetAnnotationPageItem($creatorUsername: String!, $id: ID!) {
+    getAnnotationPageItem(creatorUsername: $creatorUsername, id: $id) {
+      id
+      annotationPageId
+      annotationId
+      created
+      modified
+      creatorUsername
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        username
+        createdAt
+        updatedAt
+      }
+      annotation {
+        context
+        type
+        id
+        created
+        generated
+        modified
+        motivation
+        via
+        canonical
+        creatorUsername
+      }
+      annotationPage {
+        context
+        id
+        type
+        startIndex
+        created
+        modified
+        creatorUsername
       }
     }
   }
 `;
 export const listAnnotationPageItems = /* GraphQL */ `
   query ListAnnotationPageItems(
-    $creatorId: AWSURL
+    $creatorUsername: String
     $id: ModelIDKeyConditionInput
     $filter: ModelAnnotationPageItemFilterInput
     $limit: Int
@@ -252,7 +303,7 @@ export const listAnnotationPageItems = /* GraphQL */ `
     $sortDirection: ModelSortDirection
   ) {
     listAnnotationPageItems(
-      creatorId: $creatorId
+      creatorUsername: $creatorUsername
       id: $id
       filter: $filter
       limit: $limit
@@ -263,28 +314,74 @@ export const listAnnotationPageItems = /* GraphQL */ `
         id
         annotationPageId
         annotationId
-        creatorId
         created
         modified
+        creatorUsername
+      }
+      nextToken
+    }
+  }
+`;
+export const listAnnotationPages = /* GraphQL */ `
+  query ListAnnotationPages(
+    $creatorUsername: String
+    $id: ModelStringKeyConditionInput
+    $filter: ModelAnnotationPageFilterInput
+    $limit: Int
+    $nextToken: String
+    $sortDirection: ModelSortDirection
+  ) {
+    listAnnotationPages(
+      creatorUsername: $creatorUsername
+      id: $id
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      sortDirection: $sortDirection
+    ) {
+      items {
+        context
+        id
+        type
+        startIndex
+        created
+        modified
+        creatorUsername
       }
       nextToken
     }
   }
 `;
 export const getAnnotationPage = /* GraphQL */ `
-  query GetAnnotationPage($creatorId: AWSURL!, $id: AWSURL!) {
-    getAnnotationPage(creatorId: $creatorId, id: $id) {
+  query GetAnnotationPage($creatorUsername: String!, $id: String!) {
+    getAnnotationPage(creatorUsername: $creatorUsername, id: $id) {
       context
       id
       type
+      startIndex
+      created
+      modified
+      creatorUsername
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        username
+        createdAt
+        updatedAt
+      }
       partOf {
         context
         id
         type
         label
         total
-        creatorId
         created
+        creatorUsername
         modified
       }
       items {
@@ -295,109 +392,19 @@ export const getAnnotationPage = /* GraphQL */ `
         id
         type
         startIndex
-        creatorId
         created
         modified
+        creatorUsername
       }
       prev {
         context
         id
         type
         startIndex
-        creatorId
         created
         modified
+        creatorUsername
       }
-      startIndex
-      creatorId
-      created
-      modified
-      creator {
-        id
-        type
-        name
-        nickname
-        email_sha1
-        email
-        homepage
-        createdAt
-        updatedAt
-      }
-    }
-  }
-`;
-export const listAnnotationPages = /* GraphQL */ `
-  query ListAnnotationPages(
-    $creatorId: AWSURL
-    $id: ModelStringKeyConditionInput
-    $filter: ModelAnnotationPageFilterInput
-    $limit: Int
-    $nextToken: String
-    $sortDirection: ModelSortDirection
-  ) {
-    listAnnotationPages(
-      creatorId: $creatorId
-      id: $id
-      filter: $filter
-      limit: $limit
-      nextToken: $nextToken
-      sortDirection: $sortDirection
-    ) {
-      items {
-        context
-        id
-        type
-        startIndex
-        creatorId
-        created
-        modified
-      }
-      nextToken
-    }
-  }
-`;
-export const listAgents = /* GraphQL */ `
-  query ListAgents(
-    $id: AWSURL
-    $filter: ModelAgentFilterInput
-    $limit: Int
-    $nextToken: String
-    $sortDirection: ModelSortDirection
-  ) {
-    listAgents(
-      id: $id
-      filter: $filter
-      limit: $limit
-      nextToken: $nextToken
-      sortDirection: $sortDirection
-    ) {
-      items {
-        id
-        type
-        name
-        nickname
-        email_sha1
-        email
-        homepage
-        createdAt
-        updatedAt
-      }
-      nextToken
-    }
-  }
-`;
-export const getAgent = /* GraphQL */ `
-  query GetAgent($id: AWSURL!) {
-    getAgent(id: $id) {
-      id
-      type
-      name
-      nickname
-      email_sha1
-      email
-      homepage
-      createdAt
-      updatedAt
     }
   }
 `;
