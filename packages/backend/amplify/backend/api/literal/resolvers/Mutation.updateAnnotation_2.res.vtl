@@ -3,14 +3,14 @@
 #end
 
 #set( $ctx.stash.oldAnnotationCollectionResults = [] )
-#foreach( $item in $util.defaultIfNull($ctx.result.items) )
+#foreach( $item in $util.defaultIfNull($ctx.result.items, []) )
   ## Because we queried for AnnotationCollections for already persisted tags,
   ## we expect all to already be created.
   #if( $util.isNull($item) || $item.isEmpty() )
     $util.error("AnnotationCollection for tag does not exist.", "ValidationError")
   #end
 
-  $util.qr($ctx.stash.newAnnotationCollectionResults.add($item))
+  $util.qr($ctx.stash.oldAnnotationCollectionResults.add($item))
 #end
 
 #set( $ctx.stash.transactWriteItems = [] )
@@ -197,7 +197,7 @@
       "key": {
         "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
         "id": $util.dynamodb.toDynamoDB($annotationPageItemId)
-      },
+      }
     } )
     $util.qr($ctx.stash.transactWriteItems.add($deleteAnnotationPageItemOperation))
     $util.qr($ctx.stash.output.deletedAnnotationPageItemIds.add($annotationPageItemId))
@@ -212,9 +212,12 @@
           "id": $util.dynamodb.toDynamoDB($annotationCollectionResult.id)
         },
         "condition": {
-          "expression": "#total = 1",
-          "exressionNames": {
-            "#total": "total",
+          "expression": "#total = :readTotal",
+          "expressionNames": {
+            "#total": "total"
+          },
+          "expressionValues": {
+            ":readTotal": $util.dynamodb.toNumber(1)
           }
         }
       } )
@@ -224,7 +227,7 @@
         "key": {
           "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
           "id": $util.dynamodb.toDynamoDB($annotationPageId)
-        },
+        }
       } )
 
       $util.qr($ctx.stash.transactWriteItems.add($deleteAnnotationCollectionOperation))

@@ -56,6 +56,17 @@
                       "typeName": "createAnnotation"
                     }
                   ]
+                },
+                {
+                  "Fn::Sub": [
+                    "arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${apiId}/types/${typeName}/*",
+                    {
+                      "apiId": {
+                        "Ref": "AppSyncApiId"
+                      },
+                      "typeName": "updateAnnotation"
+                    }
+                  ]
                 }
               ]
             }
@@ -265,6 +276,170 @@
                   ]
                 }
               ]
+            }
+          ]
+        }
+      }
+    },
+    "UpdateAnnotationMutation": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Mutation",
+        "FieldName": "updateAnnotation",
+        "Kind": "PIPELINE",
+        "RequestMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.updateAnnotation.req.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        },
+        "ResponseMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.updateAnnotation.res.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        },
+        "PipelineConfig": {
+          "Functions": [
+            {
+              "Fn::GetAtt": ["UpdateAnnotationMutationStep1", "FunctionId"]
+            },
+            {
+              "Fn::GetAtt": ["UpdateAnnotationMutationStep2", "FunctionId"]
+            },
+            {
+              "Fn::GetAtt": ["UpdateAnnotationMutationStep3", "FunctionId"]
+            }
+          ]
+        }
+      }
+    },
+    "UpdateAnnotationMutationStep1": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "DataSourceName": "AnnotationTable",
+        "Description": "Step 1 of UpdateAnnotationMutation pipeline.",
+        "FunctionVersion": "2018-05-29",
+        "Name": "UpdateAnnotationMutationStep1",
+        "RequestMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.updateAnnotation_1.req.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        },
+        "ResponseMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.updateAnnotation_1.res.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "UpdateAnnotationMutationStep2": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "DataSourceName": "AnnotationTable",
+        "Description": "Step 2 of UpdateAnnotationMutation pipeline.",
+        "FunctionVersion": "2018-05-29",
+        "Name": "UpdateAnnotationMutationStep2",
+        "RequestMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.updateAnnotation_2.req.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        },
+        "ResponseMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.updateAnnotation_2.res.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "UpdateAnnotationMutationStep3": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "DataSourceName": "AnnotationTable",
+        "Description": "Step 3 of UpdateAnnotationMutation pipeline.",
+        "FunctionVersion": "2018-05-29",
+        "Name": "UpdateAnnotationMutationStep3",
+        "RequestMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.updateAnnotation_3.req.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        },
+        "ResponseMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.updateAnnotation_3.res.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
             }
           ]
         }

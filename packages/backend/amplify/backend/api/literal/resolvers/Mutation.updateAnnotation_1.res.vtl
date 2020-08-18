@@ -9,7 +9,7 @@
 ## Further, GetAnnotationCollection order corresponds to relative order of tags
 ## with the update annotation input.
 #set( $ctx.stash.newAnnotationCollectionResults = [] )
-#foreach( $item in $util.defaultIfNull($ctx.result.items) )
+#foreach( $item in $util.defaultIfNull($ctx.result.items, []) )
   #if( $foreach.index == 0 )
     #set( $ctx.stash.oldAnnotationResult = $item )
   #else
