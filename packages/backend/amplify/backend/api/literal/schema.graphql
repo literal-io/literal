@@ -704,7 +704,17 @@ type UpdateAnnotationOutput {
   deletedAnnotationPageIds: [String!]!
 }
 
+input DeleteAnnotationInput {
+  creatorUsername: String!
+  id: String!
+}
+
+type DeleteAnnotationOutput {
+  annotation: Annotation! 
+}
+
 type Mutation {
   createAnnotation(input: CreateAnnotationInput!): CreateAnnotationOutput
   updateAnnotation(input: UpdateAnnotationInput!): UpdateAnnotationOutput
+  deleteAnnotation(input: DeleteAnnotationInput!): DeleteAnnotationOutput
 }

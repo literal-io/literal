@@ -1,0 +1,10 @@
+## Get the annotation about to be deleted.
+
+{
+  "key": {
+    "creatorUsername": $util.dynamodb.toDynamoDBJson($ctx.stash.creatorUsername), 
+    "id": $util.dynamodb.toDynamoDBJson($ctx.stash.input.id)
+  },
+  "operation": "GetItem",
+  "version": "2018-05-29"
+}

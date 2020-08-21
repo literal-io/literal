@@ -71,8 +71,6 @@
     #set( $endIdx = $tagPathParts.size() - 1 )
     #set( $tagId = $tagPathParts.get($endIdx) )
 
-    #set( $annotationId = $ctx.stash.input.id )
-
     #set( $annotationCollectionId = "${ctx.stash.constants.ORIGIN}/creators/${ctx.stash.identity}/annotation-collections/${tagId}" )
     #set( $operation = {
       "table": $ctx.stash.constants.ANNOTATION_COLLECTION_TABLE,
