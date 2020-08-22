@@ -24,3 +24,12 @@ module Url = {
 
   [@bs.new] [@bs.module "url"] external url: string => url = "URL";
 };
+
+module Crypto = {
+  type hash;
+
+  [@bs.module "crypto"] external makeHash: string => hash = "createHash";
+
+  [@bs.send] external update: (hash, string) => unit = "update";
+  [@bs.send] external digest: (hash, string) => string = "digest";
+}

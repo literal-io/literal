@@ -17,15 +17,14 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@baransu/graphql_ppx_re": "^0.7.1",
     "aws-sdk": "^2.701.0",
-    "bs-platform": "^7.3.2",
+    "bs-platform": "^8.2.0",
     "decco": "^1.2.1",
     "dotenv": "^8.2.0",
     "dotenv-cli": "^3.1.0",
     "uuid": "^8.0.0",
     "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.11"
-  },
-  "dependencies": {}
+    "webpack-cli": "^3.3.11",
+    "@reasonml-community/graphql-ppx": "^0.7.2"
+  }
 }

@@ -72,23 +72,23 @@ interface Resource {
   textDirection: TextDirection
   #https://schema.org/accessibilityFeature
   accessibility: [String!]
-  rights: [AWSURL!]
+  rights: [ID!]
 }
 
 type Target implements Resource {
-  id: AWSURL!
+  id: ID!
   format: Format
   language: Language
   processingLanguage: Language
   textDirection: TextDirection
   type: ResourceType
   accessibility: [String!]
-  rights: [AWSURL!]
+  rights: [ID!]
 }
 
 type TextualBody implements Resource {
   # Resource
-  id: AWSURL
+  id: ID 
   value: String!
   format: Format
   language: Language
@@ -96,20 +96,20 @@ type TextualBody implements Resource {
   textDirection: TextDirection
   accessibility: [String!]
   purpose: [Motivation!]
-  rights: [AWSURL!]
+  rights: [ID!]
 
   type: TextualBodyType
 }
 
 type ExternalBody implements Resource {
   # Resource
-  id: AWSURL!
+  id: ID!
   format: Format
   language: Language
   processingLanguage: Language
   textDirection: TextDirection
   accessibility: [String!]
-  rights: [AWSURL!]
+  rights: [ID!]
 
   type: ResourceType
 }
@@ -122,7 +122,7 @@ type ChoiceBody {
 type FragmentSelector {
   type: FragmentSelectorType!
   value: String!
-  conformsTo: AWSURL
+  conformsTo: ID 
   refinedBy: [Selector!]
 }
 
@@ -203,7 +203,7 @@ type TimeState {
   sourceDate: [AWSDateTime!]
   sourceDateStart: AWSDateTime
   sourceDateEnd: AWSDateTime
-  cached: [AWSURL!]
+  cached: [ID!]
   refinedBy: [StateOrSelector!]
 }
 
@@ -218,7 +218,7 @@ type HttpRequestState {
 }
 
 type RenderedVia {
-  id: AWSURL!
+  id: ID!
 }
 
 union State = TimeState | HttpRequestState
@@ -235,7 +235,7 @@ union StateOrSelector =
   | RangeSelector
 
 type SpecificBody {
-  id: AWSURL
+  id: ID 
   type: SpecificResourceType
   purpose: [Motivation!]
   source: AnnotationBody!
@@ -243,22 +243,22 @@ type SpecificBody {
   state: [State!]
   styleClass: [String!]
   renderedVia: [RenderedVia!]
-  scope: [AWSURL!]
+  scope: [ID!]
 }
 
 input ExternalBodyInput {
-  id: AWSURL!
+  id: ID!
   format: Format
   language: Language
   processingLanguage: Language
   textDirection: TextDirection
   accessibility: [String!]
-  rights: [AWSURL!]
+  rights: [ID!]
   type: ResourceType
 }
 
 input TextualBodyInput {
-  id: AWSURL
+  id: ID 
   value: String!
   format: Format
   language: Language
@@ -266,7 +266,7 @@ input TextualBodyInput {
   textDirection: TextDirection
   accessibility: [String!]
   purpose: [Motivation!]
-  rights: [AWSURL!]
+  rights: [ID!]
   type: TextualBodyType
 }
 
@@ -276,13 +276,13 @@ input ChoiceBodyInput {
 }
 
 input RenderedViaInput {
-  id: AWSURL!
+  id: ID!
 }
 
 input FragmentSelectorInput {
   type: FragmentSelectorType!
   value: String!
-  conformsTo: AWSURL
+  conformsTo: ID 
   refinedBy: [SelectorInput!]
 }
 
@@ -356,7 +356,7 @@ input TimeStateInput {
   sourceDate: [AWSDateTime!]
   sourceDateStart: AWSDateTime
   sourceDateEnd: AWSDateTime
-  cached: [AWSURL!]
+  cached: [ID!]
   refinedBy: [StateOrSelectorInput!]
 }
 
@@ -381,7 +381,7 @@ input StateOrSelectorInput {
 }
 
 input SpecificBodyInput {
-  id: AWSURL
+  id: ID 
   type: SpecificResourceType
   purpose: [Motivation!]
   source: AnnotationBodyInput!
@@ -389,7 +389,7 @@ input SpecificBodyInput {
   state: [StateInput!]
   styleClass: [String!]
   renderedVia: [RenderedViaInput!]
-  scope: [AWSURL!]
+  scope: [ID!]
 }
 
 # TODO: enforce OneOf
@@ -430,7 +430,7 @@ type Agent
     ]
   )
   @key(fields: ["username"]) {
-  id: AWSURL!
+  id: String!
   type: AgentType!
   name: String
   nickname: String
@@ -446,7 +446,7 @@ type Agent
 #
 # TODO: should probably be a union type of all possible Audience types in order to handle metadata
 type Audience {
-  id: AWSURL
+  id: String
   type: [String!]
 }
 
@@ -478,7 +478,7 @@ type Annotation
   @key(fields: ["creatorUsername", "id"]) {
   context: [String!]!
   type: [AnnotationType!]!
-  id: AWSURL!
+  id: String!
   body: [AnnotationBody!]
   target: [Target!]!
   creator: Agent! @connection(fields: ["creatorUsername"])
@@ -488,8 +488,8 @@ type Annotation
   modified: AWSDateTime
   audience: [Audience!]
   motivation: [Motivation!]
-  via: [AWSURL!]
-  canonical: AWSURL
+  via: [ID!]
+  canonical: ID
   stylesheet: CssStylesheet
 
   # non-spec
@@ -525,7 +525,7 @@ type AnnotationCollection
   )
   @key(fields: ["creatorUsername", "id"]) {
   context: [String!]!
-  id: AWSURL!
+  id: String!
   type: [AnnotationCollectionType!]!
   label: [String!]
   total: Int
@@ -623,26 +623,26 @@ input CssStylesheetInput {
 }
 
 input AudienceInput {
-  id: AWSURL
+  id: ID 
   type: [String!]
 }
 
 # FIXME: TargetInput should be a union of externalTarget, textualTarget
 input TargetInput {
-  id: AWSURL!
+  id: ID!
   format: Format
   language: Language
   processingLanguage: Language
   textDirection: TextDirection
   type: ResourceType
   accessibility: [String!]
-  rights: [AWSURL!]
+  rights: [ID!]
 }
 
 input CreateAnnotationInput {
   context: [String!]!
   type: [AnnotationType!]!
-  id: AWSURL!
+  id: ID!
   body: [AnnotationBodyInput!]
   target: [TargetInput!]!
   created: AWSDateTime
@@ -650,10 +650,10 @@ input CreateAnnotationInput {
   modified: AWSDateTime
   audience: [AudienceInput!]
   motivation: [Motivation!]
-  via: [AWSURL!]
-  canonical: AWSURL
+  via: [ID!]
+  canonical: ID 
   stylesheet: CssStylesheetInput
-  generator: AWSURL
+  generator: ID 
 
   # non-spec
   creatorUsername: String!
@@ -662,7 +662,7 @@ input CreateAnnotationInput {
 input UpdateAnnotationInput {
   context: [String!]!
   type: [AnnotationType!]!
-  id: AWSURL!
+  id: ID!
   body: [AnnotationBodyInput!]
   target: [TargetInput!]!
   created: AWSDateTime
@@ -670,10 +670,10 @@ input UpdateAnnotationInput {
   modified: AWSDateTime
   audience: [AudienceInput!]
   motivation: [Motivation!]
-  via: [AWSURL!]
-  canonical: AWSURL
+  via: [ID!]
+  canonical: ID 
   stylesheet: CssStylesheetInput
-  generator: AWSURL
+  generator: ID 
 
   # non-spec
   creatorUsername: String!
