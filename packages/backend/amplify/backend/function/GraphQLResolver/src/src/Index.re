@@ -9,6 +9,10 @@ let handler = event => {
     | Belt.Result.Error(e) =>
       Js.log("Unable to decode event.");
       Js.Exn.raiseError(e.message);
+    | Belt.Result.Ok(
+        {typeName: "Mutation", fieldName: "createAnnotationFromExternalTarget"} as ctx
+      ) =>
+      QueryResolver.CreateAnnotationFromExternalTarget.resolver(ctx)
     | _ =>
       Js.log("Resolver not found.");
       Js.Exn.raiseError("Resolver not found.");

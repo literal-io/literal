@@ -5,6 +5,6 @@
   "main": "index.js",
   "license": "Apache-2.0",
   "dependencies": {
-    "@google-cloud/vision": "^1.10.0"
+    "@google-cloud/vision": "^2.1.1"
   }
 }

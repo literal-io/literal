@@ -15,6 +15,10 @@ module Env = {
   [@bs.val]
   external highlightBoundingBoxDetectorAPI: string =
     "process.env.HIGHLIGHT_BOUNDING_BOX_DETECTOR_API";
+
+  [@bs.val]
+    external appOrigin: string =
+      "process.env.APP_ORIGIN"
 };
 
 let gcloudServiceAccountFilename =

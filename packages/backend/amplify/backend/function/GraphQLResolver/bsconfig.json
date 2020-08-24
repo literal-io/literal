@@ -19,7 +19,7 @@
   ],
   "ppx-flags": [
     "decco/ppx",
-    ["@baransu/graphql_ppx_re/ppx", "-schema ./graphql-schema.json"]
+    ["@reasonml-community/graphql-ppx/ppx", "-schema ./graphql-schema.json"]
   ],
   "warnings": {
     "error": "+101"

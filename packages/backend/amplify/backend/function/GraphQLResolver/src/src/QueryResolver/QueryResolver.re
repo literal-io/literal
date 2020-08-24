@@ -1,1 +1,1 @@
-module CreateHighlightFromScreenshot = QueryResolver_CreateHighlightFromScreenshot;
+module CreateAnnotationFromExternalTarget = QueryResolver_CreateAnnotationFromExternalTarget

@@ -1,5 +1,5 @@
 enum TextDirection {
-  TR
+  LTR
   RTL
   AUTO
 }
@@ -75,7 +75,10 @@ interface Resource {
   rights: [ID!]
 }
 
-type Target implements Resource {
+union AnnotationTarget = ExternalTarget | TextualTarget
+
+type ExternalTarget implements Resource {
+  # Resource
   id: ID!
   format: Format
   language: Language
@@ -86,10 +89,23 @@ type Target implements Resource {
   rights: [ID!]
 }
 
+# non-spec
+type TextualTarget implements Resource {
+  # Resource
+  id: ID
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  accessibility: [String!]
+  rights: [ID!]
+
+  value: String!
+}
+
 type TextualBody implements Resource {
   # Resource
-  id: ID 
-  value: String!
+  id: ID
   format: Format
   language: Language
   processingLanguage: Language
@@ -98,6 +114,7 @@ type TextualBody implements Resource {
   purpose: [Motivation!]
   rights: [ID!]
 
+  value: String!
   type: TextualBodyType
 }
 
@@ -122,7 +139,7 @@ type ChoiceBody {
 type FragmentSelector {
   type: FragmentSelectorType!
   value: String!
-  conformsTo: ID 
+  conformsTo: ID
   refinedBy: [Selector!]
 }
 
@@ -235,7 +252,7 @@ union StateOrSelector =
   | RangeSelector
 
 type SpecificBody {
-  id: ID 
+  id: ID
   type: SpecificResourceType
   purpose: [Motivation!]
   source: AnnotationBody!
@@ -258,7 +275,7 @@ input ExternalBodyInput {
 }
 
 input TextualBodyInput {
-  id: ID 
+  id: ID
   value: String!
   format: Format
   language: Language
@@ -282,7 +299,7 @@ input RenderedViaInput {
 input FragmentSelectorInput {
   type: FragmentSelectorType!
   value: String!
-  conformsTo: ID 
+  conformsTo: ID
   refinedBy: [SelectorInput!]
 }
 
@@ -381,7 +398,7 @@ input StateOrSelectorInput {
 }
 
 input SpecificBodyInput {
-  id: ID 
+  id: ID
   type: SpecificResourceType
   purpose: [Motivation!]
   source: AnnotationBodyInput!
@@ -480,7 +497,7 @@ type Annotation
   type: [AnnotationType!]!
   id: String!
   body: [AnnotationBody!]
-  target: [Target!]!
+  target: [AnnotationTarget!]!
   creator: Agent! @connection(fields: ["creatorUsername"])
   created: AWSDateTime
   generator: Agent @connection
@@ -623,12 +640,11 @@ input CssStylesheetInput {
 }
 
 input AudienceInput {
-  id: ID 
+  id: ID
   type: [String!]
 }
 
-# FIXME: TargetInput should be a union of externalTarget, textualTarget
-input TargetInput {
+input ExternalTargetInput {
   id: ID!
   format: Format
   language: Language
@@ -639,24 +655,40 @@ input TargetInput {
   rights: [ID!]
 }
 
+input TextualTargetInput {
+  id: ID
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  accessibility: [String!]
+  rights: [ID!]
+  value: String!
+}
+
+input AnnotationTargetInput {
+  externalTarget: ExternalTargetInput
+  textualTarget: TextualTargetInput
+}
+
 input CreateAnnotationInput {
   context: [String!]!
   type: [AnnotationType!]!
   id: ID!
   body: [AnnotationBodyInput!]
-  target: [TargetInput!]!
+  target: [AnnotationTargetInput!]!
   created: AWSDateTime
   generated: AWSDateTime
   modified: AWSDateTime
   audience: [AudienceInput!]
   motivation: [Motivation!]
   via: [ID!]
-  canonical: ID 
+  canonical: ID
   stylesheet: CssStylesheetInput
-  generator: ID 
 
   # non-spec
   creatorUsername: String!
+  annotationGeneratorId: ID
 }
 
 input UpdateAnnotationInput {
@@ -664,19 +696,19 @@ input UpdateAnnotationInput {
   type: [AnnotationType!]!
   id: ID!
   body: [AnnotationBodyInput!]
-  target: [TargetInput!]!
+  target: [AnnotationTargetInput!]!
   created: AWSDateTime
   generated: AWSDateTime
   modified: AWSDateTime
   audience: [AudienceInput!]
   motivation: [Motivation!]
   via: [ID!]
-  canonical: ID 
+  canonical: ID
   stylesheet: CssStylesheetInput
-  generator: ID 
 
   # non-spec
   creatorUsername: String!
+  annotationGeneratorId: ID
 }
 
 type CreateAnnotationOutput {
@@ -709,12 +741,21 @@ input DeleteAnnotationInput {
   id: String!
 }
 
+input CreateAnnotationFromExternalTargetInput {
+  externalTarget: ExternalTargetInput!
+  creatorUsername: String!
+}
+
 type DeleteAnnotationOutput {
-  annotation: Annotation! 
+  annotation: Annotation!
 }
 
 type Mutation {
   createAnnotation(input: CreateAnnotationInput!): CreateAnnotationOutput
   updateAnnotation(input: UpdateAnnotationInput!): UpdateAnnotationOutput
   deleteAnnotation(input: DeleteAnnotationInput!): DeleteAnnotationOutput
+
+  createAnnotationFromExternalTarget(
+    input: CreateAnnotationFromExternalTargetInput!
+  ): Annotation @function(name: "GraphQLResolver-${env}")
 }
