@@ -131,7 +131,7 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
       <div className={cn(["flex", "flex-row"])}>
         <MaterialUi.IconButton
           size=`Small
-          edge=`End
+          edge=MaterialUi.IconButton.Edge._end
           onClick={_ =>
             switch (highlight, currentUser) {
             | (Some(highlight), Some(currentUser)) =>
@@ -145,7 +145,10 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
               "rippleVisible": cn(["opacity-50"]),
             },
           }
-          classes=[Root(cn(["p-0", "ml-1"]))]>
+          classes={MaterialUi.IconButton.Classes.make(
+            ~root=cn(["p-0", "ml-1"]),
+            (),
+          )}>
           <Svg
             placeholderViewBox="0 0 24 24"
             className={cn(["pointer-events-none", "opacity-75"])}
@@ -159,7 +162,7 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
         </MaterialUi.IconButton>
         <MaterialUi.IconButton
           size=`Small
-          edge=`End
+          edge=MaterialUi.IconButton.Edge._end
           onClick={_ =>
             switch (highlight, currentUser) {
             | (Some(_), Some(_)) => handleCreate()
@@ -172,7 +175,10 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
               "rippleVisible": cn(["opacity-50"]),
             },
           }
-          classes=[Root(cn(["p-0", "ml-4"]))]>
+          classes={MaterialUi.IconButton.Classes.make(
+            ~root=cn(["p-0", "ml-4"]),
+            (),
+          )}>
           <Svg
             placeholderViewBox="0 0 24 24"
             className={cn(["pointer-events-none", "opacity-75"])}

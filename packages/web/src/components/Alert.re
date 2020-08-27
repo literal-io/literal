@@ -43,7 +43,7 @@ let make = (~query, ~mountDelay=250, ~clearDelay=5000) => {
 
   switch (query_decode(query)) {
   | Belt.Result.Ok({alert}) =>
-    <MaterialUi.Slide direction=`Up in_={isVisible} timeout={`Int(200)}>
+    <MaterialUi.Slide direction=`Up _in={isVisible}>
       <div
         onClick=handleClick
         className={cn([

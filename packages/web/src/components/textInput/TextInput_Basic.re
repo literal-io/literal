@@ -8,7 +8,7 @@ let make =
       ~onChange: string => unit,
       ~onFocus=?,
       ~onBlur=?,
-      ~inputClasses=[],
+      ~inputClasses=MaterialUi.Input.Classes.make(),
       ~value,
       ~autoFocus=?,
       ~placeholder=?,
@@ -89,7 +89,7 @@ let make =
       ?onFocus
       ?onBlur
       onChange={ev => ev->ReactEvent.Form.target->(el => el##value)->onChange}
-      value={`String(value)}
+      value={MaterialUi.TextField.Value.string(value)}
       fullWidth=true
       multiline=true
       ref=?{
@@ -98,33 +98,47 @@ let make =
       _InputProps={Raw.merge(
         {
           "classes":
-            MaterialUi.Input.Classes.(
-              List.concat([
-                [
-                  Input(
-                    cn([
-                      "text-white",
-                      "font-serif",
-                      "text-lg",
-                      "leading-relaxed",
-                      "box-decoration-break-clone",
-                      "px-1",
-                      "textInputBasic_input",
-                    ]),
-                  ),
-                  Underline(styles##underline),
-                ],
-                inputClasses,
-              ])
-              ->to_obj
+            MaterialUi.Input.Classes.make(
+              ~input=
+                Cn.(
+                  fromList([
+                    "text-white",
+                    "font-serif",
+                    "text-lg",
+                    "leading-relaxed",
+                    "box-decoration-break-clone",
+                    "px-1",
+                    "textInputBasic_input",
+                    inputClasses##input->take,
+                  ])
+                ),
+              ~underline=
+                Cn.(
+                  fromList([styles##underline, inputClasses##underline->take])
+                ),
+              ~root=Cn.(inputClasses##root->take),
+              ~formControl=Cn.(inputClasses##formControl->take),
+              ~focused=Cn.(inputClasses##focused->take),
+              ~disabled=Cn.(inputClasses##disabled->take),
+              ~colorSecondary=Cn.(inputClasses##colorSecondary->take),
+              ~error=Cn.(inputClasses##error->take),
+              ~marginDense=Cn.(inputClasses##marginDense->take),
+              ~multiline=Cn.(inputClasses##multiline->take),
+              ~fullWidth=Cn.(inputClasses##fullWidth->take),
+              ~inputMarginDense=Cn.(inputClasses##inputMarginDense->take),
+              ~inputMultiline=Cn.(inputClasses##inputMultiline->take),
+              ~inputTypeSearch=Cn.(inputClasses##inputTypeSearch->take),
+              (),
             ),
         },
         inputProps,
       )}
       _InputLabelProps={
         "classes":
-          MaterialUi.InputLabel.Classes.(
-            [Root("text-white"), Focused("text-white")]->to_obj
+          MaterialUi.InputLabel.Classes.make(
+            ~root="text-white",
+            ~focused="text-white",
+            (),
           ),
       }
     />;

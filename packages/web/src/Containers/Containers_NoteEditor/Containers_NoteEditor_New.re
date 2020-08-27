@@ -231,7 +231,7 @@ module PhasePrompt = {
         ])}>
         <MaterialUi.IconButton
           size=`Medium
-          edge=`Start
+          edge=MaterialUi.IconButton.Edge.start
           onClick={_ => onCreateFromText()}
           _TouchRippleProps={
             "classes": {
@@ -239,7 +239,10 @@ module PhasePrompt = {
               "rippleVisible": cn(["opacity-75"]),
             },
           }
-          classes=[Root(cn(["mr-20", "p-8"]))]>
+          classes={MaterialUi.IconButton.Classes.make(
+            ~root=cn(["mr-20", "p-8"]),
+            (),
+          )}>
           <Svg
             placeholderViewBox="0 0 24 24"
             className={cn(["w-16", "h-16", "pointer-events-none"])}
@@ -248,7 +251,7 @@ module PhasePrompt = {
         </MaterialUi.IconButton>
         <MaterialUi.IconButton
           size=`Medium
-          edge=`Start
+          edge=MaterialUi.IconButton.Edge.start
           onClick={_ => onCreateFromFile()}
           _TouchRippleProps={
             "classes": {
@@ -256,7 +259,7 @@ module PhasePrompt = {
               "rippleVisible": cn(["opacity-75"]),
             },
           }
-          classes=[Root(cn(["p-8"]))]>
+          classes={MaterialUi.IconButton.Classes.make(~root=cn(["p-8"]), ())}>
           <Svg
             placeholderViewBox="0 0 24 24"
             className={cn(["w-16", "h-16", "pointer-events-none"])}

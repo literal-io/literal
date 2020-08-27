@@ -115,7 +115,11 @@ module ListHighlights = {
   module CacheWriteQuery = ApolloClient.WriteQuery(Query);
 
   let readCache = (~query, ~client, ()) => {
-    let readQueryOptions = ApolloHooks.toReadQueryOptions(query);
+    let readQueryOptions =
+      CacheReadQuery.{
+        query: ApolloClient.gql(. query##query),
+        variables: Js.Nullable.fromOption(Some(query##variables)),
+      };
     switch (CacheReadQuery.readQuery(client, readQueryOptions)) {
     | exception _ => None
     | cachedResponse =>

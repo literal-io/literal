@@ -40,8 +40,11 @@ module Loading = {
         className={cn(["fixed", "right-0", "bottom-0", "m-6", "z-10"])}
         disabled=true>
         <MaterialUi.CircularProgress
-          size={`Int(26)}
-          classes=[ColorPrimary(cn(["text-black"]))]
+          size={MaterialUi.CircularProgress.Size.int(26)}
+          classes={MaterialUi.CircularProgress.Classes.make(
+            ~colorPrimary=cn(["text-black"]),
+            (),
+          )}
         />
       </FloatingActionButton>
     </>;

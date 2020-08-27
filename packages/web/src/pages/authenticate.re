@@ -81,9 +81,9 @@ let default = () => {
         },
       }
       size=`Large
-      classes=[
-        Root(cn(["py-4"])),
-        Label(
+      classes={MaterialUi.Button.Classes.make(
+        ~root=cn(["py-4"]),
+        ~label=
           cn([
             "text-white",
             "font-sans",
@@ -92,9 +92,9 @@ let default = () => {
             "leading-none",
             "italic",
           ]),
-        ),
-        Outlined(cn(["border-white"])),
-      ]
+        ~outlined=cn(["border-white"]),
+        (),
+      )}
       variant=`Outlined>
       {React.string("Sign In With Google")}
     </MaterialUi.Button>

@@ -28,7 +28,7 @@ let handleUpdateCache = (~currentUser, ~mutationData) => {
             createdAt: highlight##createdAt,
             text: highlight##editorHighlightFragment##text,
             typename: highlight##__typename,
-            tags: None
+            tags: None,
           },
         )
       | None => None,
@@ -98,7 +98,7 @@ let make = (~profileFragment as profile, ~currentUser) => {
               "note": None,
               "highlightScreenshotId": None,
               "createdAt": baseTs |> Js.Date.toISOString |> Js.Option.some,
-              "owner": None
+              "owner": None,
             };
           });
       let variables =
@@ -117,16 +117,15 @@ let make = (~profileFragment as profile, ~currentUser) => {
 
       let _ =
         onboardingMutation(~variables, ())
-        |> Js.Promise.then_(
-             (
-               mutationResult:
-                 ApolloHooks.Mutation.result(OnboardingMutation.t),
-             ) => {
+        |> Js.Promise.then_(((mutationResult, _)) => {
              switch (mutationResult) {
+             | ApolloHooks.Mutation.Errors(errors) =>
+               errors->Belt.Array.forEach(error => {
+                 Error.(report(GraphQLError(error)))
+               })
              | Data(mutationData) =>
                let _ = handleUpdateCache(~currentUser, ~mutationData);
                ();
-             | Error(error) => Error.(report(ApolloError(error)))
              | NoData => Error.(report(ApolloEmptyData))
              };
              Js.Promise.resolve();

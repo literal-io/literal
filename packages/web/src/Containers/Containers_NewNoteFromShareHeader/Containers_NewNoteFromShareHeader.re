@@ -96,7 +96,7 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
   <Header className={cn(["py-2", "mx-6"])}>
     <MaterialUi.IconButton
       size=`Small
-      edge=`Start
+      edge=MaterialUi.IconButton.Edge.start
       onClick={_ => handleClose()}
       _TouchRippleProps={
         "classes": {
@@ -104,7 +104,7 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
           "rippleVisible": cn(["opacity-50"]),
         },
       }
-      classes=[Root(cn(["p-0"]))]>
+      classes={MaterialUi.IconButton.Classes.make(~root=cn(["p-0"]), ())}>
       <Svg
         placeholderViewBox="0 0 24 24"
         className={cn(["w-8", "h-8", "pointer-events-none"])}
