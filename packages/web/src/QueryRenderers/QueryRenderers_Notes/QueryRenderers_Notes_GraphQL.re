@@ -1,18 +1,13 @@
-module ListHighlights = {
+module ListAnnotations = {
   module Query = [%graphql
     {|
-      query listHighlights($owner: String!) {
-        getProfile(owner: $owner) {
-          id
-          isOnboarded
-          ...Containers_Onboarding_GraphQL.GetProfileFragment.OnboardingProfileFragment @bsField(name: "onboardingProfileFragment")
-        }
-        listHighlights(limit: 100) {
+      query listAnnotations($username: String!) {
+        listAnnotations(creatorUsername: $username, limit: 100) {
           items {
             id
-            createdAt
-            ...Containers_NoteEditor_Notes_GraphQL.GetHighlightFragment.EditorHighlightFragment @bsField(name: "editorHighlightFragment")
-            ...Containers_NoteHeader_GraphQL.GetHighlightFragment.HeaderHighlightFragment @bsField(name: "headerHighlightFragment")
+            created
+            ...Containers_NoteEditor_Notes_GraphQL.GetAnnotationFragment.EditorAnnotationFragment @bsField(name: "editorAnnotationFragment")
+            ...Containers_NoteHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
           }
         }
       }

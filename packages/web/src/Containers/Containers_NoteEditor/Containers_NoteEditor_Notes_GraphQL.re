@@ -1,16 +1,17 @@
-module GetHighlightFragment = [%graphql
+module GetAnnotationFragment = [%graphql
   {|
-    fragment editorHighlightFragment on Highlight {
+    fragment editorAnnotationFragment on Annotation {
       id
-      text
-      tags {
-        items {
+      body {
+        ... on TextualBody {
           id
-          createdAt
-          tag {
-            id
-            text
-          }
+          value
+          purpose
+        }
+      }
+      target {
+        ... on TextualTarget {
+          value
         }
       }
     }

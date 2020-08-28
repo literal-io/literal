@@ -736,6 +736,29 @@ type UpdateAnnotationOutput {
   deletedAnnotationPageIds: [String!]!
 }
 
+"""
+Perform a DynamoDB SET operation on the top-level key with the provided value.
+
+Several individual AnnotationSetOperations should be used for setting more than one key, i.e. each AnnotationSetOperation should contain only a single non-null key.
+"""
+input AnnotationSetOperationInput {
+  body: [AnnotationBodyInput!]
+  target: [AnnotationTargetInput!]
+  
+  # TODO: Other Annotation keys: context, type, audience...
+}
+
+input PatchAnnotationOperationInput {
+  set: AnnotationSetOperationInput
+  # TODO: Other DynamoDB update operations: remove, add, delete
+}
+
+input PatchAnnotationInput {
+  id: String!
+  creatorUsername: String!
+  operations: [PatchAnnotationOperationInput!]!
+}
+
 input DeleteAnnotationInput {
   creatorUsername: String!
   id: String!
@@ -754,6 +777,7 @@ type Mutation {
   createAnnotation(input: CreateAnnotationInput!): CreateAnnotationOutput
   updateAnnotation(input: UpdateAnnotationInput!): UpdateAnnotationOutput
   deleteAnnotation(input: DeleteAnnotationInput!): DeleteAnnotationOutput
+  patchAnnotation(input: PatchAnnotationInput!): PatchAnnotationOutput
 
   createAnnotationFromExternalTarget(
     input: CreateAnnotationFromExternalTargetInput!

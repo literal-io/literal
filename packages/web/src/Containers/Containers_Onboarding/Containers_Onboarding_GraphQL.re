@@ -1,8 +1,8 @@
-module GetProfileFragment = [%graphql
+module GetAgentFragment = [%graphql
   {|
-    fragment onboardingProfileFragment on Profile {
+    fragment onboardingAgentFragment on Agent {
       id
-      owner
+      username
     }
   |}
 ];

@@ -6,10 +6,10 @@ external castToListHighlights:
   "%identity";
 
 [@react.component]
-let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
-  let (deleteHighlightMutation, _s, _f) =
+let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
+  let (deleteAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(
-      Containers_NoteHeader_GraphQL.DeleteHighlightMutation.definition,
+      Containers_NoteHeader_GraphQL.DeleteAnnotationMutation.definition,
     );
 
   let handleCreate = () => {
@@ -17,28 +17,20 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
     ();
   };
 
-  let handleDelete = (~highlight, ~currentUser) => {
-    let deleteHighlightInput = {"id": highlight##id};
-    let deleteHighlightTagsInput =
-      highlight##tags
-      ->Belt.Option.flatMap(t => t##items)
-      ->Belt.Option.map(t =>
-          t
-          ->Belt.Array.keepMap(ht => ht)
-          ->Belt.Array.map(ht => {"id": ht##id})
-        )
-      ->Belt.Option.getWithDefault([||]);
-
+  let handleDelete = (~annotation, ~currentUser) => {
     let variables =
-      DeleteHighlightMutation.makeVariables(
-        ~deleteHighlightInput,
-        ~deleteHighlightTagsInput,
+      DeleteAnnotationMutation.makeVariables(
+        ~input={
+          "creatorUsername": currentUser.username,
+          "id": annotation##id
+        },
         (),
       );
 
     let _ =
       deleteHighlightMutation(~variables, ())
       |> Js.Promise.then_(_ => {
+            /** FIXME: restore cache update
            let cacheQuery =
              QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
                ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
@@ -92,6 +84,7 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
                  };
                ();
              };
+             **/
            Js.Promise.resolve();
          });
     ();
@@ -133,9 +126,9 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
           size=`Small
           edge=MaterialUi.IconButton.Edge._end
           onClick={_ =>
-            switch (highlight, currentUser) {
-            | (Some(highlight), Some(currentUser)) =>
-              handleDelete(~highlight, ~currentUser)
+            switch (annotation, currentUser) {
+            | (Some(annotation), Some(currentUser)) =>
+              handleDelete(~annotation, ~currentUser)
             | _ => ()
             }
           }
