@@ -1,6 +1,6 @@
 ## TransactWriteItems to commit all updates
 
-$util.qr($context.stash.input.put("modified", $util.defaultIfNull($ctx.stash.input.motivated, $util.time.nowISO8601())))
+$util.qr($context.stash.input.put("modified", $util.defaultIfNull($ctx.stash.input.modified, $util.time.nowISO8601())))
 $util.qr($context.stash.input.put("__typename", "Annotation"))
 
 #set( $updateAnnotationOperation = {

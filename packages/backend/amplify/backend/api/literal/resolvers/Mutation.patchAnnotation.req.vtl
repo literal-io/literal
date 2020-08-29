@@ -51,7 +51,7 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
   }
 } )
 #set( $setUpdateExpression = "SET " )
-#foreach( $operation in $uti.defaultIfNull($ctx.stash.input.operations, []) )
+#foreach( $operation in $util.defaultIfNull($ctx.stash.input.operations, []) )
   #if( !$util.isNull($operation.set) )
     #if( !$util.isNull($operation.set.body) )
 
@@ -368,22 +368,22 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
       #end
 
       ## update set expression, names, values
-      #set( $setUpdateExpression =  "${$setUpdateExpression} #body = :body" ) 
+      #set( $setUpdateExpression =  "${setUpdateExpression} #body = :body" ) 
       $util.qr($annotationUpdateOperation.update.expressionNames.put("#body", "body"))
       $util.qr($annotationUpdateOperation.update.expressionValues.put(":body", $util.dynamodb.toDynamoDB($updateValue)))
       $util.qr($ctx.stash.put("newBody", $updateValue))
 
     #elseif ( !$util.isNull($operation.set.target) )
 
-      ## parse the body target
+      ## parse the target
       #set( $updateValue = [] )
-      #foreach( $annotationTargetInput in $util.defaultIfNull($operation.set.target) )
+      #foreach( $annotationTargetInput in $util.defaultIfNull($operation.set.target, []) )
         
         #if( !$util.isNull($annotationTargetInput.externalTarget) )
-          $util.qr($annotationTargetInput.externalTarget.put("__typename", "ExternalTarget")
+          $util.qr($annotationTargetInput.externalTarget.put("__typename", "ExternalTarget"))
           #set( $annotationTarget = $annotationTargetInput.externalTarget )
         #elseif( !$util.isNull($annotationTargetInput.textualTarget) )
-          $util.qr($annotationTargetInput.externalTarget.put("__typename", "TextualTarget")
+          $util.qr($annotationTargetInput.externalTarget.put("__typename", "TextualTarget"))
           #set( $annotationTarget = $annotationTargetInput.textualTarget )
         #else
           $util.error("At least one field of AnnotationTargetInput must be non-null.", "ValidationError")
@@ -393,17 +393,22 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
       #end
 
       ## update set expression, names, values
-      #set( $setUpdateExpression =  "${$setUpdateExpression} #target = :target" ) 
-      $util.qr($annotationUpdateOperation.update.expressionNames.put("#target", "body"))
+      #set( $setUpdateExpression =  "${setUpdateExpression} #target = :target" ) 
+      $util.qr($annotationUpdateOperation.update.expressionNames.put("#target", "target"))
       $util.qr($annotationUpdateOperation.update.expressionValues.put(":target", $util.dynamodb.toDynamoDB($updateValue)))
-
+      $util.qr($ctx.stash.put("newTarget", $updateValue))
     #else
       $util.error("At least one field of AnnotationSetOperationInput must be non-null", "ValidationError")
     #end
 
     #if( $foreach.hasNext )
-      $set( $setUpdateExpression = "${setUpdateExpression},")
+      #set( $setUpdateExpression = "${setUpdateExpression},")
     #else
+      ## set modified timestamp
+      #set( $setUpdateExpression = "${setUpdateExpression}, #modified = :modified")
+      $util.qr($annotationUpdateOperation.update.expressionNames.put("#modified", "modified"))
+      $util.qr($annotationUpdateOperation.update.expressionValues.put(":modified", $util.dynamodb.toDynamoDB($util.time.nowISO8601())))
+
       $util.qr($annotationUpdateOperation.update.put("expression", $setUpdateExpression))
     #end
   #else
@@ -413,5 +418,7 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
 
 $util.qr($ctx.stash.put("transactWriteItems", []))
 $util.qr($ctx.stash.transactWriteItems.add($annotationUpdateOperation))
+
+#set( $ctx.stash.output = {} )
 
 {}

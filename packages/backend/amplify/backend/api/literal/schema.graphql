@@ -777,7 +777,7 @@ type Mutation {
   createAnnotation(input: CreateAnnotationInput!): CreateAnnotationOutput
   updateAnnotation(input: UpdateAnnotationInput!): UpdateAnnotationOutput
   deleteAnnotation(input: DeleteAnnotationInput!): DeleteAnnotationOutput
-  patchAnnotation(input: PatchAnnotationInput!): PatchAnnotationOutput
+  patchAnnotation(input: PatchAnnotationInput!): UpdateAnnotationOutput
 
   createAnnotationFromExternalTarget(
     input: CreateAnnotationFromExternalTargetInput!
