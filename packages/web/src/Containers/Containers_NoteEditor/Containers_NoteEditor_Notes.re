@@ -2,20 +2,19 @@ open Containers_NoteEditor_Notes_GraphQL;
 open Containers_NoteEditor_GraphQL_Util;
 
 let handleSave =
-  Lodash.debounce3(
+  Lodash.debounce2(
     (.
       variables,
-      updateCache,
-      updateHighlightMutation:
-        ApolloHooks.Mutation.mutation(UpdateHighlightMutation.t),
+      /**updateCache,**/ updateAnnotationMutation:
+        ApolloHooks.Mutation.mutation(PatchAnnotationMutation.t),
     ) => {
-      let _ = updateHighlightMutation(~variables, ());
-      let _ = updateCache();
-      ();
+      let _ = updateAnnotationMutation(~variables, ());
+      /**let _ = updateCache();**/ ();
     },
     500,
   );
 
+/**
 let handleUpdateCache =
     (
       ~highlight,
@@ -164,95 +163,107 @@ let handleUpdateCache =
   ();
 };
 
+**/
+
 [@react.component]
-let make = (~highlightFragment as highlight, ~isActive, ~currentUser) => {
-  let (updateHighlightMutation, _s, _f) =
-    ApolloHooks.useMutation(UpdateHighlightMutation.definition);
+let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
+  let (updateAnnotationMutation, _s, _f) =
+    ApolloHooks.useMutation(PatchAnnotationMutation.definition);
 
   let handleChange = (editorValue: Containers_NoteEditor_Base.value) => {
-    let highlightTags =
-      highlight##tags
-      ->Belt.Option.flatMap(t => t##items)
-      ->Belt.Option.map(t => t->Belt.Array.keepMap(t => t))
-      ->Belt.Option.getWithDefault([||]);
-
-    let (createTagsInput, createHighlightTagsInput) = {
-      let newTags =
-        editorValue.tags
-        ->Belt.Array.keep(tag => {
-            let alreadyExists =
-              Belt.Array.some(highlightTags, highlightTag =>
-                highlightTag##tag##id === tag##id
-              );
-            !alreadyExists;
+    let updateTargetInput = {
+      let idx =
+        annotation##target
+        ->Belt.Array.getIndexBy(target =>
+            target##__typename === "TextualTarget"
+          );
+      let updatedTextualTarget =
+        idx
+        ->Belt.Option.flatMap(idx => annotation##target->Belt.Array.get(idx))
+        ->Belt.Option.map(target => {
+            let copy = Js.Obj.assign(Js.Obj.empty(), target);
+            Js.Obj.assign(copy, {"value": editorValue.text});
+          })
+        ->Belt.Option.getWithDefault({
+            "__typename": "TextualTarget",
+            "id": None,
+            "format": Some(`TEXT_PLAIN),
+            "language": `Some(`EN_US),
+            "processingLanguage": Some(`EN_US),
+            "textDirection": Some(`LTR),
+            "accessibility": None,
+            "rights": None,
+            "value": editorValue.text,
+            "type_": Some(`TEXT)
           });
-      let createTagsInput =
-        newTags->Belt.Array.keepMap(tag =>
-          shouldCreateTag(tag)
-            ? Some({"id": tag##id, "text": tag##text, "createdAt": None})
-            : None
-        );
 
-      let createHighlightTagsInput =
-        newTags->Belt.Array.map(tag =>
-          {
-            "id":
-              makeHighlightTagId(~highlightId=highlight##id, ~tagId=tag##id)
-              ->Js.Option.some,
-            "highlightId": highlight##id,
-            "tagId": tag##id,
-            "createdAt": None,
-          }
-        );
-      (createTagsInput, createHighlightTagsInput);
+      let updatedTarget = Belt.Array.copy(annotation##target);
+      let _ =
+        switch (idx) {
+        | Some(idx) =>
+          let _ = updatedTarget->Belt.Array.set(idx, updatedTextualTarget);
+          ();
+        | None =>
+          let _ = updatedTarget->Js.Array2.push(updatedTextualTarget);
+          ();
+        };
+
+      updatedTarget->Belt.Array.map(
+        Lib_GraphQL.Annotation.targetInputFromTarget,
+      );
+    };
+    let updateBodyInput = {
+      editorValue.tags
+      ->Belt.Array.map(tag => {
+          Lib_GraphQL.AnnotationCollection.makeId(
+            ~creatorUsername=
+              AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+            ~label=tag##text,
+          )
+          |> Js.Promise.then_(id =>
+               Js.Promise.resolve({
+                 "textualTarget":
+                   Some({
+                     "id": Some(id),
+                     "value": tag##text,
+                     "purpose": Some([|`TAGGING|]),
+                     "rights": None,
+                     "accessibility": None,
+                     "format": Some(`TEXT_PLAIN),
+                     "textDirection": Some(`LTR),
+                     "language": Some(`EN_US),
+                     "processingLanguage": Some(`EN_US),
+                   }),
+                 "externalTarget": None,
+               })
+             )
+        });
     };
 
-    let deleteHighlightTagsInput =
-      highlightTags
-      ->Belt.Array.keep(highlightTag => {
-          let retained =
-            Belt.Array.some(editorValue.tags, tag =>
-              highlightTag##tag##id === tag##id
-            );
-          !retained;
-        })
-      ->Belt.Array.map(highlightTag => {"id": highlightTag##id});
-
-    let variables =
-      UpdateHighlightMutation.makeVariables(
-        ~input={
-          "updateHighlight":
-            Some({
-              "id": highlight##id,
-              "text": editorValue.text->Js.Option.some,
-              "createdAt": None,
-              "note": None,
-              "highlightScreenshotId": None,
-              "owner": None,
-            }),
-          "createHighlightTags":
-            Js.Array2.length(createHighlightTagsInput) > 0
-              ? Some(createHighlightTagsInput) : None,
-          "createTags":
-            Js.Array2.length(createTagsInput) > 0
-              ? Some(createTagsInput) : None,
-          "deleteHighlightTags":
-            Js.Array2.length(deleteHighlightTagsInput) > 0
-              ? Some(deleteHighlightTagsInput) : None,
-        },
-        (),
-      );
-    let _ =
-      handleSave(.
-        variables,
-        handleUpdateCache(
-          ~highlight,
-          ~editorValue,
-          ~createHighlightTagsInput,
-          ~currentUser,
-        ),
-        updateHighlightMutation,
-      );
+    Js.Promise.all(updateBodyInput)
+    |> Js.Promise.then_(updateBodyInput => {
+         let variables =
+           PatchAnnotationMutation.makeVariables(
+             ~input={
+               "id": annotation##id,
+               "creatorUsername":
+                 AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+               "operations": [|
+                 {
+                   "set":
+                     Some({"body": Some(updateBodyInput), "target": None}),
+                 },
+                 {
+                   "set":
+                     Some({"body": None, "target": Some(updateTargetInput)}),
+                 },
+               |],
+             },
+             (),
+           );
+         let _ = handleSave(. variables, patchAnnotationMutation);
+         ();
+       });
     ();
   };
 

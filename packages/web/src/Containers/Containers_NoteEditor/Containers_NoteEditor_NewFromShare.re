@@ -28,6 +28,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
             "__typename": "TextualTarget",
             "id": None,
             "format": Some(`TEXT_PLAIN),
+            "language": `Some(`EN_US),
             "processingLanguage": Some(`EN_US),
             "textDirection": Some(`LTR),
             "accessibility": None,
