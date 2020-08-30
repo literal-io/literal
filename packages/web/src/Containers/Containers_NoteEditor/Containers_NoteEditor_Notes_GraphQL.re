@@ -18,23 +18,11 @@ module GetAnnotationFragment = [%graphql
   |}
 ];
 
-module UpdateHighlightMutation = [%graphql
+module PatchAnnotationMutation = [%graphql
   {|
-  mutation UpdateHighlightAndTags($input: UpdateHighlightAndTagsInput!) {
-    updateHighlightAndTags(input: $input) {
-      updateHighlight {
-        id
-        text
-      }
-      createTags {
-        id
-        createdAt
-      }
-      createHighlightTags {
-        id
-        createdAt
-      }
-      deleteHighlightTags {
+  mutation PatchAnnotation($input: PatchAnnotationInput!) {
+    patchAnnotation(input: $input) {
+      annotation {
         id
       }
     }

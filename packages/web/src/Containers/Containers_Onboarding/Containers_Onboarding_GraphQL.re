@@ -10,35 +10,36 @@ module GetAgentFragment = [%graphql
 module OnboardingMutation = [%graphql
   {|
     mutation onboarding(
-      $updateProfileInput: UpdateProfileInput!
-      $createHighlightInput1: CreateHighlightInput!
-      $createHighlightInput2: CreateHighlightInput!
-      $createHighlightInput3: CreateHighlightInput!
+      $createAnnotationInput1: CreateAnnotationInput!
+      $createAnnotationInput2: CreateAnnotationInput!
+      $createAnnotationInput3: CreateAnnotationInput!
     ) {
-      updateProfile(input: $updateProfileInput) {
-        id
-        isOnboarded
+      createAnnotation1: createAnnotation(input: $createAnnotationInput1) {
+        annotation {
+          id
+          created
+          __typename
+          ...Containers_NoteEditor_Notes_GraphQL.GetAnnotationFragment.EditorAnnotationFragment @bsField(name: "editorAnnotationFragment")
+          ...Containers_NoteHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
+        }
       }
-      createHighlight1: createHighlight(input: $createHighlightInput1) {
-        id
-        createdAt
-        __typename
-        ...Containers_NoteEditor_Notes_GraphQL.GetHighlightFragment.EditorHighlightFragment @bsField(name: "editorHighlightFragment")
-        ...Containers_NoteHeader_GraphQL.GetHighlightFragment.HeaderHighlightFragment @bsField(name: "headerHighlightFragment")
+      createAnnotation2: createAnnotation(input: $createAnnotationInput2) {
+        annotation {
+          id
+          created
+          __typename
+          ...Containers_NoteEditor_Notes_GraphQL.GetAnnotationFragment.EditorAnnotationFragment @bsField(name: "editorAnnotationFragment")
+          ...Containers_NoteHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
+        }
       }
-      createHighlight2: createHighlight(input: $createHighlightInput2) {
-        id
-        createdAt
-        __typename
-        ...Containers_NoteEditor_Notes_GraphQL.GetHighlightFragment.EditorHighlightFragment @bsField(name: "editorHighlightFragment")
-        ...Containers_NoteHeader_GraphQL.GetHighlightFragment.HeaderHighlightFragment @bsField(name: "headerHighlightFragment")
-      }
-      createHighlight3: createHighlight(input: $createHighlightInput3) {
-        id
-        createdAt
-        __typename
-        ...Containers_NoteEditor_Notes_GraphQL.GetHighlightFragment.EditorHighlightFragment @bsField(name: "editorHighlightFragment")
-        ...Containers_NoteHeader_GraphQL.GetHighlightFragment.HeaderHighlightFragment @bsField(name: "headerHighlightFragment")
+      createAnnotation3: createAnnotation(input: $createAnnotationInput3) {
+        annotation {
+          id
+          created
+          __typename
+          ...Containers_NoteEditor_Notes_GraphQL.GetAnnotationFragment.EditorAnnotationFragment @bsField(name: "editorAnnotationFragment")
+          ...Containers_NoteHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
+        }
       }
     }
   |}

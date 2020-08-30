@@ -1,9 +1,11 @@
 open Containers_NoteHeader_GraphQL;
 open Styles;
 
+/**
 external castToListHighlights:
   Js.Json.t => QueryRenderers_Notes_GraphQL.ListHighlights.Query.t =
   "%identity";
+**/
 
 [@react.component]
 let make = (~annotationFragment as annotation=?, ~currentUser=?) => {

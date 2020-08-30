@@ -12,13 +12,11 @@ type tagState = {
     }),
   partial: string,
   filterResults:
-    option(
-      array({
-        .
-        "text": string,
-        "id": string,
-      }),
-    ),
+    array({
+      .
+      "text": string,
+      "id": string,
+    }),
 };
 
 type value = {
@@ -64,12 +62,12 @@ let make =
             )
             ->Belt.Array.map(t => t##tag);
 
-          {partial: "", commits, filterResults: None};
+          {partial: "", commits, filterResults: [||]};
         })
       ->Belt.Option.getWithDefault({
           partial: "",
           commits: [||],
-          filterResults: None,
+          filterResults: [||],
         })
     );
   let _ =
@@ -90,9 +88,7 @@ let make =
             switch (
               Belt.Array.getBy(tagsState.commits, tag => tag##text === text),
               tagsState.filterResults
-              ->Belt.Option.flatMap(r =>
-                  r->Belt.Array.getBy(tag => tag##text === text)
-                ),
+              ->Belt.Array.getBy(tag => tag##text === text),
             ) {
             | (Some(tag), _) => tag
             | (_, Some(tag)) => tag

@@ -239,7 +239,6 @@ let createAnnotation = (~input, ~text) => {
     Lib_Constants.Env.appOrigin ++ "/creators/" ++ input.creatorUsername ++ "/annotations/" ++ digest;
   };
     
-  // FIXME: IDs should be IRIs
   let mutation = 
     CreateAnnotationMutation.make(
       ~input={

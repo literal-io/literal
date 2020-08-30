@@ -5,15 +5,26 @@ open Styles;
 let make = (~text, ~onTagResults, ~onTagClicked) => {
   let (_s, query) =
     ApolloHooks.useQuery(
-      ~variables=FilterTags.makeVariables(~input=text, ()),
-      FilterTags.definition,
+      ~variables=FilterAnnotationCollections.makeVariables(~input=text, ()),
+      FilterAnnotationCollections.definition,
     );
 
   let results =
     query.data
-    ->Belt.Option.flatMap(d => d##listTags)
+    ->Belt.Option.flatMap(d => d##listAnnotationCollections)
     ->Belt.Option.flatMap(d => d##items)
-    ->Belt.Option.map(d => d->Belt.Array.keepMap(d => d));
+    ->Belt.Option.map(annotationCollections =>
+        annotationCollections->Belt.Array.keepMap(annotationCollection =>
+          annotationCollection->Belt.Option.flatMap(annotationCollection => {
+            annotationCollection##label
+            ->Belt.Option.flatMap(labels => labels->Belt.Array.get(0))
+            ->Belt.Option.map(label =>
+                {"text": label, "id": annotationCollection##id}
+              )
+          })
+        )
+      )
+    ->Belt.Option.getWithDefault([||]);
 
   let _ =
     React.useEffect1(
@@ -26,31 +37,27 @@ let make = (~text, ~onTagResults, ~onTagClicked) => {
 
   let tags =
     results
-    ->Belt.Option.map(d =>
-        d
-        ->Belt.Array.map(tag =>
-            <span
-              onMouseDown={_ev => {
-                let _ = onTagClicked(tag);
-                ();
-              }}
-              key=tag##text
-              className={cn([
-                "z-10",
-                "font-sans",
-                "text-lightSecondary",
-                "italic",
-                "underline",
-                "font-medium",
-                "pa-2",
-                "mr-3",
-              ])}>
-              {React.string("#" ++ tag##text)}
-            </span>
-          )
-        ->React.array
-      )
-    ->Belt.Option.getWithDefault(React.null);
+    ->Belt.Array.map(tag => {
+        <span
+          onMouseDown={_ev => {
+            let _ = onTagClicked(tag);
+            ();
+          }}
+          key=tag##id
+          className={cn([
+            "z-10",
+            "font-sans",
+            "text-lightSecondary",
+            "italic",
+            "underline",
+            "font-medium",
+            "pa-2",
+            "mr-3",
+          ])}>
+          {React.string("#" ++ tag##text)}
+        </span>
+      })
+    ->React.array;
 
   <div className={cn(["flex", "flex-row"])}> tags </div>;
 };

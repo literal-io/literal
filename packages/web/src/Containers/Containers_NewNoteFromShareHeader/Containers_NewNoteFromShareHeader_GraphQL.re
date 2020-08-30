@@ -1,16 +1,18 @@
-module GetHighlightFragment = [%graphql
+module GetAnnotationFragment = [%graphql
   {|
-    fragment headerHighlightFragment on Highlight {
+    fragment headerAnnotationFragment on Annotation {
       id
     }
   |}
 ];
 
-module DeleteHighlightMutation = [%graphql
+module DeleteAnnotationMutation = [%graphql
   {|
-    mutation deleteHighlight($input: DeleteHighlightInput!) {
-      deleteHighlight(input: $input) {
-        id
+    mutation deleteAnnotation($input: DeleteAnnotationInput!) {
+      deleteAnnotation(input: $input) {
+        annotation {
+          id
+        }
       }
     }
   |}

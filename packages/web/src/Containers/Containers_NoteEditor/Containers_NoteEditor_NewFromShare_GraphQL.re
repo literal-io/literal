@@ -1,43 +1,61 @@
-module UpdateHighlightMutation = [%graphql
+module PatchAnnotationMutation = [%graphql
   {|
-    mutation UpdateHighlight(
-      $input: UpdateHighlightAndTagsInput!
+    mutation PatchAnnotation(
+      $input: PatchAnnotationInput!
     ) {
-      updateHighlightAndTags(input: $input) {
-        updateHighlight {
+      patchAnnotation(input: $input) {
+        annotation {
           id
-          text
-        }
-        createTags {
-          id
-          createdAt
-        }
-        createHighlightTags {
-          id
-          createdAt
-        }
-        createHighlightTags {
-          id
-          createdAt
+          ...Containers_NoteEditor_Notes_GraphQL.GetAnnotationFragment.EditorAnnotationFragment @bsField(name: "editorAnnotationFragment")
+          ...Containers_NoteHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
         }
       }
     }
   |}
 ];
 
-module GetHighlightFragment = [%graphql
+module GetAnnotationFragment = [%graphql
   {|
-    fragment editorHighlightFragment on Highlight {
+    fragment editorAnnotationFragment on Annotation {
       id
-      text
-      tags {
-        items {
+      target {
+        ... on TextualTarget {
+          value
+          __typename
+
           id
-          createdAt
-          tag {
-            id
-            text
-          }
+          format
+          language
+          processingLanguage
+          textDirection
+          accessibility
+          rights
+        }
+        ... on ExternalTarget {
+          __typename
+
+          id
+          format
+          language
+          processingLanguage
+          textDirection
+          type_: type
+          accessibility
+          rights
+        }
+      }
+      body {
+        ... on TextualBody {
+          id
+          value
+          purpose
+
+          format
+          language
+          processingLanguage
+          textDirection
+          accessibility
+          rights
         }
       }
     }

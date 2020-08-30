@@ -1,12 +1,12 @@
 module GetNoteQuery = [%graphql
   {|
-    query GetHighlight($id: ID!) {
-      getHighlight(id: $id) {
+    query GetHighlight($creatorUsername: String!, $id: String!) {
+      getAnnotation(creatorUsername: $creatorUsername, id: $id) {
         id
-        text
-        note
-        ...Containers_NewNoteFromShareHeader_GraphQL.GetHighlightFragment.HeaderHighlightFragment @bsField(name: "headerHighlightFragment")
-        ...Containers_NoteEditor_NewFromShare_GraphQL.GetHighlightFragment.EditorHighlightFragment @bsField(name: "editorHighlightFragment")
+        created
+        __typename
+        ...Containers_NoteEditor_Notes_GraphQL.GetAnnotationFragment.EditorAnnotationFragment @bsField(name: "editorAnnotationFragment")
+        ...Containers_NoteHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
       }
     }
   |}

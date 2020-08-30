@@ -6,7 +6,8 @@ let onboardingNotes = [|
   "Annotations are organized primarily based on tags and bi-directional links between tags in order to retain context and build connections.\n\nIf you have any questions, reach out to hello@literal.io.\n\nOnce you've created some annotations, feel free to delete these introductory example annotations.",
 |];
 
-let handleUpdateCache = (~currentUser, ~mutationData) => {
+let handleUpdateCache = (~currentUser, ~mutationData) =>
+  /** FIXME
   let cacheQuery =
     QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
       ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
@@ -75,8 +76,10 @@ let handleUpdateCache = (~currentUser, ~mutationData) => {
         };
       ();
     };
-  ();
-};
+  **/
+  {
+    ();
+  };
 
 [@react.component]
 let make = (~profileFragment as profile, ~currentUser) => {
@@ -87,36 +90,66 @@ let make = (~profileFragment as profile, ~currentUser) => {
     React.useEffect0(() => {
       /** enforce desired ordering of onboarding highlights via createdAt timestamps */
       let baseTs = Js.Date.make();
-      let createHighlightInputs =
+      let createAnnotationInputs =
         onboardingNotes
         ->Belt.Array.reverse
         ->Belt.Array.mapWithIndex((idx, text) => {
             let _ = baseTs->Js.Date.setMilliseconds(float_of_int(idx));
-            {
-              "id": Uuid.makeV4(),
-              "text": text,
-              "note": None,
-              "highlightScreenshotId": None,
-              "createdAt": baseTs |> Js.Date.toISOString |> Js.Option.some,
-              "owner": None,
-            };
+            let ts = baseTs->Js.Date.toISOString;
+            Lib_GraphQL.Annotation.makeId(
+              ~creatorUsername=
+                AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+              ~textualTargetValue=text,
+            )
+            |> Js.Promise.then_(id =>
+                 Js.Promise.resolve({
+                   "context": [|Lib_GraphQL.Annotation.defaultContext|],
+                   "type": [|`ANNOTATION|],
+                   "id": id,
+                   "body": None,
+                   "created": Some(ts->Js.Json.string),
+                   "modified": Some(ts->Js.Json.string),
+                   "generated": Some(ts->Js.Json.string),
+                   "audience": None,
+                   "canonical": None,
+                   "stylesheet": None,
+                   "via": None,
+                   "motivation": Some([|`HIGHLIGHTING|]),
+                   "creatorUsername":
+                     AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                   "annotationGeneratorId": None,
+                   "target": [|
+                     {
+                       "externalTarget": None,
+                       "textualTarget":
+                         Some({
+                           "format": Some(`TEXT_PLAIN),
+                           "language": Some(`EN_US),
+                           "processingLanguage": Some(`EN_US),
+                           "textDirection": Some(`LTR),
+                           "accessibility": None,
+                           "rights": None,
+                           "value": text,
+                           "id": None,
+                         }),
+                     },
+                   |],
+                 })
+               );
           });
-      let variables =
-        OnboardingMutation.makeVariables(
-          ~createHighlightInput1=createHighlightInputs[0],
-          ~createHighlightInput2=createHighlightInputs[1],
-          ~createHighlightInput3=createHighlightInputs[2],
-          ~updateProfileInput={
-            "id": profile##id,
-            "owner": profile##owner,
-            "createdAt": None,
-            "isOnboarded": Some(true),
-          },
-          (),
-        );
 
       let _ =
-        onboardingMutation(~variables, ())
+        Js.Promise.all(createAnnotationInputs)
+        |> Js.Promise.then_(inputs => {
+             let variables =
+               OnboardingMutation.makeVariables(
+                 ~createAnnotationInput1=inputs[0],
+                 ~createAnnotationInput2=inputs[1],
+                 ~createAnnotationInput3=inputs[2],
+                 (),
+               );
+             onboardingMutation(~variables, ());
+           })
         |> Js.Promise.then_(((mutationResult, _)) => {
              switch (mutationResult) {
              | ApolloHooks.Mutation.Errors(errors) =>
