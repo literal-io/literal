@@ -23,16 +23,17 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
     let variables =
       DeleteAnnotationMutation.makeVariables(
         ~input={
-          "creatorUsername": currentUser.username,
-          "id": annotation##id
+          "creatorUsername":
+            AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+          "id": annotation##id,
         },
         (),
       );
 
     let _ =
-      deleteHighlightMutation(~variables, ())
+      deleteAnnotationMutation(~variables, ())
       |> Js.Promise.then_(_ => {
-            /** FIXME: restore cache update
+           /** FIXME: restore cache update
            let cacheQuery =
              QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
                ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
@@ -87,7 +88,7 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
                ();
              };
              **/
-           Js.Promise.resolve();
+           Js.Promise.resolve()
          });
     ();
   };
@@ -159,7 +160,7 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
           size=`Small
           edge=MaterialUi.IconButton.Edge._end
           onClick={_ =>
-            switch (highlight, currentUser) {
+            switch (annotation, currentUser) {
             | (Some(_), Some(_)) => handleCreate()
             | _ => ()
             }

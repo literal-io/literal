@@ -118,7 +118,9 @@ module PhaseTextInput = {
   [@react.component]
   let make = (~currentUser) => {
     let (editorValue, setEditorValue) =
-      React.useState(() => Containers_NoteEditor_Base.{text: "", tags: [||]});
+      React.useState(() =>
+        Containers_NoteEditor_Base_Types.{text: "", tags: [||]}
+      );
     let (createAnnotationMutation, _s, _f) =
       ApolloHooks.useMutation(CreateAnnotationMutation.definition);
 
@@ -132,18 +134,24 @@ module PhaseTextInput = {
 
       let bodyPromise =
         editorValue.tags
-        ->Belt.Array.map(tag =>
-            Lib_GraphQL.AnnotationCollection.makeId(
-              ~creatorUsername=
-                AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-              ~label=tag##text,
-            )
+        ->Belt.Array.map(tag => {
+            let id =
+              switch (tag.id) {
+              | Some(id) => Js.Promise.resolve(id)
+              | None =>
+                Lib_GraphQL.AnnotationCollection.makeId(
+                  ~creatorUsername=
+                    AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                  ~label=tag.text,
+                )
+              };
+            id
             |> Js.Promise.then_(id =>
                  Js.Promise.resolve({
                    "textualBody":
                      Some({
                        "id": Some(id),
-                       "value": tag##text,
+                       "value": tag.text,
                        "purpose": Some([|`TAGGING|]),
                        "rights": None,
                        "accessibility": None,
@@ -157,8 +165,8 @@ module PhaseTextInput = {
                    "choiceBody": None,
                    "specificBody": None,
                  })
-               )
-          )
+               );
+          })
         ->Js.Promise.all;
 
       let _ =

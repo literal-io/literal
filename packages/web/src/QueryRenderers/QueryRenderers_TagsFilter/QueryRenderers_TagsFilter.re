@@ -19,7 +19,10 @@ let make = (~text, ~onTagResults, ~onTagClicked) => {
             annotationCollection##label
             ->Belt.Option.flatMap(labels => labels->Belt.Array.get(0))
             ->Belt.Option.map(label =>
-                {"text": label, "id": annotationCollection##id}
+                Containers_NoteEditor_Base_Types.{
+                  text: label,
+                  id: Some(annotationCollection##id),
+                }
               )
           })
         )
@@ -43,7 +46,7 @@ let make = (~text, ~onTagResults, ~onTagClicked) => {
             let _ = onTagClicked(tag);
             ();
           }}
-          key=tag##id
+          key={tag.id->Belt.Option.getWithDefault(tag.text)}
           className={cn([
             "z-10",
             "font-sans",
@@ -54,7 +57,7 @@ let make = (~text, ~onTagResults, ~onTagClicked) => {
             "pa-2",
             "mr-3",
           ])}>
-          {React.string("#" ++ tag##text)}
+          {React.string("#" ++ tag.text)}
         </span>
       })
     ->React.array;

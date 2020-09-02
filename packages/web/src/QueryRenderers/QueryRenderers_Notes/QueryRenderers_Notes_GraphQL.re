@@ -1,8 +1,8 @@
 module ListAnnotations = {
   module Query = [%graphql
     {|
-      query listAnnotations($username: String!) {
-        listAnnotations(creatorUsername: $username, limit: 100) {
+      query listAnnotations($creatorUsername: String!) {
+        listAnnotations(creatorUsername: $creatorUsername, limit: 100) {
           items {
             id
             created
@@ -18,6 +18,7 @@ module ListAnnotations = {
    * Cache representation is of different structure than what
    * graphql_ppx generates.
    */
+  /** TODO: Fix cache
   module Raw = {
     [@decco]
     type connection('a) = {
@@ -139,4 +140,5 @@ module ListAnnotations = {
       (),
     );
   };
+  **/
 };

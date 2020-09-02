@@ -49,6 +49,7 @@ module GetAnnotationFragment = [%graphql
           id
           value
           purpose
+          __typename
 
           format
           language

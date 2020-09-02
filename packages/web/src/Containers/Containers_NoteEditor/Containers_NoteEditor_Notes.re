@@ -1,5 +1,4 @@
 open Containers_NoteEditor_Notes_GraphQL;
-open Containers_NoteEditor_GraphQL_Util;
 
 let handleSave =
   Lodash.debounce2(
@@ -167,10 +166,10 @@ let handleUpdateCache =
 
 [@react.component]
 let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
-  let (updateAnnotationMutation, _s, _f) =
+  let (patchAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(PatchAnnotationMutation.definition);
 
-  let handleChange = (editorValue: Containers_NoteEditor_Base.value) => {
+  let handleChange = (editorValue: Containers_NoteEditor_Base_Types.value) => {
     let updateTargetInput = {
       let idx =
         annotation##target
@@ -188,13 +187,13 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
             "__typename": "TextualTarget",
             "id": None,
             "format": Some(`TEXT_PLAIN),
-            "language": `Some(`EN_US),
+            "language": Some(`EN_US),
             "processingLanguage": Some(`EN_US),
             "textDirection": Some(`LTR),
             "accessibility": None,
             "rights": None,
             "value": editorValue.text,
-            "type_": Some(`TEXT)
+            "type_": Some(`TEXT),
           });
 
       let updatedTarget = Belt.Array.copy(annotation##target);
@@ -222,7 +221,7 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
           )
           |> Js.Promise.then_(id =>
                Js.Promise.resolve({
-                 "textualTarget":
+                 "textualBody":
                    Some({
                      "id": Some(id),
                      "value": tag##text,
@@ -233,37 +232,44 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
                      "textDirection": Some(`LTR),
                      "language": Some(`EN_US),
                      "processingLanguage": Some(`EN_US),
+                     "type": Some(`TEXTUAL_BODY),
                    }),
-                 "externalTarget": None,
+                 "externalBody": None,
+                 "choiceBody": None,
+                 "specificBody": None,
                })
              )
         });
     };
 
-    Js.Promise.all(updateBodyInput)
-    |> Js.Promise.then_(updateBodyInput => {
-         let variables =
-           PatchAnnotationMutation.makeVariables(
-             ~input={
-               "id": annotation##id,
-               "creatorUsername":
-                 AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-               "operations": [|
-                 {
-                   "set":
-                     Some({"body": Some(updateBodyInput), "target": None}),
-                 },
-                 {
-                   "set":
-                     Some({"body": None, "target": Some(updateTargetInput)}),
-                 },
-               |],
-             },
-             (),
-           );
-         let _ = handleSave(. variables, patchAnnotationMutation);
-         ();
-       });
+    let _ =
+      Js.Promise.all(updateBodyInput)
+      |> Js.Promise.then_(updateBodyInput => {
+           let variables =
+             PatchAnnotationMutation.makeVariables(
+               ~input={
+                 "id": annotation##id,
+                 "creatorUsername":
+                   AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                 "operations": [|
+                   {
+                     "set":
+                       Some({"body": Some(updateBodyInput), "target": None}),
+                   },
+                   {
+                     "set":
+                       Some({
+                         "body": None,
+                         "target": Some(updateTargetInput),
+                       }),
+                   },
+                 |],
+               },
+               (),
+             );
+           let _ = handleSave(. variables, patchAnnotationMutation);
+           Js.Promise.resolve();
+         });
     ();
   };
 
@@ -271,13 +277,13 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
     React.useEffect0(() => {
       Some(
         () => {
-          let _ = Lodash.flush3(handleSave);
+          let _ = Lodash.flush2(handleSave);
           ();
         },
       )
     });
   <Containers_NoteEditor_Base
-    highlightFragment=highlight
+    annotationFragment=annotation
     isActive
     onChange=handleChange
     currentUser

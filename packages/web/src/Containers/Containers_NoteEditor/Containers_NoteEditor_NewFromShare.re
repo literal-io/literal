@@ -1,11 +1,12 @@
 open Styles;
 open Containers_NoteEditor_NewFromShare_GraphQL;
-open Containers_NoteEditor_GraphQL_Util;
 
 [@react.component]
 let make = (~annotationFragment as annotation, ~currentUser) => {
   let (editorValue, setEditorValue) =
-    React.useState(() => Containers_NoteEditor_Base.{text: "", tags: [||]});
+    React.useState(() =>
+      Containers_NoteEditor_Base_Types.{text: "", tags: [||]}
+    );
 
   let (patchAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(PatchAnnotationMutation.definition);
@@ -28,12 +29,13 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
             "__typename": "TextualTarget",
             "id": None,
             "format": Some(`TEXT_PLAIN),
-            "language": `Some(`EN_US),
+            "language": Some(`EN_US),
             "processingLanguage": Some(`EN_US),
             "textDirection": Some(`LTR),
             "accessibility": None,
             "rights": None,
             "value": editorValue.text,
+            "type_": Some(`TEXT),
           });
 
       let updatedTarget = Belt.Array.copy(annotation##target);
@@ -54,17 +56,23 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
     let updateBodyInput = {
       editorValue.tags
       ->Belt.Array.map(tag => {
-          Lib_GraphQL.AnnotationCollection.makeId(
-            ~creatorUsername=
-              AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-            ~label=tag##text,
-          )
+          let id =
+            switch (tag.id) {
+            | Some(id) => Js.Promise.resolve(id)
+            | None =>
+              Lib_GraphQL.AnnotationCollection.makeId(
+                ~creatorUsername=
+                  AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                ~label=tag.text,
+              )
+            };
+          id
           |> Js.Promise.then_(id =>
                Js.Promise.resolve({
-                 "textualTarget":
+                 "textualBody":
                    Some({
                      "id": Some(id),
-                     "value": tag##text,
+                     "value": tag.text,
                      "purpose": Some([|`TAGGING|]),
                      "rights": None,
                      "accessibility": None,
@@ -72,44 +80,56 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
                      "textDirection": Some(`LTR),
                      "language": Some(`EN_US),
                      "processingLanguage": Some(`EN_US),
+                     "type": Some(`TEXTUAL_BODY),
                    }),
-                 "externalTarget": None,
+                 "externalBody": None,
+                 "choiceBody": None,
+                 "specificBody": None,
                })
-             )
+             );
         });
     };
 
-    Js.Promise.all(updateBodyInput)
-    |> Js.Promise.then_(updateBodyInput => {
-         let variables =
-           PatchAnnotationMutation.makeVariables(
-             ~input={
-               "id": annotation##id,
-               "creatorUsername":
-                 AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-               "operations": [|
-                 {"set": Some({"body": Some(updateBodyInput), "target": None})},
-                 {
-                   "set": Some({"body": None, "target": Some(updateTargetInput)}),
-                 },
-               |],
-             },
-             (),
-           );
-         patchAnnotationMutation(~variables, ());
-       })
-    |> Js.Promise.then_(_ => {
-         let _ =
-           Webview.(postMessage(WebEvent.make(~type_="ACTIVITY_FINISH")));
-         Js.Promise.resolve();
-       });
+    let _ =
+      Js.Promise.all(updateBodyInput)
+      |> Js.Promise.then_(updateBodyInput => {
+           let variables =
+             PatchAnnotationMutation.makeVariables(
+               ~input={
+                 "id": annotation##id,
+                 "creatorUsername":
+                   AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                 "operations": [|
+                   {
+                     "set":
+                       Some({"body": Some(updateBodyInput), "target": None}),
+                   },
+                   {
+                     "set":
+                       Some({
+                         "body": None,
+                         "target": Some(updateTargetInput),
+                       }),
+                   },
+                 |],
+               },
+               (),
+             );
+           patchAnnotationMutation(~variables, ());
+         })
+      |> Js.Promise.then_(_ => {
+           let _ =
+             Webview.(postMessage(WebEvent.make(~type_="ACTIVITY_FINISH")));
+           Js.Promise.resolve();
+         });
+    ();
   };
 
   let handleChange = value => setEditorValue(_ => value);
 
   <>
     <Containers_NoteEditor_Base
-      highlightFragment=highlight
+      annotationFragment=annotation
       onChange=handleChange
       autoFocus=true
       placeholder="Lorem Ipsum"

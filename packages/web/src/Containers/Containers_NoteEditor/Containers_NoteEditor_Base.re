@@ -1,38 +1,12 @@
 open Styles;
-open Containers_NoteEditor_GraphQL_Util;
+open Containers_NoteEditor_Base_Types;
 
 let styles = [%raw "require('./Containers_NoteEditor_Base.module.css')"];
-
-type tagState = {
-  commits:
-    array({
-      .
-      "id": string,
-      "text": string,
-    }),
-  partial: string,
-  filterResults:
-    array({
-      .
-      "text": string,
-      "id": string,
-    }),
-};
-
-type value = {
-  text: string,
-  tags:
-    array({
-      .
-      "id": string,
-      "text": string,
-    }),
-};
 
 [@react.component]
 let make =
     (
-      ~highlightFragment as highlight=?,
+      ~annotationFragment as annotation=?,
       ~isActive=true,
       ~onChange,
       ~currentUser,
@@ -41,27 +15,29 @@ let make =
     ) => {
   let (textState, setTextState) =
     React.useState(() =>
-      switch (highlight) {
-      | Some(highlight) => highlight##text
-      | None => ""
-      }
+      annotation
+      ->Belt.Option.flatMap(a =>
+          a##target
+          ->Belt.Array.getBy(target => target##__typename === "TextualTarget")
+        )
+      ->Belt.Option.map(target => target##value)
+      ->Belt.Option.getWithDefault("")
     );
 
   let (tagsState, setTagsState) =
     React.useState(() =>
-      highlight
-      ->Belt.Option.flatMap(h => h##tags)
-      ->Belt.Option.flatMap(t => t##items)
-      ->Belt.Option.map(t => {
+      annotation
+      ->Belt.Option.flatMap(a => a##body)
+      ->Belt.Option.map(bodies => {
           let commits =
-            (
-              Belt.Array.keepMap(t, t => t)
-              |> Ramda.sortBy(t =>
-                   t##createdAt->Js.Date.fromString->Js.Date.valueOf
-                 )
-            )
-            ->Belt.Array.map(t => t##tag);
-
+            bodies->Belt.Array.keepMap(body =>
+              switch (body) {
+              | `Nonexhaustive => None
+              | `TextualBody(body) =>
+                Lib_GraphQL.Annotation.isBodyTag(body)
+                  ? Some({text: body##value, id: None}) : None
+              }
+            );
           {partial: "", commits, filterResults: [||]};
         })
       ->Belt.Option.getWithDefault({
@@ -86,21 +62,13 @@ let make =
         s.commits
         ->Belt.Array.map(text => {
             switch (
-              Belt.Array.getBy(tagsState.commits, tag => tag##text === text),
+              Belt.Array.getBy(tagsState.commits, tag => tag.text === text),
               tagsState.filterResults
-              ->Belt.Array.getBy(tag => tag##text === text),
+              ->Belt.Array.getBy(tag => tag.text === text),
             ) {
             | (Some(tag), _) => tag
             | (_, Some(tag)) => tag
-            | _ => {
-                "id":
-                  makeTagId(
-                    ~text,
-                    ~owner=
-                      currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-                  ),
-                "text": text,
-              }
+            | _ => {id: None, text}
             }
           });
 
@@ -139,7 +107,7 @@ let make =
         textValue=textState
         tagsValue={
           TextInput_Tags.Value.partial: tagsState.partial,
-          commits: tagsState.commits->Belt.Array.map(t => t##text),
+          commits: tagsState.commits->Belt.Array.map(t => t.text),
         }
         onTagsChange=handleTagsChange
         ?placeholder

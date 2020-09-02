@@ -82,7 +82,7 @@ let handleUpdateCache = (~currentUser, ~mutationData) =>
   };
 
 [@react.component]
-let make = (~profileFragment as profile, ~currentUser) => {
+let make = (~currentUser) => {
   let (onboardingMutation, _s, _f) =
     ApolloHooks.useMutation(OnboardingMutation.definition);
 

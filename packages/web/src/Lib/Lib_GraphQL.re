@@ -16,9 +16,39 @@ module Annotation = {
            ++ valueHash,
          )
        });
-  let targetInputFromTarget = target =>
-    switch (target##__typename) {
-    | "TextualTarget" => {
+
+  let isBodyTag = body => {
+    let hasTaggingPurpose =
+      body##purpose
+      ->Belt.Option.map(purpose =>
+          purpose->Belt.Array.some(p => p === `TAGGING)
+        )
+      ->Belt.Option.getWithDefault(false);
+
+    body##__typename === "TextualBody"
+    && Js.Option.isSome(body##id)
+    && hasTaggingPurpose;
+  };
+
+  /**
+   * Weird polymorphic variant required due to how graphql_ppx handles
+   * union type polymorphism. Input field types are polymorphic (e.g.
+   * `field`), but ocaml derives from first usage.
+   */
+  type targetInput('a, 'b) =
+    | TextualTarget(Js.t('a))
+    | ExternalTarget(Js.t('b));
+
+  let targetInputFromTarget = target => {
+    let conv =
+      switch (target##__typename) {
+      | "TextualTarget" => Some(TextualTarget(target))
+      | "ExternalTarget" => Some(ExternalTarget(target))
+      | _ => None
+      };
+
+    switch (conv) {
+    | Some(TextualTarget(target)) => {
         "textualTarget":
           Some({
             "id": target##id,
@@ -32,22 +62,23 @@ module Annotation = {
           }),
         "externalTarget": None,
       }
-    | "ExternalTarget" => {
+    | Some(ExternalTarget(target)) => {
         "textualTarget": None,
         "externalTarget":
           Some({
-            "id": target##id,
+            "id": target##id->Js.Option.getExn,
             "format": target##format,
             "language": target##language,
             "processingLanguage": target##processingLanguage,
             "textDirection": target##textDirection,
             "accessibility": target##accessibility,
             "rights": target##rights,
-            "type": target##type_
+            "type": target##type_,
           }),
       }
-    | _ => {"textualTarget": None, "externalTarget": None}
+    | None => {"textualTarget": None, "externalTarget": None}
     };
+  };
 };
 
 module AnnotationCollection = {

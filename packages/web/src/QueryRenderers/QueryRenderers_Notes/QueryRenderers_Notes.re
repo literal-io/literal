@@ -4,27 +4,32 @@ open QueryRenderers_Notes_GraphQL;
 module Data = {
   [@react.component]
   let make =
-      (~highlights, ~initialHighlightId, ~onHighlightIdChange, ~currentUser) => {
+      (
+        ~annotations,
+        ~initialAnnotationId,
+        ~onAnnotationIdChange,
+        ~currentUser,
+      ) => {
     let (activeIdx, setActiveIdx) =
       React.useState(() =>
-        initialHighlightId
-        ->Belt.Option.flatMap(initialHighlightId =>
-            highlights->Belt.Array.getIndexBy(h =>
-              h##id === initialHighlightId
+        initialAnnotationId
+        ->Belt.Option.flatMap(initialAnnotationId =>
+            annotations->Belt.Array.getIndexBy(a =>
+              a##id === initialAnnotationId
             )
           )
         ->Belt.Option.getWithDefault(0)
       );
 
-    let activeHighlight = highlights->Belt.Array.getExn(activeIdx);
+    let activeAnnotation = annotations->Belt.Array.getExn(activeIdx);
 
     let _ =
       React.useEffect1(
         () => {
-          let _ = onHighlightIdChange(activeHighlight##id);
+          let _ = onAnnotationIdChange(activeAnnotation##id);
           None;
         },
-        [|activeHighlight|],
+        [|activeAnnotation|],
       );
 
     let handleIdxChange = idx => setActiveIdx(_ => idx);
@@ -32,19 +37,19 @@ module Data = {
     <div
       className={cn(["w-full", "h-full", "bg-black", "overflow-y-scroll"])}>
       <Containers_NoteHeader
-        highlightFragment={activeHighlight##headerHighlightFragment}
+        annotationFragment={activeAnnotation##headerAnnotationFragment}
         currentUser
       />
       <ScrollSnapList.Container
         direction=ScrollSnapList.Horizontal
         onIdxChange=handleIdxChange
         initialIdx=activeIdx>
-        {highlights->Belt.Array.map(h =>
+        {annotations->Belt.Array.map(annotation =>
            <ScrollSnapList.Item
-             key={h##id} direction=ScrollSnapList.Horizontal>
+             key={annotation##id} direction=ScrollSnapList.Horizontal>
              <Containers_NoteEditor_Notes
-               highlightFragment={h##editorHighlightFragment}
-               isActive={h##id === activeHighlight##id}
+               annotationFragment={annotation##editorAnnotationFragment}
+               isActive={annotation##id === activeAnnotation##id}
                currentUser
              />
            </ScrollSnapList.Item>
@@ -56,13 +61,10 @@ module Data = {
 
 module Onboarding = {
   [@react.component]
-  let make = (~onboardingProfileFragment, ~currentUser) => {
+  let make = (~currentUser) => {
     <div
       className={cn(["w-full", "h-full", "bg-black", "overflow-y-scroll"])}>
-      <Containers_Onboarding
-        profileFragment=onboardingProfileFragment
-        currentUser
-      />
+      <Containers_Onboarding currentUser />
     </div>;
   };
 };
@@ -85,8 +87,8 @@ module Loading = {
 [@react.component]
 let make =
     (
-      ~highlightId,
-      ~onHighlightIdChange,
+      ~annotationId,
+      ~onAnnotationIdChange,
       ~authentication: CurrentUserInfo.state,
       ~rehydrated,
     ) => {
@@ -102,13 +104,14 @@ let make =
       ~variables=
         switch (authentication) {
         | Authenticated(currentUser) when rehydrated =>
-          ListHighlights.Query.makeVariables(
-            ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+          ListAnnotations.Query.makeVariables(
+            ~creatorUsername=
+              currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
             (),
           )
         | _ => Js.Json.null
         },
-      ListHighlights.Query.definition,
+      ListAnnotations.Query.definition,
     );
 
   switch (query, rehydrated, authentication) {
@@ -116,27 +119,26 @@ let make =
   | (_, false, _)
   | (_, _, Loading) => <Loading />
   | (Data(data), _, Authenticated(currentUser)) =>
-    switch (
-      data##listHighlights->Belt.Option.flatMap(h => h##items),
-      data##getProfile,
-    ) {
-    | (Some(highlights), _) when Array.length(highlights) > 0 =>
+    switch (data##listAnnotations->Belt.Option.flatMap(h => h##items)) {
+    | Some(annotations) when Array.length(annotations) > 0 =>
       <Data
-        onHighlightIdChange
-        initialHighlightId=highlightId
+        onAnnotationIdChange
+        initialAnnotationId=annotationId
         currentUser
-        highlights={
-          highlights->Belt.Array.keepMap(i => i)
-          |> Ramda.sortBy(h => {
-               -. h##createdAt->Js.Date.fromString->Js.Date.valueOf
+        annotations={
+          annotations->Belt.Array.keepMap(i => i)
+          |> Ramda.sortBy(a => {
+               -.
+                 a##created
+                 ->Belt.Option.flatMap(Js.Json.decodeString)
+                 ->Belt.Option.map(created =>
+                     created->Js.Date.fromString->Js.Date.valueOf
+                   )
+                 ->Belt.Option.getWithDefault(0.)
              })
         }
       />
-    | (_, Some(profile)) when !profile##isOnboarded =>
-      <Onboarding
-        onboardingProfileFragment={profile##onboardingProfileFragment}
-        currentUser
-      />
+    | None => <Onboarding currentUser />
     | _ => <Empty />
     }
   | (NoData, true, _)

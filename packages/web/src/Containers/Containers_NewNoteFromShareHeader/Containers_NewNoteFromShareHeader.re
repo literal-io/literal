@@ -1,5 +1,6 @@
 open Styles;
 
+/** FIXME: restore cache
 let handleUpdateCache = (~currentUser, ~highlight) => {
   let cacheQuery =
     QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
@@ -57,27 +58,31 @@ let handleUpdateCache = (~currentUser, ~highlight) => {
     };
   Js.Promise.resolve();
 };
+**/
 
 [@react.component]
-let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
-  let (deleteHighlightMutation, _s, _f) =
+let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
+  let (deleteAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(
-      Containers_NoteHeader_GraphQL.DeleteHighlightMutation.definition,
+      Containers_NewNoteFromShareHeader_GraphQL.DeleteAnnotationMutation.definition,
     );
 
   let handleClose = () => {
-    switch (highlight, currentUser) {
-    | (Some(highlight), Some(currentUser)) =>
+    switch (annotation, currentUser) {
+    | (Some(annotation), Some(currentUser)) =>
       let variables =
-        Containers_NoteHeader_GraphQL.DeleteHighlightMutation.makeVariables(
-          ~deleteHighlightInput={"id": highlight##id},
-          ~deleteHighlightTagsInput=[||],
+        Containers_NewNoteFromShareHeader_GraphQL.DeleteAnnotationMutation.makeVariables(
+          ~input={
+            "id": annotation##id,
+            "creatorUsername":
+              AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+          },
           (),
         );
 
       let _ =
-        deleteHighlightMutation(~variables, ())
-        |> Js.Promise.then_(_ => handleUpdateCache(~highlight, ~currentUser))
+        deleteAnnotationMutation(~variables, ())
+        // |> Js.Promise.then_(_ => handleUpdateCache(~highlight, ~currentUser))
         |> Js.Promise.then_(_ => {
              let _ =
                Webview.(
