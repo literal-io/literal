@@ -12,7 +12,7 @@
     "bsb:build": "bsb -make-world",
     "bsb:start": "bsb -make-world -w",
     "bsb:clean": "bsb -clean-world && ./scripts/bsb-post-clean.sh",
-    "amplify:graphql-sync-schema": "./scripts/graphql-sync-schema.sh && npm run bsb:clean",
+    "amplify:graphql-sync-schema": "./scripts/graphql-sync-schema.sh && ./scripts/generate-fragment-types.js && npm run bsb:clean",
     "amplify:production:pull": "amplify env pull --restore && amplify env checkout production && amplify api gql-compile"
   },
   "author": "",

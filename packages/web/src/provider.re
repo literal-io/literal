@@ -1,6 +1,8 @@
 %raw
 "require('isomorphic-fetch')";
 
+let fragmentTypes = [%raw "require('../fragment-types.json')"];
+
 let authenticatedClientAuthOptions = {
   Webview.isWebview()
     ? AwsAppSync.Client.authWithCognitoUserPools(~jwtToken=() => {
@@ -64,9 +66,21 @@ let appSyncLinkOptions =
   };
 let appSyncLink = AwsAppSync.Client.createAppSyncLink(appSyncLinkOptions);
 
+let appSyncCache =
+  ApolloInMemoryCache.createInMemoryCache(
+    ~fragmentMatcher=
+      ApolloInMemoryCache.introspectionFragmentMatcher({
+        "introspectionQueryResultData": fragmentTypes,
+      }),
+    (),
+  );
+
 let client =
   AwsAppSync.Client.(
-    makeWithOptions(appSyncLinkOptions, {link: appSyncLink})
+    makeWithOptions(
+      appSyncLinkOptions,
+      {link: Some(appSyncLink), cache: Some(appSyncCache)},
+    )
   );
 
 [@react.component]
