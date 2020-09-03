@@ -6,7 +6,7 @@ module PatchAnnotationMutation = [%graphql
       patchAnnotation(input: $input) {
         annotation {
           id
-          ...Containers_NoteEditor_Notes_GraphQL.GetAnnotationFragment.EditorAnnotationFragment @bsField(name: "editorAnnotationFragment")
+          ...Containers_NoteEditor_Notes_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
           ...Containers_NoteHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
         }
       }
@@ -16,14 +16,14 @@ module PatchAnnotationMutation = [%graphql
 
 module GetAnnotationFragment = [%graphql
   {|
-    fragment editorAnnotationFragment on Annotation {
+    fragment editorNewFromShareAnnotationFragment on Annotation {
       id
       target {
         ... on TextualTarget {
           value
           __typename
 
-          id
+          textualTargetId: id
           format
           language
           processingLanguage
@@ -34,7 +34,7 @@ module GetAnnotationFragment = [%graphql
         ... on ExternalTarget {
           __typename
 
-          id
+          externalTargetId: id
           format
           language
           processingLanguage

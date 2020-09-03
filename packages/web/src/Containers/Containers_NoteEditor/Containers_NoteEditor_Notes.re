@@ -197,7 +197,7 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
         ->Belt.Option.getWithDefault(
             `TextualTarget({
               "__typename": "TextualTarget",
-              "id": None,
+              "textualTargetId": None,
               "format": Some(`TEXT_PLAIN),
               "language": Some(`EN_US),
               "processingLanguage": Some(`EN_US),

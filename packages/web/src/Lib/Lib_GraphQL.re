@@ -1,6 +1,23 @@
-let origin = Webapi.Dom.(window |> Window.location |> Location.origin);
-let makeHash = text =>
-  Externals_Crypto.(digest("SHA-256", encode(makeTextEncoder(), text)));
+external castToArrayLike:
+  Js.TypedArray2.Uint8Array.t => Js.Array2.array_like(int) =
+  "%identity";
+
+[@bs.send] external padStart: (string, int, string) => string = "padStart";
+
+let makeHash = text => {
+  Externals_Crypto.(digest("SHA-256", encode(makeTextEncoder(), text)))
+  |> Js.Promise.then_(buffer =>
+       buffer
+       ->Js.TypedArray2.Uint8Array.fromBuffer
+       ->castToArrayLike
+       ->Js.Array2.from
+       ->Js.Array2.map(b =>
+           b->Js.Int.toStringWithRadix(~radix=16)->padStart(2, "0")
+         )
+       ->Js.Array2.joinWith("")
+       ->Js.Promise.resolve
+     );
+};
 
 module Annotation = {
   let defaultContext = "http://www.w3.org/ns/anno.jsonld";
@@ -9,7 +26,7 @@ module Annotation = {
     makeHash(textualTargetValue)
     |> Js.Promise.then_(valueHash => {
          Js.Promise.resolve(
-           origin
+           Webapi.Dom.(window |> Window.location |> Location.origin)
            ++ "/creators/"
            ++ creatorUsername
            ++ "/annotations/"
@@ -35,7 +52,7 @@ module Annotation = {
     | `TextualTarget(target) => {
         "textualTarget":
           Some({
-            "id": target##id,
+            "id": target##textualTargetId,
             "format": target##format,
             "processingLanguage": target##processingLanguage,
             "language": target##language,
@@ -50,7 +67,7 @@ module Annotation = {
         "textualTarget": None,
         "externalTarget":
           Some({
-            "id": target##id,
+            "id": target##externalTargetId,
             "format": target##format,
             "language": target##language,
             "processingLanguage": target##processingLanguage,
@@ -68,7 +85,7 @@ module AnnotationCollection = {
     makeHash(label)
     |> Js.Promise.then_(hash =>
          Js.Promise.resolve(
-           origin
+           Webapi.Dom.(window |> Window.location |> Location.origin)
            ++ "/creators/"
            ++ creatorUsername
            ++ "/annotation-collections/"

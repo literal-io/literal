@@ -1,6 +1,6 @@
 module GetAnnotationFragment = [%graphql
   {|
-    fragment editorAnnotationFragment on Annotation {
+    fragment editorNotesAnnotationFragment on Annotation {
       id
       body {
         ... on TextualBody {
@@ -22,7 +22,7 @@ module GetAnnotationFragment = [%graphql
           value
           __typename
 
-          id
+          textualTargetId: id
           format
           language
           processingLanguage
@@ -33,7 +33,7 @@ module GetAnnotationFragment = [%graphql
         ... on ExternalTarget {
           __typename
 
-          id
+          externalTargetId: id
           format
           language
           processingLanguage

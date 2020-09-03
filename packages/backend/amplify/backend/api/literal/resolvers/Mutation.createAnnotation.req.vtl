@@ -356,7 +356,7 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
     $util.qr($annotationTargetInput.externalTarget.put("__typename", "ExternalTarget"))
     #set( $annotationTarget = $annotationTargetInput.externalTarget )
   #elseif( !$util.isNull($annotationTargetInput.textualTarget) )
-    $util.qr($annotationTargetInput.externalTarget.put("__typename", "TextualTarget"))
+    $util.qr($annotationTargetInput.textualTarget.put("__typename", "TextualTarget"))
     #set( $annotationTarget = $annotationTargetInput.textualTarget )
   #else
     $util.error("At least one field of AnnotationTargetInput must be non-null.", "ValidationError")
@@ -366,5 +366,10 @@ $util.qr($ctx.stash.put("input", $ctx.args.input))
 #end
 
 #set( $ctx.stash.output = {} )
+
+#set( $ctx.stash.transactWriteItems = [] )
+#set( $ctx.stash.output.annotationPageItems = [] )
+#set( $ctx.stash.output.annotationPages = [] )
+#set( $ctx.stash.output.annotationCollections = [] )
 
 {}

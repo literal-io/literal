@@ -82,7 +82,7 @@ export const listAnnotations = /* GraphQL */ `
   }
 `;
 export const getAnnotation = /* GraphQL */ `
-  query GetAnnotation($creatorUsername: String!, $id: AWSURL!) {
+  query GetAnnotation($creatorUsername: String!, $id: String!) {
     getAnnotation(creatorUsername: $creatorUsername, id: $id) {
       context
       type
@@ -100,7 +100,6 @@ export const getAnnotation = /* GraphQL */ `
         }
         ... on TextualBody {
           id
-          value
           format
           language
           processingLanguage
@@ -108,6 +107,7 @@ export const getAnnotation = /* GraphQL */ `
           accessibility
           purpose
           rights
+          value
           type
         }
         ... on ChoiceBody {
@@ -122,14 +122,26 @@ export const getAnnotation = /* GraphQL */ `
         }
       }
       target {
-        id
-        format
-        language
-        processingLanguage
-        textDirection
-        type
-        accessibility
-        rights
+        ... on ExternalTarget {
+          id
+          format
+          language
+          processingLanguage
+          textDirection
+          type
+          accessibility
+          rights
+        }
+        ... on TextualTarget {
+          id
+          format
+          language
+          processingLanguage
+          textDirection
+          accessibility
+          rights
+          value
+        }
       }
       created
       generated
@@ -205,7 +217,7 @@ export const listAnnotationCollections = /* GraphQL */ `
   }
 `;
 export const getAnnotationCollection = /* GraphQL */ `
-  query GetAnnotationCollection($creatorUsername: String!, $id: AWSURL!) {
+  query GetAnnotationCollection($creatorUsername: String!, $id: String!) {
     getAnnotationCollection(creatorUsername: $creatorUsername, id: $id) {
       context
       id

@@ -138,8 +138,8 @@ let make =
              })
         }
       />
+    | Some(_) /*** empty arr **/
     | None => <Onboarding currentUser />
-    | _ => <Empty />
     }
   | (NoData, true, _)
   | (Error(_), true, _)
