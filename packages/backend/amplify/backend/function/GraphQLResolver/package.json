@@ -21,7 +21,7 @@
     "@aws-amplify/pubsub": "^3.0.24",
     "@aws-amplify/storage": "^3.2.13",
     "@reasonml-community/graphql-ppx": "^0.7.2",
-    "@trashed/bs-aws-amplify": "1.0.0",
+    "@literal/bs-aws-amplify": "1.0.0",
     "amazon-s3-uri": "0.0.3",
     "aws-sdk": "^2.738.0",
     "bs-fetch": "^0.6.2",

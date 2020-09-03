@@ -1,0 +1,5 @@
+src/**/*.js
+.merlin
+.bsb.lock
+lib
+node_modules

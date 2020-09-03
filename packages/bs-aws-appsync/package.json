@@ -1,0 +1,35 @@
+{
+  "name": "@literal/bs-aws-appsync",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "bsb:build": "bsb -make-world",
+    "bsb:start": "bsb -make-world -w",
+    "bsb:clean": "bsb -clean-world",
+    "start": "npm run bsb:start"
+  },
+  "author": "Daniel Ramirez <javamonn@gmail.com>",
+  "homepage": "https://trashed.today",
+  "repository": "https://github.com/javamonn/trashed/tree/master/packages/bs-aws-appsync",
+  "description": "BuckleScript bindings to aws-appsync.",
+  "keywords": [
+    "bucklescript",
+    "reason",
+    "aws-appsync"
+  ],
+  "license": "MIT - Hippocratic 1.2",
+  "dependencies": {
+    "@literal/bs-aws-amplify": "^1.0.0",
+    "aws-appsync": "^4.0.0",
+    "aws-appsync-react": "^4.0.0",
+    "reason-apollo": "^0.20.0",
+    "reason-react": "^0.9.1"
+  },
+  "peerDependencies": {
+    "bs-platform": "^8.2.0"
+  },
+  "devDependencies": {
+    "bs-platform": "^8.2.0"
+  }
+}

@@ -17,8 +17,8 @@ POST_AUTHENTICATION_SRC_DIR="$FUNCTION_DIR/PostAuthentication"
 # Sync against the currently deployed GraphQL schema.
 (cd $GRAPHQL_RESOLVER_SRC_DIR && \
   npm run graphql:sync-schema && \
-  npm link @trashed/bs-aws-amplify)
+  npm link @literal/bs-aws-amplify)
 
 (cd $POST_AUTHENTICATION_SRC_DIR && \
   npm run graphql:sync-schema && \
-  npm link @trashed/bs-aws-amplify)
+  npm link @literal/bs-aws-amplify)
