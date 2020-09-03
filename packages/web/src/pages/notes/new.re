@@ -27,10 +27,10 @@ let default = () => {
              Routes.New.params_decode(router.Next.query),
            ) {
            | (Unauthenticated, _) => <Loading />
-           | (_, Ok({id: Some(highlightId)}))
-               when Js.String.length(highlightId) > 0 =>
+           | (_, Ok({id: Some(annotationId)}))
+               when Js.String.length(annotationId) > 0 =>
              <QueryRenderers_NewNoteFromShare
-               highlightId
+               annotationId
                authentication
                rehydrated
              />

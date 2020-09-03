@@ -30,25 +30,9 @@ module Annotation = {
     && hasTaggingPurpose;
   };
 
-  /**
-   * Weird polymorphic variant required due to how graphql_ppx handles
-   * union type polymorphism. Input field types are polymorphic (e.g.
-   * `field`), but ocaml derives from first usage.
-   */
-  type targetInput('a, 'b) =
-    | TextualTarget(Js.t('a))
-    | ExternalTarget(Js.t('b));
-
-  let targetInputFromTarget = target => {
-    let conv =
-      switch (target##__typename) {
-      | "TextualTarget" => Some(TextualTarget(target))
-      | "ExternalTarget" => Some(ExternalTarget(target))
-      | _ => None
-      };
-
-    switch (conv) {
-    | Some(TextualTarget(target)) => {
+  let targetInputFromTarget = target =>
+    switch (target) {
+    | `TextualTarget(target) => {
         "textualTarget":
           Some({
             "id": target##id,
@@ -62,11 +46,11 @@ module Annotation = {
           }),
         "externalTarget": None,
       }
-    | Some(ExternalTarget(target)) => {
+    | `ExternalTarget(target) => {
         "textualTarget": None,
         "externalTarget":
           Some({
-            "id": target##id->Js.Option.getExn,
+            "id": target##id,
             "format": target##format,
             "language": target##language,
             "processingLanguage": target##processingLanguage,
@@ -76,9 +60,7 @@ module Annotation = {
             "type": target##type_,
           }),
       }
-    | None => {"textualTarget": None, "externalTarget": None}
     };
-  };
 };
 
 module AnnotationCollection = {

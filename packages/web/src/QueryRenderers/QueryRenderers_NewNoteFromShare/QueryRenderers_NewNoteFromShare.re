@@ -7,7 +7,7 @@ let noDataAlert = "Unable to parse image. Make sure the text is clearly highligh
 
 module Data = {
   [@react.component]
-  let make = (~highlight, ~currentUser) => {
+  let make = (~annotation, ~currentUser) => {
     <div
       className={cn([
         "w-full",
@@ -20,11 +20,11 @@ module Data = {
       ])}>
       <Containers_NewNoteFromShareHeader
         currentUser
-        highlightFragment={highlight##headerHighlightFragment}
+        annotationFragment={annotation##headerAnnotationFragment}
       />
       <Containers_NoteEditor_NewFromShare
         currentUser
-        highlightFragment={highlight##editorHighlightFragment}
+        annotationFragment={annotation##editorAnnotationFragment}
       />
     </div>;
   };
@@ -57,11 +57,22 @@ module Empty = {
 };
 
 [@react.component]
-let make = (~highlightId, ~authentication: CurrentUserInfo.state, ~rehydrated) => {
+let make =
+    (~annotationId, ~authentication: CurrentUserInfo.state, ~rehydrated) => {
   let (isLoaded, setIsLoaded) = React.useState(_ => false);
   let (query, _fullQuery) =
     ApolloHooks.useQuery(
-      ~variables=GetNoteQuery.makeVariables(~id=highlightId, ()),
+      ~variables=
+        GetAnnotationQuery.makeVariables(
+          ~id=annotationId,
+          ~creatorUsername=
+            switch (authentication) {
+            | Authenticated(currentUser) =>
+              AwsAmplify.Auth.CurrentUserInfo.(currentUser->username)
+            | _ => ""
+            },
+          (),
+        ),
       ~pollInterval=isLoaded ? 0 : pollInterval,
       ~skip=
         switch (authentication) {
@@ -70,7 +81,7 @@ let make = (~highlightId, ~authentication: CurrentUserInfo.state, ~rehydrated) =
         | Loading
         | Unauthenticated => true
         },
-      GetNoteQuery.definition,
+      GetAnnotationQuery.definition,
     );
 
   let _ =
@@ -86,7 +97,7 @@ let make = (~highlightId, ~authentication: CurrentUserInfo.state, ~rehydrated) =
         let _ =
           switch (query) {
           | Data(data) =>
-            switch (data##getHighlight) {
+            switch (data##getAnnotation) {
             | Some(_) => setIsLoaded(_ => true)
             | _ => ()
             }
@@ -103,8 +114,8 @@ let make = (~highlightId, ~authentication: CurrentUserInfo.state, ~rehydrated) =
   | (_, _, Loading, _)
   | (_, _, _, false) => <Loading />
   | (Data(data), _, Authenticated(currentUser), true) =>
-    switch (data##getHighlight) {
-    | Some(highlight) => <Data highlight currentUser />
+    switch (data##getAnnotation) {
+    | Some(annotation) => <Data annotation currentUser />
     | None =>
       <Redirect
         path="/notes/new"

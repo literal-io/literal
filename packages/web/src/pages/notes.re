@@ -21,17 +21,17 @@ let default = () => {
       [|authentication|],
     );
 
-  let highlightId =
+  let annotationId =
     switch (routeParams_decode(router.Next.query)) {
     | Ok(p) => Some(p.id)
     | _ => None
     };
 
-  let handleHighlightIdChange = highlightId =>
+  let handleAnnotationIdChange = annotationId =>
     Next.Router.(
       replaceWithOptions({
         pathname: router.pathname,
-        query: routeParams_encode({id: highlightId}),
+        query: routeParams_encode({id: annotationId}),
       })
     );
 
@@ -41,8 +41,8 @@ let default = () => {
       | Unauthenticated => <Loading />
       | Loading | Authenticated(_) =>
         <QueryRenderers_Notes
-          highlightId
-          onHighlightIdChange=handleHighlightIdChange
+          annotationId
+          onAnnotationIdChange=handleAnnotationIdChange
           authentication
           rehydrated
         />

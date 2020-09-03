@@ -174,27 +174,39 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
       let idx =
         annotation##target
         ->Belt.Array.getIndexBy(target =>
-            target##__typename === "TextualTarget"
+            switch (target) {
+            | `TextualTarget(_) => true
+            | `ExternalTarget(_) => false
+            }
           );
       let updatedTextualTarget =
         idx
         ->Belt.Option.flatMap(idx => annotation##target->Belt.Array.get(idx))
-        ->Belt.Option.map(target => {
-            let copy = Js.Obj.assign(Js.Obj.empty(), target);
-            Js.Obj.assign(copy, {"value": editorValue.text});
-          })
-        ->Belt.Option.getWithDefault({
-            "__typename": "TextualTarget",
-            "id": None,
-            "format": Some(`TEXT_PLAIN),
-            "language": Some(`EN_US),
-            "processingLanguage": Some(`EN_US),
-            "textDirection": Some(`LTR),
-            "accessibility": None,
-            "rights": None,
-            "value": editorValue.text,
-            "type_": Some(`TEXT),
-          });
+        ->Belt.Option.flatMap(target =>
+            switch (target) {
+            | `TextualTarget(target) =>
+              let copy = Js.Obj.assign(Js.Obj.empty(), target);
+              Some(
+                `TextualTarget(
+                  Js.Obj.assign(copy, {"value": editorValue.text}),
+                ),
+              );
+            | `ExternalTarget(_) => None
+            }
+          )
+        ->Belt.Option.getWithDefault(
+            `TextualTarget({
+              "__typename": "TextualTarget",
+              "id": None,
+              "format": Some(`TEXT_PLAIN),
+              "language": Some(`EN_US),
+              "processingLanguage": Some(`EN_US),
+              "textDirection": Some(`LTR),
+              "accessibility": None,
+              "rights": None,
+              "value": editorValue.text
+            }),
+          );
 
       let updatedTarget = Belt.Array.copy(annotation##target);
       let _ =
@@ -214,17 +226,23 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
     let updateBodyInput = {
       editorValue.tags
       ->Belt.Array.map(tag => {
-          Lib_GraphQL.AnnotationCollection.makeId(
-            ~creatorUsername=
-              AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-            ~label=tag##text,
-          )
+          let id =
+            switch (tag.id) {
+            | Some(id) => Js.Promise.resolve(id)
+            | None =>
+              Lib_GraphQL.AnnotationCollection.makeId(
+                ~creatorUsername=
+                  AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                ~label=tag.text,
+              )
+            };
+          id
           |> Js.Promise.then_(id =>
                Js.Promise.resolve({
                  "textualBody":
                    Some({
                      "id": Some(id),
-                     "value": tag##text,
+                     "value": tag.text,
                      "purpose": Some([|`TAGGING|]),
                      "rights": None,
                      "accessibility": None,
@@ -238,7 +256,7 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
                  "choiceBody": None,
                  "specificBody": None,
                })
-             )
+             );
         });
     };
 

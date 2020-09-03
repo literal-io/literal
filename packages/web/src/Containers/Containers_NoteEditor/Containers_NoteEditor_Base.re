@@ -18,9 +18,19 @@ let make =
       annotation
       ->Belt.Option.flatMap(a =>
           a##target
-          ->Belt.Array.getBy(target => target##__typename === "TextualTarget")
+          ->Belt.Array.getBy(target =>
+              switch (target) {
+              | `TextualTarget(_) => true
+              | `ExternalTarget(_) => false
+              }
+            )
         )
-      ->Belt.Option.map(target => target##value)
+      ->Belt.Option.flatMap(target =>
+          switch (target) {
+          | `TextualTarget(target) => Some(target##value)
+          | `ExternalTarget(_) => None
+          }
+        )
       ->Belt.Option.getWithDefault("")
     );
 

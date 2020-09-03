@@ -1,6 +1,6 @@
-module GetNoteQuery = [%graphql
+module GetAnnotationQuery = [%graphql
   {|
-    query GetHighlight($creatorUsername: String!, $id: String!) {
+    query GetAnnotation($creatorUsername: String!, $id: String!) {
       getAnnotation(creatorUsername: $creatorUsername, id: $id) {
         id
         created

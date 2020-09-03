@@ -16,27 +16,40 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       let idx =
         annotation##target
         ->Belt.Array.getIndexBy(target =>
-            target##__typename === "TextualTarget"
+            switch (target) {
+            | `TextualTarget(_) => true
+            | `ExternalTarget(_) => false
+            }
           );
+
       let updatedTextualTarget =
         idx
         ->Belt.Option.flatMap(idx => annotation##target->Belt.Array.get(idx))
-        ->Belt.Option.map(target => {
-            let copy = Js.Obj.assign(Js.Obj.empty(), target);
-            Js.Obj.assign(copy, {"value": editorValue.text});
-          })
-        ->Belt.Option.getWithDefault({
-            "__typename": "TextualTarget",
-            "id": None,
-            "format": Some(`TEXT_PLAIN),
-            "language": Some(`EN_US),
-            "processingLanguage": Some(`EN_US),
-            "textDirection": Some(`LTR),
-            "accessibility": None,
-            "rights": None,
-            "value": editorValue.text,
-            "type_": Some(`TEXT),
-          });
+        ->Belt.Option.flatMap(target =>
+            switch (target) {
+            | `TextualTarget(target) =>
+              let copy = Js.Obj.assign(Js.Obj.empty(), target);
+              Some(
+                `TextualTarget(
+                  Js.Obj.assign(copy, {"value": editorValue.text}),
+                ),
+              );
+            | `ExternalTarget(_) => None
+            }
+          )
+        ->Belt.Option.getWithDefault(
+            `TextualTarget({
+              "__typename": "TextualTarget",
+              "id": None,
+              "format": Some(`TEXT_PLAIN),
+              "language": Some(`EN_US),
+              "processingLanguage": Some(`EN_US),
+              "textDirection": Some(`LTR),
+              "accessibility": None,
+              "rights": None,
+              "value": editorValue.text
+            }),
+          );
 
       let updatedTarget = Belt.Array.copy(annotation##target);
       let _ =
