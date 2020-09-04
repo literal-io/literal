@@ -435,7 +435,10 @@ enum AgentType {
 }
 
 type Agent
-  @model
+  @model(
+    subscriptions: null
+    timestamps: { createdAt: "created", updatedAt: "modified" }
+  )
   @auth(
     rules: [
       { allow: owner, ownerField: "username", operations: [read, update] }
@@ -744,7 +747,7 @@ Several individual AnnotationSetOperations should be used for setting more than 
 input AnnotationSetOperationInput {
   body: [AnnotationBodyInput!]
   target: [AnnotationTargetInput!]
-  
+
   # TODO: Other Annotation keys: context, type, audience...
 }
 

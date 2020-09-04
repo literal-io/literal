@@ -1,7 +1,6 @@
 #set( $ctx.stash.output.deletedAnnotationCollectionIds = [] )
 #set( $ctx.stash.output.deletedAnnotationPageItemIds = [] )
 #set( $ctx.stash.output.deletedAnnotationPageIds = [] )
-#set( $ctx.stash.transactWriteItems = [] )
 
 #foreach( $item in $ctx.result.items )
   #if( $util.isNull($item) || $item.isEmpty() )
@@ -62,6 +61,29 @@
     $util.qr($ctx.stash.transactWriteItems.add($deleteAnnotationPageOperation))
     $util.qr($ctx.stash.output.deletedAnnotationPageIds.add($annotationPageId))
     $util.qr($ctx.stash.output.deletedAnnotationCollectionIds.add($annotationCollectionResult.id))
+  #else
+    ## Update AnnotationCollection total, modified
+    #set( $updateAnnotationCollectionOperation = {
+      "table": ${ctx.stash.constants.ANNOTATION_COLLECTION_TABLE},
+      "operation": "UpdateItem",
+      "key": {
+        "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
+        "id": $util.dynamodb.toDynamoDB($item.id)
+      },
+      "update": {
+        "expression": "SET #modified = :modified, #total = #total - :decrement",
+        "expressionNames": {
+          "#total": "total",
+          "#modified": "modified"
+        },
+        "expressionValues": {
+          ":decrement": $util.dynamodb.toDynamoDB(1),
+          ":modified": $util.dynamodb.toDynamoDB($util.time.nowISO8601())
+        }
+      }
+    } )
+
+    $util.qr($ctx.stash.transactWriteItems.add($updateAnnotationCollectionOperation))
   #end
 #end
 

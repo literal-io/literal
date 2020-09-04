@@ -5,6 +5,7 @@
   #foreach( $item in $util.defaultIfNull($ctx.result.items, []) )
     #set( $transactGetItem = $ctx.stash.transactGetItems[$foreach.index] )
     #set( $annotationCollectionId = $transactGetItem.key.id.S )
+    #set( $newTag = $ctx.stash.newTags[$foreach.index] )
 
     ## Use the last part of the AnnotationCollection ID IRI as the Tag ID.
     #set( $annotationCollectionPathParts = $annotationCollectionId.split("/") )
@@ -86,7 +87,7 @@
         "context": ["http://www.w3.org/ns/anno.jsonld"],
         "id": $annotationCollectionId,
         "type": ["ANNOTATION_COLLECTION"],
-        "label": [$body.value],
+        "label": [$newTag.value],
         "total": 1,
         "first": $annotationPageId,
         "last": $annotationPageId,

@@ -1,4 +1,6 @@
 #set( $ctx.stash.transactGetItems = [] )
+#set( $ctx.stash.newTags = [] )
+
 #foreach( $body in $util.defaultIfNull($ctx.stash.input.body, []) )
   #set( $isTextualBody = $body.type == "TEXTUAL_BODY" )
   #set( $hasId = !$util.isNull($body.id) )
@@ -10,25 +12,16 @@
   #end
 
   #if( $isTextualBody && $hasId && $hasTag )
-
-    ## Use the last part of the body ID IRI as the base Tag ID.
-    #set( $tagPathParts = $body.id.split("/") )
-    #if( $tagPathParts.size() < 1 )
-      $util.error("Body ID is not an IRI", "ValidationError")
-    #end
-    #set( $endIdx = $tagPathParts.size() - 1 )
-    #set( $tagId = $tagPathParts.get($endIdx) )
-
-    #set( $annotationCollectionId = "${ctx.stash.constants.ORIGIN}/creators/${ctx.stash.identity}/annotation-collections/${tagId}" )
     #set( $operation = {
       "table": $ctx.stash.constants.ANNOTATION_COLLECTION_TABLE,
       "key": {
         "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
-        "id": $util.dynamodb.toDynamoDB($annotationCollectionId)
+        "id": $util.dynamodb.toDynamoDB($body.id)
       }
     } )
 
     $util.qr($ctx.stash.transactGetItems.add($operation))
+    $util.qr($ctx.stash.newTags.add($body))
   #end
 #end
   
