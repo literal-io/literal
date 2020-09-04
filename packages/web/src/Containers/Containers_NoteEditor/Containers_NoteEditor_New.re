@@ -16,104 +16,97 @@ let phase_decode = json =>
 type action =
   | SetPhase(phase);
 
-/** FIXME: restore cache update
-let updateCache =
-    (
-      ~currentUser,
-      ~editorValue: Containers_NoteEditor_Base.value,
-      ~createHighlightInput,
-      ~createHighlightTagsInput,
-    ) => {
+
+let annotationFromCreateAnnotationInput = [%raw {|
+  function (input) {
+    return {
+      ...input,
+      __typename: "Annotation",
+      created: (new Date()).toISOString(),
+      body: 
+        input.body
+          ? input.body.map(body => { 
+              const parser = [
+                ["textualBody", { 
+                  __typename: "TextualBody",
+                  accessibility: null,
+                  rights: null
+                }],
+                ["choiceBody", {__typename: "ChoiceBody" }],
+                ["externalBody", {__typename: "ExternalBody"}],
+                ["specificBody", {__typename: "SpecificBody"}]
+              ]
+              const [key, attrs] = parser.find(([key, _]) => body[key])
+              return { ...attrs, ...body[key] }
+          })
+          : null,
+      target:
+        input.target
+          ? input.target.map(target => {
+              const parser = [
+                ["textualTarget", { 
+                  __typename: "TextualTarget",
+                  textualTargetId: null,
+                  rights: null,
+                  accessibility: null
+                }],
+                ["externalTarget", {__typename: "ExternalTarget" }],
+              ]
+              const [key, attrs] = parser.find(([key, _]) => target[key])
+              return { ...attrs, ...target[key] }
+
+            })
+          : null
+    }
+  }
+|}];
+
+let updateCache = (~currentUser, ~input) => {
   let cacheQuery =
-    QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
-      ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+    QueryRenderers_Notes_GraphQL.ListAnnotations.Query.make(
+      ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
       (),
     );
   let _ =
-    switch (
-      QueryRenderers_Notes_GraphQL.ListHighlights.readCache(
-        ~query=cacheQuery,
-        ~client=Provider.client,
-        (),
-      )
-    ) {
-    | None => ()
-    | Some(cachedQuery) =>
-      let updatedListHighlights =
-        QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
-          cachedQuery
-          ->listHighlights
-          ->Belt.Option.flatMap(highlightConnectionItems)
-          ->Belt.Option.map(items => {
-              let updatedTags =
-                editorValue.tags
-                ->Belt.Array.map(committedTag =>
-                    switch (
-                      createHighlightTagsInput->Belt.Array.getBy(input =>
-                        input##tagId === committedTag##id
-                      )
-                    ) {
-                    | Some(input) =>
-                      makeHighlightTag(
-                        ~id=input##id->Js.Option.getExn,
-                        ~createdAt=Js.Date.(make()->toISOString),
-                        ~tag=
-                          makeTag(~id=input##tagId, ~text=committedTag##text),
-                      )
-                      ->Js.Option.some
-                    | None =>
-                      let _ =
-                        Error.(
-                          report(
-                            InvalidState(
-                              "Expected highlight tag in cache or created, but found none.",
-                            ),
-                          )
-                        );
-                      None;
-                    }
-                  );
+    QueryRenderers_Notes_GraphQL.ListAnnotations.readCache(
+      ~query=cacheQuery,
+      ~client=Provider.client,
+      (),
+    )
+    ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
+    ->Belt.Option.flatMap(listAnnotations => listAnnotations##items)
+    ->Belt.Option.forEach(annotations => {
+        let newAnnotation = 
+          input
+          ->CreateAnnotationMutation.json_of_CreateAnnotationInput
+          ->annotationFromCreateAnnotationInput;
 
-              let updatedHighlight =
-                makeHighlight(
-                  ~id=createHighlightInput##id,
-                  ~createdAt=Js.Date.(make()->toISOString),
-                  ~text=editorValue.text,
-                  ~tags=
-                    makeHighlightTagsConnection(
-                      ~tags=updatedTags->Js.Option.some,
-                    )
-                    ->Js.Option.some,
-                )
-                ->Js.Option.some;
-              let updatedItems =
-                Js.Array.concat([|updatedHighlight|], items);
-              {
-                ...cachedQuery,
-                listHighlights:
-                  Some({
-                    ...cachedQuery->listHighlights->Belt.Option.getExn,
-                    items: Some(updatedItems),
-                  }),
-              };
-            })
-        );
-      let _ =
-        switch (updatedListHighlights) {
-        | Some(updatedListHighlights) =>
-          QueryRenderers_Notes_GraphQL.ListHighlights.writeCache(
-            ~client=Provider.client,
-            ~data=updatedListHighlights,
-            ~query=cacheQuery,
-            (),
-          )
-        | None => ()
+        let newAnnotations =
+          Belt.Array.concat(annotations, [|newAnnotation|]);
+
+        let newData = {
+          "listAnnotations":
+            Some({
+              "items": Some(newAnnotations),
+              "__typename": "ModelAnnotationConnection",
+            }),
+          "__typename": "Query",
         };
-      ();
-    };
+
+        let _ =
+          QueryRenderers_Notes_GraphQL.ListAnnotations.(
+            writeCache(
+              ~query=cacheQuery,
+              ~client=Provider.client,
+              ~data=newData,
+              (),
+            )
+          );
+        ();
+      });
   ();
 };
-**/
+
 module PhaseTextInput = {
   [@react.component]
   let make = (~currentUser) => {
@@ -187,7 +180,6 @@ module PhaseTextInput = {
                "creatorUsername":
                  AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
                "annotationGeneratorId": None,
-               "body": None,
                "target": [|
                  {
                    "textualTarget":
@@ -210,15 +202,7 @@ module PhaseTextInput = {
                CreateAnnotationMutation.makeVariables(~input, ());
 
              let _ = createAnnotationMutation(~variables, ());
-             /**
-              let _ =
-                updateCache(
-                  ~currentUser,
-                  ~editorValue,
-                  ~createHighlightTagsInput,
-                  ~createHighlightInput,
-                );
-              **/
+             let _ = updateCache(~currentUser, ~input);
 
              // FIXME: This should really do something like "back and replace"
              let _ = Next.Router.push("/notes?id=" ++ id);

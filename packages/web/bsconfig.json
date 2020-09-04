@@ -30,7 +30,11 @@
     "@jsiebern/bs-material-ui"
   ],
   "ppx-flags": [
-    ["@reasonml-community/graphql-ppx/ppx", "-schema ./graphql-schema.json"],
+    [
+      "@reasonml-community/graphql-ppx/ppx",
+      "-schema ./graphql-schema.json",
+      "-apollo-mode"
+    ],
     "decco/ppx"
   ],
   "warnings": {
