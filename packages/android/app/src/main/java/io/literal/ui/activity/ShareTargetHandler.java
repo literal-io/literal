@@ -163,8 +163,6 @@ public class ShareTargetHandler extends AppCompatActivity {
     }
 
     private void handleSendText(Intent intent) {
-        String highlightId = UUID.randomUUID().toString();
-        webView.loadUrl(Constants.WEB_HOST + "/notes/new?id=" + highlightId);
 
         String text = intent.getStringExtra(Intent.EXTRA_TEXT);
 
@@ -172,6 +170,7 @@ public class ShareTargetHandler extends AppCompatActivity {
         try {
             String valueHash = Crypto.sha256Hex(text);
             String annotationId = "https://literal.io/creators/" + creatorUsername + "/annotations/" + valueHash;
+            webView.loadUrl(Constants.WEB_HOST + "/notes/new?id=" + annotationId);
             CreateAnnotationMutation createHighlightMutation = CreateAnnotationMutation
                     .builder()
                     .input(
