@@ -1,6 +1,6 @@
 open Styles;
 
-let styles = [%raw "require('./textInputBasic.module.css')"];
+let styles = [%raw "require('./TextInput_Basic.module.css')"];
 [@react.component]
 let make =
   React.forwardRef(
@@ -102,7 +102,7 @@ let make =
               ~input=
                 Cn.(
                   fromList([
-                    "text-white",
+                    "text-lightSecondary",
                     "font-serif",
                     "text-lg",
                     "leading-relaxed",

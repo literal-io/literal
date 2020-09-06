@@ -80,14 +80,7 @@ let make =
     ();
   };
 
-  <div
-    className=Cn.(
-      fromList([
-        take(className),
-        styles##underline,
-        on(styles##underlineFocused, isFocused),
-      ])
-    )>
+  <>
     <TextInput_Basic
       onFocus=handleFocus
       onBlur=handleBlur
@@ -96,9 +89,9 @@ let make =
       ?placeholder
       ?autoFocus
       inputProps={
-        "disableUnderline": true,
         "onKeyDown": handleTextKeyDown,
         "inputRef": textInputRef->ReactDOMRe.Ref.domRef->Js.Option.some,
+        "disableUnderline": false
       }
     />
     <TextInput_Tags
@@ -110,5 +103,5 @@ let make =
       className={cn(["pt-8", "pb-6"])}
       ref={tagsInputRef->ReactDOMRe.Ref.domRef}
     />
-  </div>;
+  </>;
 };

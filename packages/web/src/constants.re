@@ -30,4 +30,4 @@ let bowser = () =>
 
 let browser = () => bowser()->Bowser.getBrowser;
 
-let serifFontFace = "Prata";
+let serifFontFace = "Domine";

@@ -1,6 +1,6 @@
 import "../app.css";
-import "typeface-prata";
-import "typeface-montserrat";
+import "typeface-open-sans";
+import "typeface-domine";
 
 import Head from "next/head";
 import Router from "next/router";

@@ -77,11 +77,9 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
       "z-10",
     ])}>
     <div
-      style={style(~borderColor="rgba(255, 255, 255, 0.5)", ())}
       className={cn([
         "justify-between",
         "items-center",
-        "border-b",
         "py-2",
         "mx-6",
         "flex",
@@ -89,14 +87,13 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
       ])}>
       <h1
         className={cn([
-          "text-white",
+          "text-lightPrimary",
           "font-sans",
-          "font-semibold",
-          "italic",
+          "font-bold",
           "leading-none",
           "text-xl",
         ])}>
-        {React.string("#recent")}
+        {React.string("recent")}
       </h1>
       <div className={cn(["flex", "flex-row"])}>
         <MaterialUi.IconButton
@@ -121,7 +118,7 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
           )}>
           <Svg
             placeholderViewBox="0 0 24 24"
-            className={cn(["pointer-events-none", "opacity-75"])}
+            className={cn(["pointer-events-none", "opacity-50"])}
             style={ReactDOMRe.Style.make(
               ~width="1.75rem",
               ~height="1.75rem",
@@ -151,7 +148,7 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
           )}>
           <Svg
             placeholderViewBox="0 0 24 24"
-            className={cn(["pointer-events-none", "opacity-75"])}
+            className={cn(["pointer-events-none", "opacity-50"])}
             style={ReactDOMRe.Style.make(
               ~width="1.75rem",
               ~height="1.75rem",

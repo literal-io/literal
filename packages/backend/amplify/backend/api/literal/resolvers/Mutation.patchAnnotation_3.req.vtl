@@ -185,7 +185,12 @@
     $util.qr($ctx.stash.transactWriteItems.add($deleteAnnotationPageItemOperation))
     $util.qr($ctx.stash.output.deletedAnnotationPageItemIds.add($annotationPageItemId))
 
-    #set( $annotationCollectionResult = $ctx.stash.oldAnnotationCollectionResults.get($foreach.index) )
+    #foreach( $oldAnnotationCollection in $ctx.stash.oldAnnotationCollectionResults )
+      #if( $oldAnnotationCollection.id == $tag.id )
+        #set( $annotationCollectionResult = $oldAnnotationCollection )
+      #end
+    #end
+
     #if( $util.defaultIfNull($annotationCollectionResult.total, 0) == 1 )
       #set( $deleteAnnotationCollectionOperation = {
         "table": ${ctx.stash.constants.ANNOTATION_COLLECTION_TABLE},
