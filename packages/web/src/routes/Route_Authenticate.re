@@ -100,3 +100,5 @@ let default = () => {
     </MaterialUi.Button>
   </div>;
 };
+
+let page = "authenticate.js"

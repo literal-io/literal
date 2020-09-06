@@ -166,3 +166,5 @@ let default = () => {
     </div>
   </div>;
 };
+
+let page = "index.js"

@@ -16,7 +16,7 @@
   },
   "suffix": ".js",
   "js-post-build": {
-    "cmd": "./scripts/bsb-js-post-build.sh"
+    "cmd": "./scripts/bsb-js-post-build.js"
   },
   "bs-dependencies": [
     "@literal-io/bs-aws-amplify",

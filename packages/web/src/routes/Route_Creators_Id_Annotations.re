@@ -50,3 +50,5 @@ let default = () => {
     }
   />;
 };
+
+let page = "creators/[creatorUsername]/annotations.js"

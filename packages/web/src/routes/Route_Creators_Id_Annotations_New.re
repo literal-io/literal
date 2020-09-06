@@ -47,3 +47,5 @@ let default = () => {
     />
   </>;
 };
+
+let page = "creators/[creatorUsername]/annotations/new.js"
