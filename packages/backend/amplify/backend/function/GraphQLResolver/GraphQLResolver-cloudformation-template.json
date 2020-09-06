@@ -93,7 +93,7 @@
 				"Timeout": "25",
 				"Code": {
 					"S3Bucket": "amplify-literal-production-114446-deployment",
-					"S3Key": "amplify-builds/GraphQLResolver-30535269596275787634-build.zip"
+					"S3Key": "amplify-builds/GraphQLResolver-612f2f6d355764345256-build.zip"
 				},
 				"Layers": [
 					{
@@ -336,6 +336,37 @@
 											},
 											"/*"
 										]
+									]
+								}
+							]
+						},
+						{
+							"Effect": "Allow",
+							"Action": [
+								"appsync:GraphQL"
+							],
+							"Resource": [
+								{
+									"Fn::Sub": [
+										"arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${apiId}/types/${typeName}/fields/${fieldName}",
+										{
+											"apiId": {
+												"Ref": "apiliteralGraphQLAPIIdOutput"
+											},
+											"typeName": "Mutation",
+											"fieldName": "createAnnotation"
+										}
+									]
+								},
+								{
+									"Fn::Sub": [
+										"arn:aws:appsync:${AWS::Region}:${AWS::AccountId}:apis/${apiId}/types/${typeName}/*",
+										{
+											"apiId": {
+												"Ref": "apiliteralGraphQLAPIIdOutput"
+											},
+											"typeName": "Annotation"
+										}
 									]
 								}
 							]

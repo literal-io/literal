@@ -1,5 +1,5 @@
 {
-  "name": "@literal/bs-aws-sdk",
+  "name": "@literal-io/bs-aws-sdk",
   "reason": {
     "react-jsx": 3
   },

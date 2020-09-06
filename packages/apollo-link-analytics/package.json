@@ -1,5 +1,5 @@
 {
-  "name": "@literal/apollo-link-analytics",
+  "name": "@literal-io/apollo-link-analytics",
   "version": "1.0.0",
   "main": "./src/ApolloLinkAnalytics.bs.js",
   "scripts": {

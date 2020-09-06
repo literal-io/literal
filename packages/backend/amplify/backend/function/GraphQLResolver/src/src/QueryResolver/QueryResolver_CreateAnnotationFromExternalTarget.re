@@ -100,6 +100,7 @@ type externalTargetInput = {
 [@bs.deriving accessors]
 type input = {
   creatorUsername: string,
+  annotationId: option(string),
   externalTarget: externalTargetInput
 };
 
@@ -116,22 +117,16 @@ let parseTextFromExternalTarget = (input) => {
 
   if (eligible) {
     let { bucket, key }: Externals_AmazonS3URI.t = Externals_AmazonS3URI.make(input.externalTarget.id)
-    let unleveledKey =
-      key
-      ->Js.String2.split("/")
-      ->Js.Array2.sliceFrom(1)
-      ->Js.Array2.joinWith("/");
-
-      AwsAmplify.Storage.(
-        getWithConfig(
-          inst,
-          unleveledKey,
-          {level: "public", download: true},
-        )
+    Externals_AWS.S3.(
+      getObject(
+        makeClient({ version: "2006-03-01" }),
+        { bucket, key }
       )
+      ->promise
+    )
       ->Lib_OptionPromise.fromPromise
       ->Lib_OptionPromise.map(s3GetResult => {
-          let imageBuffer = s3GetResult.AwsAmplify.Storage.body;
+          let imageBuffer = s3GetResult.Externals_AWS.S3.body;
           let requestData =
             Service_HighlightBoundingBoxDetector.{
               instances: [|
@@ -189,7 +184,7 @@ module CreateAnnotationMutation = [%graphql
           type
           target {
             ... on ExternalTarget {
-              id
+              externalTargetId: id
               format
               language
               processingLanguage
@@ -199,7 +194,7 @@ module CreateAnnotationMutation = [%graphql
               rights
             }
             ... on TextualTarget {
-              id
+              textualTargetId: id
               format
               language
               processingLanguage
@@ -231,13 +226,15 @@ module CreateAnnotationMutation = [%graphql
 ];
 
 let createAnnotation = (~input, ~text) => {
-  let id = {
-    let hash = Externals_Node.Crypto.makeHash("sha256");
-    let _ = Externals_Node.Crypto.update(hash, text);
-    let digest = Externals_Node.Crypto.digest(hash, "hex");
+  let id = switch (input.annotationId) {
+    | Some(annotationId) => annotationId
+    | None =>
+      let hash = Externals_Node.Crypto.makeHash("sha256");
+      let _ = Externals_Node.Crypto.update(hash, text);
+      let digest = Externals_Node.Crypto.digest(hash, "hex");
 
-    Lib_Constants.Env.appOrigin ++ "/creators/" ++ input.creatorUsername ++ "/annotations/" ++ digest;
-  };
+      Lib_Constants.appOrigin ++ "/creators/" ++ input.creatorUsername ++ "/annotations/" ++ digest;
+    };
     
   let mutation = 
     CreateAnnotationMutation.make(

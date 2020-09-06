@@ -25,8 +25,8 @@ export const listAgents = /* GraphQL */ `
         email
         homepage
         username
-        createdAt
-        updatedAt
+        created
+        modified
       }
       nextToken
     }
@@ -43,8 +43,8 @@ export const getAgent = /* GraphQL */ `
       email
       homepage
       username
-      createdAt
-      updatedAt
+      created
+      modified
     }
   }
 `;
@@ -167,8 +167,8 @@ export const getAnnotation = /* GraphQL */ `
         email
         homepage
         username
-        createdAt
-        updatedAt
+        created
+        modified
       }
       generator {
         id
@@ -179,8 +179,8 @@ export const getAnnotation = /* GraphQL */ `
         email
         homepage
         username
-        createdAt
-        updatedAt
+        created
+        modified
       }
     }
   }
@@ -236,8 +236,8 @@ export const getAnnotationCollection = /* GraphQL */ `
         email
         homepage
         username
-        createdAt
-        updatedAt
+        created
+        modified
       }
       first {
         context
@@ -278,8 +278,8 @@ export const getAnnotationPageItem = /* GraphQL */ `
         email
         homepage
         username
-        createdAt
-        updatedAt
+        created
+        modified
       }
       annotation {
         context
@@ -383,8 +383,8 @@ export const getAnnotationPage = /* GraphQL */ `
         email
         homepage
         username
-        createdAt
-        updatedAt
+        created
+        modified
       }
       partOf {
         context

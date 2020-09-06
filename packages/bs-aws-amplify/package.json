@@ -1,6 +1,6 @@
 {
-  "name": "@literal/bs-aws-amplify",
-  "version": "1.0.0",
+  "name": "@literal-io/bs-aws-amplify",
+  "version": "1.0.1",
   "description": "BuckleScript bindings to aws-amplify.",
   "keywords": [
     "bucklescript",
@@ -16,8 +16,8 @@
     "start": "npm run bsb:start"
   },
   "author": "Daniel Ramirez <javamonn@gmail.com>",
-  "homepage": "https://trashed.today",
-  "repository": "https://github.com/javamonn/trashed/tree/master/packages/bs-aws-amplify",
+  "homepage": "https://literal.io",
+  "repository": "https://github.com/javamonn/literal/tree/master/packages/bs-aws-amplify",
   "license": "MIT - Hippocratic 1.2",
   "dependencies": {
     "@aws-amplify/api": "^3.1.23",

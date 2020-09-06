@@ -3,6 +3,7 @@
 
 let fragmentTypes = [%raw "require('../fragment-types.json')"];
 
+/** FIXME: cache AUTH_GET_TOKENS, as this is called once per gql op **/
 let authenticatedClientAuthOptions = {
   Webview.isWebview()
     ? AwsAppSync.Client.authWithCognitoUserPools(~jwtToken=() => {

@@ -20,6 +20,7 @@ let currentUserInfoWebview = () =>
        ->Belt.Option.flatMap(data => {
            switch (Webview.WebEvent.authGetUserInfoResult_decode(data)) {
            | Belt.Result.Ok(userInfo) =>
+            Js.log2("getUserInfo", userInfo);
              Some(
                AwsAmplify.Auth.CurrentUserInfo.{
                  id: Some(userInfo.id),

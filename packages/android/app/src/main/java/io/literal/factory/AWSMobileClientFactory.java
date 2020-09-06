@@ -1,11 +1,16 @@
 package io.literal.factory;
 
 import android.content.Context;
+import android.content.Intent;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.mobile.config.AWSConfiguration;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferService;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,9 +23,12 @@ import io.literal.R;
 
 public class AWSMobileClientFactory {
 
+    public static volatile TransferUtility transferUtility;
+
     static CountDownLatch initializationLatch = new CountDownLatch(1);
 
     public static void initializeClient(Context context, final Callback<UserStateDetails> callback) {
+        context.startService(new Intent(context, TransferService.class));
         AWSMobileClient.getInstance().initialize(context, getConfiguration(context), new Callback<UserStateDetails>() {
             @Override
             public void onResult(UserStateDetails result) {
@@ -44,6 +52,19 @@ public class AWSMobileClientFactory {
     public static void initializeClientBlocking(Context context) throws InterruptedException {
         initializeClient(context, null);
         initializationLatch.await();
+    }
+
+    public static TransferUtility getTransferUtility(Context context) {
+        if (transferUtility == null) {
+            AWSMobileClient mobileClient = AWSMobileClient.getInstance();
+            transferUtility = TransferUtility
+                    .builder()
+                    .context(context)
+                    .awsConfiguration(mobileClient.getConfiguration())
+                    .s3Client(new AmazonS3Client(mobileClient))
+                    .build();
+        }
+        return transferUtility;
     }
 
     private static JSONObject parseInputStream(InputStream inputStream) {

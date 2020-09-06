@@ -14,7 +14,6 @@
   "suffix": ".bs.js",
   "bs-dependencies": [
     "decco",
-    "@literal/bs-aws-amplify",
     "bs-fetch"
   ],
   "ppx-flags": [

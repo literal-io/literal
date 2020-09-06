@@ -1,5 +1,5 @@
 {
-  "name": "@literal/bs-aws-sdk",
+  "name": "@literal-io/bs-aws-sdk",
   "version": "1.0.0",
   "main": "src/Index.bs.js",
   "scripts": {
@@ -11,8 +11,8 @@
     "build": "npm run bsb:build"
   },
   "author": "Daniel Ramirez <javamonn@gmail.com>",
-  "homepage": "https://trashed.today",
-  "repository": "https://github.com/javamonn/trashed/tree/master/packages/bs-aws-sdk",
+  "homepage": "https://literal-io",
+  "repository": "https://github.com/javamonn/literal/tree/master/packages/bs-aws-sdk",
   "description": "BuckleScript bindings to aws-sdk.",
   "keywords": [
     "bucklescript",

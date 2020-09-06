@@ -77,7 +77,7 @@ interface Resource {
 
 union AnnotationTarget = ExternalTarget | TextualTarget
 
-type ExternalTarget implements Resource {
+type ExternalTarget implements Resource @aws_iam @aws_cognito_user_pools {
   # Resource
   id: ID!
   format: Format
@@ -90,7 +90,7 @@ type ExternalTarget implements Resource {
 }
 
 # non-spec
-type TextualTarget implements Resource {
+type TextualTarget implements Resource @aws_iam @aws_cognito_user_pools {
   # Resource
   id: ID
   format: Format
@@ -475,6 +475,8 @@ enum AnnotationType {
 }
 
 type Annotation
+  @aws_iam
+  @aws_cognito_user_pools
   @model(
     queries: { get: "getAnnotation", list: "listAnnotations" }
     mutations: null
@@ -714,7 +716,7 @@ input UpdateAnnotationInput {
   annotationGeneratorId: ID
 }
 
-type CreateAnnotationOutput {
+type CreateAnnotationOutput @aws_iam @aws_cognito_user_pools {
   annotation: Annotation!
   annotationCollections: [AnnotationCollection!]!
   annotationPageItems: [AnnotationPageItem!]!
@@ -770,6 +772,7 @@ input DeleteAnnotationInput {
 input CreateAnnotationFromExternalTargetInput {
   externalTarget: ExternalTargetInput!
   creatorUsername: String!
+  annotationId: String
 }
 
 type DeleteAnnotationOutput {
@@ -778,6 +781,8 @@ type DeleteAnnotationOutput {
 
 type Mutation {
   createAnnotation(input: CreateAnnotationInput!): CreateAnnotationOutput
+    @aws_iam
+    @aws_cognito_user_pools
   updateAnnotation(input: UpdateAnnotationInput!): UpdateAnnotationOutput
   deleteAnnotation(input: DeleteAnnotationInput!): DeleteAnnotationOutput
   patchAnnotation(input: PatchAnnotationInput!): UpdateAnnotationOutput

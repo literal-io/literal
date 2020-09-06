@@ -16,15 +16,20 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
-import com.amazonaws.amplify.generated.graphql.CreateHighlightFromScreenshotMutation;
-import com.amazonaws.amplify.generated.graphql.CreateHighlightMutation;
-import com.amazonaws.amplify.generated.graphql.CreateScreenshotMutation;
-import com.amazonaws.amplify.generated.graphql.GetHighlightQuery;
+import com.amazonaws.amplify.generated.graphql.CreateAnnotationFromExternalTargetMutation;
+import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
+import com.amazonaws.amplify.generated.graphql.GetAnnotationForNotificationQuery;
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.mobileconnectors.appsync.ClearCacheException;
 import com.amazonaws.mobileconnectors.appsync.ClearCacheOptions;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.apollographql.apollo.GraphQLCall;
 import com.apollographql.apollo.api.Response;
 import com.apollographql.apollo.exception.ApolloException;
@@ -32,8 +37,10 @@ import com.apollographql.apollo.exception.ApolloException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 
 import javax.annotation.Nonnull;
 
@@ -42,12 +49,20 @@ import io.literal.factory.AWSMobileClientFactory;
 import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.Constants;
 import io.literal.lib.ContentResolverLib;
+import io.literal.lib.Crypto;
 import io.literal.lib.WebEvent;
 import io.literal.ui.view.WebView;
-import type.CreateHighlightFromScreenshotInput;
-import type.CreateHighlightInput;
-import type.CreateScreenshotInput;
-import type.S3ObjectInput;
+import type.AnnotationTargetInput;
+import type.AnnotationType;
+import type.CreateAnnotationFromExternalTargetInput;
+import type.CreateAnnotationInput;
+import type.ExternalTargetInput;
+import type.Format;
+import type.Language;
+import type.Motivation;
+import type.ResourceType;
+import type.TextDirection;
+import type.TextualTargetInput;
 
 public class ShareTargetHandler extends AppCompatActivity {
 
@@ -152,63 +167,92 @@ public class ShareTargetHandler extends AppCompatActivity {
         webView.loadUrl(Constants.WEB_HOST + "/notes/new?id=" + highlightId);
 
         String text = intent.getStringExtra(Intent.EXTRA_TEXT);
-        CreateHighlightMutation createHighlightMutation = CreateHighlightMutation
-                .builder()
-                .input(
-                        CreateHighlightInput
-                                .builder()
-                                .id(highlightId)
-                                .text(text)
-                                .owner(AWSMobileClient.getInstance().getUsername())
-                                .build()
-                )
-                .build();
 
-        AppSyncClientFactory.getInstance(this)
-                .mutate(createHighlightMutation)
-                .enqueue(new GraphQLCall.Callback<CreateHighlightMutation.Data>() {
-                    @Override
-                    public void onResponse(@Nonnull Response<CreateHighlightMutation.Data> highlightResponse) {
-                        if (highlightResponse.hasErrors()) {
-                            // Error is handled in WebView.
-                            Log.e(Constants.LOG_TAG, highlightResponse.errors().toString());
-                            return;
-                        }
+        String creatorUsername = AWSMobileClient.getInstance().getUsername();
+        try {
+            String valueHash = Crypto.sha256Hex(text);
+            String annotationId = "https://literal.io/creators/" + creatorUsername + "/annotations/" + valueHash;
+            CreateAnnotationMutation createHighlightMutation = CreateAnnotationMutation
+                    .builder()
+                    .input(
+                            CreateAnnotationInput
+                                    .builder()
+                                    .context(Collections.singletonList("http://www.w3.org/ns/anno.jsonld"))
+                                    .type(Collections.singletonList(AnnotationType.ANNOTATION))
+                                    .id(annotationId)
+                                    .motivation(Collections.singletonList(Motivation.HIGHLIGHTING))
+                                    .creatorUsername(creatorUsername)
+                                    .target(Collections.singletonList(
+                                            AnnotationTargetInput
+                                                    .builder()
+                                                    .textualTarget(
+                                                            TextualTargetInput
+                                                                    .builder()
+                                                                    .format(Format.TEXT_PLAIN)
+                                                                    .language(Language.EN_US)
+                                                                    .processingLanguage(Language.EN_US)
+                                                                    .textDirection(TextDirection.LTR)
+                                                                    .value(text)
+                                                                    .build()
+                                                    )
+                                                    .build()
+                                    ))
+                                    .build()
+                    )
+                    .build();
 
-
-                        final CreateHighlightMutation.Data highlightData = highlightResponse.data();
-                        if (highlightData == null) {
-                            // Error is handled in WebView
-                            Log.i(Constants.LOG_TAG, "highlightResult is null");
-                            return;
-                        }
-
-                        webView.onWebEvent(new WebEvent.Callback(ShareTargetHandler.this, webView) {
-                            @Override
-                            public void onWebEvent(WebEvent event) {
-                                super.onWebEvent(event);
-                                switch (event.getType()) {
-                                    case WebEvent.TYPE_ACTIVITY_FINISH:
-                                        CreateHighlightMutation.CreateHighlight highlight = highlightData.createHighlight();
-                                        if (highlight != null) {
-                                            handleDisplayNotification(highlight.id());
-                                        }
-                                        finish();
-                                }
+            AppSyncClientFactory.getInstance(this)
+                    .mutate(createHighlightMutation)
+                    .enqueue(new GraphQLCall.Callback<CreateAnnotationMutation.Data>() {
+                        @Override
+                        public void onResponse(@Nonnull Response<CreateAnnotationMutation.Data> highlightResponse) {
+                            if (highlightResponse.hasErrors()) {
+                                // Error is handled in WebView.
+                                Log.e(Constants.LOG_TAG, highlightResponse.errors().toString());
+                                return;
                             }
-                        });
-                    }
 
-                    @Override
-                    public void onFailure(@Nonnull ApolloException e) {
 
-                    }
-                });
+                            final CreateAnnotationMutation.Data annotationData = highlightResponse.data();
+                            if (annotationData == null) {
+                                // Error is handled in WebView
+                                Log.i(Constants.LOG_TAG, "highlightResult is null");
+                                return;
+                            }
+
+                            webView.onWebEvent(new WebEvent.Callback(ShareTargetHandler.this, webView) {
+                                @Override
+                                public void onWebEvent(WebEvent event) {
+                                    super.onWebEvent(event);
+                                    switch (event.getType()) {
+                                        case WebEvent.TYPE_ACTIVITY_FINISH:
+                                            CreateAnnotationMutation.CreateAnnotation annotation = annotationData.createAnnotation();
+                                            if (annotation != null) {
+                                                handleDisplayNotification(annotation.annotation().id());
+                                            }
+                                            finish();
+                                    }
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(@Nonnull ApolloException e) {
+
+                        }
+                    });
+        } catch (NoSuchAlgorithmException ex) {
+            Log.e(Constants.LOG_TAG, "No such algorithm", ex);
+            /** error is handled in webview **/
+        }
     }
 
     private void handleSendImage(Intent intent) {
-        String highlightId = UUID.randomUUID().toString();
-        webView.loadUrl(Constants.WEB_HOST + "/notes/new?id=" + highlightId);
+
+        String screenshotId = UUID.randomUUID().toString();
+        String creatorUsername = AWSMobileClient.getInstance().getUsername();
+        String annotationId = "https://literal.io/creators/" + creatorUsername + "/annotations/" + screenshotId;
+        webView.loadUrl(Constants.WEB_HOST + "/notes/new?id=" + annotationId);
 
         JSONObject s3TransferUtilityJson = AppSyncClientFactory
                 .getConfiguration(this)
@@ -216,111 +260,102 @@ public class ShareTargetHandler extends AppCompatActivity {
         String bucket = s3TransferUtilityJson.optString("Bucket");
         String region = s3TransferUtilityJson.optString("Region");
 
-        String screenshotId = UUID.randomUUID().toString();
         Uri imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
         String filePath = "screenshots/" + screenshotId;
         File file = ContentResolverLib.toFile(this, imageUri, filePath);
 
-        CreateScreenshotMutation createScreenshotMutation = CreateScreenshotMutation
-                .builder()
-                .input(
-                        CreateScreenshotInput.builder()
-                                .id(screenshotId)
-                                .owner(AWSMobileClient.getInstance().getUsername())
-                                .file(
-                                        S3ObjectInput.builder()
-                                                .bucket(bucket)
-                                                .key("public/screenshot/" + screenshotId)
-                                                .region(region)
-                                                .localUri(file.getAbsolutePath())
-                                                .mimeType(intent.getType())
-                                                .build()
-                                )
-                                .build()
-                )
-                .build();
-        AppSyncClientFactory.getInstance(this)
-                .mutate(createScreenshotMutation)
-                .enqueue(new GraphQLCall.Callback<CreateScreenshotMutation.Data>() {
-                    @Override
-                    public void onResponse(@Nonnull Response<CreateScreenshotMutation.Data> screenshotResponse) {
-                        if (screenshotResponse.hasErrors()) {
-                            // Error is handled in WebView
-                            Log.e(Constants.LOG_TAG, screenshotResponse.errors().toString());
-                            return;
-                        }
-                        CreateScreenshotMutation.Data screenshotData = screenshotResponse.data();
-                        if (screenshotData == null) {
-                            // Error is handled in WebView
-                            Log.i("Literal", "screenshotResult is null");
-                            return;
-                        }
+        TransferUtility transferUtility = AWSMobileClientFactory.getTransferUtility(getApplicationContext());
+        TransferObserver transferObserver = transferUtility.upload(
+                bucket,
+                "public/screenshot/" + screenshotId,
+                file
+        );
+        transferObserver.setTransferListener(new TransferListener() {
+            @Override
+            public void onStateChanged(int id, TransferState state) {
+                if (TransferState.COMPLETED != state) {
+                    return;
+                }
+                String uploadURI = "s3://" + transferObserver.getBucket() + "/" + transferObserver.getKey();
+                CreateAnnotationFromExternalTargetMutation createAnnotationMutation = CreateAnnotationFromExternalTargetMutation
+                        .builder()
+                        .input(
+                                CreateAnnotationFromExternalTargetInput
+                                        .builder()
+                                        .creatorUsername(creatorUsername)
+                                        .annotationId(annotationId)
+                                        .externalTarget(
+                                                ExternalTargetInput
+                                                        .builder()
+                                                        .format(Format.TEXT_PLAIN)
+                                                        .language(Language.EN_US)
+                                                        .processingLanguage(Language.EN_US)
+                                                        .type(ResourceType.IMAGE)
+                                                        .id(uploadURI)
+                                                        .build()
+                                        )
+                                        .build()
+                        )
+                        .build();
+                AppSyncClientFactory.getInstance(ShareTargetHandler.this)
+                        .mutate(createAnnotationMutation)
+                        .enqueue(new GraphQLCall.Callback<CreateAnnotationFromExternalTargetMutation.Data>() {
+                            @Override
+                            public void onResponse(@Nonnull Response<CreateAnnotationFromExternalTargetMutation.Data> annotationResponse) {
+                                if (annotationResponse.hasErrors()) {
+                                    // Error is handled in WebView.
+                                    Log.e(Constants.LOG_TAG, annotationResponse.errors().toString());
+                                    return;
+                                }
 
-                        CreateHighlightFromScreenshotMutation createHighlightMutation = CreateHighlightFromScreenshotMutation.builder()
-                                .input(
-                                        CreateHighlightFromScreenshotInput.builder()
-                                                .id(highlightId)
-                                                .screenshotId(screenshotId)
-                                                .owner(AWSMobileClient.getInstance().getUsername())
-                                                .build()
-                                )
-                                .build();
-
-                        AppSyncClientFactory.getInstance(ShareTargetHandler.this)
-                                .mutate(createHighlightMutation)
-                                .enqueue(new GraphQLCall.Callback<CreateHighlightFromScreenshotMutation.Data>() {
+                                final CreateAnnotationFromExternalTargetMutation.Data annotationData = annotationResponse.data();
+                                if (annotationData == null) {
+                                    // Error is handled in WebView.
+                                    Log.i("Literal", "highlightResult is null");
+                                    return;
+                                }
+                                webView.onWebEvent(new WebEvent.Callback(ShareTargetHandler.this, webView) {
                                     @Override
-                                    public void onResponse(@Nonnull Response<CreateHighlightFromScreenshotMutation.Data> highlightResponse) {
-                                        if (highlightResponse.hasErrors()) {
-                                            // Error is handled in WebView.
-                                            Log.e(Constants.LOG_TAG, highlightResponse.errors().toString());
-                                            return;
-                                        }
-
-                                        final CreateHighlightFromScreenshotMutation.Data highlightData = highlightResponse.data();
-                                        if (highlightData == null) {
-                                            // Error is handled in WebView.
-                                            Log.i("Literal", "highlightResult is null");
-                                            return;
-                                        }
-                                        webView.onWebEvent(new WebEvent.Callback(ShareTargetHandler.this, webView) {
-                                            @Override
-                                            public void onWebEvent(WebEvent event) {
-                                                super.onWebEvent(event);
-                                                switch (event.getType()) {
-                                                    case WebEvent.TYPE_ACTIVITY_FINISH:
-                                                        CreateHighlightFromScreenshotMutation.CreateHighlightFromScreenshot highlight = highlightData.createHighlightFromScreenshot();
-                                                        if (highlight != null) {
-                                                            handleDisplayNotification(highlight.id());
-                                                        }
-                                                        finish();
+                                    public void onWebEvent(WebEvent event) {
+                                        super.onWebEvent(event);
+                                        switch (event.getType()) {
+                                            case WebEvent.TYPE_ACTIVITY_FINISH:
+                                                CreateAnnotationFromExternalTargetMutation.CreateAnnotationFromExternalTarget annotation = annotationData.createAnnotationFromExternalTarget();
+                                                if (annotation != null) {
+                                                    handleDisplayNotification(annotation.id());
                                                 }
-                                            }
-                                        });
-                                    }
-
-                                    @Override
-                                    public void onFailure(@Nonnull ApolloException e) {
-                                        // Error is handled in WebView.
-                                        Log.e(Constants.LOG_TAG, "ApolloException", e);
+                                                finish();
+                                        }
                                     }
                                 });
-                    }
+                            }
 
-                    @Override
-                    public void onFailure(@Nonnull ApolloException e) {
-                        // Error is handled in WebView.
-                        Log.e(Constants.LOG_TAG, "ApolloException", e);
-                    }
-                });
+                            @Override
+                            public void onFailure(@Nonnull ApolloException e) {
+                                // Error is handled in WebView.
+                                Log.e(Constants.LOG_TAG, "ApolloException", e);
+                            }
+                        });
+            }
 
+            @Override
+            public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+                /** noop **/
+            }
+
+            @Override
+            public void onError(int id, Exception ex) {
+                Log.e(Constants.LOG_TAG, "TransferUtility", ex);
+                /** error is handled in webview **/
+            }
+        });
     }
 
     private void handleSendNotSupported() {
         // TODO: implement fallback handling, e.g. display a "This does not look like a screenshot" UI
     }
 
-    private void handleDisplayNotification(String noteId) {
+    private void handleDisplayNotification(String annotationId) {
         try {
             // NewHighlightFromShare may have deleted or changed the highlight.
             AppSyncClientFactory.getInstance(this).clearCaches(ClearCacheOptions.builder().clearQueries().build());
@@ -329,40 +364,59 @@ public class ShareTargetHandler extends AppCompatActivity {
         }
 
         AppSyncClientFactory.getInstance(this)
-                .query(GetHighlightQuery.builder().id(noteId).build())
-                .enqueue(new GraphQLCall.Callback<GetHighlightQuery.Data>() {
+                .query(
+                        GetAnnotationForNotificationQuery
+                                .builder()
+                                .id(annotationId)
+                                .creatorUsername(AWSMobileClient.getInstance().getUsername())
+                                .build()
+                )
+                .enqueue(new GraphQLCall.Callback<GetAnnotationForNotificationQuery.Data>() {
                     @Override
-                    public void onResponse(@Nonnull Response<GetHighlightQuery.Data> response) {
+                    public void onResponse(@Nonnull Response<GetAnnotationForNotificationQuery.Data> response) {
                         if (response.hasErrors()) {
                             Log.e(Constants.LOG_TAG, response.errors().toString());
                             return;
                         }
-                        GetHighlightQuery.Data data = response.data();
+                        GetAnnotationForNotificationQuery.Data data = response.data();
                         if (data == null) {
                             return;
                         }
-                        GetHighlightQuery.GetHighlight highlight = data.getHighlight();
-                        if (highlight == null) {
+                        GetAnnotationForNotificationQuery.GetAnnotation annotation = data.getAnnotation();
+                        if (annotation == null) {
                             return;
                         }
 
                         Intent intent = new Intent(ShareTargetHandler.this, MainActivity.class);
-                        intent.setData(Uri.parse(Constants.WEB_HOST + "/notes?id=" + highlight.id()));
+                        intent.setData(Uri.parse(Constants.WEB_HOST + "/notes?id=" + annotation.id()));
                         PendingIntent pendingIntent = PendingIntent.getActivity(ShareTargetHandler.this, 0, intent, 0);
 
-                        NotificationCompat.Builder builder = new NotificationCompat.Builder(ShareTargetHandler.this, Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_ID)
-                                .setSmallIcon(R.drawable.ic_stat_name)
-                                .setColor(Color.BLACK)
-                                .setContentTitle(Constants.NOTIFICATION_NOTE_CREATED_TITLE)
-                                .setStyle(
-                                        new NotificationCompat.BigTextStyle().bigText(highlight.text())
-                                )
-                                .setContentText(highlight.text())
-                                .setPriority(NotificationCompat.PRIORITY_LOW)
-                                .setContentIntent(pendingIntent)
-                                .setAutoCancel(true);
-                        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(ShareTargetHandler.this);
-                        notificationManager.notify(highlight.id().hashCode(), builder.build());
+                        String textualTargetValue = null;
+                        for (GetAnnotationForNotificationQuery.Target target: annotation.target()) {
+                            GetAnnotationForNotificationQuery.AsTextualTarget textualTarget = target.asTextualTarget();
+                            if (textualTarget != null) {
+                                textualTargetValue = textualTarget.value();
+                                break;
+                            }
+                        }
+
+                        if (textualTargetValue != null) {
+                            NotificationCompat.Builder builder = new NotificationCompat.Builder(ShareTargetHandler.this, Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_ID)
+                                    .setSmallIcon(R.drawable.ic_stat_name)
+                                    .setColor(Color.BLACK)
+                                    .setContentTitle(Constants.NOTIFICATION_NOTE_CREATED_TITLE)
+                                    .setStyle(
+                                            new NotificationCompat.BigTextStyle().bigText(textualTargetValue)
+                                    )
+                                    .setContentText(textualTargetValue)
+                                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                                    .setContentIntent(pendingIntent)
+                                    .setAutoCancel(true);
+                            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(ShareTargetHandler.this);
+                            notificationManager.notify(annotation.id().hashCode(), builder.build());
+                        } else {
+                            Log.i(Constants.LOG_TAG, "Did not not notify AnnotationCreation: null textualTargetValue");
+                        }
                     }
 
                     @Override

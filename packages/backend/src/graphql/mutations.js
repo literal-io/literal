@@ -248,8 +248,8 @@ export const createAnnotationFromExternalTarget = /* GraphQL */ `
         email
         homepage
         username
-        createdAt
-        updatedAt
+        created
+        modified
       }
       generator {
         id
@@ -260,8 +260,8 @@ export const createAnnotationFromExternalTarget = /* GraphQL */ `
         email
         homepage
         username
-        createdAt
-        updatedAt
+        created
+        modified
       }
     }
   }
@@ -280,8 +280,8 @@ export const createAgent = /* GraphQL */ `
       email
       homepage
       username
-      createdAt
-      updatedAt
+      created
+      modified
     }
   }
 `;
@@ -299,8 +299,8 @@ export const updateAgent = /* GraphQL */ `
       email
       homepage
       username
-      createdAt
-      updatedAt
+      created
+      modified
     }
   }
 `;
@@ -318,8 +318,8 @@ export const deleteAgent = /* GraphQL */ `
       email
       homepage
       username
-      createdAt
-      updatedAt
+      created
+      modified
     }
   }
 `;

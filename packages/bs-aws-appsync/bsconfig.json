@@ -1,5 +1,5 @@
 {
-  "name": "@literal/bs-aws-appsync",
+  "name": "@literal-io/bs-aws-appsync",
   "reason": {
    "react-jsx": 3
   },
@@ -17,7 +17,7 @@
   "bs-dependencies": [
     "reason-react",
     "reason-apollo",
-    "@literal/bs-aws-amplify"
+    "@literal-io/bs-aws-amplify"
   ],
   "ppx-flags": [],
   "refmt": 3
