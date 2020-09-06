@@ -3,32 +3,42 @@
 
 let fragmentTypes = [%raw "require('../fragment-types.json')"];
 
+
 /** FIXME: cache AUTH_GET_TOKENS, as this is called once per gql op **/
+let authTokens = ref(None);
 let authenticatedClientAuthOptions = {
   Webview.isWebview()
     ? AwsAppSync.Client.authWithCognitoUserPools(~jwtToken=() => {
-        Timer.thunkP(~label="AUTH_GET_TOKENS", () =>
-          Webview.(
-            postMessageForResult(WebEvent.make(~type_="AUTH_GET_TOKENS"))
+        switch (authTokens^) {
+        | Some(tokens) =>
+          tokens.Webview.WebEvent.idToken
+          ->AwsAmplify.Auth.JwtToken.unsafeOfString
+          ->Js.Promise.resolve
+        | None =>
+          Timer.thunkP(~label="AUTH_GET_TOKENS", () =>
+            Webview.(
+              postMessageForResult(WebEvent.make(~type_="AUTH_GET_TOKENS"))
+            )
           )
-        )
-        |> Js.Promise.then_(result => {
-             switch (result) {
-             | Some(data) =>
-               switch (Webview.WebEvent.authGetTokensResult_decode(data)) {
-               | Belt.Result.Ok(tokens) =>
-                 tokens.idToken
-                 ->AwsAmplify.Auth.JwtToken.unsafeOfString
-                 ->Js.Promise.resolve
-               | Belt.Result.Error(_) =>
-                 let _ = Next.Router.replace("/authenticate");
+          |> Js.Promise.then_(result => {
+               switch (result) {
+               | Some(data) =>
+                 switch (Webview.WebEvent.authGetTokensResult_decode(data)) {
+                 | Belt.Result.Ok(tokens) =>
+                   authTokens := Some(tokens);
+                   tokens.idToken
+                   ->AwsAmplify.Auth.JwtToken.unsafeOfString
+                   ->Js.Promise.resolve;
+                 | Belt.Result.Error(_) =>
+                   let _ = Next.Router.replace(Routes.Authenticate.path());
+                   Js.Promise.reject(Error.AuthenticationRequired);
+                 }
+               | None =>
+                 let _ = Next.Router.replace(Routes.Authenticate.path());
                  Js.Promise.reject(Error.AuthenticationRequired);
                }
-             | None =>
-               let _ = Next.Router.replace("/authenticate");
-               Js.Promise.reject(Error.AuthenticationRequired);
-             }
-           })
+             })
+        }
       })
     : AwsAppSync.Client.authWithCognitoUserPools(~jwtToken=() =>
         AwsAmplify.(
@@ -84,6 +94,7 @@ let client =
     )
   );
 
+/** FIXME: re-hydrates on route change **/
 [@react.component]
 let make = (~render) =>
   <ReasonApollo.Provider client>

@@ -118,23 +118,27 @@ let make =
     | Some(annotation) => <Data annotation currentUser />
     | None =>
       <Redirect
-        path="/notes/new"
+        path={Routes.CreatorsIdAnnotationsNew.path(
+          ~creatorUsername=currentUser.username,
+        )}
         query={Raw.merge(
           Alert.(query_encode({alert: noDataAlert})),
-          Routes.New.params_encode({
+          Routes.CreatorsIdAnnotationsNew.queryParams_encode({
             id: None,
             initialPhaseState: Some(`PhaseTextInput),
           }),
         )}
       />
     }
-  | (NoData, true, _, _)
-  | (Error(_), true, _, _) =>
+  | (NoData, true, Authenticated(currentUser), _)
+  | (Error(_), true, Authenticated(currentUser), _) =>
     <Redirect
-      path="/notes/new"
+      path={Routes.CreatorsIdAnnotationsNew.path(
+        ~creatorUsername=currentUser.username,
+      )}
       query={Raw.merge(
         Alert.(query_encode({alert: noDataAlert})),
-        Routes.New.params_encode({
+        Routes.CreatorsIdAnnotationsNew.queryParams_encode({
           id: None,
           initialPhaseState: Some(`PhaseTextInput),
         }),

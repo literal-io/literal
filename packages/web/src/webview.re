@@ -79,6 +79,7 @@ module WebEventHandler = {
   };
 
   let handleSignInResult = (event: option(Js.Json.t)) => {
+    /** FIXME: include user attributes in sign in result?
     let _ =
       event->Belt.Option.map(data => {
         switch (WebEvent.authGetTokensResult_decode(data)) {
@@ -86,6 +87,7 @@ module WebEventHandler = {
         | _ => ()
         }
       });
+    **/
     ();
   };
 

@@ -14,6 +14,8 @@ module Router = {
   [@bs.module "next/router"] [@bs.scope "default"]
   external replace: string => unit = "replace";
   [@bs.module "next/router"] [@bs.scope "default"]
+  external replaceWithAs: (string, string) => unit = "replace";
+  [@bs.module "next/router"] [@bs.scope "default"]
   external replaceWithOptions: urlOptions => unit = "replace";
 
   [@bs.module "next/router"] [@bs.scope "default"]

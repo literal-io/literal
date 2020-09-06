@@ -7,29 +7,15 @@ let default = () => {
   let authentication = CurrentUserInfo.use();
 
   let _ =
-    React.useEffect0(() => {
-      let handleEvent = (ev: AwsAmplify.Hub.event(AwsAmplify.Hub.auth)) => {
-        switch (ev.payload.event) {
-        | "signIn" => Next.Router.replace("/notes")
-        | _ => ()
-        };
-      };
-
-      let _ = AwsAmplify.Hub.(listen(inst, `auth(handleEvent)));
-      Some(
-        () => {
-          let _ = AwsAmplify.Hub.(remove(inst, `auth(handleEvent)));
-          ();
-        },
-      );
-    });
-
-  let _ =
     React.useEffect1(
       () => {
         let _ =
           switch (authentication) {
-          | Authenticated(_) => Next.Router.replace("/notes")
+          | Authenticated(currentUser) =>
+            Routes.CreatorsIdAnnotations.path(
+              ~creatorUsername=currentUser.username,
+            )
+            ->Next.Router.replace
           | _ => ()
           };
         None;
@@ -101,4 +87,4 @@ let default = () => {
   </div>;
 };
 
-let page = "authenticate.js"
+let page = "authenticate.js";

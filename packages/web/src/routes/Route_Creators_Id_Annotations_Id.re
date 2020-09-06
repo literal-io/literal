@@ -18,10 +18,18 @@ let default = () => {
       [|authentication|],
     );
 
-  let creatorUsername =
-    switch (Routes.CreatorsIdAnnotations.params_decode(router.Next.query)) {
-    | Ok(p) => Some(p.creatorUsername)
-    | _ => None
+  let (creatorUsername, annotationId) =
+    switch (Routes.CreatorsIdAnnotationsId.params_decode(router.Next.query)) {
+    | Ok(p) => (
+        Some(p.creatorUsername),
+        Some(
+          Lib_GraphQL.Annotation.makeIdFromComponent(
+            ~creatorUsername=p.creatorUsername,
+            ~annotationIdComponent=p.annotationIdComponent,
+          ),
+        ),
+      )
+    | _ => (None, None)
     };
 
   let handleAnnotationIdChange = annotationId => {
@@ -46,7 +54,7 @@ let default = () => {
       | Loading
       | Authenticated(_) =>
         <QueryRenderers_Notes
-          annotationId=None
+          annotationId
           onAnnotationIdChange=handleAnnotationIdChange
           authentication
           rehydrated
@@ -56,4 +64,4 @@ let default = () => {
   />;
 };
 
-let page = "creators/[creatorUsername]/annotations.js";
+let page = "creators/[creatorUsername]/annotations/[annotationIdComponent].js";

@@ -9,7 +9,15 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
     );
 
   let handleCreate = () => {
-    let _ = Next.Router.push("/notes/new");
+    switch (currentUser) {
+    | Some(currentUser) =>
+      Routes.CreatorsIdAnnotationsNew.path(
+        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+      )
+      ->Next.Router.push
+    | None => ()
+    };
+    let _ = ();
     ();
   };
 

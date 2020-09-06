@@ -34,6 +34,17 @@ module Annotation = {
          )
        });
 
+  let makeIdFromComponent = (~creatorUsername, ~annotationIdComponent) =>
+    Webapi.Dom.(window |> Window.location |> Location.origin)
+    ++ "/creators/"
+    ++ creatorUsername
+    ++ "/annotations/"
+    ++ annotationIdComponent;
+
+  /** returns just the last path of the id IRI **/
+  let idComponent = fullId =>
+    fullId->Js.String2.split("/")->(arr => arr[Js.Array2.length(arr) - 1]);
+
   let isBodyTag = body => {
     let hasTaggingPurpose =
       body##purpose

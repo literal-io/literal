@@ -16,18 +16,18 @@ let phase_decode = json =>
 type action =
   | SetPhase(phase);
 
-
-let annotationFromCreateAnnotationInput = [%raw {|
+let annotationFromCreateAnnotationInput = [%raw
+  {|
   function (input) {
     return {
       ...input,
       __typename: "Annotation",
       created: (new Date()).toISOString(),
-      body: 
+      body:
         input.body
-          ? input.body.map(body => { 
+          ? input.body.map(body => {
               const parser = [
-                ["textualBody", { 
+                ["textualBody", {
                   __typename: "TextualBody",
                   accessibility: null,
                   rights: null
@@ -44,7 +44,7 @@ let annotationFromCreateAnnotationInput = [%raw {|
         input.target
           ? input.target.map(target => {
               const parser = [
-                ["textualTarget", { 
+                ["textualTarget", {
                   __typename: "TextualTarget",
                   textualTargetId: null,
                   rights: null,
@@ -59,7 +59,8 @@ let annotationFromCreateAnnotationInput = [%raw {|
           : null
     }
   }
-|}];
+|}
+];
 
 let updateCache = (~currentUser, ~input) => {
   let cacheQuery =
@@ -76,7 +77,7 @@ let updateCache = (~currentUser, ~input) => {
     ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
     ->Belt.Option.flatMap(listAnnotations => listAnnotations##items)
     ->Belt.Option.forEach(annotations => {
-        let newAnnotation = 
+        let newAnnotation =
           input
           ->CreateAnnotationMutation.json_of_CreateAnnotationInput
           ->annotationFromCreateAnnotationInput;
@@ -204,8 +205,14 @@ module PhaseTextInput = {
              let _ = createAnnotationMutation(~variables, ());
              let _ = updateCache(~currentUser, ~input);
 
-             // FIXME: This should really do something like "back and replace"
-             let _ = Next.Router.push("/notes?id=" ++ id);
+             let _ =
+               Next.Router.push(
+                 Routes.CreatorsIdAnnotationsId.path(
+                   ~annotationIdComponent=
+                     Lib_GraphQL.Annotation.idComponent(id),
+                   ~creatorUsername=currentUser.username,
+                 ),
+               );
              Js.Promise.resolve();
            });
       ();

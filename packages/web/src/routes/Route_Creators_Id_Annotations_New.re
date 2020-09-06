@@ -10,7 +10,7 @@ let default = () => {
       () => {
         let _ =
           switch (authentication) {
-          | Unauthenticated => Next.Router.replace("/authenticate")
+          | Unauthenticated => Next.Router.replace(Routes.Authenticate.path())
           | _ => ()
           };
         None;
@@ -24,7 +24,9 @@ let default = () => {
         <>
           {switch (
              authentication,
-             Routes.New.params_decode(router.Next.query),
+             Routes.CreatorsIdAnnotationsNew.queryParams_decode(
+               router.Next.query,
+             ),
            ) {
            | (Unauthenticated, _) => <Loading />
            | (_, Ok({id: Some(annotationId)}))
@@ -48,4 +50,4 @@ let default = () => {
   </>;
 };
 
-let page = "creators/[creatorUsername]/annotations/new.js"
+let page = "creators/[creatorUsername]/annotations/new.js";
