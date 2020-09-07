@@ -1,11 +1,11 @@
-module FilterAnnotationCollections = [%graphql
+module AnnotationCollectionLabelAutocomplete = [%graphql
   {|
-    query FilterAnnotationCollections($input: String!) {
-      listAnnotationCollections(filter: {
-        label: {
-          beginsWith: $input
-        }
-      }) {
+    query annotationCollectionLabelAutocomplete(
+      $input: AnnotationCollectionLabelAutocompleteInput!
+    ) {
+      annotationCollectionLabelAutocomplete(
+        input: $input
+      ) {
         items {
           id
           label

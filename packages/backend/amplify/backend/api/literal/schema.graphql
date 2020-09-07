@@ -779,6 +779,23 @@ type DeleteAnnotationOutput {
   annotation: Annotation!
 }
 
+input AnnotationCollectionLabelAutocompleteInput {
+  creatorUsername: String!
+  labelBeginsWith: String!
+}
+
+type ModelAnnotationCollectionConnection {
+  items: [AnnotationCollection]
+  nextToken: String
+}
+
+type Query {
+  annotationCollectionLabelAutocomplete(
+    input: AnnotationCollectionLabelAutocompleteInput!
+  ): ModelAnnotationCollectionConnection
+    @aws_cognito_user_pools
+}
+
 type Mutation {
   createAnnotation(input: CreateAnnotationInput!): CreateAnnotationOutput
     @aws_iam

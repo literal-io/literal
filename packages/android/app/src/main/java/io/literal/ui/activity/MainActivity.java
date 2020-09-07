@@ -63,7 +63,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onError(Exception e) {
                 Log.e(Constants.LOG_TAG, "Unable to initializeClient: ", e);
-                handleSignedOut();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        handleSignedOut();
+                    }
+                });
             }
         });
     }

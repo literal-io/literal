@@ -2,16 +2,24 @@ open QueryRenderers_TagsFilter_GraphQL;
 open Styles;
 
 [@react.component]
-let make = (~text, ~onTagResults, ~onTagClicked) => {
+let make = (~currentUser, ~text, ~onTagResults, ~onTagClicked) => {
   let (_s, query) =
     ApolloHooks.useQuery(
-      ~variables=FilterAnnotationCollections.makeVariables(~input=text, ()),
-      FilterAnnotationCollections.definition,
+      ~variables=
+        AnnotationCollectionLabelAutocomplete.makeVariables(
+          ~input={
+            "labelBeginsWith": text,
+            "creatorUsername":
+              AwsAmplify.Auth.CurrentUserInfo.username(currentUser),
+          },
+          (),
+        ),
+      AnnotationCollectionLabelAutocomplete.definition,
     );
 
   let results =
     query.data
-    ->Belt.Option.flatMap(d => d##listAnnotationCollections)
+    ->Belt.Option.flatMap(d => d##annotationCollectionLabelAutocomplete)
     ->Belt.Option.flatMap(d => d##items)
     ->Belt.Option.map(annotationCollections =>
         annotationCollections->Belt.Array.keepMap(annotationCollection =>

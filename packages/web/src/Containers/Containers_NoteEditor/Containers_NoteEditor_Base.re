@@ -128,6 +128,7 @@ let make =
              text={tagsState.partial}
              onTagResults=handleTagsFilterResults
              onTagClicked=handleTagsFilterClicked
+             currentUser
            />
          : React.null}
     </div>
