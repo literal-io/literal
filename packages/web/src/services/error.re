@@ -2,7 +2,9 @@ exception InvalidState(string);
 
 exception ApolloEmptyCache;
 exception ApolloEmptyData;
+
 exception ApolloError(ApolloHooksTypes.apolloError);
+exception GraphQLError(ApolloHooksTypes.graphqlError)
 
 exception DeccoDecodeError(Decco.decodeError);
 

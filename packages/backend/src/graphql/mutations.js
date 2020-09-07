@@ -1,418 +1,325 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-export const createHighlightFromScreenshot = /* GraphQL */ `
-  mutation CreateHighlightFromScreenshot(
-    $input: CreateHighlightFromScreenshotInput!
+export const createAnnotation = /* GraphQL */ `
+  mutation CreateAnnotation($input: CreateAnnotationInput!) {
+    createAnnotation(input: $input) {
+      annotation {
+        context
+        type
+        id
+        created
+        generated
+        modified
+        motivation
+        via
+        canonical
+        creatorUsername
+      }
+      annotationCollections {
+        context
+        id
+        type
+        label
+        total
+        created
+        creatorUsername
+        modified
+      }
+      annotationPageItems {
+        id
+        annotationPageId
+        annotationId
+        created
+        modified
+        creatorUsername
+      }
+      annotationPage {
+        context
+        id
+        type
+        startIndex
+        created
+        modified
+        creatorUsername
+      }
+    }
+  }
+`;
+export const updateAnnotation = /* GraphQL */ `
+  mutation UpdateAnnotation($input: UpdateAnnotationInput!) {
+    updateAnnotation(input: $input) {
+      annotation {
+        context
+        type
+        id
+        created
+        generated
+        modified
+        motivation
+        via
+        canonical
+        creatorUsername
+      }
+      createdAnnotationCollections {
+        context
+        id
+        type
+        label
+        total
+        created
+        creatorUsername
+        modified
+      }
+      createdAnnotationPageItems {
+        id
+        annotationPageId
+        annotationId
+        created
+        modified
+        creatorUsername
+      }
+      createdAnnotationPages {
+        context
+        id
+        type
+        startIndex
+        created
+        modified
+        creatorUsername
+      }
+      deletedAnnotationCollectionIds
+      deletedAnnotationPageItemIds
+      deletedAnnotationPageIds
+    }
+  }
+`;
+export const deleteAnnotation = /* GraphQL */ `
+  mutation DeleteAnnotation($input: DeleteAnnotationInput!) {
+    deleteAnnotation(input: $input) {
+      annotation {
+        context
+        type
+        id
+        created
+        generated
+        modified
+        motivation
+        via
+        canonical
+        creatorUsername
+      }
+    }
+  }
+`;
+export const patchAnnotation = /* GraphQL */ `
+  mutation PatchAnnotation($input: PatchAnnotationInput!) {
+    patchAnnotation(input: $input) {
+      annotation {
+        context
+        type
+        id
+        created
+        generated
+        modified
+        motivation
+        via
+        canonical
+        creatorUsername
+      }
+      createdAnnotationCollections {
+        context
+        id
+        type
+        label
+        total
+        created
+        creatorUsername
+        modified
+      }
+      createdAnnotationPageItems {
+        id
+        annotationPageId
+        annotationId
+        created
+        modified
+        creatorUsername
+      }
+      createdAnnotationPages {
+        context
+        id
+        type
+        startIndex
+        created
+        modified
+        creatorUsername
+      }
+      deletedAnnotationCollectionIds
+      deletedAnnotationPageItemIds
+      deletedAnnotationPageIds
+    }
+  }
+`;
+export const createAnnotationFromExternalTarget = /* GraphQL */ `
+  mutation CreateAnnotationFromExternalTarget(
+    $input: CreateAnnotationFromExternalTargetInput!
   ) {
-    createHighlightFromScreenshot(input: $input) {
+    createAnnotationFromExternalTarget(input: $input) {
+      context
+      type
       id
-      createdAt
-      text
-      note
-      owner
-      screenshot {
-        id
-        createdAt
-        owner
+      body {
+        ... on ExternalBody {
+          id
+          format
+          language
+          processingLanguage
+          textDirection
+          accessibility
+          rights
+          type
+        }
+        ... on TextualBody {
+          id
+          format
+          language
+          processingLanguage
+          textDirection
+          accessibility
+          purpose
+          rights
+          value
+          type
+        }
+        ... on ChoiceBody {
+          type
+        }
+        ... on SpecificBody {
+          id
+          type
+          purpose
+          styleClass
+          scope
+        }
       }
-      tags {
-        nextToken
+      target {
+        ... on ExternalTarget {
+          id
+          format
+          language
+          processingLanguage
+          textDirection
+          type
+          accessibility
+          rights
+        }
+        ... on TextualTarget {
+          id
+          format
+          language
+          processingLanguage
+          textDirection
+          accessibility
+          rights
+          value
+        }
+      }
+      created
+      generated
+      modified
+      audience {
+        id
+        type
+      }
+      motivation
+      via
+      canonical
+      stylesheet {
+        type
+        value
+      }
+      creatorUsername
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        username
+        created
+        modified
+      }
+      generator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        username
+        created
+        modified
       }
     }
   }
 `;
-export const createTags = /* GraphQL */ `
-  mutation CreateTags($input: [CreateTagInput!]!) {
-    createTags(input: $input) {
-      id
-      createdAt
-      text
-      owner
-      highlights {
-        nextToken
-      }
-    }
-  }
-`;
-export const createHighlightTags = /* GraphQL */ `
-  mutation CreateHighlightTags($input: [CreateHighlightTagInput!]!) {
-    createHighlightTags(input: $input) {
-      id
-      highlightId
-      tagId
-      createdAt
-      tag {
-        id
-        createdAt
-        text
-        owner
-      }
-      highlight {
-        id
-        createdAt
-        text
-        note
-        owner
-      }
-    }
-  }
-`;
-export const deleteHighlightTags = /* GraphQL */ `
-  mutation DeleteHighlightTags($input: [DeleteHighlightTagInput!]!) {
-    deleteHighlightTags(input: $input) {
-      id
-      highlightId
-      tagId
-      createdAt
-      tag {
-        id
-        createdAt
-        text
-        owner
-      }
-      highlight {
-        id
-        createdAt
-        text
-        note
-        owner
-      }
-    }
-  }
-`;
-export const updateHighlightAndTags = /* GraphQL */ `
-  mutation UpdateHighlightAndTags($input: UpdateHighlightAndTagsInput!) {
-    updateHighlightAndTags(input: $input) {
-      updateHighlight {
-        id
-        createdAt
-        text
-        note
-        owner
-      }
-      createTags {
-        id
-        createdAt
-        text
-        owner
-      }
-      createHighlightTags {
-        id
-        highlightId
-        tagId
-        createdAt
-      }
-      deleteHighlightTags {
-        id
-      }
-    }
-  }
-`;
-export const createHighlightAndTags = /* GraphQL */ `
-  mutation CreateHighlightAndTags($input: CreateHighlightAndTagsInput!) {
-    createHighlightAndTags(input: $input) {
-      createHighlight {
-        id
-        createdAt
-        text
-        note
-        owner
-      }
-      createTags {
-        id
-        createdAt
-        text
-        owner
-      }
-      createHighlightTags {
-        id
-        highlightId
-        tagId
-        createdAt
-      }
-    }
-  }
-`;
-export const updateScreenshot = /* GraphQL */ `
-  mutation UpdateScreenshot(
-    $input: UpdateScreenshotInput!
-    $condition: ModelScreenshotConditionInput
+export const createAgent = /* GraphQL */ `
+  mutation CreateAgent(
+    $input: CreateAgentInput!
+    $condition: ModelAgentConditionInput
   ) {
-    updateScreenshot(input: $input, condition: $condition) {
+    createAgent(input: $input, condition: $condition) {
       id
-      createdAt
-      file {
-        bucket
-        key
-        region
-      }
-      owner
+      type
+      name
+      nickname
+      email_sha1
+      email
+      homepage
+      username
+      created
+      modified
     }
   }
 `;
-export const deleteScreenshot = /* GraphQL */ `
-  mutation DeleteScreenshot(
-    $input: DeleteScreenshotInput!
-    $condition: ModelScreenshotConditionInput
+export const updateAgent = /* GraphQL */ `
+  mutation UpdateAgent(
+    $input: UpdateAgentInput!
+    $condition: ModelAgentConditionInput
   ) {
-    deleteScreenshot(input: $input, condition: $condition) {
+    updateAgent(input: $input, condition: $condition) {
       id
-      createdAt
-      file {
-        bucket
-        key
-        region
-      }
-      owner
+      type
+      name
+      nickname
+      email_sha1
+      email
+      homepage
+      username
+      created
+      modified
     }
   }
 `;
-export const createScreenshot = /* GraphQL */ `
-  mutation CreateScreenshot(
-    $input: CreateScreenshotInput!
-    $condition: ModelScreenshotConditionInput
+export const deleteAgent = /* GraphQL */ `
+  mutation DeleteAgent(
+    $input: DeleteAgentInput!
+    $condition: ModelAgentConditionInput
   ) {
-    createScreenshot(input: $input, condition: $condition) {
+    deleteAgent(input: $input, condition: $condition) {
       id
-      createdAt
-      file {
-        bucket
-        key
-        region
-      }
-      owner
-    }
-  }
-`;
-export const createTag = /* GraphQL */ `
-  mutation CreateTag(
-    $input: CreateTagInput!
-    $condition: ModelTagConditionInput
-  ) {
-    createTag(input: $input, condition: $condition) {
-      id
-      createdAt
-      text
-      owner
-      highlights {
-        nextToken
-      }
-    }
-  }
-`;
-export const updateTag = /* GraphQL */ `
-  mutation UpdateTag(
-    $input: UpdateTagInput!
-    $condition: ModelTagConditionInput
-  ) {
-    updateTag(input: $input, condition: $condition) {
-      id
-      createdAt
-      text
-      owner
-      highlights {
-        nextToken
-      }
-    }
-  }
-`;
-export const deleteTag = /* GraphQL */ `
-  mutation DeleteTag(
-    $input: DeleteTagInput!
-    $condition: ModelTagConditionInput
-  ) {
-    deleteTag(input: $input, condition: $condition) {
-      id
-      createdAt
-      text
-      owner
-      highlights {
-        nextToken
-      }
-    }
-  }
-`;
-export const createHighlight = /* GraphQL */ `
-  mutation CreateHighlight(
-    $input: CreateHighlightInput!
-    $condition: ModelHighlightConditionInput
-  ) {
-    createHighlight(input: $input, condition: $condition) {
-      id
-      createdAt
-      text
-      note
-      owner
-      screenshot {
-        id
-        createdAt
-        owner
-      }
-      tags {
-        nextToken
-      }
-    }
-  }
-`;
-export const updateHighlight = /* GraphQL */ `
-  mutation UpdateHighlight(
-    $input: UpdateHighlightInput!
-    $condition: ModelHighlightConditionInput
-  ) {
-    updateHighlight(input: $input, condition: $condition) {
-      id
-      createdAt
-      text
-      note
-      owner
-      screenshot {
-        id
-        createdAt
-        owner
-      }
-      tags {
-        nextToken
-      }
-    }
-  }
-`;
-export const deleteHighlight = /* GraphQL */ `
-  mutation DeleteHighlight(
-    $input: DeleteHighlightInput!
-    $condition: ModelHighlightConditionInput
-  ) {
-    deleteHighlight(input: $input, condition: $condition) {
-      id
-      createdAt
-      text
-      note
-      owner
-      screenshot {
-        id
-        createdAt
-        owner
-      }
-      tags {
-        nextToken
-      }
-    }
-  }
-`;
-export const createHighlightTag = /* GraphQL */ `
-  mutation CreateHighlightTag(
-    $input: CreateHighlightTagInput!
-    $condition: ModelHighlightTagConditionInput
-  ) {
-    createHighlightTag(input: $input, condition: $condition) {
-      id
-      highlightId
-      tagId
-      createdAt
-      tag {
-        id
-        createdAt
-        text
-        owner
-      }
-      highlight {
-        id
-        createdAt
-        text
-        note
-        owner
-      }
-    }
-  }
-`;
-export const updateHighlightTag = /* GraphQL */ `
-  mutation UpdateHighlightTag(
-    $input: UpdateHighlightTagInput!
-    $condition: ModelHighlightTagConditionInput
-  ) {
-    updateHighlightTag(input: $input, condition: $condition) {
-      id
-      highlightId
-      tagId
-      createdAt
-      tag {
-        id
-        createdAt
-        text
-        owner
-      }
-      highlight {
-        id
-        createdAt
-        text
-        note
-        owner
-      }
-    }
-  }
-`;
-export const deleteHighlightTag = /* GraphQL */ `
-  mutation DeleteHighlightTag(
-    $input: DeleteHighlightTagInput!
-    $condition: ModelHighlightTagConditionInput
-  ) {
-    deleteHighlightTag(input: $input, condition: $condition) {
-      id
-      highlightId
-      tagId
-      createdAt
-      tag {
-        id
-        createdAt
-        text
-        owner
-      }
-      highlight {
-        id
-        createdAt
-        text
-        note
-        owner
-      }
-    }
-  }
-`;
-export const createProfile = /* GraphQL */ `
-  mutation CreateProfile(
-    $input: CreateProfileInput!
-    $condition: ModelProfileConditionInput
-  ) {
-    createProfile(input: $input, condition: $condition) {
-      id
-      owner
-      createdAt
-      isOnboarded
-    }
-  }
-`;
-export const updateProfile = /* GraphQL */ `
-  mutation UpdateProfile(
-    $input: UpdateProfileInput!
-    $condition: ModelProfileConditionInput
-  ) {
-    updateProfile(input: $input, condition: $condition) {
-      id
-      owner
-      createdAt
-      isOnboarded
-    }
-  }
-`;
-export const deleteProfile = /* GraphQL */ `
-  mutation DeleteProfile(
-    $input: DeleteProfileInput!
-    $condition: ModelProfileConditionInput
-  ) {
-    deleteProfile(input: $input, condition: $condition) {
-      id
-      owner
-      createdAt
-      isOnboarded
+      type
+      name
+      nickname
+      email_sha1
+      email
+      homepage
+      username
+      created
+      modified
     }
   }
 `;

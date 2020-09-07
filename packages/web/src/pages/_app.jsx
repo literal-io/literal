@@ -1,9 +1,12 @@
 import "../app.css";
-import "typeface-prata";
-import "typeface-montserrat";
+import "typeface-open-sans";
+import "typeface-domine";
 
 import Head from "next/head";
 import Router from "next/router";
+
+import AuthenticationProvider from "../Providers/Providers_Authentication.js";
+import ApolloProvider from "../Providers/Providers_Apollo.js";
 
 import * as React from "react";
 
@@ -39,7 +42,16 @@ export default function App({ Component, pageProps, router: { asPath } }) {
         />
         <link rel="icon" type="image/png" href="/favicon-32.png" />
       </Head>
-      <Component {...pageProps} />
+      <AuthenticationProvider.make>
+        <ApolloProvider.make
+          render={(rehydrated) =>
+            <Component
+              rehydrated={rehydrated} 
+              {...pageProps} 
+            />
+          }
+        />
+      </AuthenticationProvider.make>
     </>
   );
 }

@@ -1,43 +1,61 @@
-module UpdateHighlightMutation = [%graphql
+module PatchAnnotationMutation = [%graphql
   {|
-    mutation UpdateHighlight(
-      $input: UpdateHighlightAndTagsInput!
+    mutation PatchAnnotation(
+      $input: PatchAnnotationInput!
     ) {
-      updateHighlightAndTags(input: $input) {
-        updateHighlight {
-          id
-          text
-        }
-        createTags {
-          id
-          createdAt
-        }
-        createHighlightTags {
-          id
-          createdAt
-        }
-        createHighlightTags {
-          id
-          createdAt
+      patchAnnotation(input: $input) {
+        annotation {
+          ...Containers_NoteEditor_Notes_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
+          ...Containers_NoteHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
         }
       }
     }
   |}
 ];
 
-module GetHighlightFragment = [%graphql
+module GetAnnotationFragment = [%graphql
   {|
-    fragment editorHighlightFragment on Highlight {
+    fragment editorNewFromShareAnnotationFragment on Annotation {
       id
-      text
-      tags {
-        items {
+      target {
+        ... on TextualTarget {
+          value
+          __typename
+
+          textualTargetId: id
+          format
+          language
+          processingLanguage
+          textDirection
+          accessibility
+          rights
+        }
+        ... on ExternalTarget {
+          __typename
+
+          externalTargetId: id
+          format
+          language
+          processingLanguage
+          textDirection
+          type_: type
+          accessibility
+          rights
+        }
+      }
+      body {
+        ... on TextualBody {
           id
-          createdAt
-          tag {
-            id
-            text
-          }
+          value
+          purpose
+          __typename
+
+          format
+          language
+          processingLanguage
+          textDirection
+          accessibility
+          rights
         }
       }
     }

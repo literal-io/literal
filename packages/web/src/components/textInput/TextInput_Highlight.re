@@ -36,7 +36,7 @@ let make =
           when
             Js.String.length(tagsValue.TextInput_Tags.Value.partial) === 0
             && Js.Array.length(tagsValue.commits) === 0 =>
-        switch (textInputRef->React.Ref.current->Js.Nullable.toOption) {
+        switch (textInputRef.current->Js.Nullable.toOption) {
         | Some(inputElem) =>
           let _ =
             inputElem
@@ -60,7 +60,7 @@ let make =
     let handled =
       switch (ev->ReactEvent.Keyboard.keyCode) {
       | 51 /*** # **/ =>
-        switch (tagsInputRef->React.Ref.current->Js.Nullable.toOption) {
+        switch (tagsInputRef.current->Js.Nullable.toOption) {
         | Some(inputElem) =>
           let _ =
             inputElem
@@ -80,12 +80,7 @@ let make =
     ();
   };
 
-  <div
-    className={cn([
-      Cn.unpack(className),
-      styles##underline,
-      Cn.ifTrue(styles##underlineFocused, isFocused),
-    ])}>
+  <>
     <TextInput_Basic
       onFocus=handleFocus
       onBlur=handleBlur
@@ -94,9 +89,9 @@ let make =
       ?placeholder
       ?autoFocus
       inputProps={
-        "disableUnderline": true,
         "onKeyDown": handleTextKeyDown,
         "inputRef": textInputRef->ReactDOMRe.Ref.domRef->Js.Option.some,
+        "disableUnderline": false
       }
     />
     <TextInput_Tags
@@ -108,5 +103,5 @@ let make =
       className={cn(["pt-8", "pb-6"])}
       ref={tagsInputRef->ReactDOMRe.Ref.domRef}
     />
-  </div>;
+  </>;
 };

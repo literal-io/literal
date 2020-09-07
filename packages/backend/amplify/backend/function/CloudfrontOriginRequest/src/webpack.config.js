@@ -8,5 +8,6 @@ module.exports = {
   output: {
     filename: "bundle.js",
     libraryTarget: "umd",
+    path: path.resolve(__dirname, './dist')
   },
 };

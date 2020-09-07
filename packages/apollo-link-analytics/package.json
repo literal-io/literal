@@ -1,0 +1,34 @@
+{
+  "name": "@literal-io/apollo-link-analytics",
+  "version": "1.0.0",
+  "main": "./src/ApolloLinkAnalytics.bs.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "bsb:build": "bsb -make-world",
+    "bsb:start": "bsb -make-world -w",
+    "bsb:clean": "bsb -clean-world",
+    "start": "npm run bsb:start"
+  },
+  "author": "Daniel Ramirez <javamonn@gmail.com>",
+  "homepage": "https://trashed.today",
+  "repository": "https://github.com/javamonn/trashed/tree/master/packages/apollo-link-analytics",
+  "description": "Automatic product analytics derived from GraphQL operations executed by Apollo.",
+  "keywords": [
+    "bucklescript",
+    "reason",
+    "apollo",
+    "graphql",
+    "analytics"
+  ],
+  "license": "MIT - Hippocratic 1.2",
+  "dependencies": {
+    "apollo-link": "1.2.3",
+    "reason-apollo": "^0.18.0"
+  },
+  "peerDependencies": {
+    "bs-platform": "^7.0.1"
+  },
+  "devDependencies": {
+    "bs-platform": "^7.0.1"
+  }
+}

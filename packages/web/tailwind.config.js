@@ -3,7 +3,7 @@ module.exports = {
   theme: {
     fontFamily: {
       sans: [
-        "Montserrat",
+        "Open Sans",
         "system-ui",
         "-apple-system",
         "BlinkMacSystemFont",
@@ -19,7 +19,7 @@ module.exports = {
         "Noto\\ Color\\ Emoji",
       ],
       serif: [
-        "Prata",
+        "Domine",
         "Georgia",
         "Cambria",
         "Times\\ New\\ Roman",
@@ -45,7 +45,7 @@ module.exports = {
       },
       textColor: {
         lightPrimary: "rgba(255, 255, 255, .87)",
-        lightSecondary: "rgba(255, 255, 255, .50)",
+        lightSecondary: "rgba(255, 255, 255, .62)",
         lightDisabled: "rgba(255, 255, 255, .38)"
       }
     },

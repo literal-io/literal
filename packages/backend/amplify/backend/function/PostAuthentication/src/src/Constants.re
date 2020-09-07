@@ -12,7 +12,4 @@ module Env = {
   [@bs.val]
   external authLiteralAuthUserPooWebClientId: string =
     "process.env.AUTH_LITERALAUTH_USERPOOLWEBCLIENTID";
-  [@bs.val]
-  external highlightBoundingBoxDetectorAPI: string =
-    "process.env.HIGHLIGHT_BOUNDING_BOX_DETECTOR_API";
 };

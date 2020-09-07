@@ -1,0 +1,30 @@
+{
+  "name": "post-authentication",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently -k -n \"bsb,webpack\" \"npm run bsb:start\" \"dotenv npm run webpack:start\"",
+    "build:development": "dotenv npm run webpack:build",
+    "build": "NODE_ENV=production dotenv npm run webpack:build",
+    "bsb:build": "bsb -make-world",
+    "bsb:start": "bsb -make-world -w",
+    "bsb:clean": "bsb -clean-world",
+    "webpack:start": "webpack --watch --config ./src/webpack.config.js",
+    "webpack:build": "npm run bsb:clean && npm run bsb:build && webpack --config ./src/webpack.config.js",
+    "graphql:sync-schema": "./scripts/graphql-sync-schema.sh"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "aws-sdk": "^2.701.0",
+    "bs-platform": "^8.2.0",
+    "decco": "^1.2.1",
+    "dotenv": "^8.2.0",
+    "dotenv-cli": "^3.1.0",
+    "uuid": "^8.0.0",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11",
+    "@reasonml-community/graphql-ppx": "^0.7.2"
+  }
+}

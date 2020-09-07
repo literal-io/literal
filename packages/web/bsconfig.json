@@ -16,21 +16,25 @@
   },
   "suffix": ".js",
   "js-post-build": {
-    "cmd": "./scripts/bsb-js-post-build.sh"
+    "cmd": "./scripts/bsb-js-post-build.js"
   },
   "bs-dependencies": [
-    "@trashed/bs-aws-amplify",
+    "@literal-io/bs-aws-amplify",
     "decco",
     "bs-webapi",
     "reason-react",
     "re-classnames",
     "reason-apollo",
     "reason-apollo-hooks",
-    "@trashed/bs-aws-appsync",
+    "@literal-io/bs-aws-appsync",
     "@jsiebern/bs-material-ui"
   ],
   "ppx-flags": [
-    ["@baransu/graphql_ppx_re/ppx", "-schema ./graphql-schema.json"],
+    [
+      "@reasonml-community/graphql-ppx/ppx",
+      "-schema ./graphql-schema.json",
+      "-apollo-mode"
+    ],
     "decco/ppx"
   ],
   "warnings": {

@@ -1,45 +1,321 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-export const listScreenshots = /* GraphQL */ `
-  query ListScreenshots(
-    $filter: ModelScreenshotFilterInput
+export const listAgents = /* GraphQL */ `
+  query ListAgents(
+    $username: String
+    $filter: ModelAgentFilterInput
     $limit: Int
     $nextToken: String
+    $sortDirection: ModelSortDirection
   ) {
-    listScreenshots(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    listAgents(
+      username: $username
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      sortDirection: $sortDirection
+    ) {
       items {
         id
-        createdAt
-        owner
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        username
+        created
+        modified
       }
       nextToken
     }
   }
 `;
-export const getScreenshot = /* GraphQL */ `
-  query GetScreenshot($id: ID!) {
-    getScreenshot(id: $id) {
+export const getAgent = /* GraphQL */ `
+  query GetAgent($username: String!) {
+    getAgent(username: $username) {
       id
-      createdAt
-      file {
-        bucket
-        key
-        region
-      }
-      owner
+      type
+      name
+      nickname
+      email_sha1
+      email
+      homepage
+      username
+      created
+      modified
     }
   }
 `;
-export const listTags = /* GraphQL */ `
-  query ListTags(
-    $id: ID
-    $filter: ModelTagFilterInput
+export const listAnnotations = /* GraphQL */ `
+  query ListAnnotations(
+    $creatorUsername: String
+    $id: ModelStringKeyConditionInput
+    $filter: ModelAnnotationFilterInput
     $limit: Int
     $nextToken: String
     $sortDirection: ModelSortDirection
   ) {
-    listTags(
+    listAnnotations(
+      creatorUsername: $creatorUsername
+      id: $id
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      sortDirection: $sortDirection
+    ) {
+      items {
+        context
+        type
+        id
+        created
+        generated
+        modified
+        motivation
+        via
+        canonical
+        creatorUsername
+      }
+      nextToken
+    }
+  }
+`;
+export const getAnnotation = /* GraphQL */ `
+  query GetAnnotation($creatorUsername: String!, $id: String!) {
+    getAnnotation(creatorUsername: $creatorUsername, id: $id) {
+      context
+      type
+      id
+      body {
+        ... on ExternalBody {
+          id
+          format
+          language
+          processingLanguage
+          textDirection
+          accessibility
+          rights
+          type
+        }
+        ... on TextualBody {
+          id
+          format
+          language
+          processingLanguage
+          textDirection
+          accessibility
+          purpose
+          rights
+          value
+          type
+        }
+        ... on ChoiceBody {
+          type
+        }
+        ... on SpecificBody {
+          id
+          type
+          purpose
+          styleClass
+          scope
+        }
+      }
+      target {
+        ... on ExternalTarget {
+          id
+          format
+          language
+          processingLanguage
+          textDirection
+          type
+          accessibility
+          rights
+        }
+        ... on TextualTarget {
+          id
+          format
+          language
+          processingLanguage
+          textDirection
+          accessibility
+          rights
+          value
+        }
+      }
+      created
+      generated
+      modified
+      audience {
+        id
+        type
+      }
+      motivation
+      via
+      canonical
+      stylesheet {
+        type
+        value
+      }
+      creatorUsername
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        username
+        created
+        modified
+      }
+      generator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        username
+        created
+        modified
+      }
+    }
+  }
+`;
+export const listAnnotationCollections = /* GraphQL */ `
+  query ListAnnotationCollections(
+    $creatorUsername: String
+    $id: ModelStringKeyConditionInput
+    $filter: ModelAnnotationCollectionFilterInput
+    $limit: Int
+    $nextToken: String
+    $sortDirection: ModelSortDirection
+  ) {
+    listAnnotationCollections(
+      creatorUsername: $creatorUsername
+      id: $id
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      sortDirection: $sortDirection
+    ) {
+      items {
+        context
+        id
+        type
+        label
+        total
+        created
+        creatorUsername
+        modified
+      }
+      nextToken
+    }
+  }
+`;
+export const getAnnotationCollection = /* GraphQL */ `
+  query GetAnnotationCollection($creatorUsername: String!, $id: String!) {
+    getAnnotationCollection(creatorUsername: $creatorUsername, id: $id) {
+      context
+      id
+      type
+      label
+      total
+      created
+      creatorUsername
+      modified
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        username
+        created
+        modified
+      }
+      first {
+        context
+        id
+        type
+        startIndex
+        created
+        modified
+        creatorUsername
+      }
+      last {
+        context
+        id
+        type
+        startIndex
+        created
+        modified
+        creatorUsername
+      }
+    }
+  }
+`;
+export const getAnnotationPageItem = /* GraphQL */ `
+  query GetAnnotationPageItem($creatorUsername: String!, $id: ID!) {
+    getAnnotationPageItem(creatorUsername: $creatorUsername, id: $id) {
+      id
+      annotationPageId
+      annotationId
+      created
+      modified
+      creatorUsername
+      creator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        username
+        created
+        modified
+      }
+      annotation {
+        context
+        type
+        id
+        created
+        generated
+        modified
+        motivation
+        via
+        canonical
+        creatorUsername
+      }
+      annotationPage {
+        context
+        id
+        type
+        startIndex
+        created
+        modified
+        creatorUsername
+      }
+    }
+  }
+`;
+export const listAnnotationPageItems = /* GraphQL */ `
+  query ListAnnotationPageItems(
+    $creatorUsername: String
+    $id: ModelIDKeyConditionInput
+    $filter: ModelAnnotationPageItemFilterInput
+    $limit: Int
+    $nextToken: String
+    $sortDirection: ModelSortDirection
+  ) {
+    listAnnotationPageItems(
+      creatorUsername: $creatorUsername
       id: $id
       filter: $filter
       limit: $limit
@@ -48,36 +324,27 @@ export const listTags = /* GraphQL */ `
     ) {
       items {
         id
-        createdAt
-        text
-        owner
+        annotationPageId
+        annotationId
+        created
+        modified
+        creatorUsername
       }
       nextToken
     }
   }
 `;
-export const getTag = /* GraphQL */ `
-  query GetTag($id: ID!) {
-    getTag(id: $id) {
-      id
-      createdAt
-      text
-      owner
-      highlights {
-        nextToken
-      }
-    }
-  }
-`;
-export const listHighlights = /* GraphQL */ `
-  query ListHighlights(
-    $id: ID
-    $filter: ModelHighlightFilterInput
+export const listAnnotationPages = /* GraphQL */ `
+  query ListAnnotationPages(
+    $creatorUsername: String
+    $id: ModelStringKeyConditionInput
+    $filter: ModelAnnotationPageFilterInput
     $limit: Int
     $nextToken: String
     $sortDirection: ModelSortDirection
   ) {
-    listHighlights(
+    listAnnotationPages(
+      creatorUsername: $creatorUsername
       id: $id
       filter: $filter
       limit: $limit
@@ -85,107 +352,71 @@ export const listHighlights = /* GraphQL */ `
       sortDirection: $sortDirection
     ) {
       items {
+        context
         id
-        createdAt
-        text
-        note
-        owner
+        type
+        startIndex
+        created
+        modified
+        creatorUsername
       }
       nextToken
     }
   }
 `;
-export const getHighlight = /* GraphQL */ `
-  query GetHighlight($id: ID!) {
-    getHighlight(id: $id) {
+export const getAnnotationPage = /* GraphQL */ `
+  query GetAnnotationPage($creatorUsername: String!, $id: String!) {
+    getAnnotationPage(creatorUsername: $creatorUsername, id: $id) {
+      context
       id
-      createdAt
-      text
-      note
-      owner
-      screenshot {
+      type
+      startIndex
+      created
+      modified
+      creatorUsername
+      creator {
         id
-        createdAt
-        owner
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        username
+        created
+        modified
       }
-      tags {
+      partOf {
+        context
+        id
+        type
+        label
+        total
+        created
+        creatorUsername
+        modified
+      }
+      items {
         nextToken
       }
-    }
-  }
-`;
-export const getHighlightTag = /* GraphQL */ `
-  query GetHighlightTag($id: ID!) {
-    getHighlightTag(id: $id) {
-      id
-      highlightId
-      tagId
-      createdAt
-      tag {
+      next {
+        context
         id
-        createdAt
-        text
-        owner
+        type
+        startIndex
+        created
+        modified
+        creatorUsername
       }
-      highlight {
+      prev {
+        context
         id
-        createdAt
-        text
-        note
-        owner
+        type
+        startIndex
+        created
+        modified
+        creatorUsername
       }
-    }
-  }
-`;
-export const listHighlightTags = /* GraphQL */ `
-  query ListHighlightTags(
-    $filter: ModelHighlightTagFilterInput
-    $limit: Int
-    $nextToken: String
-  ) {
-    listHighlightTags(filter: $filter, limit: $limit, nextToken: $nextToken) {
-      items {
-        id
-        highlightId
-        tagId
-        createdAt
-      }
-      nextToken
-    }
-  }
-`;
-export const getProfile = /* GraphQL */ `
-  query GetProfile($owner: String!) {
-    getProfile(owner: $owner) {
-      id
-      owner
-      createdAt
-      isOnboarded
-    }
-  }
-`;
-export const listProfiles = /* GraphQL */ `
-  query ListProfiles(
-    $owner: String
-    $filter: ModelProfileFilterInput
-    $limit: Int
-    $nextToken: String
-    $sortDirection: ModelSortDirection
-  ) {
-    listProfiles(
-      owner: $owner
-      filter: $filter
-      limit: $limit
-      nextToken: $nextToken
-      sortDirection: $sortDirection
-    ) {
-      items {
-        id
-        owner
-        createdAt
-        isOnboarded
-      }
-      nextToken
     }
   }
 `;

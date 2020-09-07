@@ -1,99 +1,77 @@
 open Containers_NoteHeader_GraphQL;
 open Styles;
 
-external castToListHighlights:
-  Js.Json.t => QueryRenderers_Notes_GraphQL.ListHighlights.Query.t =
-  "%identity";
-
 [@react.component]
-let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
-  let (deleteHighlightMutation, _s, _f) =
+let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
+  let (deleteAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(
-      Containers_NoteHeader_GraphQL.DeleteHighlightMutation.definition,
+      Containers_NoteHeader_GraphQL.DeleteAnnotationMutation.definition,
     );
 
   let handleCreate = () => {
-    let _ = Next.Router.push("/notes/new");
+    switch (currentUser) {
+    | Some(currentUser) =>
+      Routes.CreatorsIdAnnotationsNew.path(
+        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+      )
+      ->Next.Router.push
+    | None => ()
+    };
+    let _ = ();
     ();
   };
 
-  let handleDelete = (~highlight, ~currentUser) => {
-    let deleteHighlightInput = {"id": highlight##id};
-    let deleteHighlightTagsInput =
-      highlight##tags
-      ->Belt.Option.flatMap(t => t##items)
-      ->Belt.Option.map(t =>
-          t
-          ->Belt.Array.keepMap(ht => ht)
-          ->Belt.Array.map(ht => {"id": ht##id})
-        )
-      ->Belt.Option.getWithDefault([||]);
-
+  let handleDelete = (~annotation, ~currentUser) => {
     let variables =
-      DeleteHighlightMutation.makeVariables(
-        ~deleteHighlightInput,
-        ~deleteHighlightTagsInput,
+      DeleteAnnotationMutation.makeVariables(
+        ~input={
+          "creatorUsername":
+            AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+          "id": annotation##id,
+        },
         (),
       );
 
+    let _ = deleteAnnotationMutation(~variables, ());
+    let cacheQuery =
+      QueryRenderers_Notes_GraphQL.ListAnnotations.Query.make(
+        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+        (),
+      );
     let _ =
-      deleteHighlightMutation(~variables, ())
-      |> Js.Promise.then_(_ => {
-           let cacheQuery =
-             QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
-               ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-               (),
-             );
-           let _ =
-             switch (
-               QueryRenderers_Notes_GraphQL.ListHighlights.readCache(
-                 ~query=cacheQuery,
-                 ~client=Provider.client,
-                 (),
-               )
-             ) {
-             | None => ()
-             | Some(cachedQuery) =>
-               let updatedListHighlights =
-                 QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
-                   cachedQuery
-                   ->listHighlights
-                   ->Belt.Option.flatMap(highlightConnectionItems)
-                   ->Belt.Option.map(items => {
-                       let updatedItems =
-                         items
-                         ->Belt.Array.keep(
-                             fun
-                             | Some(h) => h.id !== highlight##id
-                             | None => false,
-                           )
-                         ->Js.Option.some;
-                       {
-                         ...cachedQuery,
-                         listHighlights:
-                           Some({
-                             ...
-                               cachedQuery->listHighlights->Belt.Option.getExn,
-                             items: updatedItems,
-                           }),
-                       };
-                     })
-                 );
-               let _ =
-                 switch (updatedListHighlights) {
-                 | Some(updatedListHighlights) =>
-                   QueryRenderers_Notes_GraphQL.ListHighlights.writeCache(
-                     ~client=Provider.client,
-                     ~data=updatedListHighlights,
-                     ~query=cacheQuery,
-                     (),
-                   )
-                 | None => ()
-                 };
-               ();
-             };
-           Js.Promise.resolve();
-         });
+      QueryRenderers_Notes_GraphQL.ListAnnotations.readCache(
+        ~query=cacheQuery,
+        ~client=Providers_Apollo.client,
+        (),
+      )
+      ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
+      ->Belt.Option.flatMap(listAnnotations => listAnnotations##items)
+      ->Belt.Option.forEach(annotations => {
+          let newAnnotations =
+            annotations->Belt.Array.keep(cachedAnnotation =>
+              switch (cachedAnnotation) {
+              | Some(cachedAnnotation) =>
+                cachedAnnotation##id !== annotation##id
+              | None => false
+              }
+            );
+          let newData = {
+            "listAnnotations":
+              Some({
+                "__typename": "ModelAnnotationConnection",
+                "items": Some(newAnnotations),
+              }),
+            "__typename": "Query",
+          };
+          let _ =
+            QueryRenderers_Notes_GraphQL.ListAnnotations.writeCache(
+              ~query=cacheQuery,
+              ~client=Providers_Apollo.client,
+              ~data=newData,
+              (),
+            );
+          ();
+        });
     ();
   };
 
@@ -107,11 +85,9 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
       "z-10",
     ])}>
     <div
-      style={style(~borderColor="rgba(255, 255, 255, 0.5)", ())}
       className={cn([
         "justify-between",
         "items-center",
-        "border-b",
         "py-2",
         "mx-6",
         "flex",
@@ -119,23 +95,22 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
       ])}>
       <h1
         className={cn([
-          "text-white",
+          "text-lightPrimary",
           "font-sans",
-          "font-semibold",
-          "italic",
+          "font-bold",
           "leading-none",
           "text-xl",
         ])}>
-        {React.string("#recent")}
+        {React.string("recent")}
       </h1>
       <div className={cn(["flex", "flex-row"])}>
         <MaterialUi.IconButton
           size=`Small
-          edge=`End
+          edge=MaterialUi.IconButton.Edge._end
           onClick={_ =>
-            switch (highlight, currentUser) {
-            | (Some(highlight), Some(currentUser)) =>
-              handleDelete(~highlight, ~currentUser)
+            switch (annotation, currentUser) {
+            | (Some(annotation), Some(currentUser)) =>
+              handleDelete(~annotation, ~currentUser)
             | _ => ()
             }
           }
@@ -145,10 +120,13 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
               "rippleVisible": cn(["opacity-50"]),
             },
           }
-          classes=[Root(cn(["p-0", "ml-1"]))]>
+          classes={MaterialUi.IconButton.Classes.make(
+            ~root=cn(["p-0", "ml-1"]),
+            (),
+          )}>
           <Svg
             placeholderViewBox="0 0 24 24"
-            className={cn(["pointer-events-none", "opacity-75"])}
+            className={cn(["pointer-events-none", "opacity-50"])}
             style={ReactDOMRe.Style.make(
               ~width="1.75rem",
               ~height="1.75rem",
@@ -159,9 +137,9 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
         </MaterialUi.IconButton>
         <MaterialUi.IconButton
           size=`Small
-          edge=`End
+          edge=MaterialUi.IconButton.Edge._end
           onClick={_ =>
-            switch (highlight, currentUser) {
+            switch (annotation, currentUser) {
             | (Some(_), Some(_)) => handleCreate()
             | _ => ()
             }
@@ -172,10 +150,13 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
               "rippleVisible": cn(["opacity-50"]),
             },
           }
-          classes=[Root(cn(["p-0", "ml-4"]))]>
+          classes={MaterialUi.IconButton.Classes.make(
+            ~root=cn(["p-0", "ml-4"]),
+            (),
+          )}>
           <Svg
             placeholderViewBox="0 0 24 24"
-            className={cn(["pointer-events-none", "opacity-75"])}
+            className={cn(["pointer-events-none", "opacity-50"])}
             style={ReactDOMRe.Style.make(
               ~width="1.75rem",
               ~height="1.75rem",

@@ -2,6 +2,7 @@ package io.literal.ui.activity;
 
 import io.literal.R;
 import io.literal.factory.AWSMobileClientFactory;
+import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.Constants;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -10,16 +11,19 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+
+import com.amazonaws.mobile.client.AWSMobileClient;
+import com.amazonaws.mobile.client.Callback;
+import com.amazonaws.mobile.client.UserStateDetails;
 
 import io.literal.ui.view.WebView;
 
 public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
-
-    private static final String WEB_DEFAULT_URL = Constants.WEB_HOST + "/notes";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,24 +43,65 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        AWSMobileClientFactory.initializeClient(this);
+        AWSMobileClientFactory.initializeClient(this, new Callback<UserStateDetails>() {
+            @Override
+            public void onResult(UserStateDetails result) {
+                switch (result.getUserState()) {
+                    case SIGNED_IN:
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                handleSignedIn(savedInstanceState);
+                            }
+                        });
+                        break;
+                    default:
+                        handleSignedOut();
+                }
+            }
 
-        this.webView.initialize(this);
-        this.webView.requestFocus();
+            @Override
+            public void onError(Exception e) {
+                Log.e(Constants.LOG_TAG, "Unable to initializeClient: ", e);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        handleSignedOut();
+                    }
+                });
+            }
+        });
+    }
+
+    private void handleSignedIn(Bundle savedInstanceState) {
+        webView.initialize(this);
+        webView.requestFocus();
+
+        String username = AWSMobileClient.getInstance().getUsername();
+        String defaultUrl =
+            username != null
+                ? Constants.WEB_HOST + "/creators/" + username + "/annotations"
+                : Constants.WEB_HOST + "/authenticate";
 
         if (savedInstanceState == null) {
             Intent intent = getIntent();
             if (intent != null) {
                 Uri uri = intent.getData();
                 if (uri != null) {
-                    webView.loadUrlWithHistory(uri.toString(), new String[]{"/notes"});
+                    webView.loadUrlWithHistory(uri.toString(), new String[]{"/annotations"});
                 } else {
-                    webView.loadUrl(WEB_DEFAULT_URL);
+                    webView.loadUrl(defaultUrl);
                 }
             } else {
-                webView.loadUrl(WEB_DEFAULT_URL);
+                webView.loadUrl(defaultUrl);
             }
         }
+    }
+
+    private void handleSignedOut() {
+        webView.initialize(this);
+        webView.requestFocus();
+        webView.loadUrl(Constants.WEB_HOST + "/authenticate");
     }
 
     @Override

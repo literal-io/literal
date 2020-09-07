@@ -1,0 +1,24 @@
+{
+  "name": "@literal-io/bs-aws-appsync",
+  "reason": {
+   "react-jsx": 3
+  },
+  "sources": {
+    "dir": "src",
+    "subdirs": true
+  },
+  "package-specs": [
+    {
+      "module": "es6-global",
+      "in-source": true
+    }
+  ],
+  "suffix": ".bs.js",
+  "bs-dependencies": [
+    "reason-react",
+    "reason-apollo",
+    "@literal-io/bs-aws-amplify"
+  ],
+  "ppx-flags": [],
+  "refmt": 3
+}

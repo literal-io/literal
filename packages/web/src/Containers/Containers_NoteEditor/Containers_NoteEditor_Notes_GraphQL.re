@@ -1,40 +1,59 @@
-module GetHighlightFragment = [%graphql
+module GetAnnotationFragment = [%graphql
   {|
-    fragment editorHighlightFragment on Highlight {
+    fragment editorNotesAnnotationFragment on Annotation {
       id
-      text
-      tags {
-        items {
+      body {
+        ... on TextualBody {
           id
-          createdAt
-          tag {
-            id
-            text
-          }
+          value
+          purpose
+          __typename
+
+          format
+          language
+          processingLanguage
+          textDirection
+          accessibility
+          rights
+        }
+      }
+      target {
+        ... on TextualTarget {
+          value
+          __typename
+
+          textualTargetId: id
+          format
+          language
+          processingLanguage
+          textDirection
+          accessibility
+          rights
+        }
+        ... on ExternalTarget {
+          __typename
+
+          externalTargetId: id
+          format
+          language
+          processingLanguage
+          textDirection
+          type_: type
+          accessibility
+          rights
         }
       }
     }
   |}
 ];
 
-module UpdateHighlightMutation = [%graphql
+module PatchAnnotationMutation = [%graphql
   {|
-  mutation UpdateHighlightAndTags($input: UpdateHighlightAndTagsInput!) {
-    updateHighlightAndTags(input: $input) {
-      updateHighlight {
-        id
-        text
-      }
-      createTags {
-        id
-        createdAt
-      }
-      createHighlightTags {
-        id
-        createdAt
-      }
-      deleteHighlightTags {
-        id
+  mutation PatchAnnotation($input: PatchAnnotationInput!) {
+    patchAnnotation(input: $input) {
+      annotation {
+        ...GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
+        ...Containers_NoteHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
       }
     }
   }

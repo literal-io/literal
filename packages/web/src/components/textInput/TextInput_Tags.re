@@ -1,5 +1,7 @@
 open Styles;
 
+let styles = [%raw "require('./TextInput_Tags.module.css')"];
+
 module Value = {
   type t = {
     commits: array(string),
@@ -22,7 +24,6 @@ let make =
       ref_,
     ) => {
     let keyEventHandled = React.useRef(false);
-    let (isFocused, setFocused) = React.useState(() => false);
 
     let handleChange = ev => {
       let _ = ev->ReactEvent.Form.persist;
@@ -118,8 +119,7 @@ let make =
       ();
     };
 
-    let handleFocus = ev => {
-      let _ = setFocused(_ => true);
+    let handleFocus = (ev: ReactEvent.Focus.t) => {
       let _ =
         switch (onFocus) {
         | Some(onFocus) => onFocus(ev)
@@ -130,7 +130,6 @@ let make =
 
     let handleBlur = ev => {
       let _ = ReactEvent.Focus.persist(ev);
-      let _ = setFocused(_ => false);
       let _ =
         if (Js.String.length(value.partial) > 0) {
           let _ = onChange({...value, partial: ""});
@@ -170,64 +169,57 @@ let make =
 
     <div
       onClick=handleContainerClick
-      style={style(~minHeight="5rem", ())}
-      className={cn(["flex", "flex-row", "flex-wrap", Cn.unpack(className)])}>
+      className={cn(["flex", "flex-col", Cn.unpack(className)])}>
       {value.commits
        ->Belt.Array.map(text =>
-           <span
-             key=text
-             className={cn([
-               "font-sans",
-               "text-white",
-               "italic",
-               "underline",
-               "font-medium",
-               "mr-3",
-             ])}>
-             {React.string("#" ++ text)}
-           </span>
+           <div key=text className=Cn.(fromList(["mr-3", "mb-3"]))>
+             <span
+               className={cn([
+                 "font-sans",
+                 "text-lightPrimary",
+                 "font-medium",
+                 "text-lg",
+                 "border-b",
+                 "border-white",
+                 "border-opacity-50",
+                 "inline-block",
+                 "mr-3",
+                 "mb-3",
+               ])}>
+               {React.string(text)}
+             </span>
+           </div>
          )
        ->React.array}
-      <span
-        className={cn([
-          "font-sans",
-          "text-lightPrimary",
-          "font-medium",
-          "italic",
-          "underline",
-          Cn.ifTrue(
-            cn(["absolute", "opacity-0"]),
-            !(isFocused || Js.String2.length(value.partial) > 0),
-          ),
-        ])}>
-        {React.string("#")}
-      </span>
-      <input
-        type_="text"
-        ref={inputRef->ReactDOMRe.Ref.domRef}
-        className={cn([
-          "font-sans",
-          "text-lightPrimary",
-          "font-medium",
-          "italic",
-          "bg-black",
-          "underline",
-          Cn.ifTrue(
-            cn(["absolute", "opacity-0"]),
-            !(isFocused || Js.String2.length(value.partial) > 0),
-          ),
-        ])}
-        style={style(
-          ~width=
-            string_of_int(max(Js.String2.length(value.partial), 1)) ++ "ch",
-          (),
-        )}
-        value={value.partial}
+      <MaterialUi.TextField
+        value={MaterialUi.TextField.Value.string(value.partial)}
         onChange=handleChange
-        onKeyUp=handleKeyUp
-        onKeyDown=handleKeyDown
-        onFocus=handleFocus
-        onBlur=handleBlur
+        fullWidth=true
+        multiline=true
+        ref={inputRef->ReactDOMRe.Ref.domRef}
+        _InputProps={
+          "classes":
+            MaterialUi.Input.Classes.make(
+              ~input=
+                Cn.(
+                  fromList([
+                    "font-sans",
+                    "text-lightPrimary",
+                    "font-medium",
+                    "text-lg",
+                  ])
+                ),
+              ~underline=Cn.(fromList([styles##underline])),
+              (),
+            ),
+        }
+        inputProps={
+          "onChange": handleChange,
+          "onKeyUp": handleKeyUp,
+          "onKeyDown": handleKeyDown,
+          "onFocus": handleFocus,
+          "onBlur": handleBlur,
+        }
       />
     </div>;
   });

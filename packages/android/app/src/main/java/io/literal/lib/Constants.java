@@ -7,8 +7,8 @@ public class Constants {
 
     public static final String WEB_HOST = BuildConfig.DEBUG ? "http://localhost:3000" : "https://literal.io";
 
-    public static final String NOTIFICATION_CHANNEL_NOTE_CREATED_ID = "NOTE_CREATED";
-    public static final String NOTIFICATION_CHANNEL_NOTE_CREATED_NAME = "Note created";
-    public static final String NOTIFICATION_CHANNEL_NOTE_CREATED_DESCRIPTION = "Confirmation that a note has been created.";
-    public static final String NOTIFICATION_NOTE_CREATED_TITLE = "Note Created";
+    public static final String NOTIFICATION_CHANNEL_ANNOTATION_CREATED_ID = "ANNOTATION_CREATED";
+    public static final String NOTIFICATION_CHANNEL_ANNOTATION_CREATED_NAME = "Annotation created";
+    public static final String NOTIFICATION_CHANNEL_ANNOTATION_CREATED_DESCRIPTION = "Confirmation that an annotation has been created.";
+    public static final String NOTIFICATION_ANNOTATION_CREATED_TITLE = "Annotation Created";
 }

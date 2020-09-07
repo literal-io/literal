@@ -1,84 +1,72 @@
 open Styles;
 
-let handleUpdateCache = (~currentUser, ~highlight) => {
+let handleUpdateCache = (~currentUser, ~annotation) => {
   let cacheQuery =
-    QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
-      ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+    QueryRenderers_Notes_GraphQL.ListAnnotations.Query.make(
+      ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
       (),
     );
   let _ =
-    switch (
-      QueryRenderers_Notes_GraphQL.ListHighlights.readCache(
-        ~query=cacheQuery,
-        ~client=Provider.client,
-        (),
-      )
-    ) {
-    | None => ()
-    | Some(cachedQuery) =>
-      let updatedListHighlights =
-        QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
-          cachedQuery
-          ->listHighlights
-          ->Belt.Option.flatMap(highlightConnectionItems)
-          ->Belt.Option.map(items => {
-              let updatedItems =
-                items
-                ->Belt.Array.keep(
-                    fun
-                    | Some(h) => h.id !== highlight##id
-                    | None => false,
-                  )
-                ->Js.Option.some;
-              {
-                ...cachedQuery,
-                listHighlights:
-                  Some({
-                    ...cachedQuery->listHighlights->Belt.Option.getExn,
-                    items: updatedItems,
-                  }),
-              };
-            })
-        );
-      let _ =
-        switch (updatedListHighlights) {
-        | Some(updatedListHighlights) =>
-          QueryRenderers_Notes_GraphQL.ListHighlights.(
-            writeCache(
-              ~query=cacheQuery,
-              ~client=Provider.client,
-              ~data=updatedListHighlights,
-              (),
-            )
-          )
-        | None => ()
+    QueryRenderers_Notes_GraphQL.ListAnnotations.readCache(
+      ~query=cacheQuery,
+      ~client=Providers_Apollo.client,
+      (),
+    )
+    ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
+    ->Belt.Option.flatMap(listAnnotations => listAnnotations##items)
+    ->Belt.Option.forEach(annotations => {
+        let newAnnotations =
+          annotations->Belt.Array.keep(cachedAnnotation =>
+            switch (cachedAnnotation) {
+            | Some(cachedAnnotation) =>
+              cachedAnnotation##id !== annotation##id
+            | None => false
+            }
+          );
+        let newData = {
+          "listAnnotations":
+            Some({
+              "__typename": "ModelAnnotationConnection",
+              "items": Some(newAnnotations),
+            }),
+          "__typename": "Query",
         };
-      ();
-    };
-  Js.Promise.resolve();
+        let _ =
+          QueryRenderers_Notes_GraphQL.ListAnnotations.writeCache(
+            ~query=cacheQuery,
+            ~client=Providers_Apollo.client,
+            ~data=newData,
+            (),
+          );
+        ();
+      });
+  ();
 };
 
 [@react.component]
-let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
-  let (deleteHighlightMutation, _s, _f) =
+let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
+  let (deleteAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(
-      Containers_NoteHeader_GraphQL.DeleteHighlightMutation.definition,
+      Containers_NewNoteFromShareHeader_GraphQL.DeleteAnnotationMutation.definition,
     );
 
   let handleClose = () => {
-    switch (highlight, currentUser) {
-    | (Some(highlight), Some(currentUser)) =>
+    switch (annotation, currentUser) {
+    | (Some(annotation), Some(currentUser)) =>
       let variables =
-        Containers_NoteHeader_GraphQL.DeleteHighlightMutation.makeVariables(
-          ~deleteHighlightInput={"id": highlight##id},
-          ~deleteHighlightTagsInput=[||],
+        Containers_NewNoteFromShareHeader_GraphQL.DeleteAnnotationMutation.makeVariables(
+          ~input={
+            "id": annotation##id,
+            "creatorUsername":
+              AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+          },
           (),
         );
 
       let _ =
-        deleteHighlightMutation(~variables, ())
-        |> Js.Promise.then_(_ => handleUpdateCache(~highlight, ~currentUser))
+        deleteAnnotationMutation(~variables, ())
         |> Js.Promise.then_(_ => {
+             let _ = handleUpdateCache(~annotation, ~currentUser);
              let _ =
                Webview.(
                  postMessage(WebEvent.make(~type_="ACTIVITY_FINISH"))
@@ -96,7 +84,7 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
   <Header className={cn(["py-2", "mx-6"])}>
     <MaterialUi.IconButton
       size=`Small
-      edge=`Start
+      edge=MaterialUi.IconButton.Edge.start
       onClick={_ => handleClose()}
       _TouchRippleProps={
         "classes": {
@@ -104,7 +92,7 @@ let make = (~highlightFragment as highlight=?, ~currentUser=?) => {
           "rippleVisible": cn(["opacity-50"]),
         },
       }
-      classes=[Root(cn(["p-0"]))]>
+      classes={MaterialUi.IconButton.Classes.make(~root=cn(["p-0"]), ())}>
       <Svg
         placeholderViewBox="0 0 24 24"
         className={cn(["w-8", "h-8", "pointer-events-none"])}

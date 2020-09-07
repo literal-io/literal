@@ -21,8 +21,7 @@
                 "CloudfrontOriginRequest": {},
                 "GraphQLResolver": {},
                 "PostAuthentication": {},
-                "literalAuthPostAuthentication": {},
-                "DynamoDBStream": {}
+                "literalAuthPostAuthentication": {}
             }
         }
     }

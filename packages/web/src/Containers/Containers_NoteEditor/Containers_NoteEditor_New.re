@@ -1,6 +1,5 @@
 open Styles;
 open Containers_NoteEditor_New_GraphQL;
-open Containers_NoteEditor_GraphQL_Util;
 
 [@bs.deriving jsConverter]
 type phase = [ | `PhasePrompt | `PhaseTextInput];
@@ -17,100 +16,49 @@ let phase_decode = json =>
 type action =
   | SetPhase(phase);
 
-let updateCache =
-    (
-      ~currentUser,
-      ~editorValue: Containers_NoteEditor_Base.value,
-      ~createHighlightInput,
-      ~createHighlightTagsInput,
-    ) => {
+let updateCache = (~currentUser, ~input) => {
   let cacheQuery =
-    QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
-      ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+    QueryRenderers_Notes_GraphQL.ListAnnotations.Query.make(
+      ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
       (),
     );
   let _ =
-    switch (
-      QueryRenderers_Notes_GraphQL.ListHighlights.readCache(
-        ~query=cacheQuery,
-        ~client=Provider.client,
-        (),
-      )
-    ) {
-    | None => ()
-    | Some(cachedQuery) =>
-      let updatedListHighlights =
-        QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
-          cachedQuery
-          ->listHighlights
-          ->Belt.Option.flatMap(highlightConnectionItems)
-          ->Belt.Option.map(items => {
-              let updatedTags =
-                editorValue.tags
-                ->Belt.Array.map(committedTag =>
-                    switch (
-                      createHighlightTagsInput->Belt.Array.getBy(input =>
-                        input##tagId === committedTag##id
-                      )
-                    ) {
-                    | Some(input) =>
-                      makeHighlightTag(
-                        ~id=input##id->Js.Option.getExn,
-                        ~createdAt=Js.Date.(make()->toISOString),
-                        ~tag=
-                          makeTag(~id=input##tagId, ~text=committedTag##text),
-                      )
-                      ->Js.Option.some
-                    | None =>
-                      let _ =
-                        Error.(
-                          report(
-                            InvalidState(
-                              "Expected highlight tag in cache or created, but found none.",
-                            ),
-                          )
-                        );
-                      None;
-                    }
-                  );
+    QueryRenderers_Notes_GraphQL.ListAnnotations.readCache(
+      ~query=cacheQuery,
+      ~client=Providers_Apollo.client,
+      (),
+    )
+    ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
+    ->Belt.Option.flatMap(listAnnotations => listAnnotations##items)
+    ->Belt.Option.forEach(annotations => {
+        let newAnnotation =
+          input
+          ->CreateAnnotationMutation.json_of_CreateAnnotationInput
+          ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput;
 
-              let updatedHighlight =
-                makeHighlight(
-                  ~id=createHighlightInput##id,
-                  ~createdAt=Js.Date.(make()->toISOString),
-                  ~text=editorValue.text,
-                  ~tags=
-                    makeHighlightTagsConnection(
-                      ~tags=updatedTags->Js.Option.some,
-                    )
-                    ->Js.Option.some,
-                )
-                ->Js.Option.some;
-              let updatedItems =
-                Js.Array.concat([|updatedHighlight|], items);
-              {
-                ...cachedQuery,
-                listHighlights:
-                  Some({
-                    ...cachedQuery->listHighlights->Belt.Option.getExn,
-                    items: Some(updatedItems),
-                  }),
-              };
-            })
-        );
-      let _ =
-        switch (updatedListHighlights) {
-        | Some(updatedListHighlights) =>
-          QueryRenderers_Notes_GraphQL.ListHighlights.writeCache(
-            ~client=Provider.client,
-            ~data=updatedListHighlights,
-            ~query=cacheQuery,
-            (),
-          )
-        | None => ()
+        let newAnnotations =
+          Belt.Array.concat(annotations, [|newAnnotation|]);
+
+        let newData = {
+          "listAnnotations":
+            Some({
+              "items": Some(newAnnotations),
+              "__typename": "ModelAnnotationConnection",
+            }),
+          "__typename": "Query",
         };
-      ();
-    };
+
+        let _ =
+          QueryRenderers_Notes_GraphQL.ListAnnotations.(
+            writeCache(
+              ~query=cacheQuery,
+              ~client=Providers_Apollo.client,
+              ~data=newData,
+              (),
+            )
+          );
+        ();
+      });
   ();
 };
 
@@ -118,66 +66,109 @@ module PhaseTextInput = {
   [@react.component]
   let make = (~currentUser) => {
     let (editorValue, setEditorValue) =
-      React.useState(() => Containers_NoteEditor_Base.{text: "", tags: [||]});
-    let (createHighlightMutation, _s, _f) =
-      ApolloHooks.useMutation(CreateHighlightMutation.definition);
+      React.useState(() =>
+        Containers_NoteEditor_Base_Types.{text: "", tags: [||]}
+      );
+    let (createAnnotationMutation, _s, _f) =
+      ApolloHooks.useMutation(CreateAnnotationMutation.definition);
 
     let handleSave = () => {
-      let highlightId = Uuid.makeV4();
-      let createHighlightInput = {
-        "id": highlightId,
-        "text": editorValue.text,
-        "createdAt": None,
-        "note": None,
-        "highlightScreenshotId": None,
-        "owner": None,
-      };
-      let createTagsInput =
-        editorValue.tags
-        ->Belt.Array.keepMap(tag =>
-            shouldCreateTag(tag)
-              ? Some({"id": tag##id, "text": tag##text, "createdAt": None})
-              : None
-          );
-      let createHighlightTagsInput =
-        editorValue.tags
-        ->Belt.Array.map(tag =>
-            {
-              "id":
-                makeHighlightTagId(
-                  ~highlightId=createHighlightInput##id,
-                  ~tagId=tag##id,
-                )
-                ->Js.Option.some,
-              "highlightId": createHighlightInput##id,
-              "tagId": tag##id,
-              "createdAt": None,
-            }
-          );
+      let idPromise =
+        Lib_GraphQL.Annotation.makeId(
+          ~creatorUsername=
+            AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+          ~textualTargetValue=editorValue.text,
+        );
 
-      let variables =
-        CreateHighlightMutation.makeVariables(
-          ~input={
-            "createHighlight": createHighlightInput,
-            "createTags":
-              Js.Array2.length(createTagsInput) > 0
-                ? Some(createTagsInput) : None,
-            "createHighlightTags":
-              Js.Array2.length(createHighlightTagsInput) > 0
-                ? Some(createHighlightTagsInput) : None,
-          },
-          (),
-        );
-      let _ = createHighlightMutation(~variables, ());
+      let bodyPromise =
+        editorValue.tags
+        ->Belt.Array.map(tag => {
+            let id =
+              switch (tag.id) {
+              | Some(id) => Js.Promise.resolve(id)
+              | None =>
+                Lib_GraphQL.AnnotationCollection.makeId(
+                  ~creatorUsername=
+                    AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                  ~label=tag.text,
+                )
+              };
+            id
+            |> Js.Promise.then_(id =>
+                 Js.Promise.resolve({
+                   "textualBody":
+                     Some({
+                       "id": Some(id),
+                       "value": tag.text,
+                       "purpose": Some([|`TAGGING|]),
+                       "rights": None,
+                       "accessibility": None,
+                       "format": Some(`TEXT_PLAIN),
+                       "textDirection": Some(`LTR),
+                       "language": Some(`EN_US),
+                       "processingLanguage": Some(`EN_US),
+                       "type": Some(`TEXTUAL_BODY),
+                     }),
+                   "externalBody": None,
+                   "choiceBody": None,
+                   "specificBody": None,
+                 })
+               );
+          })
+        ->Js.Promise.all;
+
       let _ =
-        updateCache(
-          ~currentUser,
-          ~editorValue,
-          ~createHighlightTagsInput,
-          ~createHighlightInput,
-        );
-      // FIXME: This should really do something like "back and replace"
-      let _ = Next.Router.push("/notes?id=" ++ highlightId);
+        Js.Promise.all2((idPromise, bodyPromise))
+        |> Js.Promise.then_(((id, body)) => {
+             let input = {
+               "context": [|Lib_GraphQL.Annotation.defaultContext|],
+               "type": [|`ANNOTATION|],
+               "id": id,
+               "created": None,
+               "modified": None,
+               "generated": None,
+               "audience": None,
+               "canonical": None,
+               "stylesheet": None,
+               "via": None,
+               "motivation": Some([|`HIGHLIGHTING|]),
+               "creatorUsername":
+                 AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+               "annotationGeneratorId": None,
+               "target": [|
+                 {
+                   "textualTarget":
+                     Some({
+                       "format": Some(`TEXT_PLAIN),
+                       "language": Some(`EN_US),
+                       "processingLanguage": Some(`EN_US),
+                       "textDirection": Some(`LTR),
+                       "accessibility": None,
+                       "rights": None,
+                       "value": editorValue.text,
+                       "id": None,
+                     }),
+                   "externalTarget": None,
+                 },
+               |],
+               "body": Js.Array2.length(body) > 0 ? Some(body) : None,
+             };
+             let variables =
+               CreateAnnotationMutation.makeVariables(~input, ());
+
+             let _ = createAnnotationMutation(~variables, ());
+             let _ = updateCache(~currentUser, ~input);
+
+             let _ =
+               Next.Router.push(
+                 Routes.CreatorsIdAnnotationsId.path(
+                   ~annotationIdComponent=
+                     Lib_GraphQL.Annotation.idComponent(id),
+                   ~creatorUsername=currentUser.username,
+                 ),
+               );
+             Js.Promise.resolve();
+           });
       ();
     };
 
@@ -231,7 +222,7 @@ module PhasePrompt = {
         ])}>
         <MaterialUi.IconButton
           size=`Medium
-          edge=`Start
+          edge=MaterialUi.IconButton.Edge.start
           onClick={_ => onCreateFromText()}
           _TouchRippleProps={
             "classes": {
@@ -239,7 +230,10 @@ module PhasePrompt = {
               "rippleVisible": cn(["opacity-75"]),
             },
           }
-          classes=[Root(cn(["mr-20", "p-8"]))]>
+          classes={MaterialUi.IconButton.Classes.make(
+            ~root=cn(["mr-20", "p-8"]),
+            (),
+          )}>
           <Svg
             placeholderViewBox="0 0 24 24"
             className={cn(["w-16", "h-16", "pointer-events-none"])}
@@ -248,7 +242,7 @@ module PhasePrompt = {
         </MaterialUi.IconButton>
         <MaterialUi.IconButton
           size=`Medium
-          edge=`Start
+          edge=MaterialUi.IconButton.Edge.start
           onClick={_ => onCreateFromFile()}
           _TouchRippleProps={
             "classes": {
@@ -256,7 +250,7 @@ module PhasePrompt = {
               "rippleVisible": cn(["opacity-75"]),
             },
           }
-          classes=[Root(cn(["p-8"]))]>
+          classes={MaterialUi.IconButton.Classes.make(~root=cn(["p-8"]), ())}>
           <Svg
             placeholderViewBox="0 0 24 24"
             className={cn(["w-16", "h-16", "pointer-events-none"])}

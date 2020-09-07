@@ -1,72 +1,493 @@
-input S3ObjectInput {
-  bucket: String!
-  key: String!
-  region: String!
-  localUri: String
-  mimeType: String
+enum TextDirection {
+  LTR
+  RTL
+  AUTO
 }
 
-type S3Object @aws_iam @aws_cognito_user_pools {
-  bucket: String!
-  key: String!
-  region: String!
+# https://www.iana.org/assignments/media-types/media-types.xhtml
+enum Format {
+  TEXT_PLAIN
 }
 
-type Screenshot
-  @model
+enum ResourceType {
+  DATASET
+  IMAGE
+  VIDEO
+  SOUND
+  TEXT
+}
+
+enum TextualBodyType {
+  TEXTUAL_BODY
+}
+
+enum SpecificResourceType {
+  SPECIFIC_RESOURCE
+}
+
+enum FragmentSelectorType {
+  FRAGMENT_SELECTOR
+}
+
+enum CssSelectorType {
+  CSS_SELECTOR
+}
+
+enum XPathSelectorType {
+  XPATH_SELECTOR
+}
+
+enum TextQuoteSelectorType {
+  TEXT_QUOTE_SELECTOR
+}
+
+enum Language {
+  EN_US
+}
+
+enum ChoiceType {
+  CHOICE
+}
+
+enum Motivation {
+  ACCESSING
+  BOOKMARKING
+  CLASSIFYING
+  COMMENTING
+  DESCRIBING
+  EDITING
+  HIGHLIGHTING
+  IDENTIFYING
+  LINKING
+  MODERATING
+  QUESTIONING
+  REPLYING
+  TAGGING
+}
+
+interface Resource {
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  #https://schema.org/accessibilityFeature
+  accessibility: [String!]
+  rights: [ID!]
+}
+
+union AnnotationTarget = ExternalTarget | TextualTarget
+
+type ExternalTarget implements Resource @aws_iam @aws_cognito_user_pools {
+  # Resource
+  id: ID!
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  type: ResourceType
+  accessibility: [String!]
+  rights: [ID!]
+}
+
+# non-spec
+type TextualTarget implements Resource @aws_iam @aws_cognito_user_pools {
+  # Resource
+  id: ID
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  accessibility: [String!]
+  rights: [ID!]
+
+  value: String!
+}
+
+type TextualBody implements Resource {
+  # Resource
+  id: ID
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  accessibility: [String!]
+  purpose: [Motivation!]
+  rights: [ID!]
+
+  value: String!
+  type: TextualBodyType
+}
+
+type ExternalBody implements Resource {
+  # Resource
+  id: ID!
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  accessibility: [String!]
+  rights: [ID!]
+
+  type: ResourceType
+}
+
+type ChoiceBody {
+  type: ChoiceType
+  items: [AnnotationBody!]!
+}
+
+type FragmentSelector {
+  type: FragmentSelectorType!
+  value: String!
+  conformsTo: ID
+  refinedBy: [Selector!]
+}
+
+type CssSelector {
+  type: CssSelectorType!
+  value: String!
+  refinedBy: [Selector!]
+}
+
+type XPathSelector {
+  type: XPathSelectorType!
+  value: String!
+  refinedBy: [Selector!]
+}
+
+type TextQuoteSelector {
+  type: TextQuoteSelectorType!
+  exact: String!
+  prefix: String
+  suffix: String
+  refinedBy: [Selector!]
+}
+
+enum TextPositionSelectorType {
+  TEXT_POSITION_SELECTOR
+}
+type TextPositionSelector {
+  type: TextPositionSelectorType!
+  start: Int!
+  end: Int!
+  refinedBy: [Selector!]
+}
+
+enum DataPositionSelectorType {
+  DATA_POSITION_SELECTOR
+}
+type DataPositionSelector {
+  type: DataPositionSelectorType!
+  start: Int!
+  end: Int!
+  refinedBy: [Selector!]
+}
+
+enum SvgSelectorType {
+  SVG_SELECTOR
+}
+type SvgSelector {
+  type: SvgSelectorType!
+  value: String!
+  refinedBy: [Selector!]
+}
+
+enum RangeSelectorType {
+  RANGE_SELECTOR
+}
+type RangeSelector {
+  type: RangeSelectorType!
+  startSelector: Selector!
+  endSelector: Selector!
+  refinedBy: [Selector!]
+}
+
+union Selector =
+    FragmentSelector
+  | CssSelector
+  | XPathSelector
+  | TextQuoteSelector
+  | TextPositionSelector
+  | DataPositionSelector
+  | SvgSelector
+  | RangeSelector
+
+enum TimeStateType {
+  TIME_STATE
+}
+type TimeState {
+  type: TimeStateType!
+  sourceDate: [AWSDateTime!]
+  sourceDateStart: AWSDateTime
+  sourceDateEnd: AWSDateTime
+  cached: [ID!]
+  refinedBy: [StateOrSelector!]
+}
+
+enum HttpRequestStateType {
+  HTTP_REQUEST_STATE
+}
+
+type HttpRequestState {
+  type: HttpRequestStateType!
+  value: String!
+  refinedBy: [StateOrSelector!]
+}
+
+type RenderedVia {
+  id: ID!
+}
+
+union State = TimeState | HttpRequestState
+union StateOrSelector =
+    TimeState
+  | HttpRequestState
+  | FragmentSelector
+  | CssSelector
+  | XPathSelector
+  | TextQuoteSelector
+  | TextPositionSelector
+  | DataPositionSelector
+  | SvgSelector
+  | RangeSelector
+
+type SpecificBody {
+  id: ID
+  type: SpecificResourceType
+  purpose: [Motivation!]
+  source: AnnotationBody!
+  selector: [Selector!]
+  state: [State!]
+  styleClass: [String!]
+  renderedVia: [RenderedVia!]
+  scope: [ID!]
+}
+
+input ExternalBodyInput {
+  id: ID!
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  accessibility: [String!]
+  rights: [ID!]
+  type: ResourceType
+}
+
+input TextualBodyInput {
+  id: ID
+  value: String!
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  accessibility: [String!]
+  purpose: [Motivation!]
+  rights: [ID!]
+  type: TextualBodyType
+}
+
+input ChoiceBodyInput {
+  type: ChoiceType
+  items: [AnnotationBodyInput!]!
+}
+
+input RenderedViaInput {
+  id: ID!
+}
+
+input FragmentSelectorInput {
+  type: FragmentSelectorType!
+  value: String!
+  conformsTo: ID
+  refinedBy: [SelectorInput!]
+}
+
+input CssSelectorInput {
+  type: CssSelectorType!
+  value: String!
+  refinedBy: [SelectorInput!]
+}
+
+input XPathSelectorInput {
+  type: XPathSelectorType!
+  value: String!
+  refinedBy: [SelectorInput!]
+}
+
+input TextQuoteSelectorInput {
+  type: TextQuoteSelectorType!
+  exact: String!
+  prefix: String
+  suffix: String
+  refinedBy: [SelectorInput!]
+}
+
+input TextPositionSelectorInput {
+  type: TextPositionSelectorType!
+  start: Int!
+  end: Int!
+  refinedBy: [SelectorInput!]
+}
+
+input DataPositionSelectorInput {
+  type: DataPositionSelectorType!
+  start: Int!
+  end: Int!
+  refinedBy: [SelectorInput!]
+}
+
+input SvgSelectorInput {
+  type: SvgSelectorType!
+  value: String!
+  refinedBy: [SelectorInput!]
+}
+
+input RangeSelectorInput {
+  type: RangeSelectorType!
+  startSelector: SelectorInput!
+  endSelector: SelectorInput!
+  refinedBy: [SelectorInput!]
+}
+
+# TODO: enforce OneOf
+input SelectorInput {
+  fragmentSelector: FragmentSelectorInput
+  cssSelector: CssSelectorInput
+  xPathSelector: XPathSelectorInput
+  textQuoteSelector: TextQuoteSelectorInput
+  textPositionSelector: TextPositionSelectorInput
+  dataPositionSelector: DataPositionSelectorInput
+  svgSelector: SvgSelectorInput
+  rangeSelector: RangeSelectorInput
+}
+
+input HttpRequestStateInput {
+  type: HttpRequestStateType!
+  value: String!
+  refinedBy: [StateOrSelectorInput!]
+}
+
+input TimeStateInput {
+  type: TimeStateType!
+  sourceDate: [AWSDateTime!]
+  sourceDateStart: AWSDateTime
+  sourceDateEnd: AWSDateTime
+  cached: [ID!]
+  refinedBy: [StateOrSelectorInput!]
+}
+
+# TODO: enforce OneOf
+input StateInput {
+  timeState: TimeStateInput
+  httpRequestState: HttpRequestStateInput
+}
+
+# TODO: enforce OneOf
+input StateOrSelectorInput {
+  timeState: TimeStateInput
+  httpRequestState: HttpRequestStateInput
+  fragmentSelector: FragmentSelectorInput
+  cssSelector: CssSelectorInput
+  xPathSelector: XPathSelectorInput
+  textQuoteSelector: TextQuoteSelectorInput
+  textPositionSelector: TextPositionSelectorInput
+  dataPositionSelector: DataPositionSelectorInput
+  svgSelector: SvgSelectorInput
+  rangeSelector: RangeSelectorInput
+}
+
+input SpecificBodyInput {
+  id: ID
+  type: SpecificResourceType
+  purpose: [Motivation!]
+  source: AnnotationBodyInput!
+  selector: [SelectorInput!]
+  state: [StateInput!]
+  styleClass: [String!]
+  renderedVia: [RenderedViaInput!]
+  scope: [ID!]
+}
+
+# TODO: enforce OneOf
+input AnnotationBodyInput {
+  externalBody: ExternalBodyInput
+  textualBody: TextualBodyInput
+  choiceBody: ChoiceBodyInput
+  specificBody: SpecificBodyInput
+}
+
+union AnnotationBody = ExternalBody | TextualBody | ChoiceBody | SpecificBody
+
+enum CssStylesheetType {
+  CSS_STYLESHEET
+}
+
+type CssStylesheet {
+  type: CssStylesheetType!
+  value: String!
+}
+
+enum AgentType {
+  PERSON
+  ORGANIZATION
+  SOFTWARE
+}
+
+type Agent
+  @model(
+    subscriptions: null
+    timestamps: { createdAt: "created", updatedAt: "modified" }
+  )
   @auth(
     rules: [
-      { allow: owner, ownerField: "owner", operations: [create, read] }
-      { allow: private, provider: iam, operations: [create, read] }
+      { allow: owner, ownerField: "username", operations: [read, update] }
+      {
+        allow: private
+        provider: iam
+        operations: [create, read, update, delete]
+      }
     ]
-  ) {
-  id: ID!
-  createdAt: String!
-  file: S3Object!
-  owner: String
+  )
+  @key(fields: ["username"]) {
+  id: String!
+  type: AgentType!
+  name: String
+  nickname: String
+  email_sha1: [String]
+  email: [String]
+  homepage: [String]
+
+  # non-spec
+  username: String!
 }
 
-input CreateScreenshotInput {
-  id: ID
-  createdAt: String
-  file: S3ObjectInput!
-  owner: String
+# https://schema.org/Audience
+#
+# TODO: should probably be a union type of all possible Audience types in order to handle metadata
+type Audience {
+  id: String
+  type: [String!]
 }
 
-input CreateHighlightInput {
-  id: ID
-  createdAt: String
-  text: String!
-  note: String
-  owner: String
-  highlightScreenshotId: ID
+enum AnnotationType {
+  ANNOTATION
 }
 
-input CreateTagInput {
-  id: ID
-  createdAt: String
-  text: String!
-}
-
-input CreateHighlightTagInput {
-  id: ID
-  highlightId: ID!
-  tagId: ID!
-  createdAt: String
-}
-
-input DeleteHighlightTagInput {
-  id: ID!
-}
-
-type Tag
-  @model
-  @key(fields: ["id"])
+type Annotation
+  @aws_iam
+  @aws_cognito_user_pools
+  @model(
+    queries: { get: "getAnnotation", list: "listAnnotations" }
+    mutations: null
+    subscriptions: null
+    timestamps: { createdAt: "created", updatedAt: "modified" }
+  )
   @auth(
     rules: [
       {
         allow: owner
-        ownerField: "owner"
+        ownerField: "creatorUsername"
         operations: [create, read, update, delete]
       }
       {
@@ -75,22 +496,46 @@ type Tag
         operations: [create, read, update, delete]
       }
     ]
-  ) {
-  id: ID!
-  createdAt: String!
-  text: String!
-  owner: String!
-  highlights: [HighlightTag!]! @connection(keyName: "byTag", fields: ["id"])
+  )
+  @key(fields: ["creatorUsername", "id"]) {
+  context: [String!]!
+  type: [AnnotationType!]!
+  id: String!
+  body: [AnnotationBody!]
+  target: [AnnotationTarget!]!
+  creator: Agent! @connection(fields: ["creatorUsername"])
+  created: AWSDateTime
+  generator: Agent @connection
+  generated: AWSDateTime
+  modified: AWSDateTime
+  audience: [Audience!]
+  motivation: [Motivation!]
+  via: [ID!]
+  canonical: ID
+  stylesheet: CssStylesheet
+
+  # non-spec
+  creatorUsername: String!
 }
 
-type Highlight
-  @model
-  @key(fields: ["id"])
+enum AnnotationCollectionType {
+  ANNOTATION_COLLECTION
+}
+type AnnotationCollection
+  @model(
+    queries: {
+      get: "getAnnotationCollection"
+      list: "listAnnotationCollections"
+    }
+    mutations: null
+    subscriptions: null
+    timestamps: { createdAt: "created", updatedAt: "modified" }
+  )
   @auth(
     rules: [
       {
         allow: owner
-        ownerField: "owner"
+        ownerField: "creatorUsername"
         operations: [create, read, update, delete]
       }
       {
@@ -99,25 +544,37 @@ type Highlight
         operations: [create, read, update, delete]
       }
     ]
-  ) {
-  id: ID!
-  createdAt: String!
-  text: String!
-  note: String
-  screenshot: Screenshot @connection
-  owner: String
-  tags: [HighlightTag!]! @connection(keyName: "byHighlight", fields: ["id"])
+  )
+  @key(fields: ["creatorUsername", "id"]) {
+  context: [String!]!
+  id: String!
+  type: [AnnotationCollectionType!]!
+  label: [String!]
+  total: Int
+  first: AnnotationPage @connection
+  last: AnnotationPage @connection
+  creator: Agent! @connection(fields: ["creatorUsername"])
+  created: AWSDateTime
+
+  # non-spec
+  creatorUsername: String!
 }
 
-type HighlightTag
-  @model
-  @key(name: "byHighlight", fields: ["highlightId", "tagId"])
-  @key(name: "byTag", fields: ["tagId", "highlightId"])
+type AnnotationPageItem
+  @model(
+    queries: { get: "getAnnotationPageItem", list: "listAnnotationPageItems" }
+    mutations: null
+    subscriptions: null
+    timestamps: { createdAt: "created", updatedAt: "modified" }
+  )
+  @key(fields: ["creatorUsername", "id"])
+  @key(name: "byAnnotationPage", fields: ["annotationPageId", "annotationId"])
+  @key(name: "byAnnotation", fields: ["annotationId", "annotationPageId"])
   @auth(
     rules: [
       {
         allow: owner
-        ownerField: "owner"
+        ownerField: "creatorUsername"
         operations: [create, read, update, delete]
       }
       {
@@ -128,102 +585,226 @@ type HighlightTag
     ]
   ) {
   id: ID!
-  highlightId: ID!
-  tagId: ID!
-  createdAt: String!
-  highlight: Highlight! @connection(fields: ["highlightId"])
-  tag: Tag! @connection(fields: ["tagId"])
+  annotationPageId: String!
+  annotationId: String!
+  annotation: Annotation! @connection(fields: ["annotationId"])
+  annotationPage: AnnotationPage! @connection(fields: ["annotationPageId"])
+  creator: Agent! @connection(fields: ["creatorUsername"])
+  created: AWSDateTime
+  modified: AWSDateTime
+
+  # non-spec
+  creatorUsername: String!
 }
 
-type Profile
-  @model
-  @key(fields: ["owner"])
+enum AnnotationPageType {
+  ANNOTATION_PAGE
+}
+type AnnotationPage
+  @model(
+    queries: { get: "getAnnotationPage", list: "listAnnotationPages" }
+    mutations: null
+    subscriptions: null
+    timestamps: { createdAt: "created", updatedAt: "modified" }
+  )
   @auth(
     rules: [
-      { allow: owner, ownerField: "owner", operations: [read, update] }
+      {
+        allow: owner
+        ownerField: "creatorUsername"
+        operations: [create, read, update, delete]
+      }
       {
         allow: private
         provider: iam
         operations: [create, read, update, delete]
       }
     ]
-  ) {
-  id: ID!
-  owner: String!
-  createdAt: String!
-  isOnboarded: Boolean!
+  )
+  @key(fields: ["creatorUsername", "id"]) {
+  context: [String!]!
+  id: String!
+  type: [AnnotationPageType!]!
+  partOf: AnnotationCollection @connection
+  items: [AnnotationPageItem!]!
+    @connection(keyName: "byAnnotationPage", fields: ["id"])
+  next: AnnotationPage @connection
+  prev: AnnotationPage @connection
+  startIndex: Int
+  creator: Agent! @connection(fields: ["creatorUsername"])
+  created: AWSDateTime
+  modified: AWSDateTime
+
+  # non-spec
+  creatorUsername: String!
 }
 
-input CreateProfileInput {
-  id: ID!
-  owner: String!
-  createdAt: String
-  isOnboarded: Boolean!
+input CssStylesheetInput {
+  type: CssStylesheetType!
+  value: String!
 }
 
-input CreateHighlightFromScreenshotInput {
+input AudienceInput {
   id: ID
-  createdAt: String
-  screenshotId: String!
-  note: String
-  owner: String
+  type: [String!]
 }
 
-input UpdateHighlightInput {
+input ExternalTargetInput {
   id: ID!
-  createdAt: String
-  text: String
-  note: String
-  owner: String
-  highlightScreenshotId: ID
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  type: ResourceType
+  accessibility: [String!]
+  rights: [ID!]
 }
 
-input UpdateHighlightAndTagsInput {
-  updateHighlight: UpdateHighlightInput
-  createTags: [CreateTagInput!]
-  createHighlightTags: [CreateHighlightTagInput!]
-  deleteHighlightTags: [DeleteHighlightTagInput!]
+input TextualTargetInput {
+  id: ID
+  format: Format
+  language: Language
+  processingLanguage: Language
+  textDirection: TextDirection
+  accessibility: [String!]
+  rights: [ID!]
+  value: String!
 }
 
-type DeletionResult {
+input AnnotationTargetInput {
+  externalTarget: ExternalTargetInput
+  textualTarget: TextualTargetInput
+}
+
+input CreateAnnotationInput {
+  context: [String!]!
+  type: [AnnotationType!]!
   id: ID!
+  body: [AnnotationBodyInput!]
+  target: [AnnotationTargetInput!]!
+  created: AWSDateTime
+  generated: AWSDateTime
+  modified: AWSDateTime
+  audience: [AudienceInput!]
+  motivation: [Motivation!]
+  via: [ID!]
+  canonical: ID
+  stylesheet: CssStylesheetInput
+
+  # non-spec
+  creatorUsername: String!
+  annotationGeneratorId: ID
 }
 
-type UpdateHighlightAndTagsResult {
-  updateHighlight: Highlight
-  createTags: [Tag!]
-  createHighlightTags: [HighlightTag!]
-  deleteHighlightTags: [DeletionResult!]
+input UpdateAnnotationInput {
+  context: [String!]!
+  type: [AnnotationType!]!
+  id: ID!
+  body: [AnnotationBodyInput!]
+  target: [AnnotationTargetInput!]!
+  created: AWSDateTime
+  generated: AWSDateTime
+  modified: AWSDateTime
+  audience: [AudienceInput!]
+  motivation: [Motivation!]
+  via: [ID!]
+  canonical: ID
+  stylesheet: CssStylesheetInput
+
+  # non-spec
+  creatorUsername: String!
+  annotationGeneratorId: ID
 }
 
-input CreateHighlightAndTagsInput {
-  createHighlight: CreateHighlightInput!
-  createTags: [CreateTagInput!]
-  createHighlightTags: [CreateHighlightTagInput!]
+type CreateAnnotationOutput @aws_iam @aws_cognito_user_pools {
+  annotation: Annotation!
+  annotationCollections: [AnnotationCollection!]!
+  annotationPageItems: [AnnotationPageItem!]!
+  annotationPage: [AnnotationPage!]!
 }
 
-type CreateHighlightAndTagsResult {
-  createHighlight: Highlight!
-  createTags: [Tag!]
-  createHighlightTags: [HighlightTag!]
+type UpdateAnnotationOutput {
+  annotation: Annotation!
+
+  "AnnotationCollections created as a result of new AnnotationBodyInput tags."
+  createdAnnotationCollections: [AnnotationCollection!]!
+  "AnnotationPageItems created as a result of new AnnotationBodyInput tags."
+  createdAnnotationPageItems: [AnnotationPageItem!]!
+  "AnnotationPages created as a result of new AnnotationBodyInput tags."
+  createdAnnotationPages: [AnnotationPage!]!
+
+  "AnnotationCollections deleted as a result of removed AnnotationBodyInput tags."
+  deletedAnnotationCollectionIds: [String!]!
+  "AnnotationPageItems deleted as a result of removed AnnotationBodyInput tags."
+  deletedAnnotationPageItemIds: [String!]!
+  "AnnotationPages deleted as a result of removed AnnotationBodyInput tags."
+  deletedAnnotationPageIds: [String!]!
+}
+
+"""
+Perform a DynamoDB SET operation on the top-level key with the provided value.
+
+Several individual AnnotationSetOperations should be used for setting more than one key, i.e. each AnnotationSetOperation should contain only a single non-null key.
+"""
+input AnnotationSetOperationInput {
+  body: [AnnotationBodyInput!]
+  target: [AnnotationTargetInput!]
+
+  # TODO: Other Annotation keys: context, type, audience...
+}
+
+input PatchAnnotationOperationInput {
+  set: AnnotationSetOperationInput
+  # TODO: Other DynamoDB update operations: remove, add, delete
+}
+
+input PatchAnnotationInput {
+  id: String!
+  creatorUsername: String!
+  operations: [PatchAnnotationOperationInput!]!
+}
+
+input DeleteAnnotationInput {
+  creatorUsername: String!
+  id: String!
+}
+
+input CreateAnnotationFromExternalTargetInput {
+  externalTarget: ExternalTargetInput!
+  creatorUsername: String!
+  annotationId: String
+}
+
+type DeleteAnnotationOutput {
+  annotation: Annotation!
+}
+
+input AnnotationCollectionLabelAutocompleteInput {
+  creatorUsername: String!
+  labelBeginsWith: String!
+}
+
+type ModelAnnotationCollectionConnection {
+  items: [AnnotationCollection]
+  nextToken: String
+}
+
+type Query {
+  annotationCollectionLabelAutocomplete(
+    input: AnnotationCollectionLabelAutocompleteInput!
+  ): ModelAnnotationCollectionConnection
+    @aws_cognito_user_pools
 }
 
 type Mutation {
-  createHighlightFromScreenshot(
-    input: CreateHighlightFromScreenshotInput!
-  ): Highlight
-    @function(name: "GraphQLResolver-${env}")
-    @auth(rules: [{ allow: private }])
+  createAnnotation(input: CreateAnnotationInput!): CreateAnnotationOutput
+    @aws_iam
+    @aws_cognito_user_pools
+  updateAnnotation(input: UpdateAnnotationInput!): UpdateAnnotationOutput
+  deleteAnnotation(input: DeleteAnnotationInput!): DeleteAnnotationOutput
+  patchAnnotation(input: PatchAnnotationInput!): UpdateAnnotationOutput
 
-  createTags(input: [CreateTagInput!]!): [Tag!]!
-  createHighlightTags(input: [CreateHighlightTagInput!]!): [HighlightTag!]!
-  deleteHighlightTags(input: [DeleteHighlightTagInput!]!): [HighlightTag!]!
-
-  updateHighlightAndTags(
-    input: UpdateHighlightAndTagsInput!
-  ): UpdateHighlightAndTagsResult!
-
-  createHighlightAndTags(
-    input: CreateHighlightAndTagsInput!
-  ): CreateHighlightAndTagsResult!
+  createAnnotationFromExternalTarget(
+    input: CreateAnnotationFromExternalTargetInput!
+  ): Annotation @function(name: "GraphQLResolver-${env}")
 }

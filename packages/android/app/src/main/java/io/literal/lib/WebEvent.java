@@ -139,6 +139,8 @@ public class WebEvent {
                     return result;
                 } catch (Exception e) {
                     Log.e(Constants.LOG_TAG, "Unable to handleGetTokens: ", e);
+                    Log.i(Constants.LOG_TAG, "Signing user out.");
+                    AWSMobileClient.getInstance().signOut();
                     return null;
                 }
             }

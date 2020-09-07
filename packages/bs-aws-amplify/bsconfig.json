@@ -1,0 +1,20 @@
+{
+  "name": "@literal-io/bs-aws-amplify",
+  "reason": {
+    "react-jsx": 3
+  },
+  "sources": {
+    "dir": "src",
+    "subdirs": true
+  },
+  "package-specs": [
+    {
+      "module": "es6-global",
+      "in-source": true
+    }
+  ],
+  "suffix": ".bs.js",
+  "bs-dependencies": [],
+  "ppx-flags": [],
+  "refmt": 3
+}

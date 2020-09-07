@@ -1,18 +1,9 @@
-module CreateHighlightMutation = [%graphql
+module CreateAnnotationMutation = [%graphql
   {|
-    mutation CreateHighlight($input: CreateHighlightAndTagsInput!) {
-      createHighlightAndTags(input: $input) {
-        createHighlight {
+    mutation CreateAnnotation($input: CreateAnnotationInput!) {
+      createAnnotation(input: $input) {
+        annotation {
           id
-          createdAt
-        }
-        createTags {
-          id
-          createdAt
-        }
-        createHighlightTags {
-          id
-          createdAt
         }
       }
     }
