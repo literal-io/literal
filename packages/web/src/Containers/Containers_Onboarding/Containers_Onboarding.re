@@ -6,83 +6,57 @@ let onboardingNotes = [|
   "Annotations are organized primarily based on tags and bi-directional links between tags in order to retain context and build connections.\n\nIf you have any questions, reach out to hello@literal.io.\n\nOnce you've created some annotations, feel free to delete these introductory example annotations.",
 |];
 
-let handleUpdateCache = (~currentUser, ~mutationData) =>
-  /** FIXME
+let updateCache = (~currentUser, ~createAnnotationInputs) => {
   let cacheQuery =
-    QueryRenderers_Notes_GraphQL.ListHighlights.Query.make(
-      ~owner=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+    QueryRenderers_Notes_GraphQL.ListAnnotations.Query.make(
+      ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
       (),
     );
-  /** FIXME: add tags **/
-  let updatedItems =
-    Belt.Array.map(
-      [|
-        mutationData##createHighlight1,
-        mutationData##createHighlight2,
-        mutationData##createHighlight3,
-      |],
-      fun
-      | Some(highlight) =>
-        Some(
-          QueryRenderers_Notes_GraphQL.ListHighlights.Raw.{
-            id: highlight##id,
-            createdAt: highlight##createdAt,
-            text: highlight##editorHighlightFragment##text,
-            typename: highlight##__typename,
-            tags: None,
-          },
-        )
-      | None => None,
-    );
-
   let _ =
-    switch (
-      QueryRenderers_Notes_GraphQL.ListHighlights.readCache(
-        ~client=Provider.client,
-        ~query=cacheQuery,
-        (),
-      )
-    ) {
-    | None => ()
-    | Some(cachedQuery) =>
-      let updatedListHighlights =
-        QueryRenderers_Notes_GraphQL.ListHighlights.Raw.(
-          cachedQuery
-          ->listHighlights
-          ->Belt.Option.flatMap(highlightConnectionItems)
-          ->Belt.Option.map(items => {
-              {
-                ...cachedQuery,
-                listHighlights:
-                  Some({
-                    ...cachedQuery->listHighlights->Belt.Option.getExn,
-                    items: Some(Belt.Array.concat(items, updatedItems)),
-                  }),
-              }
-            })
-        );
-      let _ =
-        switch (updatedListHighlights) {
-        | Some(updatedListHighlights) =>
-          QueryRenderers_Notes_GraphQL.ListHighlights.(
+    QueryRenderers_Notes_GraphQL.ListAnnotations.readCache(
+      ~query=cacheQuery,
+      ~client=Providers_Apollo.client,
+      (),
+    )
+    ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
+    ->Belt.Option.flatMap(listAnnotations => listAnnotations##items)
+    ->Belt.Option.forEach(annotations => {
+        let newAnnotations =
+          createAnnotationInputs->Belt.Array.map(annotationInput =>
+            annotationInput
+            ->OnboardingMutation.json_of_CreateAnnotationInput
+            ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput
+          );
+
+        let updatedAnnotations =
+          Belt.Array.concat(annotations, newAnnotations);
+
+        let newData = {
+          "listAnnotations":
+            Some({
+              "items": Some(updatedAnnotations),
+              "__typename": "ModelAnnotationConnection",
+            }),
+          "__typename": "Query",
+        };
+
+        let _ =
+          QueryRenderers_Notes_GraphQL.ListAnnotations.(
             writeCache(
-              ~client=Provider.client,
-              ~data=updatedListHighlights,
               ~query=cacheQuery,
+              ~client=Providers_Apollo.client,
+              ~data=newData,
               (),
             )
-          )
-        | None => ()
-        };
-      ();
-    };
-  **/
-  {
-    ();
-  };
+          );
+        ();
+      });
+  ();
+};
 
 [@react.component]
 let make = (~currentUser) => {
+  let router = Next.Router.useRouter();
   let (onboardingMutation, _s, _f) =
     ApolloHooks.useMutation(OnboardingMutation.definition);
 
@@ -148,7 +122,19 @@ let make = (~currentUser) => {
                  ~createAnnotationInput3=inputs[2],
                  (),
                );
-             onboardingMutation(~variables, ());
+             let result = onboardingMutation(~variables, ());
+             let _ =
+               updateCache(~currentUser, ~createAnnotationInputs=inputs);
+             let _ =
+               Next.Router.replaceWithAs(
+                 Routes.CreatorsIdAnnotationsId.staticPath,
+                 Routes.CreatorsIdAnnotationsId.path(
+                   ~creatorUsername=inputs[0]##creatorUsername,
+                   ~annotationIdComponent=
+                     Lib_GraphQL.Annotation.idComponent(inputs[0]##id),
+                 ),
+               );
+             result;
            })
         |> Js.Promise.then_(((mutationResult, _)) => {
              switch (mutationResult) {
@@ -156,13 +142,12 @@ let make = (~currentUser) => {
                errors->Belt.Array.forEach(error => {
                  Error.(report(GraphQLError(error)))
                })
-             | Data(mutationData) =>
-               let _ = handleUpdateCache(~currentUser, ~mutationData);
-               ();
              | NoData => Error.(report(ApolloEmptyData))
+             | Data(_) => ()
              };
              Js.Promise.resolve();
            });
+
       None;
     });
 

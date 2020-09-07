@@ -41,7 +41,7 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
     let _ =
       QueryRenderers_Notes_GraphQL.ListAnnotations.readCache(
         ~query=cacheQuery,
-        ~client=Provider.client,
+        ~client=Providers_Apollo.client,
         (),
       )
       ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
@@ -66,7 +66,7 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
           let _ =
             QueryRenderers_Notes_GraphQL.ListAnnotations.writeCache(
               ~query=cacheQuery,
-              ~client=Provider.client,
+              ~client=Providers_Apollo.client,
               ~data=newData,
               (),
             );

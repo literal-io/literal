@@ -89,6 +89,52 @@ module Annotation = {
           }),
       }
     };
+
+  let annotationFromCreateAnnotationInput = [%raw
+    {|
+      function (input) {
+        return {
+          ...input,
+          __typename: "Annotation",
+          created: (new Date()).toISOString(),
+          body:
+            input.body
+              ? input.body.map(body => {
+                  const parser = [
+                    ["textualBody", {
+                      __typename: "TextualBody",
+                      accessibility: null,
+                      rights: null
+                    }],
+                    ["choiceBody", {__typename: "ChoiceBody" }],
+                    ["externalBody", {__typename: "ExternalBody"}],
+                    ["specificBody", {__typename: "SpecificBody"}]
+                  ]
+                  const [key, attrs] = parser.find(([key, _]) => body[key])
+                  return { ...attrs, ...body[key] }
+              })
+              : null,
+          target:
+            input.target
+              ? input.target.map(target => {
+                  const parser = [
+                    ["textualTarget", {
+                      __typename: "TextualTarget",
+                      textualTargetId: null,
+                      rights: null,
+                      accessibility: null
+                    }],
+                    ["externalTarget", {__typename: "ExternalTarget" }],
+                  ]
+                  const [key, attrs] = parser.find(([key, _]) => target[key])
+                  return { ...attrs, ...target[key] }
+
+                })
+              : null
+        }
+      }
+    |}
+  ];
 };
 
 module AnnotationCollection = {

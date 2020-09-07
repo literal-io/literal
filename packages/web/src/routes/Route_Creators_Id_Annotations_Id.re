@@ -1,9 +1,9 @@
 let _ = AwsAmplify.(inst->configure(Constants.awsAmplifyConfig));
 
 [@react.component]
-let default = () => {
+let default = (~rehydrated) => {
   let router = Next.Router.useRouter();
-  let authentication = CurrentUserInfo.use();
+  let authentication = Hooks_CurrentUserInfo.use();
 
   let _ =
     React.useEffect1(
@@ -46,22 +46,17 @@ let default = () => {
     | None => ()
     };
   };
-
-  <Provider
-    render={(~rehydrated) =>
-      switch (authentication) {
-      | Unauthenticated => <Loading />
-      | Loading
-      | Authenticated(_) =>
-        <QueryRenderers_Notes
-          annotationId
-          onAnnotationIdChange=handleAnnotationIdChange
-          authentication
-          rehydrated
-        />
-      }
-    }
-  />;
+  switch (authentication) {
+  | Unauthenticated => <Loading />
+  | Loading
+  | Authenticated(_) =>
+    <QueryRenderers_Notes
+      annotationId
+      onAnnotationIdChange=handleAnnotationIdChange
+      authentication
+      rehydrated
+    />
+  };
 };
 
 let page = "creators/[creatorUsername]/annotations/[annotationIdComponent].js";

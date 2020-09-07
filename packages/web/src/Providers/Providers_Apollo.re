@@ -1,10 +1,10 @@
 %raw
 "require('isomorphic-fetch')";
 
-let fragmentTypes = [%raw "require('../fragment-types.json')"];
+let fragmentTypes = [%raw "require('../../fragment-types.json')"];
 
 
-/** FIXME: cache AUTH_GET_TOKENS, as this is called once per gql op **/
+/** FIXME: more sophisticated authTokens cache **/
 let authTokens = ref(None);
 let authenticatedClientAuthOptions = {
   Webview.isWebview()
@@ -94,7 +94,6 @@ let client =
     )
   );
 
-/** FIXME: re-hydrates on route change **/
 [@react.component]
 let make = (~render) =>
   <ReasonApollo.Provider client>

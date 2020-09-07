@@ -9,7 +9,7 @@ let handleUpdateCache = (~currentUser, ~annotation) => {
   let _ =
     QueryRenderers_Notes_GraphQL.ListAnnotations.readCache(
       ~query=cacheQuery,
-      ~client=Provider.client,
+      ~client=Providers_Apollo.client,
       (),
     )
     ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
@@ -34,7 +34,7 @@ let handleUpdateCache = (~currentUser, ~annotation) => {
         let _ =
           QueryRenderers_Notes_GraphQL.ListAnnotations.writeCache(
             ~query=cacheQuery,
-            ~client=Provider.client,
+            ~client=Providers_Apollo.client,
             ~data=newData,
             (),
           );

@@ -58,7 +58,11 @@ module Empty = {
 
 [@react.component]
 let make =
-    (~annotationId, ~authentication: CurrentUserInfo.state, ~rehydrated) => {
+    (
+      ~annotationId,
+      ~authentication: Hooks_CurrentUserInfo_Types.state,
+      ~rehydrated,
+    ) => {
   let (isLoaded, setIsLoaded) = React.useState(_ => false);
   let (query, _fullQuery) =
     ApolloHooks.useQuery(

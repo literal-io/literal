@@ -16,52 +16,6 @@ let phase_decode = json =>
 type action =
   | SetPhase(phase);
 
-let annotationFromCreateAnnotationInput = [%raw
-  {|
-  function (input) {
-    return {
-      ...input,
-      __typename: "Annotation",
-      created: (new Date()).toISOString(),
-      body:
-        input.body
-          ? input.body.map(body => {
-              const parser = [
-                ["textualBody", {
-                  __typename: "TextualBody",
-                  accessibility: null,
-                  rights: null
-                }],
-                ["choiceBody", {__typename: "ChoiceBody" }],
-                ["externalBody", {__typename: "ExternalBody"}],
-                ["specificBody", {__typename: "SpecificBody"}]
-              ]
-              const [key, attrs] = parser.find(([key, _]) => body[key])
-              return { ...attrs, ...body[key] }
-          })
-          : null,
-      target:
-        input.target
-          ? input.target.map(target => {
-              const parser = [
-                ["textualTarget", {
-                  __typename: "TextualTarget",
-                  textualTargetId: null,
-                  rights: null,
-                  accessibility: null
-                }],
-                ["externalTarget", {__typename: "ExternalTarget" }],
-              ]
-              const [key, attrs] = parser.find(([key, _]) => target[key])
-              return { ...attrs, ...target[key] }
-
-            })
-          : null
-    }
-  }
-|}
-];
-
 let updateCache = (~currentUser, ~input) => {
   let cacheQuery =
     QueryRenderers_Notes_GraphQL.ListAnnotations.Query.make(
@@ -71,7 +25,7 @@ let updateCache = (~currentUser, ~input) => {
   let _ =
     QueryRenderers_Notes_GraphQL.ListAnnotations.readCache(
       ~query=cacheQuery,
-      ~client=Provider.client,
+      ~client=Providers_Apollo.client,
       (),
     )
     ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
@@ -80,7 +34,7 @@ let updateCache = (~currentUser, ~input) => {
         let newAnnotation =
           input
           ->CreateAnnotationMutation.json_of_CreateAnnotationInput
-          ->annotationFromCreateAnnotationInput;
+          ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput;
 
         let newAnnotations =
           Belt.Array.concat(annotations, [|newAnnotation|]);
@@ -98,7 +52,7 @@ let updateCache = (~currentUser, ~input) => {
           QueryRenderers_Notes_GraphQL.ListAnnotations.(
             writeCache(
               ~query=cacheQuery,
-              ~client=Provider.client,
+              ~client=Providers_Apollo.client,
               ~data=newData,
               (),
             )

@@ -89,7 +89,7 @@ let make =
     (
       ~annotationId,
       ~onAnnotationIdChange,
-      ~authentication: CurrentUserInfo.state,
+      ~authentication: Hooks_CurrentUserInfo_Types.state,
       ~rehydrated,
     ) => {
   let (query, _fullQuery) =
