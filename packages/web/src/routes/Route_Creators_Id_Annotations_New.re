@@ -24,10 +24,13 @@ let default = (~rehydrated) => {
        Routes.CreatorsIdAnnotationsNew.queryParams_decode(router.Next.query),
      ) {
      | (Unauthenticated, _) => <Loading />
-     | (_, Ok({id: Some(annotationId)}))
-         when Js.String.length(annotationId) > 0 =>
+     | (_, Ok({id: Some(annotationIdComponent), creatorUsername}))
+         when Js.String.length(annotationIdComponent) > 0 =>
        <QueryRenderers_NewNoteFromShare
-         annotationId
+         annotationId={Lib_GraphQL.Annotation.makeIdFromComponent(
+           ~creatorUsername,
+           ~annotationIdComponent,
+         )}
          authentication
          rehydrated
        />

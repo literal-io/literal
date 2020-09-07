@@ -27,6 +27,7 @@ module CreatorsIdAnnotationsNew = {
 
   [@decco]
   type queryParams = {
+    creatorUsername: string,
     id: option(string),
     initialPhaseState: option(Containers_NoteEditor_New_Types.phase),
   };

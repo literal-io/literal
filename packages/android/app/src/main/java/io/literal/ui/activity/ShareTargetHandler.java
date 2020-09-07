@@ -110,11 +110,11 @@ public class ShareTargetHandler extends AppCompatActivity {
         webView.requestFocus();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel chan = new NotificationChannel(
-                    Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_ID,
-                    Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_NAME,
+                    Constants.NOTIFICATION_CHANNEL_ANNOTATION_CREATED_ID,
+                    Constants.NOTIFICATION_CHANNEL_ANNOTATION_CREATED_NAME,
                     NotificationManager.IMPORTANCE_LOW
             );
-            chan.setDescription(Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_DESCRIPTION);
+            chan.setDescription(Constants.NOTIFICATION_CHANNEL_ANNOTATION_CREATED_DESCRIPTION);
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             if (notificationManager != null) {
                 notificationManager.createNotificationChannel(chan);
@@ -170,7 +170,9 @@ public class ShareTargetHandler extends AppCompatActivity {
         try {
             String valueHash = Crypto.sha256Hex(text);
             String annotationId = Constants.WEB_HOST + "/creators/" + creatorUsername + "/annotations/" + valueHash;
-            webView.loadUrl(annotationId);
+            String uri = Constants.WEB_HOST + "/creators/" + creatorUsername + "/annotations/new?id=" + valueHash;
+            webView.loadUrl(uri);
+
             CreateAnnotationMutation createHighlightMutation = CreateAnnotationMutation
                     .builder()
                     .input(
@@ -251,7 +253,8 @@ public class ShareTargetHandler extends AppCompatActivity {
         String screenshotId = UUID.randomUUID().toString();
         String creatorUsername = AWSMobileClient.getInstance().getUsername();
         String annotationId = Constants.WEB_HOST + "/creators/" + creatorUsername + "/annotations/" + screenshotId;
-        webView.loadUrl(annotationId);
+        String uri = Constants.WEB_HOST + "/creators/" + creatorUsername + "/annotations/new?id=" + screenshotId;
+        webView.loadUrl(uri);
 
         JSONObject s3TransferUtilityJson = AppSyncClientFactory
                 .getConfiguration(this)
@@ -387,7 +390,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                         }
 
                         Intent intent = new Intent(ShareTargetHandler.this, MainActivity.class);
-                        intent.setData(Uri.parse(Constants.WEB_HOST + "/notes?id=" + annotation.id()));
+                        intent.setData(Uri.parse(annotation.id()));
                         PendingIntent pendingIntent = PendingIntent.getActivity(ShareTargetHandler.this, 0, intent, 0);
 
                         String textualTargetValue = null;
@@ -400,10 +403,10 @@ public class ShareTargetHandler extends AppCompatActivity {
                         }
 
                         if (textualTargetValue != null) {
-                            NotificationCompat.Builder builder = new NotificationCompat.Builder(ShareTargetHandler.this, Constants.NOTIFICATION_CHANNEL_NOTE_CREATED_ID)
+                            NotificationCompat.Builder builder = new NotificationCompat.Builder(ShareTargetHandler.this, Constants.NOTIFICATION_CHANNEL_ANNOTATION_CREATED_ID)
                                     .setSmallIcon(R.drawable.ic_stat_name)
                                     .setColor(Color.BLACK)
-                                    .setContentTitle(Constants.NOTIFICATION_NOTE_CREATED_TITLE)
+                                    .setContentTitle(Constants.NOTIFICATION_ANNOTATION_CREATED_TITLE)
                                     .setStyle(
                                             new NotificationCompat.BigTextStyle().bigText(textualTargetValue)
                                     )

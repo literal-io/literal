@@ -130,6 +130,7 @@ let make =
           Routes.CreatorsIdAnnotationsNew.queryParams_encode({
             id: None,
             initialPhaseState: Some(`PhaseTextInput),
+            creatorUsername: currentUser.username,
           }),
         )}
       />
@@ -145,6 +146,7 @@ let make =
         Routes.CreatorsIdAnnotationsNew.queryParams_encode({
           id: None,
           initialPhaseState: Some(`PhaseTextInput),
+          creatorUsername: currentUser.username,
         }),
       )}
     />
