@@ -169,8 +169,8 @@ public class ShareTargetHandler extends AppCompatActivity {
         String creatorUsername = AWSMobileClient.getInstance().getUsername();
         try {
             String valueHash = Crypto.sha256Hex(text);
-            String annotationId = "https://literal.io/creators/" + creatorUsername + "/annotations/" + valueHash;
-            webView.loadUrl(Constants.WEB_HOST + "/notes/new?id=" + annotationId);
+            String annotationId = Constants.WEB_HOST + "/creators/" + creatorUsername + "/annotations/" + valueHash;
+            webView.loadUrl(annotationId);
             CreateAnnotationMutation createHighlightMutation = CreateAnnotationMutation
                     .builder()
                     .input(
@@ -250,8 +250,8 @@ public class ShareTargetHandler extends AppCompatActivity {
 
         String screenshotId = UUID.randomUUID().toString();
         String creatorUsername = AWSMobileClient.getInstance().getUsername();
-        String annotationId = "https://literal.io/creators/" + creatorUsername + "/annotations/" + screenshotId;
-        webView.loadUrl(Constants.WEB_HOST + "/notes/new?id=" + annotationId);
+        String annotationId = Constants.WEB_HOST + "/creators/" + creatorUsername + "/annotations/" + screenshotId;
+        webView.loadUrl(annotationId);
 
         JSONObject s3TransferUtilityJson = AppSyncClientFactory
                 .getConfiguration(this)
