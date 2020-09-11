@@ -1,10 +1,14 @@
 module AnnotationCollectionLabelAutocomplete = [%graphql
   {|
     query annotationCollectionLabelAutocomplete(
-      $input: AnnotationCollectionLabelAutocompleteInput!
+      $creatorUsername: String!,
+      $labelBeginsWith: String!
     ) {
-      annotationCollectionLabelAutocomplete(
-        input: $input
+      listAnnotationCollectionsByLabel(
+        creatorUsername: $creatorUsername,
+        label: {
+          beginsWith: $labelBeginsWith
+        }
       ) {
         items {
           id

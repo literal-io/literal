@@ -7,11 +7,9 @@ let make = (~currentUser, ~text, ~onTagResults, ~onTagClicked) => {
     ApolloHooks.useQuery(
       ~variables=
         AnnotationCollectionLabelAutocomplete.makeVariables(
-          ~input={
-            "labelBeginsWith": text,
-            "creatorUsername":
-              AwsAmplify.Auth.CurrentUserInfo.username(currentUser),
-          },
+          ~labelBeginsWith=text,
+          ~creatorUsername=
+            AwsAmplify.Auth.CurrentUserInfo.username(currentUser),
           (),
         ),
       AnnotationCollectionLabelAutocomplete.definition,
@@ -19,19 +17,15 @@ let make = (~currentUser, ~text, ~onTagResults, ~onTagClicked) => {
 
   let results =
     query.data
-    ->Belt.Option.flatMap(d => d##annotationCollectionLabelAutocomplete)
+    ->Belt.Option.flatMap(d => d##listAnnotationCollectionsByLabel)
     ->Belt.Option.flatMap(d => d##items)
     ->Belt.Option.map(annotationCollections =>
         annotationCollections->Belt.Array.keepMap(annotationCollection =>
-          annotationCollection->Belt.Option.flatMap(annotationCollection => {
-            annotationCollection##label
-            ->Belt.Option.flatMap(labels => labels->Belt.Array.get(0))
-            ->Belt.Option.map(label =>
-                Containers_NoteEditor_Base_Types.{
-                  text: label,
-                  id: Some(annotationCollection##id),
-                }
-              )
+          annotationCollection->Belt.Option.map(annotationCollection => {
+            Containers_NoteEditor_Base_Types.{
+              text: annotationCollection##label,
+              id: Some(annotationCollection##id),
+            }
           })
         )
       )
