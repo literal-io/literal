@@ -114,5 +114,5 @@ let make =
       })
     ->React.array;
 
-  <div className={cn(["flex", "flex-row"])}> tags </div>;
+  <div className={cn(["flex", "flex-row", "h-6"])}> tags </div>;
 };

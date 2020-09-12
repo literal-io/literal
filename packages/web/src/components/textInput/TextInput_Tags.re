@@ -13,16 +13,7 @@ module Value = {
 
 [@react.component]
 let make =
-  React.forwardRef(
-    (
-      ~value,
-      ~onChange,
-      ~onFocus=?,
-      ~onBlur=?,
-      ~onKeyDown=?,
-      ~className=?,
-      ref_,
-    ) => {
+  React.forwardRef((~value, ~onChange, ~onKeyDown=?, ~className=?, ref_) => {
     let keyEventHandled = React.useRef(false);
 
     let handleChange = ev => {
@@ -119,26 +110,12 @@ let make =
       ();
     };
 
-    let handleFocus = (ev: ReactEvent.Focus.t) => {
-      let _ =
-        switch (onFocus) {
-        | Some(onFocus) => onFocus(ev)
-        | None => ()
-        };
-      ();
-    };
-
     let handleBlur = ev => {
       let _ = ReactEvent.Focus.persist(ev);
       let _ =
         if (Js.String.length(value.partial) > 0) {
           let _ = onChange({...value, partial: ""});
           ();
-        };
-      let _ =
-        switch (onBlur) {
-        | Some(onBlur) => onBlur(ev)
-        | None => ()
         };
       ();
     };
@@ -196,7 +173,6 @@ let make =
         onChange=handleChange
         fullWidth=true
         multiline=true
-        ref={inputRef->ReactDOMRe.Ref.domRef}
         _InputProps={
           "classes":
             MaterialUi.Input.Classes.make(
@@ -217,8 +193,8 @@ let make =
           "onChange": handleChange,
           "onKeyUp": handleKeyUp,
           "onKeyDown": handleKeyDown,
-          "onFocus": handleFocus,
           "onBlur": handleBlur,
+          "ref": inputRef->ReactDOMRe.Ref.domRef,
         }
       />
     </div>;

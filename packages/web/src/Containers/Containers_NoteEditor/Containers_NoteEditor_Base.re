@@ -56,6 +56,8 @@ let make =
           filterResults: [||],
         })
     );
+  let tagsInputRef = React.useRef(Js.Nullable.null);
+
   let _ =
     React.useEffect2(
       () => {
@@ -97,14 +99,34 @@ let make =
   let handleTagsFilterResults = s =>
     setTagsState(tagsState => {...tagsState, filterResults: s});
 
-  let handleTagsFilterClicked = tag =>
-    setTagsState(tagsState =>
-      {
-        partial: "",
-        filterResults: tagsState.filterResults,
-        commits: Belt.Array.concat(tagsState.commits, [|tag|]),
-      }
-    );
+  let handleTagsFilterClicked = tag => {
+    let _ =
+      setTagsState(tagsState =>
+        {
+          partial: "",
+          filterResults: tagsState.filterResults,
+          commits: Belt.Array.concat(tagsState.commits, [|tag|]),
+        }
+      );
+    let _ =
+      Js.Global.setTimeout(
+        () => {
+          let _ =
+            switch (tagsInputRef.current->Js.Nullable.toOption) {
+            | Some(inputElem) =>
+              let _ =
+                inputElem
+                ->Webapi.Dom.Element.unsafeAsHtmlElement
+                ->Webapi.Dom.HtmlElement.focus;
+              ();
+            | None => ()
+            };
+          ();
+        },
+        0,
+      );
+    ();
+  };
 
   <div
     className={cn([
@@ -125,17 +147,18 @@ let make =
           commits: tagsState.commits->Belt.Array.map(t => t.text),
         }
         onTagsChange=handleTagsChange
+        tagsInputRef
         ?placeholder
         ?autoFocus
       />
       {isActive && Js.String.length(tagsState.partial) > 0
          ? <QueryRenderers_TagsFilter
-             tagsState={tagsState}
+             tagsState
              onTagResults=handleTagsFilterResults
              onTagClicked=handleTagsFilterClicked
              currentUser
            />
-         : React.null}
+         : <div className={Cn.fromList(["h-6"])} />}
     </div>
   </div>;
 };

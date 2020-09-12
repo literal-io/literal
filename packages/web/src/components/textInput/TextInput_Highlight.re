@@ -12,19 +12,17 @@ let make =
       ~inputClasses=[],
       ~autoFocus=?,
       ~placeholder=?,
+      ~tagsInputRef=?,
     ) => {
-  let tagsInputRef = React.useRef(Js.Nullable.null);
   let textInputRef = React.useRef(Js.Nullable.null);
 
-  let (isFocused, setIsFocused) = React.useState(_ => false);
-
-  let handleFocus = _ => {
-    let _ = setIsFocused(_ => true);
-    ();
-  };
-  let handleBlur = _ => {
-    let _ = setIsFocused(_ => false);
-    ();
+  /** Reuse the ref prop if one was passed in, otherwise use our own **/
+  let tagsInputRef = {
+    let ownRef = React.useRef(Js.Nullable.null);
+    switch (tagsInputRef) {
+    | Some(tagsInputRef) => tagsInputRef
+    | None => ownRef
+    };
   };
 
   let handleTagsKeyDown = ev => {
@@ -82,8 +80,6 @@ let make =
 
   <>
     <TextInput_Basic
-      onFocus=handleFocus
-      onBlur=handleBlur
       onChange=onTextChange
       value=textValue
       ?placeholder
@@ -91,12 +87,10 @@ let make =
       inputProps={
         "onKeyDown": handleTextKeyDown,
         "inputRef": textInputRef->ReactDOMRe.Ref.domRef->Js.Option.some,
-        "disableUnderline": false
+        "disableUnderline": false,
       }
     />
     <TextInput_Tags
-      onFocus=handleFocus
-      onBlur=handleBlur
       onChange=onTagsChange
       onKeyDown=handleTagsKeyDown
       value=tagsValue
