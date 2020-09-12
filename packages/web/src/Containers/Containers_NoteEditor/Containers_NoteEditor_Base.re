@@ -130,7 +130,7 @@ let make =
       />
       {isActive && Js.String.length(tagsState.partial) > 0
          ? <QueryRenderers_TagsFilter
-             text={tagsState.partial}
+             tagsState={tagsState}
              onTagResults=handleTagsFilterResults
              onTagClicked=handleTagsFilterClicked
              currentUser

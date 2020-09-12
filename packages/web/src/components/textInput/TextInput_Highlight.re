@@ -100,7 +100,7 @@ let make =
       onChange=onTagsChange
       onKeyDown=handleTagsKeyDown
       value=tagsValue
-      className={cn(["pt-8", "pb-6"])}
+      className={cn(["pt-8", "pb-4"])}
       ref={tagsInputRef->ReactDOMRe.Ref.domRef}
     />
   </>;

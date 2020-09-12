@@ -7,13 +7,22 @@ type labelBeginsWith = {
 };
 
 [@react.component]
-let make = (~currentUser, ~text, ~onTagResults, ~onTagClicked) => {
+let make =
+    (
+      ~currentUser,
+      ~tagsState: Containers_NoteEditor_Base_Types.tagState,
+      ~onTagResults,
+      ~onTagClicked,
+    ) => {
   let previousLabelBeginsWith = React.useRef({hasResults: true, text: ""});
 
   let nextLabelBeginsWithText =
     !previousLabelBeginsWith.current.hasResults
-    && Js.String2.startsWith(text, previousLabelBeginsWith.current.text)
-      ? previousLabelBeginsWith.current.text : text;
+    && Js.String2.startsWith(
+         tagsState.partial,
+         previousLabelBeginsWith.current.text,
+       )
+      ? previousLabelBeginsWith.current.text : tagsState.partial;
 
   let (_s, query) =
     ApolloHooks.useQuery(
@@ -34,10 +43,21 @@ let make = (~currentUser, ~text, ~onTagResults, ~onTagClicked) => {
     ->Belt.Option.flatMap(d => d##items)
     ->Belt.Option.map(annotationCollections =>
         annotationCollections->Belt.Array.keepMap(annotationCollection =>
-          annotationCollection->Belt.Option.map(annotationCollection => {
-            Containers_NoteEditor_Base_Types.{
-              text: annotationCollection##label,
-              id: Some(annotationCollection##id),
+          annotationCollection->Belt.Option.flatMap(annotationCollection => {
+            switch (
+              tagsState.commits
+              ->Belt.Array.getBy(commit =>
+                  commit.text == annotationCollection##label
+                )
+            ) {
+            | Some(_) => None
+            | None =>
+              Some(
+                Containers_NoteEditor_Base_Types.{
+                  text: annotationCollection##label,
+                  id: Some(annotationCollection##id),
+                },
+              )
             }
           })
         )
@@ -85,10 +105,11 @@ let make = (~currentUser, ~text, ~onTagResults, ~onTagClicked) => {
             "italic",
             "underline",
             "font-medium",
-            "pa-2",
+            "pa-4",
             "mr-3",
+            "block",
           ])}>
-          {React.string("#" ++ tag.text)}
+          {React.string(tag.text)}
         </span>
       })
     ->React.array;
