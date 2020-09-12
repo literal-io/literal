@@ -62,7 +62,12 @@ let make =
         let _ = onChange({tags: tagsState.commits, text: textState});
         None;
       },
-      (textState, tagsState.commits),
+      (
+        textState,
+        tagsState.commits
+        ->Belt.Array.map(c => c.text)
+        ->Js.Array2.joinWith("-"),
+      ),
     );
 
   let handleTextChange = s => setTextState(_ => s);

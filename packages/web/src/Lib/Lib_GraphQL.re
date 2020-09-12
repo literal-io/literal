@@ -19,6 +19,8 @@ let makeHash = text => {
      );
 };
 
+let apiOrigin = "https://literal.io";
+
 module Annotation = {
   let defaultContext = "http://www.w3.org/ns/anno.jsonld";
 
@@ -26,7 +28,7 @@ module Annotation = {
     makeHash(textualTargetValue)
     |> Js.Promise.then_(valueHash => {
          Js.Promise.resolve(
-           Webapi.Dom.(window |> Window.location |> Location.origin)
+           apiOrigin
            ++ "/creators/"
            ++ creatorUsername
            ++ "/annotations/"
@@ -35,7 +37,7 @@ module Annotation = {
        });
 
   let makeIdFromComponent = (~creatorUsername, ~annotationIdComponent) =>
-    Webapi.Dom.(window |> Window.location |> Location.origin)
+    apiOrigin
     ++ "/creators/"
     ++ creatorUsername
     ++ "/annotations/"
@@ -142,7 +144,7 @@ module AnnotationCollection = {
     makeHash(label)
     |> Js.Promise.then_(hash =>
          Js.Promise.resolve(
-           Webapi.Dom.(window |> Window.location |> Location.origin)
+           apiOrigin
            ++ "/creators/"
            ++ creatorUsername
            ++ "/annotation-collections/"

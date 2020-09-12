@@ -1,17 +1,30 @@
 open QueryRenderers_TagsFilter_GraphQL;
 open Styles;
 
+type labelBeginsWith = {
+  hasResults: bool,
+  text: string,
+};
+
 [@react.component]
 let make = (~currentUser, ~text, ~onTagResults, ~onTagClicked) => {
+  let previousLabelBeginsWith = React.useRef({hasResults: true, text: ""});
+
+  let nextLabelBeginsWithText =
+    !previousLabelBeginsWith.current.hasResults
+    && Js.String2.startsWith(text, previousLabelBeginsWith.current.text)
+      ? previousLabelBeginsWith.current.text : text;
+
   let (_s, query) =
     ApolloHooks.useQuery(
       ~variables=
         AnnotationCollectionLabelAutocomplete.makeVariables(
-          ~labelBeginsWith=text,
+          ~labelBeginsWith=nextLabelBeginsWithText,
           ~creatorUsername=
             AwsAmplify.Auth.CurrentUserInfo.username(currentUser),
           (),
         ),
+      ~skip=Js.String2.length(nextLabelBeginsWithText) == 0,
       AnnotationCollectionLabelAutocomplete.definition,
     );
 
@@ -35,9 +48,25 @@ let make = (~currentUser, ~text, ~onTagResults, ~onTagClicked) => {
     React.useEffect1(
       () => {
         let _ = onTagResults(results);
+        previousLabelBeginsWith.current = {
+          ...previousLabelBeginsWith.current,
+          hasResults: Js.Array2.length(results) > 0,
+        };
         None;
       },
       [|query.data|],
+    );
+
+  let _ =
+    React.useEffect1(
+      () => {
+        previousLabelBeginsWith.current = {
+          ...previousLabelBeginsWith.current,
+          text: nextLabelBeginsWithText,
+        };
+        None;
+      },
+      [|nextLabelBeginsWithText|],
     );
 
   let tags =
