@@ -22,6 +22,8 @@ module CreatorsIdAnnotationsId = {
 };
 
 module CreatorsIdAnnotationsNew = {
+  let staticPath = "/creators/[creatorUsername]/annotations/new";
+
   let path = (~creatorUsername) =>
     CreatorsIdAnnotations.path(~creatorUsername) ++ "/new";
 

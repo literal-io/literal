@@ -23,6 +23,9 @@ module Router = {
 
   [@bs.module "next/router"] [@bs.scope "default"]
   external push: string => unit = "push";
+  [@bs.module "next/router"] [@bs.scope "default"]
+  external pushWithAs: (string, string) => unit = "push";
+
 };
 
 module Link = {

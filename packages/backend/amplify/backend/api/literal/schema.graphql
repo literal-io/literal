@@ -521,6 +521,7 @@ type Annotation
 enum AnnotationCollectionType {
   ANNOTATION_COLLECTION
 }
+
 type AnnotationCollection
   @model(
     queries: {
@@ -545,18 +546,25 @@ type AnnotationCollection
       }
     ]
   )
-  @key(fields: ["creatorUsername", "id"]) {
+  @key(fields: ["creatorUsername", "id"])
+  @key(
+    fields: ["creatorUsername", "label"]
+    name: "byLabel"
+    queryField: "listAnnotationCollectionsByLabel"
+  ) {
   context: [String!]!
   id: String!
   type: [AnnotationCollectionType!]!
-  label: [String!]
+
+  """Non spec: only a single label for a collection is allowed."""
+  label: String!
   total: Int
   first: AnnotationPage @connection
   last: AnnotationPage @connection
   creator: Agent! @connection(fields: ["creatorUsername"])
   created: AWSDateTime
 
-  # non-spec
+  """Non spec: ownership relationship for this collection."""
   creatorUsername: String!
 }
 
@@ -792,8 +800,7 @@ type ModelAnnotationCollectionConnection {
 type Query {
   annotationCollectionLabelAutocomplete(
     input: AnnotationCollectionLabelAutocompleteInput!
-  ): ModelAnnotationCollectionConnection
-    @aws_cognito_user_pools
+  ): ModelAnnotationCollectionConnection @aws_cognito_user_pools
 }
 
 type Mutation {

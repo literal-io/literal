@@ -158,14 +158,16 @@ module PhaseTextInput = {
 
              let _ = createAnnotationMutation(~variables, ());
              let _ = updateCache(~currentUser, ~input);
-
              let _ =
-               Next.Router.push(
-                 Routes.CreatorsIdAnnotationsId.path(
-                   ~annotationIdComponent=
-                     Lib_GraphQL.Annotation.idComponent(id),
-                   ~creatorUsername=currentUser.username,
-                 ),
+               Routes.CreatorsIdAnnotationsId.(
+                 Next.Router.pushWithAs(
+                   staticPath,
+                   path(
+                     ~annotationIdComponent=
+                       Lib_GraphQL.Annotation.idComponent(id),
+                     ~creatorUsername=currentUser.username,
+                   ),
+                 )
                );
              Js.Promise.resolve();
            });

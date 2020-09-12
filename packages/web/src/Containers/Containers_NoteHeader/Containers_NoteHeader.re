@@ -8,19 +8,6 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
       Containers_NoteHeader_GraphQL.DeleteAnnotationMutation.definition,
     );
 
-  let handleCreate = () => {
-    switch (currentUser) {
-    | Some(currentUser) =>
-      Routes.CreatorsIdAnnotationsNew.path(
-        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-      )
-      ->Next.Router.push
-    | None => ()
-    };
-    let _ = ();
-    ();
-  };
-
   let handleDelete = (~annotation, ~currentUser) => {
     let variables =
       DeleteAnnotationMutation.makeVariables(
@@ -74,6 +61,28 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
         });
     ();
   };
+
+  let createButton =
+    <MaterialUi.IconButton
+      size=`Small
+      edge=MaterialUi.IconButton.Edge._end
+      _TouchRippleProps={
+        "classes": {
+          "child": cn(["bg-white"]),
+          "rippleVisible": cn(["opacity-50"]),
+        },
+      }
+      classes={MaterialUi.IconButton.Classes.make(
+        ~root=cn(["p-0", "ml-4"]),
+        (),
+      )}>
+      <Svg
+        placeholderViewBox="0 0 24 24"
+        className={cn(["pointer-events-none", "opacity-50"])}
+        style={ReactDOMRe.Style.make(~width="1.75rem", ~height="1.75rem", ())}
+        icon=Svg.add
+      />
+    </MaterialUi.IconButton>;
 
   <Header
     className={cn([
@@ -135,36 +144,18 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
             icon=Svg.delete
           />
         </MaterialUi.IconButton>
-        <MaterialUi.IconButton
-          size=`Small
-          edge=MaterialUi.IconButton.Edge._end
-          onClick={_ =>
-            switch (annotation, currentUser) {
-            | (Some(_), Some(_)) => handleCreate()
-            | _ => ()
-            }
-          }
-          _TouchRippleProps={
-            "classes": {
-              "child": cn(["bg-white"]),
-              "rippleVisible": cn(["opacity-50"]),
-            },
-          }
-          classes={MaterialUi.IconButton.Classes.make(
-            ~root=cn(["p-0", "ml-4"]),
-            (),
-          )}>
-          <Svg
-            placeholderViewBox="0 0 24 24"
-            className={cn(["pointer-events-none", "opacity-50"])}
-            style={ReactDOMRe.Style.make(
-              ~width="1.75rem",
-              ~height="1.75rem",
-              (),
-            )}
-            icon=Svg.add
-          />
-        </MaterialUi.IconButton>
+        {switch (currentUser) {
+         | Some(currentUser) =>
+           <Next.Link
+             _as={Routes.CreatorsIdAnnotationsNew.path(
+               ~creatorUsername=
+                 currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+             )}
+             href=Routes.CreatorsIdAnnotationsNew.staticPath>
+             createButton
+           </Next.Link>
+         | _ => createButton
+         }}
       </div>
     </div>
   </Header>;
