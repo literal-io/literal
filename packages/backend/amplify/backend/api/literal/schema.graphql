@@ -559,8 +559,11 @@ type AnnotationCollection
   """Non spec: only a single label for a collection is allowed."""
   label: String!
   total: Int
+
+  """Non spec: only a single AnnotationPage is allowed."""
   first: AnnotationPage @connection
   last: AnnotationPage @connection
+
   creator: Agent! @connection(fields: ["creatorUsername"])
   created: AWSDateTime
 

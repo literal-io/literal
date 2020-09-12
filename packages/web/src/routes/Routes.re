@@ -35,6 +35,19 @@ module CreatorsIdAnnotationsNew = {
   };
 };
 
+module CreatorsIdAnnotationCollectionsId = {
+  let staticPath = "/creators/[creatorUsername]/annotation-collections/[annotationCollectionIdComponent]";
+
+  let path = (~creatorUsername, ~annotationCollectionIdComponent) =>
+    "/creators/" ++ creatorUsername ++ "/annotations/" ++ annotationCollectionIdComponent;
+
+  [@decco]
+  type params = {
+    creatorUsername: string,
+    annotationCollectionIdComponent: string,
+  };
+};
+
 module Authenticate = {
   let path = () => "/authenticate";
 };

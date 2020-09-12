@@ -1,7 +1,5 @@
 open Styles;
 
-let _ = AwsAmplify.(inst->configure(Constants.awsAmplifyConfig));
-
 [@react.component]
 let default = () => {
   let authentication = Hooks_CurrentUserInfo.use();

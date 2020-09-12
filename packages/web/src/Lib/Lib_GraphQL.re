@@ -151,4 +151,12 @@ module AnnotationCollection = {
            ++ hash,
          )
        );
+
+  let makeIdFromComponent =
+      (~creatorUsername, ~annotationCollectionIdComponent) =>
+    apiOrigin
+    ++ "/creators/"
+    ++ creatorUsername
+    ++ "/annotations/"
+    ++ annotationCollectionIdComponent;
 };

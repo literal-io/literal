@@ -1,5 +1,3 @@
-let _ = AwsAmplify.(inst->configure(Constants.awsAmplifyConfig));
-
 [@react.component]
 let default = (~rehydrated) => {
   let router = Next.Router.useRouter();

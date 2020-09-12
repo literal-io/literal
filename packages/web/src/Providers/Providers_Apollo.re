@@ -1,5 +1,7 @@
 %raw
 "require('isomorphic-fetch')";
+let _ = AwsAmplify.(inst->configure(Constants.awsAmplifyConfig));
+
 
 let fragmentTypes = [%raw "require('../../fragment-types.json')"];
 
