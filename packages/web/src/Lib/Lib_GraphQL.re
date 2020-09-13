@@ -157,6 +157,6 @@ module AnnotationCollection = {
     apiOrigin
     ++ "/creators/"
     ++ creatorUsername
-    ++ "/annotations/"
+    ++ "/annotation-collections/"
     ++ annotationCollectionIdComponent;
 };

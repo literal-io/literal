@@ -503,7 +503,7 @@ type Annotation
   id: String!
   body: [AnnotationBody!]
   target: [AnnotationTarget!]!
-  creator: Agent! @connection(fields: ["creatorUsername"])
+
   created: AWSDateTime
   generator: Agent @connection
   generated: AWSDateTime
@@ -514,7 +514,10 @@ type Annotation
   canonical: ID
   stylesheet: CssStylesheet
 
-  # non-spec
+  creator: Agent! @connection(fields: ["creatorUsername"])
+  """
+  Non-spec: creator relationship for the Annotation
+  """
   creatorUsername: String!
 }
 
@@ -556,19 +559,41 @@ type AnnotationCollection
   id: String!
   type: [AnnotationCollectionType!]!
 
-  """Non spec: only a single label for a collection is allowed."""
+  """
+  Non spec: only a single label for a collection is allowed.
+  """
   label: String!
   total: Int
 
-  """Non spec: only a single AnnotationPage is allowed."""
+  """
+  Non spec: first and last should point to the same AnnotationPage.
+  """
+  # FIXME: nullable connection required
+  # @connection(fields: ["creatorUsername", "firstAnnotationPageId"])
   first: AnnotationPage @connection
-  last: AnnotationPage @connection
+  """
+  Non spec: first AnnotationPage relationship for this collection.
+  """
+  firstAnnotationPageId: String
+
+  """
+  Non spec: first and last should point to the same AnnotationPage.
+  """
+  # FIXME: nullabel connection required
+  # @connection(fields: ["creatorUsername", "lastAnnotationPageId"])
+  last: AnnotationPage
+  """
+  Non spec: first AnnotationPage relationship for this collection.
+  """
+  lastAnnotationPageId: String
 
   creator: Agent! @connection(fields: ["creatorUsername"])
-  created: AWSDateTime
-
-  """Non spec: ownership relationship for this collection."""
+  """
+  Non spec: ownership relationship for this collection.
+  """
   creatorUsername: String!
+
+  created: AWSDateTime
 }
 
 type AnnotationPageItem
@@ -596,15 +621,18 @@ type AnnotationPageItem
     ]
   ) {
   id: ID!
-  annotationPageId: String!
-  annotationId: String!
-  annotation: Annotation! @connection(fields: ["annotationId"])
-  annotationPage: AnnotationPage! @connection(fields: ["annotationPageId"])
-  creator: Agent! @connection(fields: ["creatorUsername"])
   created: AWSDateTime
   modified: AWSDateTime
 
-  # non-spec
+  annotation: Annotation!
+    @connection(fields: ["creatorUsername", "annotationId"])
+  annotationId: String!
+
+  annotationPage: AnnotationPage!
+    @connection(fields: ["creatorUsername", "annotationPageId"])
+  annotationPageId: String!
+
+  creator: Agent! @connection(fields: ["creatorUsername"])
   creatorUsername: String!
 }
 
@@ -636,17 +664,41 @@ type AnnotationPage
   context: [String!]!
   id: String!
   type: [AnnotationPageType!]!
-  partOf: AnnotationCollection @connection
-  items: [AnnotationPageItem!]!
-    @connection(keyName: "byAnnotationPage", fields: ["id"])
-  next: AnnotationPage @connection
-  prev: AnnotationPage @connection
   startIndex: Int
-  creator: Agent! @connection(fields: ["creatorUsername"])
   created: AWSDateTime
   modified: AWSDateTime
 
-  # non-spec
+  items: [AnnotationPageItem!]!
+    @connection(keyName: "byAnnotationPage", fields: ["id"])
+
+  # FIXME: nullable connection required
+  # @connection(fields: ["creatorUsername", "partOfAnnotationCollectionId"])
+  partOf: AnnotationCollection @connection
+  """
+  Non-spec: partOf relationship for the annotation page.
+  """
+  partOfAnnotationCollectionId: String
+
+  # FIXME: nullable connection required
+  # @connection(fields: ["creatorUsername", "nextAnnotationPageId"])
+  next: AnnotationPage @connection
+  """
+  Non-spec: next AnnotationPage relationship for the AnnotationPage
+  """
+  nextAnnotationPageId: String
+
+  # FIXME: nullable connection required
+  # @connection(fields: ["creatorUsername", "prevAnnotationPageId"])
+  prev: AnnotationPage @connection
+  """
+  Non-spec: prev AnnotationPage relationship for the AnnotationPage
+  """
+  prevAnnotationPageId: String
+
+  creator: Agent! @connection(fields: ["creatorUsername"])
+  """
+  Non-spec: ownership relationship for the AnnotationPage
+  """
   creatorUsername: String!
 }
 

@@ -134,14 +134,16 @@ let make =
           annotations={
             annotations
             |> Ramda.sortBy(a => {
-                /** FIXME: sort in query **/
-                 -.
-                   a##created
-                   ->Belt.Option.flatMap(Js.Json.decodeString)
-                   ->Belt.Option.map(created =>
-                       created->Js.Date.fromString->Js.Date.valueOf
-                     )
-                   ->Belt.Option.getWithDefault(0.)
+                 /** FIXME: sort in query **/
+                 (
+                   -.
+                     a##created
+                     ->Belt.Option.flatMap(Js.Json.decodeString)
+                     ->Belt.Option.map(created =>
+                         created->Js.Date.fromString->Js.Date.valueOf
+                       )
+                     ->Belt.Option.getWithDefault(0.)
+                 )
                })
           }
         />

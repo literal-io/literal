@@ -41,7 +41,7 @@ let default = (~rehydrated) => {
     />
   | (_, Error(_)) =>
     /** FIXME: redirect to /creators/[id]/annotation-collections **/
-    <Redirect path={Routes.Authenticate.path()} />
+    <Loading />
   };
 };
 
