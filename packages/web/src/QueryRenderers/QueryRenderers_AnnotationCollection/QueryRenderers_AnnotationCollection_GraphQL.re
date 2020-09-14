@@ -3,7 +3,7 @@ module GetAnnotationCollection = {
     {|
       query getAnnotationCollection($creatorUsername: String!, $id: String!) {
         getAnnotationCollection(creatorUsername: $creatorUsername, id: $id) {
-          label
+          ...Containers_AnnotationCollectionHeader_GraphQL.GetAnnotationCollectionFragment.AnnotationCollectionHeader_AnnotationCollection @bsField(name: "annotationCollectionHeader")
           first {
             items(limit: 100) {
               items {
@@ -11,7 +11,7 @@ module GetAnnotationCollection = {
                   created
                   id
                   ...Containers_NoteEditor_Notes_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
-                  ...Containers_NoteHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
+                  ...Containers_AnnotationCollectionHeader_GraphQL.GetAnnotationFragment.AnnotationCollectionHeader_Annotation @bsField(name: "annotationCollectionHeader")
                 }
               }
             }

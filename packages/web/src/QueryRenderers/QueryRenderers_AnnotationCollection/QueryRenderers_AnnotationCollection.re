@@ -4,6 +4,7 @@ module Data = {
   [@react.component]
   let make =
       (
+        ~annotationCollection,
         ~annotations,
         ~initialAnnotationId,
         ~onAnnotationIdChange,
@@ -40,8 +41,10 @@ module Data = {
         "bg-black",
         "overflow-y-scroll",
       ])}>
-      <Containers_NoteHeader
-        annotationFragment={activeAnnotation##headerAnnotationFragment}
+      <Containers_AnnotationCollectionHeader
+        annotationFragment={activeAnnotation##annotationCollectionHeader}
+        annotationCollectionFragment=
+          {annotationCollection##annotationCollectionHeader}
         currentUser
       />
       <ScrollSnapList.Container
@@ -125,29 +128,52 @@ let make =
   | (Loading, _, _)
   | (_, false, _)
   | (_, _, Loading) => <Loading />
-  | (Data(_), _, Authenticated(currentUser)) =>
-    Array.length(annotations) > 0
-      ? <Data
-          onAnnotationIdChange
-          initialAnnotationId=None
-          currentUser
-          annotations={
-            annotations
-            |> Ramda.sortBy(a => {
-                 /** FIXME: sort in query **/
-                 (
-                   -.
-                     a##created
-                     ->Belt.Option.flatMap(Js.Json.decodeString)
-                     ->Belt.Option.map(created =>
-                         created->Js.Date.fromString->Js.Date.valueOf
-                       )
-                     ->Belt.Option.getWithDefault(0.)
-                 )
-               })
-          }
-        />
-      : <Empty />
+  | (Data(data), _, Authenticated(currentUser)) =>
+    data##getAnnotationCollection
+    ->Belt.Option.flatMap(annotationCollection => {
+        annotationCollection##first
+        ->Belt.Option.flatMap(annotationPage => annotationPage##items)
+        ->Belt.Option.flatMap(annotationPageItemConnection =>
+            annotationPageItemConnection##items
+          )
+        ->Belt.Option.flatMap(annotationPageItems => {
+            let annotations =
+              annotationPageItems->Belt.Array.keepMap(annotationPageItem =>
+                annotationPageItem->Belt.Option.map(annotationPageItem =>
+                  annotationPageItem##annotation
+                )
+              );
+
+            if (Js.Array2.length(annotations) > 0) {
+              Some(
+                <Data
+                  onAnnotationIdChange
+                  initialAnnotationId=None
+                  currentUser
+                  annotationCollection
+                  annotations={
+                    annotations
+                    |> Ramda.sortBy(a => {
+                         /** FIXME: sort in query **/
+                         (
+                           -.
+                             a##created
+                             ->Belt.Option.flatMap(Js.Json.decodeString)
+                             ->Belt.Option.map(created =>
+                                 created->Js.Date.fromString->Js.Date.valueOf
+                               )
+                             ->Belt.Option.getWithDefault(0.)
+                         )
+                       })
+                  }
+                />,
+              );
+            } else {
+              None;
+            };
+          })
+      })
+    ->Belt.Option.getWithDefault(<Empty />)
   | (NoData, true, _)
   | (Error(_), true, _)
   | (_, _, Unauthenticated) => /** FIXME: handle redirect **/ <Empty />
