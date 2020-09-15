@@ -163,67 +163,79 @@ let make =
       };
     };
 
-    <div className={cn(["flex", "flex-col", Cn.unpack(className)])}>
+    <div className=Cn.(fromList(["flex", "flex-col", take(className)]))>
       {value.commits
        ->Belt.Array.map(({text, href}) => {
            let tag =
-             <div key=text className=Cn.(fromList(["mr-3", "mb-3"]))>
+             <MaterialUi.Button
+               variant=`Text
+               fullWidth=true
+               classes={MaterialUi.Button.Classes.make(
+                 ~root=Cn.fromList(["mb-1"]),
+                 ~text=
+                   Cn.fromList([
+                     "font-sans",
+                     "text-lightPrimary",
+                     "font-medium",
+                     "text-lg",
+                     "normal-case",
+                     "justify-start",
+                   ]),
+                 (),
+               )}>
                <span
-                 className={cn([
-                   "font-sans",
-                   "text-lightPrimary",
-                   "font-medium",
-                   "text-lg",
+                 className={Cn.fromList([
                    "border-b",
                    "border-white",
                    "border-opacity-50",
-                   "inline-block",
-                   "mr-3",
-                   "mb-3",
                  ])}>
                  {React.string(text)}
                </span>
-             </div>;
+             </MaterialUi.Button>;
+
            switch (href) {
            | Some(href) =>
              <Next.Link
                key=href
                _as=href
-               href=Routes.CreatorsIdAnnotationCollectionsId.staticPath>
-               <a> tag </a>
+               href=Routes.CreatorsIdAnnotationCollectionsId.staticPath
+               passHref=true>
+               tag
              </Next.Link>
            | None => tag
            };
          })
        ->React.array}
-      <MaterialUi.TextField
-        value={MaterialUi.TextField.Value.string(value.partial)}
-        onChange=handleChange
-        fullWidth=true
-        multiline=true
-        _InputProps={
-          "classes":
-            MaterialUi.Input.Classes.make(
-              ~input=
-                Cn.(
-                  fromList([
-                    "font-sans",
-                    "text-lightPrimary",
-                    "font-medium",
-                    "text-lg",
-                  ])
-                ),
-              ~underline=Cn.(fromList([styles##underline])),
-              (),
-            ),
-        }
-        inputProps={
-          "onChange": handleChange,
-          "onKeyUp": handleKeyUp,
-          "onKeyDown": handleKeyDown,
-          "onBlur": handleBlur,
-          "ref": inputRef->ReactDOMRe.Ref.domRef,
-        }
-      />
+      <div className={Cn.fromList(["mx-2", "mt-2"])}>
+        <MaterialUi.TextField
+          value={MaterialUi.TextField.Value.string(value.partial)}
+          onChange=handleChange
+          fullWidth=true
+          multiline=true
+          _InputProps={
+            "classes":
+              MaterialUi.Input.Classes.make(
+                ~input=
+                  Cn.(
+                    fromList([
+                      "font-sans",
+                      "text-lightPrimary",
+                      "font-medium",
+                      "text-lg",
+                    ])
+                  ),
+                ~underline=Cn.(fromList([styles##underline])),
+                (),
+              ),
+          }
+          inputProps={
+            "onChange": handleChange,
+            "onKeyUp": handleKeyUp,
+            "onKeyDown": handleKeyDown,
+            "onBlur": handleBlur,
+            "ref": inputRef->ReactDOMRe.Ref.domRef,
+          }
+        />
+      </div>
     </div>;
   });
