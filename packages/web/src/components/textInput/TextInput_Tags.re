@@ -3,12 +3,42 @@ open Styles;
 let styles = [%raw "require('./TextInput_Tags.module.css')"];
 
 module Value = {
+  type tag = {
+    id: option(string),
+    href: option(string),
+    text: string,
+  };
   type t = {
-    commits: array(string),
+    commits: array(tag),
     partial: string,
   };
 
   let empty = () => {commits: [||], partial: ""};
+  let fromTagsState =
+      (~state: Containers_NoteEditor_Base_Types.tagState, ~currentUser) => {
+    commits:
+      state.commits
+      ->Belt.Array.map(({text, id}) =>
+          {
+            text,
+            id,
+            href:
+              id->Belt.Option.map(id =>
+                Lib_GraphQL.AnnotationCollection.(
+                  makeIdFromComponent(
+                    ~annotationCollectionIdComponent=idComponent(id),
+                    ~creatorUsername=
+                      currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                    ~origin=
+                      Webapi.Dom.(window->Window.location->Location.origin),
+                    (),
+                  )
+                )
+              ),
+          }
+        ),
+    partial: state.partial,
+  };
 };
 
 [@react.component]
@@ -66,7 +96,11 @@ let make =
           | 13 /*** enter **/ when Js.String.length(value.partial) > 0 =>
             Some(
               Value.{
-                commits: Js.Array2.concat(value.commits, [|value.partial|]),
+                commits:
+                  Js.Array2.concat(
+                    value.commits,
+                    [|{text: value.partial, id: None, href: None}|],
+                  ),
                 partial: "",
               },
             )
@@ -129,44 +163,38 @@ let make =
       };
     };
 
-    let handleContainerClick = _ => {
-      let _ =
-        inputRef
-        ->React.Ref.current
-        ->Js.Nullable.toOption
-        ->Belt.Option.map(inputElem => {
-            let _ =
-              inputElem
-              ->Webapi.Dom.Element.unsafeAsHtmlElement
-              ->Webapi.Dom.HtmlElement.focus;
-            ();
-          });
-      ();
-    };
-
-    <div
-      onClick=handleContainerClick
-      className={cn(["flex", "flex-col", Cn.unpack(className)])}>
+    <div className={cn(["flex", "flex-col", Cn.unpack(className)])}>
       {value.commits
-       ->Belt.Array.map(text =>
-           <div key=text className=Cn.(fromList(["mr-3", "mb-3"]))>
-             <span
-               className={cn([
-                 "font-sans",
-                 "text-lightPrimary",
-                 "font-medium",
-                 "text-lg",
-                 "border-b",
-                 "border-white",
-                 "border-opacity-50",
-                 "inline-block",
-                 "mr-3",
-                 "mb-3",
-               ])}>
-               {React.string(text)}
-             </span>
-           </div>
-         )
+       ->Belt.Array.map(({text, href}) => {
+           let tag =
+             <div key=text className=Cn.(fromList(["mr-3", "mb-3"]))>
+               <span
+                 className={cn([
+                   "font-sans",
+                   "text-lightPrimary",
+                   "font-medium",
+                   "text-lg",
+                   "border-b",
+                   "border-white",
+                   "border-opacity-50",
+                   "inline-block",
+                   "mr-3",
+                   "mb-3",
+                 ])}>
+                 {React.string(text)}
+               </span>
+             </div>;
+           switch (href) {
+           | Some(href) =>
+             <Next.Link
+               key=href
+               _as=href
+               href=Routes.CreatorsIdAnnotationCollectionsId.staticPath>
+               <a> tag </a>
+             </Next.Link>
+           | None => tag
+           };
+         })
        ->React.array}
       <MaterialUi.TextField
         value={MaterialUi.TextField.Value.string(value.partial)}

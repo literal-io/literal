@@ -153,10 +153,19 @@ module AnnotationCollection = {
        );
 
   let makeIdFromComponent =
-      (~creatorUsername, ~annotationCollectionIdComponent) =>
-    apiOrigin
+      (
+        ~creatorUsername,
+        ~annotationCollectionIdComponent,
+        ~origin=apiOrigin,
+        (),
+      ) =>
+    origin
     ++ "/creators/"
     ++ creatorUsername
     ++ "/annotation-collections/"
     ++ annotationCollectionIdComponent;
+
+  /** returns just the last path of the id IRI **/
+  let idComponent = fullId =>
+    fullId->Js.String2.split("/")->(arr => arr[Js.Array2.length(arr) - 1]);
 };

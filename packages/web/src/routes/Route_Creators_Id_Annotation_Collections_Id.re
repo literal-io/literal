@@ -34,6 +34,7 @@ let default = (~rehydrated) => {
         ~creatorUsername=routeParams.creatorUsername,
         ~annotationCollectionIdComponent=
           routeParams.annotationCollectionIdComponent,
+        (),
       )}
       onAnnotationIdChange=handleAnnotationIdChange
       authentication

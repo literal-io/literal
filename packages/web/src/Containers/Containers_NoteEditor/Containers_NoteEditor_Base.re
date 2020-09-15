@@ -45,7 +45,7 @@ let make =
               | `Nonexhaustive => None
               | `TextualBody(body) =>
                 Lib_GraphQL.Annotation.isBodyTag(body)
-                  ? Some({text: body##value, id: None}) : None
+                  ? Some({text: body##value, id: body##id}) : None
               }
             );
           {partial: "", commits, filterResults: [||]};
@@ -77,7 +77,7 @@ let make =
     setTagsState(tagsState => {
       let updatedCommits =
         s.commits
-        ->Belt.Array.map(text => {
+        ->Belt.Array.map(({text}) => {
             switch (
               Belt.Array.getBy(tagsState.commits, tag => tag.text === text),
               tagsState.filterResults
@@ -142,10 +142,10 @@ let make =
         className={cn([styles##underline])}
         onTextChange=handleTextChange
         textValue=textState
-        tagsValue={
-          TextInput_Tags.Value.partial: tagsState.partial,
-          commits: tagsState.commits->Belt.Array.map(t => t.text),
-        }
+        tagsValue={TextInput_Tags.Value.fromTagsState(
+          ~state=tagsState,
+          ~currentUser,
+        )}
         onTagsChange=handleTagsChange
         tagsInputRef
         ?placeholder
