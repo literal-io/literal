@@ -8,12 +8,12 @@ let onboardingNotes = [|
 
 let updateCache = (~currentUser, ~createAnnotationInputs) => {
   let cacheQuery =
-    QueryRenderers_Notes_GraphQL.ListAnnotations.Query.make(
+    QueryRenderers_Annotations_GraphQL.ListAnnotations.Query.make(
       ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
       (),
     );
   let _ =
-    QueryRenderers_Notes_GraphQL.ListAnnotations.readCache(
+    QueryRenderers_Annotations_GraphQL.ListAnnotations.readCache(
       ~query=cacheQuery,
       ~client=Providers_Apollo.client,
       (),
@@ -41,7 +41,7 @@ let updateCache = (~currentUser, ~createAnnotationInputs) => {
         };
 
         let _ =
-          QueryRenderers_Notes_GraphQL.ListAnnotations.(
+          QueryRenderers_Annotations_GraphQL.ListAnnotations.(
             writeCache(
               ~query=cacheQuery,
               ~client=Providers_Apollo.client,

@@ -1,5 +1,5 @@
 open Styles;
-open QueryRenderers_Notes_GraphQL;
+open QueryRenderers_Annotations_GraphQL;
 
 module Data = {
   [@react.component]
@@ -36,7 +36,7 @@ module Data = {
 
     <div
       className={cn(["w-full", "h-full", "bg-black", "overflow-y-scroll"])}>
-      <Containers_NoteHeader
+      <Containers_AnnotationHeader
         annotationFragment={activeAnnotation##headerAnnotationFragment}
         currentUser
       />
@@ -47,7 +47,7 @@ module Data = {
         {annotations->Belt.Array.map(annotation =>
            <ScrollSnapList.Item
              key={annotation##id} direction=ScrollSnapList.Horizontal>
-             <Containers_NoteEditor_Notes
+             <Containers_AnnotationEditor_Annotation
                annotationFragment={annotation##editorAnnotationFragment}
                isActive={annotation##id === activeAnnotation##id}
                currentUser
@@ -78,7 +78,7 @@ module Loading = {
   [@react.component]
   let make = () => {
     <>
-      <Containers_NoteHeader />
+      <Containers_AnnotationHeader />
       <TextInput_Loading className={cn(["px-6", "pb-4", "pt-16"])} />
     </>;
   };

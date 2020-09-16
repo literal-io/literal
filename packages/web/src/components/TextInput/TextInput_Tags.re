@@ -15,7 +15,7 @@ module Value = {
 
   let empty = () => {commits: [||], partial: ""};
   let fromTagsState =
-      (~state: Containers_NoteEditor_Base_Types.tagState, ~currentUser) => {
+      (~state: Containers_AnnotationEditor_Base_Types.tagState, ~currentUser) => {
     commits:
       state.commits
       ->Belt.Array.map(({text, id}) =>

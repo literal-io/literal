@@ -19,8 +19,8 @@ module OnboardingMutation = [%graphql
           id
           created
           __typename
-          ...Containers_NoteEditor_Notes_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
-          ...Containers_NoteHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
+          ...Containers_AnnotationEditor_Annotation_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
+          ...Containers_AnnotationHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
         }
       }
       createAnnotation2: createAnnotation(input: $createAnnotationInput2) {
@@ -28,8 +28,8 @@ module OnboardingMutation = [%graphql
           id
           created
           __typename
-          ...Containers_NoteEditor_Notes_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
-          ...Containers_NoteHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
+          ...Containers_AnnotationEditor_Annotation_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
+          ...Containers_AnnotationHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
         }
       }
       createAnnotation3: createAnnotation(input: $createAnnotationInput3) {
@@ -37,8 +37,8 @@ module OnboardingMutation = [%graphql
           id
           created
           __typename
-          ...Containers_NoteEditor_Notes_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
-          ...Containers_NoteHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
+          ...Containers_AnnotationEditor_Annotation_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
+          ...Containers_AnnotationHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
         }
       }
     }

@@ -1,7 +1,7 @@
 open Styles;
-open Containers_NoteEditor_Base_Types;
+open Containers_AnnotationEditor_Base_Types;
 
-let styles = [%raw "require('./Containers_NoteEditor_Base.module.css')"];
+let styles = [%raw "require('./Containers_AnnotationEditor_Base.module.css')"];
 
 [@react.component]
 let make =
@@ -138,7 +138,7 @@ let make =
       "overflow-y-auto",
     ])}>
     <div className={cn(["px-6", "pb-4", "pt-16"])}>
-      <TextInput.Highlight
+      <TextInput.Annotation
         className={cn([styles##underline])}
         onTextChange=handleTextChange
         textValue=textState

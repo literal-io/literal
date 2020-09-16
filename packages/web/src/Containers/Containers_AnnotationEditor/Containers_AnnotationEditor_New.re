@@ -1,5 +1,5 @@
 open Styles;
-open Containers_NoteEditor_New_GraphQL;
+open Containers_AnnotationEditor_New_GraphQL;
 
 [@bs.deriving jsConverter]
 type phase = [ | `PhasePrompt | `PhaseTextInput];
@@ -18,12 +18,12 @@ type action =
 
 let updateCache = (~currentUser, ~input) => {
   let cacheQuery =
-    QueryRenderers_Notes_GraphQL.ListAnnotations.Query.make(
+    QueryRenderers_Annotations_GraphQL.ListAnnotations.Query.make(
       ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
       (),
     );
   let _ =
-    QueryRenderers_Notes_GraphQL.ListAnnotations.readCache(
+    QueryRenderers_Annotations_GraphQL.ListAnnotations.readCache(
       ~query=cacheQuery,
       ~client=Providers_Apollo.client,
       (),
@@ -49,7 +49,7 @@ let updateCache = (~currentUser, ~input) => {
         };
 
         let _ =
-          QueryRenderers_Notes_GraphQL.ListAnnotations.(
+          QueryRenderers_Annotations_GraphQL.ListAnnotations.(
             writeCache(
               ~query=cacheQuery,
               ~client=Providers_Apollo.client,
@@ -67,7 +67,7 @@ module PhaseTextInput = {
   let make = (~currentUser) => {
     let (editorValue, setEditorValue) =
       React.useState(() =>
-        Containers_NoteEditor_Base_Types.{text: "", tags: [||]}
+        Containers_AnnotationEditor_Base_Types.{text: "", tags: [||]}
       );
     let (createAnnotationMutation, _s, _f) =
       ApolloHooks.useMutation(CreateAnnotationMutation.definition);
@@ -177,7 +177,7 @@ module PhaseTextInput = {
     let handleChange = value => setEditorValue(_ => value);
 
     <>
-      <Containers_NoteEditor_Base
+      <Containers_AnnotationEditor_Base
         onChange=handleChange
         autoFocus=true
         placeholder="Lorem Ipsum"

@@ -2,12 +2,12 @@ open Styles;
 
 let handleUpdateCache = (~currentUser, ~annotation) => {
   let cacheQuery =
-    QueryRenderers_Notes_GraphQL.ListAnnotations.Query.make(
+    QueryRenderers_Annotations_GraphQL.ListAnnotations.Query.make(
       ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
       (),
     );
   let _ =
-    QueryRenderers_Notes_GraphQL.ListAnnotations.readCache(
+    QueryRenderers_Annotations_GraphQL.ListAnnotations.readCache(
       ~query=cacheQuery,
       ~client=Providers_Apollo.client,
       (),
@@ -32,7 +32,7 @@ let handleUpdateCache = (~currentUser, ~annotation) => {
           "__typename": "Query",
         };
         let _ =
-          QueryRenderers_Notes_GraphQL.ListAnnotations.writeCache(
+          QueryRenderers_Annotations_GraphQL.ListAnnotations.writeCache(
             ~query=cacheQuery,
             ~client=Providers_Apollo.client,
             ~data=newData,
@@ -47,14 +47,14 @@ let handleUpdateCache = (~currentUser, ~annotation) => {
 let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
   let (deleteAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(
-      Containers_NewNoteFromShareHeader_GraphQL.DeleteAnnotationMutation.definition,
+      Containers_NewAnnotationFromShareHeader_GraphQL.DeleteAnnotationMutation.definition,
     );
 
   let handleClose = () => {
     switch (annotation, currentUser) {
     | (Some(annotation), Some(currentUser)) =>
       let variables =
-        Containers_NewNoteFromShareHeader_GraphQL.DeleteAnnotationMutation.makeVariables(
+        Containers_NewAnnotationFromShareHeader_GraphQL.DeleteAnnotationMutation.makeVariables(
           ~input={
             "id": annotation##id,
             "creatorUsername":

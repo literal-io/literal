@@ -1,4 +1,4 @@
-open Containers_NoteEditor_Notes_GraphQL;
+open Containers_AnnotationEditor_Annotation_GraphQL;
 
 let handleSave =
   Lodash.debounce2(
@@ -18,7 +18,7 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
   let (patchAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(PatchAnnotationMutation.definition);
 
-  let handleChange = (editorValue: Containers_NoteEditor_Base_Types.value) => {
+  let handleChange = (editorValue: Containers_AnnotationEditor_Base_Types.value) => {
     let updateTargetInput = {
       let idx =
         annotation##target
@@ -149,7 +149,7 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
         },
       )
     });
-  <Containers_NoteEditor_Base
+  <Containers_AnnotationEditor_Base
     annotationFragment=annotation
     isActive
     onChange=handleChange

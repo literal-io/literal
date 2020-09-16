@@ -48,7 +48,7 @@ let default = (~rehydrated) => {
   | Unauthenticated => <Loading />
   | Loading
   | Authenticated(_) =>
-    <QueryRenderers_Notes
+    <QueryRenderers_Annotations
       annotationId
       onAnnotationIdChange=handleAnnotationIdChange
       authentication

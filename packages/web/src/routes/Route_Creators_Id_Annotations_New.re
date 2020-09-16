@@ -24,7 +24,7 @@ let default = (~rehydrated) => {
      | (Unauthenticated, _) => <Loading />
      | (_, Ok({id: Some(annotationIdComponent), creatorUsername}))
          when Js.String.length(annotationIdComponent) > 0 =>
-       <QueryRenderers_NewNoteFromShare
+       <QueryRenderers_NewAnnotationFromShare
          annotationId={Lib_GraphQL.Annotation.makeIdFromComponent(
            ~creatorUsername,
            ~annotationIdComponent,
@@ -35,9 +35,9 @@ let default = (~rehydrated) => {
      | (Loading, _) => <Loading />
      | _ when !rehydrated => <Loading />
      | (Authenticated(currentUser), Ok({initialPhaseState})) =>
-       <QueryRenderers_NewNote currentUser ?initialPhaseState />
+       <QueryRenderers_NewAnnotation currentUser ?initialPhaseState />
      | (Authenticated(currentUser), _) =>
-       <QueryRenderers_NewNote currentUser />
+       <QueryRenderers_NewAnnotation currentUser />
      }}
     <Alert query={router.query} />
   </>;
