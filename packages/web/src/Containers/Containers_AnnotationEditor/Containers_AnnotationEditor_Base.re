@@ -52,7 +52,12 @@ let make =
         })
       ->Belt.Option.getWithDefault({
           partial: "",
-          commits: [||],
+          commits: [|
+            {
+              text: Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel,
+              id: None,
+            },
+          |],
           filterResults: [||],
         })
     );

@@ -20,7 +20,6 @@ module OnboardingMutation = [%graphql
           created
           __typename
           ...Containers_AnnotationEditor_Annotation_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
-          ...Containers_AnnotationHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
         }
       }
       createAnnotation2: createAnnotation(input: $createAnnotationInput2) {
@@ -29,7 +28,6 @@ module OnboardingMutation = [%graphql
           created
           __typename
           ...Containers_AnnotationEditor_Annotation_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
-          ...Containers_AnnotationHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
         }
       }
       createAnnotation3: createAnnotation(input: $createAnnotationInput3) {
@@ -38,7 +36,6 @@ module OnboardingMutation = [%graphql
           created
           __typename
           ...Containers_AnnotationEditor_Annotation_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
-          ...Containers_AnnotationHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
         }
       }
     }

@@ -10,7 +10,6 @@ module ListAnnotations = {
             id
             created
             ...Containers_AnnotationEditor_Annotation_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
-            ...Containers_AnnotationHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
           }
         }
       }
@@ -29,7 +28,6 @@ module ListAnnotations = {
             annotation->Belt.Option.map(annotation => {
               annotation
               ->Ramda.mergeDeepLeft(annotation##editorAnnotationFragment)
-              ->Ramda.mergeDeepLeft(annotation##headerAnnotationFragment)
             })
           )
         })

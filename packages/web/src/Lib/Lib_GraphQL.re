@@ -168,4 +168,7 @@ module AnnotationCollection = {
   /** returns just the last path of the id IRI **/
   let idComponent = fullId =>
     fullId->Js.String2.split("/")->(arr => arr[Js.Array2.length(arr) - 1]);
+
+  let recentAnnotationCollectionIdComponent = "034a7e52c5c9534b709dc1dba403868399b0949f7c1933a67325c22077ffc221";
+  let recentAnnotationCollectionLabel = "recent";
 };

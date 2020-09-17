@@ -34,6 +34,28 @@ module Data = {
 
     let handleIdxChange = idx => setActiveIdx(_ => idx);
 
+    let cacheQuery =
+      QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
+        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+        ~id=
+          Lib_GraphQL.AnnotationCollection.(
+            makeIdFromComponent(
+              ~annotationCollectionIdComponent=recentAnnotationCollectionIdComponent,
+              ~creatorUsername=
+                currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+              (),
+            )
+          ),
+        (),
+      );
+    let cache =
+      QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.readCache(
+        ~query=cacheQuery,
+        ~client=Providers_Apollo.client,
+        (),
+      );
+    Js.log2("cache", cache);
+
     <div
       className={Cn.fromList([
         "w-full",

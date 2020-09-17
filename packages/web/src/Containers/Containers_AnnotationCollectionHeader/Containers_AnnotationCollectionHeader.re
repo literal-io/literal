@@ -10,7 +10,7 @@ let make =
     ) => {
   let (deleteAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(
-      Containers_AnnotationHeader_GraphQL.DeleteAnnotationMutation.definition,
+      Containers_AnnotationCollectionHeader_GraphQL.DeleteAnnotationMutation.definition,
     );
 
   let handleDelete = (~annotation, ~currentUser) => {

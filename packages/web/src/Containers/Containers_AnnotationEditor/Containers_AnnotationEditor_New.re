@@ -17,6 +17,26 @@ type action =
   | SetPhase(phase);
 
 let updateCache = (~currentUser, ~input) => {
+  let newAnnotation =
+    input
+    ->CreateAnnotationMutation.json_of_CreateAnnotationInput
+    ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput;
+
+  newAnnotation##body
+  ->Belt.Option.map(bodies =>
+      bodies->Belt.Array.keepMap(body =>
+        switch (body) {
+        | `TextualBody(body) when Lib_GraphQL.Annotation.isBodyTag(body) =>
+          Some(body)
+        | `Nonexhaustive => None
+        | `TextualBody(_) => None
+        }
+      )
+    );
+};
+
+/**
+let updateCache = (~currentUser, ~input) => {
   let cacheQuery =
     QueryRenderers_Annotations_GraphQL.ListAnnotations.Query.make(
       ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
@@ -62,12 +82,21 @@ let updateCache = (~currentUser, ~input) => {
   ();
 };
 
+**/
 module PhaseTextInput = {
   [@react.component]
   let make = (~currentUser) => {
     let (editorValue, setEditorValue) =
       React.useState(() =>
-        Containers_AnnotationEditor_Base_Types.{text: "", tags: [||]}
+        Containers_AnnotationEditor_Base_Types.{
+          text: "",
+          tags: [|
+            {
+              text: Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel,
+              id: None,
+            },
+          |],
+        }
       );
     let (createAnnotationMutation, _s, _f) =
       ApolloHooks.useMutation(CreateAnnotationMutation.definition);
@@ -153,6 +182,8 @@ module PhaseTextInput = {
                |],
                "body": Js.Array2.length(body) > 0 ? Some(body) : None,
              };
+
+             Js.log2("input", input);
              let variables =
                CreateAnnotationMutation.makeVariables(~input, ());
 

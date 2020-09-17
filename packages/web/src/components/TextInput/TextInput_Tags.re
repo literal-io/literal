@@ -13,7 +13,6 @@ module Value = {
     partial: string,
   };
 
-  let empty = () => {commits: [||], partial: ""};
   let fromTagsState =
       (~state: Containers_AnnotationEditor_Base_Types.tagState, ~currentUser) => {
     commits:
@@ -165,6 +164,7 @@ let make =
 
     <div className=Cn.(fromList(["flex", "flex-col", take(className)]))>
       {value.commits
+       ->Belt.Array.keep(({text}) => text != "recent")
        ->Belt.Array.map(({text, href}) => {
            let tag =
              <MaterialUi.Button

@@ -6,7 +6,6 @@ module PatchAnnotationMutation = [%graphql
       patchAnnotation(input: $input) {
         annotation {
           ...Containers_AnnotationEditor_Annotation_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
-          ...Containers_AnnotationHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
         }
       }
     }
