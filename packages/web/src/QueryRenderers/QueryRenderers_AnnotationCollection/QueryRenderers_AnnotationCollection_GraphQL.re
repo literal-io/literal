@@ -26,18 +26,14 @@ module GetAnnotationCollection = {
   module CacheReadQuery = ApolloClient.ReadQuery(Query);
   module CacheWriteQuery = ApolloClient.WriteQuery(Query);
 
+  // setter to update items
   let setCacheItems = (cacheQuery, newItems) => {
     let newItemsQuery = {
-      "getAnnotationCollection": Some({
-        "first": Some({
-          "items": Some({
-            "items": Some(newItems)
-          })
-        })
-      })
-    }
+      "getAnnotationCollection":
+        Some({"first": Some({"items": Some({"items": Some(newItems)})})}),
+    };
     Ramda.mergeDeepLeft(newItemsQuery, cacheQuery);
-  }
+  };
 
   /**
    * FIXME: Return type is not actually Query.t, as Apollo cache

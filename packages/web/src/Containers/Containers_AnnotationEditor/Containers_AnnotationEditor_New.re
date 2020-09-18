@@ -22,17 +22,70 @@ let updateCache = (~currentUser, ~input) => {
     ->CreateAnnotationMutation.json_of_CreateAnnotationInput
     ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput;
 
-  newAnnotation##body
-  ->Belt.Option.map(bodies =>
-      bodies->Belt.Array.keepMap(body =>
-        switch (body) {
-        | `TextualBody(body) when Lib_GraphQL.Annotation.isBodyTag(body) =>
-          Some(body)
-        | `Nonexhaustive => None
-        | `TextualBody(_) => None
-        }
+  let tags =
+    newAnnotation##body
+    ->Belt.Option.map(bodies =>
+        bodies->Belt.Array.keepMap(body =>
+          switch (body) {
+          | `TextualBody(body) when Lib_GraphQL.Annotation.isBodyTag(body) =>
+            Some(body)
+          | `Nonexhaustive => None
+          | `TextualBody(_) => None
+          }
+        )
       )
-    );
+    ->Belt.Option.getWithDefault([||])
+    ->Belt.Array.map(tag => {
+        let cacheQuery =
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
+            ~creatorUsername=
+              currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+            ~id=tag##id->Belt.Option.getExn,
+            (),
+          );
+        let data =
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.readCache(
+            ~query=cacheQuery,
+            ~client=Providers_Apollo.client,
+            (),
+          );
+        let newAnnotation =
+          input
+          ->CreateAnnotationMutation.json_of_CreateAnnotationInput
+          ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput;
+        let cacheUpdate =
+          switch (data) {
+          | Some(data) =>
+            let items =
+              data##getAnnotationCollection
+              ->Belt.Option.flatMap(d => d##first)
+              ->Belt.Option.flatMap(d => d##items)
+              ->Belt.Option.flatMap(d => d##items)
+              ->Belt.Option.getWithDefault([||]);
+            let newItems =
+              Belt.Array.concat([|Some(newAnnotation)|], items);
+
+            QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setCacheItems(
+              data,
+              newItems,
+            );
+          | None => {
+              "getAnnotationCollection":
+                Some({
+                  "label": tag##text,
+                  "first":
+                    Some({
+                      "items":
+                        Some({
+                          "items": Some({"annotation": Some(newAnnotation)}),
+                        }),
+                    }),
+                }),
+            }
+          };
+        ();
+      });
+  ();
 };
 
 /**
