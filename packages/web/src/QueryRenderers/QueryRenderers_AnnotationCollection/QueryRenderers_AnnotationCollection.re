@@ -75,7 +75,7 @@ module Data = {
         {annotations->Belt.Array.map(annotation =>
            <ScrollSnapList.Item
              key={annotation##id} direction=ScrollSnapList.Horizontal>
-             <Containers_AnnotationEditor_Notes
+             <Containers_AnnotationEditor_Annotation
                annotationFragment={annotation##editorAnnotationFragment}
                isActive={annotation##id === activeAnnotation##id}
                currentUser

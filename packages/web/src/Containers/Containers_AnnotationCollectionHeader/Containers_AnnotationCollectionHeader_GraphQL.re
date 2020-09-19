@@ -10,6 +10,14 @@ module GetAnnotationFragment = [%graphql
   {|
     fragment AnnotationCollectionHeader_Annotation on Annotation {
       id
+      body {
+        ... on TextualBody {
+          __typename
+          id
+          value
+          purpose
+        }
+      }
     }
   |}
 ];

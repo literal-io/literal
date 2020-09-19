@@ -1,6 +1,59 @@
 open Containers_AnnotationCollectionHeader_GraphQL;
 open Styles;
 
+let handleUpdateCache = (~input, ~annotation) => {
+  let _ =
+    annotation##body
+    ->Belt.Option.getWithDefault([||])
+    ->Belt.Array.keepMap(body =>
+        switch (body) {
+        | `TextualBody(body) when Lib_GraphQL.Annotation.isBodyTag(body) =>
+          Some(body)
+        | _ => None
+        }
+      )
+    ->Belt.Array.forEach(tag => {
+        let cacheQuery =
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
+            ~creatorUsername=input##creatorUsername,
+            ~id=tag##id->Belt.Option.getExn,
+            (),
+          );
+        let data =
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.readCache(
+            ~query=cacheQuery,
+            ~client=Providers_Apollo.client,
+            (),
+          );
+        let _ =
+          data
+          ->Belt.Option.flatMap(d => d##getAnnotationCollection)
+          ->Belt.Option.flatMap(d => d##first)
+          ->Belt.Option.flatMap(d => d##items)
+          ->Belt.Option.flatMap(d => d##items)
+          ->Belt.Option.forEach(items => {
+              let newItems =
+                items->Belt.Array.keep(d => d##annotation##id != input##id);
+              let newData =
+                QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setCacheItems(
+                  data,
+                  newItems,
+                );
+              let _ =
+                QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
+                  ~query=cacheQuery,
+                  ~client=Providers_Apollo.client,
+                  ~data=newData,
+                  (),
+                );
+              ();
+            });
+
+        ();
+      });
+  ();
+};
+
 [@react.component]
 let make =
     (
@@ -14,17 +67,15 @@ let make =
     );
 
   let handleDelete = (~annotation, ~currentUser) => {
-    let variables =
-      DeleteAnnotationMutation.makeVariables(
-        ~input={
-          "creatorUsername":
-            AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-          "id": annotation##id,
-        },
-        (),
-      );
+    let input = {
+      "creatorUsername":
+        AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+      "id": annotation##id,
+    };
+    let variables = DeleteAnnotationMutation.makeVariables(~input, ());
 
     let _ = deleteAnnotationMutation(~variables, ());
+    let _ = handleUpdateCache(~input, ~annotation);
     let cacheQuery =
       QueryRenderers_Annotations_GraphQL.ListAnnotations.Query.make(
         ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
