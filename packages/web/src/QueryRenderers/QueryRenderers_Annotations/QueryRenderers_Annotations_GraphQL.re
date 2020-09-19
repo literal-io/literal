@@ -16,7 +16,7 @@ module ListAnnotations = {
     |}
   ];
 
-  external fromCache: Js.Json.t => Query.t = "%identity";
+  external unsafeFromCache: Js.Json.t => Query.t = "%identity";
 
   /** FIXME: handle wrapped values **/
   let unsafeToCache = (data: Query.t) => {
@@ -58,11 +58,27 @@ module ListAnnotations = {
     switch (CacheReadQuery.readQuery(client, readQueryOptions)) {
     | exception _ => None
     | cachedResponse =>
-      cachedResponse->Js.Nullable.toOption->Belt.Option.map(fromCache)
+      cachedResponse->Js.Nullable.toOption->Belt.Option.map(unsafeFromCache)
     };
   };
 
+  /**
+   * Data in query format, i.e. with fragments. Note that this is note the
+   * type of data once it hits the cache, but is more typesafe to work with
+   * when manually creating new cache values.
+   */
   let writeCache = (~query, ~client, ~data, ()) => {
     CacheWriteQuery.make(~client, ~variables=query##variables, ~data, ());
   };
+
+  /**
+   * Data in cache format, i.e. everything inlined on GraphQL types. Not a good
+   * way to enforce type safety.
+   */
+  let unsafeWriteCache = (~query, ~client, ~data, ()) =>
+    writeCache(
+      ~query,
+      ~client,
+      ~data=unsafeFromCache(data)
+    );
 };

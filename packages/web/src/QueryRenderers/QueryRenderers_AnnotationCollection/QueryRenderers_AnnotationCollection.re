@@ -54,7 +54,6 @@ module Data = {
         ~client=Providers_Apollo.client,
         (),
       );
-    Js.log2("cache", cache);
 
     <div
       className={Cn.fromList([
@@ -123,28 +122,6 @@ let make =
         },
       GetAnnotationCollection.Query.definition,
     );
-
-  let annotations =
-    switch (query) {
-    | Data(data) =>
-      data##getAnnotationCollection
-      ->Belt.Option.flatMap(annotationCollection =>
-          annotationCollection##first
-        )
-      ->Belt.Option.flatMap(annotationPage => annotationPage##items)
-      ->Belt.Option.flatMap(annotationPageItemConnection =>
-          annotationPageItemConnection##items
-        )
-      ->Belt.Option.map(annotationPageItems =>
-          annotationPageItems->Belt.Array.keepMap(annotationPageItem =>
-            annotationPageItem->Belt.Option.map(annotationPageItem =>
-              annotationPageItem##annotation
-            )
-          )
-        )
-      ->Belt.Option.getWithDefault([||])
-    | _ => [||]
-    };
 
   switch (query, rehydrated, authentication) {
   | (Loading, _, _)

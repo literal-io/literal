@@ -22,25 +22,23 @@ let updateCache = (~currentUser, ~input) => {
     ->CreateAnnotationMutation.json_of_CreateAnnotationInput
     ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput;
 
-  let tags =
+  let _ =
     newAnnotation##body
     ->Belt.Option.map(bodies =>
-        bodies->Belt.Array.keepMap(body =>
-          switch (body) {
-          | `TextualBody(body) when Lib_GraphQL.Annotation.isBodyTag(body) =>
-            Some(body)
-          | `Nonexhaustive => None
-          | `TextualBody(_) => None
-          }
+        bodies->Belt.Array.keep(body =>
+          body##purpose->Belt.Array.some(p => p === "TAGGING")
+          &&
+          body##__typename == "TextualBody"
+          && !Js.Nullable.isNullable(body##id)
         )
       )
     ->Belt.Option.getWithDefault([||])
-    ->Belt.Array.map(tag => {
+    ->Belt.Array.forEach(tag => {
         let cacheQuery =
           QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
             ~creatorUsername=
               currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-            ~id=tag##id->Belt.Option.getExn,
+            ~id=tag##id->Js.Nullable.toOption->Belt.Option.getExn,
             (),
           );
         let data =
@@ -53,7 +51,7 @@ let updateCache = (~currentUser, ~input) => {
           input
           ->CreateAnnotationMutation.json_of_CreateAnnotationInput
           ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput;
-        let cacheUpdate =
+        let newData =
           switch (data) {
           | Some(data) =>
             let items =
@@ -63,79 +61,51 @@ let updateCache = (~currentUser, ~input) => {
               ->Belt.Option.flatMap(d => d##items)
               ->Belt.Option.getWithDefault([||]);
             let newItems =
-              Belt.Array.concat([|Some(newAnnotation)|], items);
+              Belt.Array.concat(
+                [|{"__typename": "", "annotation": newAnnotation}|],
+                items,
+              );
 
             QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setCacheItems(
               data,
               newItems,
             );
           | None => {
+              "__typename": "Query",
               "getAnnotationCollection":
                 Some({
-                  "label": tag##text,
+                  "__typename": "AnnotationCollection",
+                  "label": tag##value,
                   "first":
                     Some({
+                      "__typename": "AnnotationPage",
                       "items":
                         Some({
-                          "items": Some({"annotation": Some(newAnnotation)}),
+                          "__typename": "ModelAnnotationPageItemConnection",
+                          "items":
+                            Some([|
+                              {
+                                "__typename": "AnnotationPageItem",
+                                "annotation": newAnnotation,
+                              },
+                            |]),
                         }),
                     }),
                 }),
             }
           };
-        ();
-      });
-  ();
-};
-
-/**
-let updateCache = (~currentUser, ~input) => {
-  let cacheQuery =
-    QueryRenderers_Annotations_GraphQL.ListAnnotations.Query.make(
-      ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-      (),
-    );
-  let _ =
-    QueryRenderers_Annotations_GraphQL.ListAnnotations.readCache(
-      ~query=cacheQuery,
-      ~client=Providers_Apollo.client,
-      (),
-    )
-    ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
-    ->Belt.Option.flatMap(listAnnotations => listAnnotations##items)
-    ->Belt.Option.forEach(annotations => {
-        let newAnnotation =
-          input
-          ->CreateAnnotationMutation.json_of_CreateAnnotationInput
-          ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput;
-
-        let newAnnotations =
-          Belt.Array.concat(annotations, [|newAnnotation|]);
-
-        let newData = {
-          "listAnnotations":
-            Some({
-              "items": Some(newAnnotations),
-              "__typename": "ModelAnnotationConnection",
-            }),
-          "__typename": "Query",
-        };
-
         let _ =
-          QueryRenderers_Annotations_GraphQL.ListAnnotations.(
-            writeCache(
-              ~query=cacheQuery,
-              ~client=Providers_Apollo.client,
-              ~data=newData,
-              (),
-            )
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
+            ~query=cacheQuery,
+            ~client=Providers_Apollo.client,
+            ~data=newData,
+            (),
           );
         ();
       });
   ();
 };
 
-**/
 module PhaseTextInput = {
   [@react.component]
   let make = (~currentUser) => {
@@ -236,19 +206,17 @@ module PhaseTextInput = {
                "body": Js.Array2.length(body) > 0 ? Some(body) : None,
              };
 
-             Js.log2("input", input);
              let variables =
                CreateAnnotationMutation.makeVariables(~input, ());
 
              let _ = createAnnotationMutation(~variables, ());
              let _ = updateCache(~currentUser, ~input);
              let _ =
-               Routes.CreatorsIdAnnotationsId.(
+               Routes.CreatorsIdAnnotationCollectionsId.(
                  Next.Router.pushWithAs(
                    staticPath,
                    path(
-                     ~annotationIdComponent=
-                       Lib_GraphQL.Annotation.idComponent(id),
+                     ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
                      ~creatorUsername=currentUser.username,
                    ),
                  )

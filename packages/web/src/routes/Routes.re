@@ -39,7 +39,10 @@ module CreatorsIdAnnotationCollectionsId = {
   let staticPath = "/creators/[creatorUsername]/annotation-collections/[annotationCollectionIdComponent]";
 
   let path = (~creatorUsername, ~annotationCollectionIdComponent) =>
-    "/creators/" ++ creatorUsername ++ "/annotations/" ++ annotationCollectionIdComponent;
+    "/creators/"
+    ++ creatorUsername
+    ++ "/annotation-collections/"
+    ++ annotationCollectionIdComponent;
 
   [@decco]
   type params = {
