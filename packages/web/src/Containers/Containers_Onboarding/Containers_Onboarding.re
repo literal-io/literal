@@ -7,6 +7,106 @@ let onboardingNotes = [|
 |];
 
 let updateCache = (~currentUser, ~createAnnotationInputs) => {
+  let _ =
+    createAnnotationInputs
+    ->Belt.Array.map(annotationInput =>
+        annotationInput
+        ->OnboardingMutation.json_of_CreateAnnotationInput
+        ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput
+      )
+    ->Belt.Array.map(annotation =>
+        annotation##body
+        ->Js.Null.toOption
+        ->Belt.Option.getWithDefault([||])
+        ->Belt.Array.keepMap(body => {
+            let isTag =
+              body##purpose
+              ->Js.Null.toOption
+              ->Belt.Option.map(d => d->Belt.Array.some(p => p == "TAGGING"))
+              ->Belt.Option.getWithDefault(false)
+              &&
+              body##__typename == "TextualBody"
+              && body##id->Js.Null.toOption->Belt.Option.isSome;
+            isTag ? Some((annotation, body)) : None;
+          })
+      )
+    ->Belt.Array.concatMany
+    ->Belt.Array.forEach(((annotation, tag)) => {
+        let cacheQuery =
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
+            ~creatorUsername=
+              currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+            ~id=tag##id->Js.Null.toOption->Belt.Option.getExn,
+            (),
+          );
+        let data =
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.readCache(
+            ~query=cacheQuery,
+            ~client=Providers_Apollo.client,
+            (),
+          );
+        let newData =
+          switch (data) {
+          | Some(data) =>
+            let items =
+              data##getAnnotationCollection
+              ->Js.Null.toOption
+              ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
+              ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+              ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+              ->Belt.Option.getWithDefault([||]);
+            let newItems =
+              Belt.Array.concat(
+                [|
+                  {
+                    "__typename": "AnnotationPageItem",
+                    "annotation": annotation,
+                  },
+                |],
+                items,
+              );
+
+            QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setCacheItems(
+              data,
+              newItems,
+            );
+          | None => {
+              "__typename": "Query",
+              "getAnnotationCollection":
+                Js.Null.return({
+                  "__typename": "AnnotationCollection",
+                  "label": tag##value,
+                  "first":
+                    Js.Null.return({
+                      "__typename": "AnnotationPage",
+                      "items":
+                        Js.Null.return({
+                          "__typename": "ModelAnnotationPageItemConnection",
+                          "items":
+                            Js.Null.return([|
+                              {
+                                "__typename": "AnnotationPageItem",
+                                "annotation": annotation,
+                              },
+                            |]),
+                        }),
+                    }),
+                }),
+            }
+          };
+        let _ =
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
+            ~query=cacheQuery,
+            ~client=Providers_Apollo.client,
+            ~data=newData,
+            (),
+          );
+        ();
+      });
+  ();
+};
+
+let updateCache = (~currentUser, ~createAnnotationInputs) => {
   let cacheQuery =
     QueryRenderers_Annotations_GraphQL.ListAnnotations.Query.make(
       ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,

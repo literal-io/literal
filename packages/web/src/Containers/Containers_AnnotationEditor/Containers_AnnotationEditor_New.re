@@ -26,10 +26,13 @@ let updateCache = (~currentUser, ~input) => {
     newAnnotation##body
     ->Belt.Option.map(bodies =>
         bodies->Belt.Array.keep(body =>
-          body##purpose->Belt.Array.some(p => p === "TAGGING")
+          body##purpose
+          ->Js.Null.toOption
+          ->Belt.Option.map(d => d->Belt.Array.some(p => p === "TAGGING"))
+          ->Belt.Option.getWithDefault(false)
           &&
           body##__typename == "TextualBody"
-          && !Js.Nullable.isNullable(body##id)
+          && body##id->Js.Null.toOption->Belt.Option.isSome
         )
       )
     ->Belt.Option.getWithDefault([||])
@@ -38,7 +41,7 @@ let updateCache = (~currentUser, ~input) => {
           QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
             ~creatorUsername=
               currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-            ~id=tag##id->Js.Nullable.toOption->Belt.Option.getExn,
+            ~id=tag##id->Js.Null.toOption->Belt.Option.getExn,
             (),
           );
         let data =
@@ -56,9 +59,10 @@ let updateCache = (~currentUser, ~input) => {
           | Some(data) =>
             let items =
               data##getAnnotationCollection
-              ->Belt.Option.flatMap(d => d##first)
-              ->Belt.Option.flatMap(d => d##items)
-              ->Belt.Option.flatMap(d => d##items)
+              ->Js.Null.toOption
+              ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
+              ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+              ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
               ->Belt.Option.getWithDefault([||]);
             let newItems =
               Belt.Array.concat(
@@ -73,17 +77,17 @@ let updateCache = (~currentUser, ~input) => {
           | None => {
               "__typename": "Query",
               "getAnnotationCollection":
-                Some({
+                Js.Null.return({
                   "__typename": "AnnotationCollection",
                   "label": tag##value,
                   "first":
-                    Some({
+                    Js.Null.return({
                       "__typename": "AnnotationPage",
                       "items":
-                        Some({
+                        Js.Null.return({
                           "__typename": "ModelAnnotationPageItemConnection",
                           "items":
-                            Some([|
+                            Js.Null.return([|
                               {
                                 "__typename": "AnnotationPageItem",
                                 "annotation": newAnnotation,

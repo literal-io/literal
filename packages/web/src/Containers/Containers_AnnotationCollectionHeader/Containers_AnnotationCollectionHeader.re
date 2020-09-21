@@ -27,10 +27,12 @@ let handleUpdateCache = (~input, ~annotation) => {
           );
         let _ =
           data
-          ->Belt.Option.flatMap(d => d##getAnnotationCollection)
-          ->Belt.Option.flatMap(d => d##first)
-          ->Belt.Option.flatMap(d => d##items)
-          ->Belt.Option.flatMap(d => d##items)
+          ->Belt.Option.flatMap(d =>
+              d##getAnnotationCollection->Js.Null.toOption
+            )
+          ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
+          ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+          ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
           ->Belt.Option.forEach(items => {
               let newItems =
                 items->Belt.Array.keep(d => d##annotation##id != input##id);
@@ -76,45 +78,6 @@ let make =
 
     let _ = deleteAnnotationMutation(~variables, ());
     let _ = handleUpdateCache(~input, ~annotation);
-    let cacheQuery =
-      QueryRenderers_Annotations_GraphQL.ListAnnotations.Query.make(
-        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-        (),
-      );
-    let _ =
-      QueryRenderers_Annotations_GraphQL.ListAnnotations.readCache(
-        ~query=cacheQuery,
-        ~client=Providers_Apollo.client,
-        (),
-      )
-      ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
-      ->Belt.Option.flatMap(listAnnotations => listAnnotations##items)
-      ->Belt.Option.forEach(annotations => {
-          let newAnnotations =
-            annotations->Belt.Array.keep(cachedAnnotation =>
-              switch (cachedAnnotation) {
-              | Some(cachedAnnotation) =>
-                cachedAnnotation##id !== annotation##id
-              | None => false
-              }
-            );
-          let newData = {
-            "listAnnotations":
-              Some({
-                "__typename": "ModelAnnotationConnection",
-                "items": Some(newAnnotations),
-              }),
-            "__typename": "Query",
-          };
-          let _ =
-            QueryRenderers_Annotations_GraphQL.ListAnnotations.writeCache(
-              ~query=cacheQuery,
-              ~client=Providers_Apollo.client,
-              ~data=newData,
-              (),
-            );
-          ();
-        });
     ();
   };
 

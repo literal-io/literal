@@ -29,30 +29,30 @@ module GetAnnotationCollection = {
     .
     "__typename": string,
     "getAnnotationCollection":
-      option({
+      Js.Null.t({
         .
         "__typename": string,
         "label": string,
         "first":
-          option({
+          Js.Null.t({
             .
             "__typename": string,
             "items":
-              option({
+              Js.Null.t({
                 .
                 "__typename": string,
                 "items":
-                  option(
+                  Js.Null.t(
                     array({
                       .
                       "__typename": string,
                       "annotation": {
                         .
                         "__typename": string,
-                        "created": option(Js.Json.t),
+                        "created": Js.Null.t(Js.Json.t),
                         "id": string,
                         "body":
-                          option(
+                          Js.Null.t(
                             array({
                               .
                               "__typename": string,

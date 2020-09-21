@@ -45,10 +45,12 @@ let handleUpdateCache =
         );
       let _ =
         data
-        ->Belt.Option.flatMap(d => d##getAnnotationCollection)
-        ->Belt.Option.flatMap(d => d##first)
-        ->Belt.Option.flatMap(d => d##items)
-        ->Belt.Option.flatMap(d => d##items)
+        ->Belt.Option.flatMap(d =>
+            d##getAnnotationCollection->Js.Null.toOption
+          )
+        ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
+        ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+        ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
         ->Belt.Option.forEach(items => {
             let newItems =
               items->Belt.Array.keep(d => d##annotation##id != annotation##id);
@@ -148,7 +150,8 @@ let handleUpdateCache =
                   ->Js.Null.fromOption,
               }
             )
-        ),
+        )
+      ->Js.Null.fromOption,
     "target":
       annotation##target
       ->Belt.Array.map(d =>
@@ -261,9 +264,10 @@ let handleUpdateCache =
         | Some(data) =>
           let items =
             data##getAnnotationCollection
-            ->Belt.Option.flatMap(d => d##first)
-            ->Belt.Option.flatMap(d => d##items)
-            ->Belt.Option.flatMap(d => d##items)
+            ->Js.Null.toOption
+            ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
+            ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+            ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
             ->Belt.Option.getWithDefault([||]);
           let newItems =
             Belt.Array.concat(
@@ -278,17 +282,17 @@ let handleUpdateCache =
         | None => {
             "__typename": "Query",
             "getAnnotationCollection":
-              Some({
+              Js.Null.return({
                 "__typename": "AnnotationCollection",
                 "label": addedTag.text,
                 "first":
-                  Some({
+                  Js.Null.return({
                     "__typename": "AnnotationPage",
                     "items":
-                      Some({
+                      Js.Null.return({
                         "__typename": "ModelAnnotationPageItemConnection",
                         "items":
-                          Some([|
+                          Js.Null.return([|
                             {
                               "__typename": "AnnotationPageItem",
                               "annotation": cacheAnnotation,
