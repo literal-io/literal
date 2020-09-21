@@ -2,6 +2,7 @@ module GetAnnotationFragment = [%graphql
   {|
     fragment editorNotesAnnotationFragment on Annotation {
       id
+      created
       body {
         ... on TextualBody {
           id

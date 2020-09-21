@@ -49,35 +49,38 @@ module GetAnnotationCollection = {
                       "annotation": {
                         .
                         "__typename": string,
+                        "created": option(Js.Json.t),
                         "id": string,
                         "body":
-                          option(array({
+                          option(
+                            array({
+                              .
+                              "__typename": string,
+                              "id": Js.Null.t(string),
+                              "value": string,
+                              "purpose": Js.Null.t(array(string)),
+                              "format": Js.Null.t(string),
+                              "language": Js.Null.t(string),
+                              "processingLanguage": Js.Null.t(string),
+                              "accessibility": Js.Null.t(array(string)),
+                              "rights": Js.Null.t(array(string)),
+                              "textDirection": Js.Null.t(string),
+                            }),
+                          ),
+                        "target":
+                          array({
                             .
                             "__typename": string,
-                            "created": option(Js.Json.t),
-                            "id": option(string),
-                            "value": string,
-                            "purpose": option(array(string)),
-                            "format": option(string),
-                            "language": option(string),
-                            "processingLanguage": option(string),
-                            "accessibility": string,
-                            "rights": option(array(string)),
-                          })),
-                        "target":
-                          option(array({
-                            .
-                            "_typename": string,
-                            "value": string,
-                            "textualTargetId": option(string),
-                            "externalTargetId": option(string),
-                            "purpose": option(array(string)),
-                            "format": option(string),
-                            "language": option(string),
-                            "processingLanguage": option(string),
-                            "accessibility": string,
-                            "rights": option(array(string)),
-                          }))
+                            "value": Js.Null.t(string),
+                            "textualTargetId": Js.Null.t(string),
+                            "externalTargetId": Js.Null.t(string),
+                            "format": Js.Null.t(string),
+                            "language": Js.Null.t(string),
+                            "processingLanguage": Js.Null.t(string),
+                            "accessibility": Js.Null.t(array(string)),
+                            "rights": Js.Null.t(array(string)),
+                            "textDirection": Js.Null.t(string),
+                          }),
                       },
                     }),
                   ),

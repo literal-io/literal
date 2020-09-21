@@ -1,5 +1,317 @@
 open Containers_AnnotationEditor_Annotation_GraphQL;
 
+let handleUpdateCache =
+    (
+      ~annotation,
+      ~tags: array(Containers_AnnotationEditor_Base_Types.tag),
+      ~currentUser,
+    ) => {
+  let currentTags =
+    annotation##body
+    ->Belt.Option.getWithDefault([||])
+    ->Belt.Array.keepMap(body =>
+        switch (body) {
+        | `TextualBody(body) when Lib_GraphQL.Annotation.isBodyTag(body) =>
+          Some(body)
+        | _ => None
+        }
+      );
+
+  let addedTags =
+    tags->Belt.Array.keep(tag =>
+      currentTags
+      ->Belt.Array.getBy(currentTag => currentTag##id == tag.id)
+      ->Js.Option.isNone
+    );
+  let removedTags =
+    currentTags->Belt.Array.keep(currentTag =>
+      tags->Belt.Array.getBy(tag => tag.id == currentTag##id)->Js.Option.isNone
+    );
+
+  let _ =
+    removedTags->Belt.Array.forEach(removedTag => {
+      let cacheQuery =
+        QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
+          ~creatorUsername=
+            currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+          ~id=removedTag##id->Belt.Option.getExn,
+          (),
+        );
+      let data =
+        QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.readCache(
+          ~query=cacheQuery,
+          ~client=Providers_Apollo.client,
+          (),
+        );
+      let _ =
+        data
+        ->Belt.Option.flatMap(d => d##getAnnotationCollection)
+        ->Belt.Option.flatMap(d => d##first)
+        ->Belt.Option.flatMap(d => d##items)
+        ->Belt.Option.flatMap(d => d##items)
+        ->Belt.Option.forEach(items => {
+            let newItems =
+              items->Belt.Array.keep(d => d##annotation##id != annotation##id);
+            let newData =
+              QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setCacheItems(
+                data,
+                newItems,
+              );
+            let _ =
+              QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
+                ~query=cacheQuery,
+                ~client=Providers_Apollo.client,
+                ~data=newData,
+                (),
+              );
+            ();
+          });
+      ();
+    });
+
+  let cacheAnnotation = {
+    "__typename": "Annotation",
+    "created": annotation##created,
+    "id": annotation##id,
+    "body":
+      annotation##body
+      ->Belt.Option.map(d =>
+          d
+          ->Belt.Array.keepMap(d =>
+              switch (d) {
+              | `TextualBody(d) => Some(d)
+              | `Nonexhaustive => None
+              }
+            )
+          ->Belt.Array.map(d =>
+              {
+                "__typename": "TextualBody",
+                "id": d##id->Js.Null.fromOption,
+                "value": d##value,
+                "purpose":
+                  d##purpose
+                  ->Belt.Option.map(d =>
+                      d->Belt.Array.map(d =>
+                        switch (d) {
+                        | `TAGGING => "TAGGING"
+                        | `ACCESSING => "ACCESSING"
+                        | `BOOKMARKING => "BOOKMARKING"
+                        | `CLASSIFYING => "CLASSIFYING"
+                        | `COMMENTING => "COMMENTING"
+                        | `DESCRIBING => "DESCRIBING"
+                        | `EDITING => "EDITING"
+                        | `HIGHLIGHTING => "HIGHLIGHTING"
+                        | `IDENTIFYING => "IDENTIFYING"
+                        | `LINKING => "LINKING"
+                        | `MODERATING => "MODERATING"
+                        | `QUESTIONING => "QUESTIONING"
+                        | `REPLYING => "REPLYING"
+                        }
+                      )
+                    )
+                  ->Js.Null.fromOption,
+                "format":
+                  d##format
+                  ->Belt.Option.map(d =>
+                      switch (d) {
+                      | `TEXT_PLAIN => "TEXT_PLAIN"
+                      }
+                    )
+                  ->Js.Null.fromOption,
+                "language":
+                  d##language
+                  ->Belt.Option.map(d =>
+                      switch (d) {
+                      | `EN_US => "EN_US"
+                      }
+                    )
+                  ->Js.Null.fromOption,
+                "processingLanguage":
+                  d##processingLanguage
+                  ->Belt.Option.map(d =>
+                      switch (d) {
+                      | `EN_US => "EN_US"
+                      }
+                    )
+                  ->Js.Null.fromOption,
+                "accessibility": d##accessibility->Js.Null.fromOption,
+                "rights": d##rights->Js.Null.fromOption,
+                "textDirection":
+                  d##textDirection
+                  ->Belt.Option.map(d =>
+                      switch (d) {
+                      | `LTR => "LTR"
+                      | `RTL => "RTL"
+                      | `AUTO => "AUTO"
+                      }
+                    )
+                  ->Js.Null.fromOption,
+              }
+            )
+        ),
+    "target":
+      annotation##target
+      ->Belt.Array.map(d =>
+          switch (d) {
+          | `TextualTarget(d) => {
+              "__typename": "TextualTarget",
+              "value": Js.Null.return(d##value),
+              "textualTargetId": d##textualTargetId->Js.Null.fromOption,
+              "externalTargetId": Js.Null.empty,
+              "format":
+                d##format
+                ->Belt.Option.map(d =>
+                    switch (d) {
+                    | `TEXT_PLAIN => "TEXT_PLAIN"
+                    }
+                  )
+                ->Js.Null.fromOption,
+              "language":
+                d##language
+                ->Belt.Option.map(d =>
+                    switch (d) {
+                    | `EN_US => "EN_US"
+                    }
+                  )
+                ->Js.Null.fromOption,
+              "processingLanguage":
+                d##processingLanguage
+                ->Belt.Option.map(d =>
+                    switch (d) {
+                    | `EN_US => "EN_US"
+                    }
+                  )
+                ->Js.Null.fromOption,
+              "accessibility": d##accessibility->Js.Null.fromOption,
+              "rights": d##rights->Js.Null.fromOption,
+              "textDirection":
+                d##textDirection
+                ->Belt.Option.map(d =>
+                    switch (d) {
+                    | `LTR => "LTR"
+                    | `RTL => "RTL"
+                    | `AUTO => "AUTO"
+                    }
+                  )
+                ->Js.Null.fromOption,
+            }
+          | `ExternalTarget(d) => {
+              "__typename": "ExternalTarget",
+              "value": Js.Null.empty,
+              "textualTargetId": Js.Null.empty,
+              "externalTargetId": d##externalTargetId->Js.Null.return,
+              "format":
+                d##format
+                ->Belt.Option.map(d =>
+                    switch (d) {
+                    | `TEXT_PLAIN => "TEXT_PLAIN"
+                    }
+                  )
+                ->Js.Null.fromOption,
+              "language":
+                d##language
+                ->Belt.Option.map(d =>
+                    switch (d) {
+                    | `EN_US => "EN_US"
+                    }
+                  )
+                ->Js.Null.fromOption,
+              "processingLanguage":
+                d##processingLanguage
+                ->Belt.Option.map(d =>
+                    switch (d) {
+                    | `EN_US => "EN_US"
+                    }
+                  )
+                ->Js.Null.fromOption,
+              "accessibility": d##accessibility->Js.Null.fromOption,
+              "rights": d##rights->Js.Null.fromOption,
+              "textDirection":
+                d##textDirection
+                ->Belt.Option.map(d =>
+                    switch (d) {
+                    | `LTR => "LTR"
+                    | `RTL => "RTL"
+                    | `AUTO => "AUTO"
+                    }
+                  )
+                ->Js.Null.fromOption,
+            }
+          }
+        ),
+  };
+
+  let _ =
+    addedTags->Belt.Array.forEach(addedTag => {
+      let cacheQuery =
+        QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
+          ~creatorUsername=
+            currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+          ~id=addedTag.id->Belt.Option.getExn,
+          (),
+        );
+      let data =
+        QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.readCache(
+          ~query=cacheQuery,
+          ~client=Providers_Apollo.client,
+          (),
+        );
+      let newData =
+        switch (data) {
+        | Some(data) =>
+          let items =
+            data##getAnnotationCollection
+            ->Belt.Option.flatMap(d => d##first)
+            ->Belt.Option.flatMap(d => d##items)
+            ->Belt.Option.flatMap(d => d##items)
+            ->Belt.Option.getWithDefault([||]);
+          let newItems =
+            Belt.Array.concat(
+              [|{"__typename": "", "annotation": cacheAnnotation}|],
+              items,
+            );
+
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setCacheItems(
+            data,
+            newItems,
+          );
+        | None => {
+            "__typename": "Query",
+            "getAnnotationCollection":
+              Some({
+                "__typename": "AnnotationCollection",
+                "label": addedTag.text,
+                "first":
+                  Some({
+                    "__typename": "AnnotationPage",
+                    "items":
+                      Some({
+                        "__typename": "ModelAnnotationPageItemConnection",
+                        "items":
+                          Some([|
+                            {
+                              "__typename": "AnnotationPageItem",
+                              "annotation": cacheAnnotation,
+                            },
+                          |]),
+                      }),
+                  }),
+              }),
+          }
+        };
+      let _ =
+        QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
+          ~query=cacheQuery,
+          ~client=Providers_Apollo.client,
+          ~data=newData,
+          (),
+        );
+      ();
+    });
+
+  ();
+};
+
 let handleSave =
   Lodash.debounce2(
     (.
@@ -18,7 +330,8 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
   let (patchAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(PatchAnnotationMutation.definition);
 
-  let handleChange = (editorValue: Containers_AnnotationEditor_Base_Types.value) => {
+  let handleChange =
+      (editorValue: Containers_AnnotationEditor_Base_Types.value) => {
     let updateTargetInput = {
       let idx =
         annotation##target
@@ -72,7 +385,8 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
         Lib_GraphQL.Annotation.targetInputFromTarget,
       );
     };
-    let updateBodyInput = {
+
+    let tagsWithIds =
       editorValue.tags
       ->Belt.Array.map(tag => {
           let id =
@@ -87,10 +401,20 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
             };
           id
           |> Js.Promise.then_(id =>
-               Js.Promise.resolve({
+               Js.Promise.resolve({...tag, id: Some(id)})
+             );
+        })
+      ->Js.Promise.all;
+
+    let updateBodyInput = {
+      tagsWithIds
+      |> Js.Promise.then_(tags =>
+           tags
+           ->Belt.Array.map((tag: Containers_AnnotationEditor_Base_Types.tag) =>
+               {
                  "textualBody":
                    Some({
-                     "id": Some(id),
+                     "id": tag.id,
                      "value": tag.text,
                      "purpose": Some([|`TAGGING|]),
                      "rights": None,
@@ -104,13 +428,14 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
                  "externalBody": None,
                  "choiceBody": None,
                  "specificBody": None,
-               })
-             );
-        });
+               }
+             )
+           ->Js.Promise.resolve
+         );
     };
 
     let _ =
-      Js.Promise.all(updateBodyInput)
+      updateBodyInput
       |> Js.Promise.then_(updateBodyInput => {
            let variables =
              PatchAnnotationMutation.makeVariables(
@@ -135,6 +460,12 @@ let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
                (),
              );
            let _ = handleSave(. variables, patchAnnotationMutation);
+           Js.Promise.resolve();
+         });
+    let _ =
+      tagsWithIds
+      |> Js.Promise.then_(tags => {
+           let _ = handleUpdateCache(~annotation, ~currentUser, ~tags);
            Js.Promise.resolve();
          });
     ();
