@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
         String username = AWSMobileClient.getInstance().getUsername();
         String defaultUrl =
             username != null
-                ? Constants.WEB_HOST + "/creators/" + username + "/annotations"
+                ? Constants.WEB_HOST + "/creators/" + username + "/annotation-collections/" + Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT
                 : Constants.WEB_HOST + "/authenticate";
 
         if (savedInstanceState == null) {

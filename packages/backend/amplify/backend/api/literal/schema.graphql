@@ -604,7 +604,7 @@ type AnnotationPageItem
     timestamps: { createdAt: "created", updatedAt: "modified" }
   )
   @key(fields: ["creatorUsername", "id"])
-  @key(name: "byAnnotationPage", fields: ["annotationPageId", "annotationId"])
+  @key(name: "byAnnotationPage", fields: ["annotationPageId", "created"])
   @key(name: "byAnnotation", fields: ["annotationId", "annotationPageId"])
   @auth(
     rules: [
