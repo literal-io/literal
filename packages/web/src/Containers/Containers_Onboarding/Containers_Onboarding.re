@@ -106,57 +106,8 @@ let updateCache = (~currentUser, ~createAnnotationInputs) => {
   ();
 };
 
-let updateCache = (~currentUser, ~createAnnotationInputs) => {
-  let cacheQuery =
-    QueryRenderers_Annotations_GraphQL.ListAnnotations.Query.make(
-      ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-      (),
-    );
-  let _ =
-    QueryRenderers_Annotations_GraphQL.ListAnnotations.readCache(
-      ~query=cacheQuery,
-      ~client=Providers_Apollo.client,
-      (),
-    )
-    ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
-    ->Belt.Option.flatMap(listAnnotations => listAnnotations##items)
-    ->Belt.Option.forEach(annotations => {
-        let newAnnotations =
-          createAnnotationInputs->Belt.Array.map(annotationInput =>
-            annotationInput
-            ->OnboardingMutation.json_of_CreateAnnotationInput
-            ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput
-          );
-
-        let updatedAnnotations =
-          Belt.Array.concat(annotations, newAnnotations);
-
-        let newData = {
-          "listAnnotations":
-            Some({
-              "items": Some(updatedAnnotations),
-              "__typename": "ModelAnnotationConnection",
-            }),
-          "__typename": "Query",
-        };
-
-        let _ =
-          QueryRenderers_Annotations_GraphQL.ListAnnotations.(
-            writeCache(
-              ~query=cacheQuery,
-              ~client=Providers_Apollo.client,
-              ~data=newData,
-              (),
-            )
-          );
-        ();
-      });
-  ();
-};
-
 [@react.component]
 let make = (~currentUser) => {
-  let router = Next.Router.useRouter();
   let (onboardingMutation, _s, _f) =
     ApolloHooks.useMutation(OnboardingMutation.definition);
 
@@ -180,7 +131,37 @@ let make = (~currentUser) => {
                    "context": [|Lib_GraphQL.Annotation.defaultContext|],
                    "type": [|`ANNOTATION|],
                    "id": id,
-                   "body": None,
+                   "body":
+                     Some([|
+                       {
+                         "textualBody":
+                           Some({
+                             "id":
+                               Some(
+                                 Lib_GraphQL.AnnotationCollection.(
+                                   makeIdFromComponent(
+                                     ~creatorUsername=
+                                       currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                                     ~annotationCollectionIdComponent=recentAnnotationCollectionIdComponent,
+                                     (),
+                                   )
+                                 ),
+                               ),
+                             "value": "recent",
+                             "purpose": Some([|`TAGGING|]),
+                             "rights": None,
+                             "accessibility": None,
+                             "format": Some(`TEXT_PLAIN),
+                             "textDirection": Some(`LTR),
+                             "language": Some(`EN_US),
+                             "processingLanguage": Some(`EN_US),
+                             "type": Some(`TEXTUAL_BODY),
+                           }),
+                         "externalBody": None,
+                         "choiceBody": None,
+                         "specificBody": None,
+                       },
+                     |]),
                    "created": Some(ts->Js.Json.string),
                    "modified": Some(ts->Js.Json.string),
                    "generated": Some(ts->Js.Json.string),
@@ -225,15 +206,6 @@ let make = (~currentUser) => {
              let result = onboardingMutation(~variables, ());
              let _ =
                updateCache(~currentUser, ~createAnnotationInputs=inputs);
-             let _ =
-               Next.Router.replaceWithAs(
-                 Routes.CreatorsIdAnnotationsId.staticPath,
-                 Routes.CreatorsIdAnnotationsId.path(
-                   ~creatorUsername=inputs[0]##creatorUsername,
-                   ~annotationIdComponent=
-                     Lib_GraphQL.Annotation.idComponent(inputs[0]##id),
-                 ),
-               );
              result;
            })
         |> Js.Promise.then_(((mutationResult, _)) => {

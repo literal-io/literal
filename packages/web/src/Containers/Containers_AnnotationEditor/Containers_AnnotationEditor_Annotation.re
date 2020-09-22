@@ -73,7 +73,7 @@ let handleUpdateCache =
 
   let cacheAnnotation = {
     "__typename": "Annotation",
-    "created": annotation##created,
+    "created": annotation##created->Js.Null.fromOption,
     "id": annotation##id,
     "body":
       annotation##body

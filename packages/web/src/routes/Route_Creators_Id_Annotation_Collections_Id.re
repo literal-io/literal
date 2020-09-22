@@ -30,12 +30,7 @@ let default = (~rehydrated) => {
   | (Loading, Ok(routeParams))
   | (Authenticated(_), Ok(routeParams)) =>
     <QueryRenderers_AnnotationCollection
-      annotationCollectionId={Lib_GraphQL.AnnotationCollection.makeIdFromComponent(
-        ~creatorUsername=routeParams.creatorUsername,
-        ~annotationCollectionIdComponent=
-          routeParams.annotationCollectionIdComponent,
-        (),
-      )}
+      annotationCollectionIdComponent={routeParams.annotationCollectionIdComponent}
       onAnnotationIdChange=handleAnnotationIdChange
       authentication
       rehydrated

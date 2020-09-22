@@ -34,27 +34,6 @@ module Data = {
 
     let handleIdxChange = idx => setActiveIdx(_ => idx);
 
-    let cacheQuery =
-      QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
-        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-        ~id=
-          Lib_GraphQL.AnnotationCollection.(
-            makeIdFromComponent(
-              ~annotationCollectionIdComponent=recentAnnotationCollectionIdComponent,
-              ~creatorUsername=
-                currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-              (),
-            )
-          ),
-        (),
-      );
-    let cache =
-      QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.readCache(
-        ~query=cacheQuery,
-        ~client=Providers_Apollo.client,
-        (),
-      );
-
     <div
       className={Cn.fromList([
         "w-full",
@@ -95,7 +74,7 @@ module Empty = {
 [@react.component]
 let make =
     (
-      ~annotationCollectionId,
+      ~annotationCollectionIdComponent,
       ~onAnnotationIdChange,
       ~authentication: Hooks_CurrentUserInfo_Types.state,
       ~rehydrated,
@@ -115,7 +94,13 @@ let make =
           GetAnnotationCollection.Query.makeVariables(
             ~creatorUsername=
               currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-            ~id=annotationCollectionId,
+            ~id=
+              Lib_GraphQL.AnnotationCollection.makeIdFromComponent(
+                ~creatorUsername=
+                  currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                ~annotationCollectionIdComponent,
+                (),
+              ),
             (),
           )
         | _ => Js.Json.null
@@ -172,9 +157,15 @@ let make =
             };
           })
       })
-    ->Belt.Option.getWithDefault(<Empty />)
-  | (NoData, true, _)
-  | (Error(_), true, _)
+    ->Belt.Option.getWithDefault(<Containers_Onboarding currentUser />)
+  | (NoData, true, Authenticated(currentUser)) =>
+    <Containers_Onboarding currentUser />
+  | (Error(_), true, Authenticated(currentUser))
+      when
+        annotationCollectionIdComponent
+        == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent =>
+    <Containers_Onboarding currentUser />
+  | (Error(_), true, _) => /** FIXME: handle error **/ <Empty />
   | (_, _, Unauthenticated) => /** FIXME: handle redirect **/ <Empty />
   };
 };

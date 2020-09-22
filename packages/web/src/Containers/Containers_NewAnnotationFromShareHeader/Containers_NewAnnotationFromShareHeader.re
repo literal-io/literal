@@ -1,43 +1,58 @@
 open Styles;
 
 let handleUpdateCache = (~currentUser, ~annotation) => {
-  let cacheQuery =
-    QueryRenderers_Annotations_GraphQL.ListAnnotations.Query.make(
-      ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-      (),
-    );
   let _ =
-    QueryRenderers_Annotations_GraphQL.ListAnnotations.readCache(
-      ~query=cacheQuery,
-      ~client=Providers_Apollo.client,
-      (),
-    )
-    ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
-    ->Belt.Option.flatMap(listAnnotations => listAnnotations##items)
-    ->Belt.Option.forEach(annotations => {
-        let newAnnotations =
-          annotations->Belt.Array.keep(cachedAnnotation =>
-            switch (cachedAnnotation) {
-            | Some(cachedAnnotation) =>
-              cachedAnnotation##id !== annotation##id
-            | None => false
-            }
-          );
-        let newData = {
-          "listAnnotations":
-            Some({
-              "__typename": "ModelAnnotationConnection",
-              "items": Some(newAnnotations),
-            }),
-          "__typename": "Query",
-        };
-        let _ =
-          QueryRenderers_Annotations_GraphQL.ListAnnotations.writeCache(
-            ~query=cacheQuery,
-            ~client=Providers_Apollo.client,
-            ~data=newData,
+    annotation##body
+    ->Belt.Option.getWithDefault([||])
+    ->Belt.Array.keepMap(body =>
+        switch (body) {
+        | `TextualBody(body) when Lib_GraphQL.Annotation.isBodyTag(body) =>
+          Some(body)
+        | _ => None
+        }
+      )
+    ->Belt.Array.forEach(tag => {
+        let cacheQuery =
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
+            ~creatorUsername=
+              currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+            ~id=tag##id->Belt.Option.getExn,
             (),
           );
+        let data =
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.readCache(
+            ~query=cacheQuery,
+            ~client=Providers_Apollo.client,
+            (),
+          );
+        let _ =
+          data
+          ->Belt.Option.flatMap(d =>
+              d##getAnnotationCollection->Js.Null.toOption
+            )
+          ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
+          ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+          ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+          ->Belt.Option.forEach(items => {
+              let newItems =
+                items->Belt.Array.keep(d =>
+                  d##annotation##id != annotation##id
+                );
+              let newData =
+                QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setCacheItems(
+                  data,
+                  newItems,
+                );
+              let _ =
+                QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
+                  ~query=cacheQuery,
+                  ~client=Providers_Apollo.client,
+                  ~data=newData,
+                  (),
+                );
+              ();
+            });
+
         ();
       });
   ();
