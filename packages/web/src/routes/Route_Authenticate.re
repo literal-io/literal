@@ -10,11 +10,15 @@ let default = () => {
         let _ =
           switch (authentication) {
           | Authenticated(currentUser) =>
-            Routes.CreatorsIdAnnotationCollectionsId.path(
-              ~creatorUsername=currentUser.username,
-              ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
+            Routes.CreatorsIdAnnotationCollectionsId.(
+              Next.Router.replaceWithAs(
+                staticPath,
+                path(
+                  ~creatorUsername=currentUser.username,
+                  ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
+                ),
+              )
             )
-            ->Next.Router.replace
           | _ => ()
           };
         None;

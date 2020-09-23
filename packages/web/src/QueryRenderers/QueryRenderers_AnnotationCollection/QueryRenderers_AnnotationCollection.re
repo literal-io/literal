@@ -79,14 +79,14 @@ let make =
       ~authentication: Hooks_CurrentUserInfo_Types.state,
       ~rehydrated,
     ) => {
-  let (query, _fullQuery) =
+  let (_, query) =
     ApolloHooks.useQuery(
       ~skip=
         switch (authentication) {
         | Authenticated(_) when rehydrated => false
-        | _ when !rehydrated => true
         | Loading
         | Unauthenticated => true
+        | _ => true
         },
       ~variables=
         switch (authentication) {
@@ -108,64 +108,111 @@ let make =
       GetAnnotationCollection.Query.definition,
     );
 
-  switch (query, rehydrated, authentication) {
-  | (Loading, _, _)
-  | (_, false, _)
-  | (_, _, Loading) => <Loading />
-  | (Data(data), _, Authenticated(currentUser)) =>
-    data##getAnnotationCollection
-    ->Belt.Option.flatMap(annotationCollection => {
-        annotationCollection##first
-        ->Belt.Option.flatMap(annotationPage => annotationPage##items)
-        ->Belt.Option.flatMap(annotationPageItemConnection =>
-            annotationPageItemConnection##items
-          )
-        ->Belt.Option.flatMap(annotationPageItems => {
-            let annotations =
-              annotationPageItems->Belt.Array.keepMap(annotationPageItem =>
-                annotationPageItem->Belt.Option.map(annotationPageItem =>
-                  annotationPageItem##annotation
-                )
-              );
+  let handleFetchMore = () => {
+    let nextToken =
+      query.data
+      ->Belt.Option.flatMap(d => d##getAnnotationCollection)
+      ->Belt.Option.flatMap(d => d##first)
+      ->Belt.Option.flatMap(d => d##items)
+      ->Belt.Option.flatMap(d => d##nextToken);
 
-            if (Js.Array2.length(annotations) > 0) {
-              Some(
-                <Data
-                  onAnnotationIdChange
-                  initialAnnotationId=None
-                  currentUser
-                  annotationCollection
-                  annotations={
-                    annotations
-                    |> Ramda.sortBy(a => {
-                         /** FIXME: sort in query **/
-                         (
-                           -.
-                             a##created
-                             ->Belt.Option.flatMap(Js.Json.decodeString)
-                             ->Belt.Option.map(created =>
-                                 created->Js.Date.fromString->Js.Date.valueOf
-                               )
-                             ->Belt.Option.getWithDefault(0.)
-                         )
-                       })
-                  }
-                />,
-              );
-            } else {
-              None;
-            };
-          })
-      })
-    ->Belt.Option.getWithDefault(<Containers_Onboarding currentUser />)
-  | (NoData, true, Authenticated(currentUser)) =>
-    <Containers_Onboarding currentUser />
-  | (Error(_), true, Authenticated(currentUser))
-      when
-        annotationCollectionIdComponent
-        == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent =>
-    <Containers_Onboarding currentUser />
-  | (Error(_), true, _) => /** FIXME: handle error **/ <Empty />
-  | (_, _, Unauthenticated) => /** FIXME: handle redirect **/ <Empty />
+    let _ =
+      switch (nextToken, authentication) {
+      | (Some(nextToken), Authenticated(currentUser)) when !query.loading =>
+        let variables =
+          GetAnnotationCollection.Query.makeVariables(
+            ~creatorUsername=
+              currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+            ~id=
+              Lib_GraphQL.AnnotationCollection.makeIdFromComponent(
+                ~creatorUsername=
+                  currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                ~annotationCollectionIdComponent,
+                (),
+              ),
+            ~nextToken,
+            (),
+          );
+        let updateQuery = (prev, next) => {
+          Js.Json.null;
+        };
+        let _ = query.fetchMore(~variables, ~updateQuery, ());
+        ();
+      | _ => ()
+      };
+    ();
+  };
+
+  switch (query, rehydrated, authentication) {
+  | (_, false, _)
+  | (_, _, Loading)
+  | ({data: None, loading: true}, _, _) => <Loading />
+  | ({data: Some(data)}, true, Authenticated(currentUser)) =>
+    let isRecentAnnotationCollection =
+      annotationCollectionIdComponent
+      == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent;
+    switch (
+      data##getAnnotationCollection
+      ->Belt.Option.flatMap(annotationCollection =>
+          annotationCollection##first
+          ->Belt.Option.flatMap(annotationPage => annotationPage##items)
+          ->Belt.Option.flatMap(annotationPageItemConnection =>
+              annotationPageItemConnection##items
+            )
+          ->Belt.Option.map(annotationPageItems => {
+              let annotations =
+                annotationPageItems->Belt.Array.keepMap(annotationPageItem =>
+                  annotationPageItem->Belt.Option.map(annotationPageItem =>
+                    annotationPageItem##annotation
+                  )
+                );
+              (annotationCollection, annotations);
+            })
+        )
+    ) {
+    | None when isRecentAnnotationCollection =>
+      <Containers_Onboarding currentUser />
+    | None =>
+      <Redirect
+        staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath
+        path={Routes.CreatorsIdAnnotationCollectionsId.path(
+          ~creatorUsername=currentUser.username,
+          ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
+        )}>
+        <Loading />
+      </Redirect>
+    | Some((_, annotations))
+        when
+          isRecentAnnotationCollection && Js.Array2.length(annotations) == 0 =>
+      <Containers_Onboarding currentUser />
+    | Some((_, annotations)) when Js.Array2.length(annotations) == 0 =>
+      <Redirect
+        staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath
+        path={Routes.CreatorsIdAnnotationCollectionsId.path(
+          ~creatorUsername=currentUser.username,
+          ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
+        )}>
+        <Loading />
+      </Redirect>
+    | Some((annotationCollection, annotations)) =>
+      <Data
+        onAnnotationIdChange
+        onFetchMore=handleFetchMore
+        initialAnnotationId=None
+        currentUser
+        annotationCollection
+        annotations
+      />
+    };
+  | ({error: Some(_error)}, _, _) =>
+    /** FIXME: handle apollo error **/ <Empty />
+  | ({error: None, data: None, loading: false}, _, _) =>
+    /** FIXME: handle unexpected error **/ <Empty />
+  | (_, _, Unauthenticated) =>
+    <Redirect
+      staticPath={Routes.Authenticate.path()}
+      path={Routes.Authenticate.path()}>
+      <Loading />
+    </Redirect>
   };
 };

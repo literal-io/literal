@@ -1,11 +1,12 @@
 module GetAnnotationCollection = {
   module Query = [%graphql
     {|
-      query getAnnotationCollection($creatorUsername: String!, $id: String!) {
+      query getAnnotationCollection($creatorUsername: String!, $id: String!, $nextToken: String) {
         getAnnotationCollection(creatorUsername: $creatorUsername, id: $id) {
           ...Containers_AnnotationCollectionHeader_GraphQL.GetAnnotationCollectionFragment.AnnotationCollectionHeader_AnnotationCollection @bsField(name: "annotationCollectionHeader")
           first {
-            items(limit: 100) {
+            items(limit: 100, sortDirection: DESC, nextToken: $nextToken) {
+              nextToken
               items {
                 annotation {
                   created
