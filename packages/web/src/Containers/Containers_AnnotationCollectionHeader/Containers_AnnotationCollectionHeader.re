@@ -35,10 +35,12 @@ let handleUpdateCache = (~input, ~annotation) => {
           ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
           ->Belt.Option.forEach(items => {
               let newItems =
-                items->Belt.Array.keep(d => d##annotation##id != input##id);
+                items
+                ->Belt.Array.keep(d => d##annotation##id != input##id)
+                ->Js.Null.return;
               let newData =
-                QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setCacheItems(
-                  data,
+                QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setAnnotationPageItems(
+                  data->Belt.Option.getExn,
                   newItems,
                 );
               let _ =

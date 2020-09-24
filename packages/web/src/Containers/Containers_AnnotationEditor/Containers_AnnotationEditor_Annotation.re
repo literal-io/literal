@@ -53,10 +53,12 @@ let handleUpdateCache =
         ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
         ->Belt.Option.forEach(items => {
             let newItems =
-              items->Belt.Array.keep(d => d##annotation##id != annotation##id);
+              items
+              ->Belt.Array.keep(d => d##annotation##id != annotation##id)
+              ->Js.Null.return;
             let newData =
-              QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setCacheItems(
-                data,
+              QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setAnnotationPageItems(
+                data->Js.Option.getExn,
                 newItems,
               );
             let _ =
@@ -71,179 +73,10 @@ let handleUpdateCache =
       ();
     });
 
-  let cacheAnnotation = {
-    "__typename": "Annotation",
-    "created": annotation##created->Js.Null.fromOption,
-    "id": annotation##id,
-    "body":
-      annotation##body
-      ->Belt.Option.map(d =>
-          d
-          ->Belt.Array.keepMap(d =>
-              switch (d) {
-              | `TextualBody(d) => Some(d)
-              | `Nonexhaustive => None
-              }
-            )
-          ->Belt.Array.map(d =>
-              {
-                "__typename": "TextualBody",
-                "id": d##id->Js.Null.fromOption,
-                "value": d##value,
-                "purpose":
-                  d##purpose
-                  ->Belt.Option.map(d =>
-                      d->Belt.Array.map(d =>
-                        switch (d) {
-                        | `TAGGING => "TAGGING"
-                        | `ACCESSING => "ACCESSING"
-                        | `BOOKMARKING => "BOOKMARKING"
-                        | `CLASSIFYING => "CLASSIFYING"
-                        | `COMMENTING => "COMMENTING"
-                        | `DESCRIBING => "DESCRIBING"
-                        | `EDITING => "EDITING"
-                        | `HIGHLIGHTING => "HIGHLIGHTING"
-                        | `IDENTIFYING => "IDENTIFYING"
-                        | `LINKING => "LINKING"
-                        | `MODERATING => "MODERATING"
-                        | `QUESTIONING => "QUESTIONING"
-                        | `REPLYING => "REPLYING"
-                        }
-                      )
-                    )
-                  ->Js.Null.fromOption,
-                "format":
-                  d##format
-                  ->Belt.Option.map(d =>
-                      switch (d) {
-                      | `TEXT_PLAIN => "TEXT_PLAIN"
-                      }
-                    )
-                  ->Js.Null.fromOption,
-                "language":
-                  d##language
-                  ->Belt.Option.map(d =>
-                      switch (d) {
-                      | `EN_US => "EN_US"
-                      }
-                    )
-                  ->Js.Null.fromOption,
-                "processingLanguage":
-                  d##processingLanguage
-                  ->Belt.Option.map(d =>
-                      switch (d) {
-                      | `EN_US => "EN_US"
-                      }
-                    )
-                  ->Js.Null.fromOption,
-                "accessibility": d##accessibility->Js.Null.fromOption,
-                "rights": d##rights->Js.Null.fromOption,
-                "textDirection":
-                  d##textDirection
-                  ->Belt.Option.map(d =>
-                      switch (d) {
-                      | `LTR => "LTR"
-                      | `RTL => "RTL"
-                      | `AUTO => "AUTO"
-                      }
-                    )
-                  ->Js.Null.fromOption,
-              }
-            )
-        )
-      ->Js.Null.fromOption,
-    "target":
-      annotation##target
-      ->Belt.Array.map(d =>
-          switch (d) {
-          | `TextualTarget(d) => {
-              "__typename": "TextualTarget",
-              "value": Js.Null.return(d##value),
-              "textualTargetId": d##textualTargetId->Js.Null.fromOption,
-              "externalTargetId": Js.Null.empty,
-              "format":
-                d##format
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `TEXT_PLAIN => "TEXT_PLAIN"
-                    }
-                  )
-                ->Js.Null.fromOption,
-              "language":
-                d##language
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `EN_US => "EN_US"
-                    }
-                  )
-                ->Js.Null.fromOption,
-              "processingLanguage":
-                d##processingLanguage
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `EN_US => "EN_US"
-                    }
-                  )
-                ->Js.Null.fromOption,
-              "accessibility": d##accessibility->Js.Null.fromOption,
-              "rights": d##rights->Js.Null.fromOption,
-              "textDirection":
-                d##textDirection
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `LTR => "LTR"
-                    | `RTL => "RTL"
-                    | `AUTO => "AUTO"
-                    }
-                  )
-                ->Js.Null.fromOption,
-            }
-          | `ExternalTarget(d) => {
-              "__typename": "ExternalTarget",
-              "value": Js.Null.empty,
-              "textualTargetId": Js.Null.empty,
-              "externalTargetId": d##externalTargetId->Js.Null.return,
-              "format":
-                d##format
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `TEXT_PLAIN => "TEXT_PLAIN"
-                    }
-                  )
-                ->Js.Null.fromOption,
-              "language":
-                d##language
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `EN_US => "EN_US"
-                    }
-                  )
-                ->Js.Null.fromOption,
-              "processingLanguage":
-                d##processingLanguage
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `EN_US => "EN_US"
-                    }
-                  )
-                ->Js.Null.fromOption,
-              "accessibility": d##accessibility->Js.Null.fromOption,
-              "rights": d##rights->Js.Null.fromOption,
-              "textDirection":
-                d##textDirection
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `LTR => "LTR"
-                    | `RTL => "RTL"
-                    | `AUTO => "AUTO"
-                    }
-                  )
-                ->Js.Null.fromOption,
-            }
-          }
-        ),
-  };
-
+  let cacheAnnotation =
+    QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.parsedAnnotationToCache(
+      annotation,
+    );
   let _ =
     addedTags->Belt.Array.forEach(addedTag => {
       let cacheQuery =
@@ -270,12 +103,14 @@ let handleUpdateCache =
             ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
             ->Belt.Option.getWithDefault([||]);
           let newItems =
-            Belt.Array.concat(
-              [|{"__typename": "", "annotation": cacheAnnotation}|],
-              items,
+            Js.Null.return(
+              Belt.Array.concat(
+                [|{"__typename": "", "annotation": cacheAnnotation}|],
+                items,
+              ),
             );
 
-          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setCacheItems(
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setAnnotationPageItems(
             data,
             newItems,
           );
@@ -291,6 +126,7 @@ let handleUpdateCache =
                     "items":
                       Js.Null.return({
                         "__typename": "ModelAnnotationPageItemConnection",
+                        "nextToken": Js.Null.empty,
                         "items":
                           Js.Null.return([|
                             {

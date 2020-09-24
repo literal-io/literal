@@ -65,12 +65,19 @@ let updateCache = (~currentUser, ~input) => {
               ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
               ->Belt.Option.getWithDefault([||]);
             let newItems =
-              Belt.Array.concat(
-                [|{"__typename": "", "annotation": newAnnotation}|],
-                items,
+              Js.Null.return(
+                Belt.Array.concat(
+                  [|
+                    {
+                      "__typename": "AnnotationPageItem",
+                      "annotation": newAnnotation,
+                    },
+                  |],
+                  items,
+                ),
               );
 
-            QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setCacheItems(
+            QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setAnnotationPageItems(
               data,
               newItems,
             );
@@ -86,6 +93,7 @@ let updateCache = (~currentUser, ~input) => {
                       "items":
                         Js.Null.return({
                           "__typename": "ModelAnnotationPageItemConnection",
+                          "nextToken": Js.Null.empty,
                           "items":
                             Js.Null.return([|
                               {

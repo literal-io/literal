@@ -8,6 +8,7 @@ module Data = {
         ~annotations,
         ~initialAnnotationId,
         ~onAnnotationIdChange,
+        ~onFetchMore,
         ~currentUser,
       ) => {
     let (activeIdx, setActiveIdx) =
@@ -116,6 +117,7 @@ let make =
       ->Belt.Option.flatMap(d => d##items)
       ->Belt.Option.flatMap(d => d##nextToken);
 
+    /** FIXME: collections manually inserted into cache will have null nextToken, how do we still know to fetch? **/
     let _ =
       switch (nextToken, authentication) {
       | (Some(nextToken), Authenticated(currentUser)) when !query.loading =>
@@ -133,8 +135,44 @@ let make =
             ~nextToken,
             (),
           );
-        let updateQuery = (prev, next) => {
-          Js.Json.null;
+        let updateQuery = (prev, next: ApolloHooksQuery.updateQueryOptions) => {
+          let prevAnnotationPageItems =
+            GetAnnotationCollection.unsafeToCache(prev)##getAnnotationCollection
+            ->Js.Null.toOption
+            ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
+            ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+            ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+            ->Belt.Option.getWithDefault([||]);
+          let (newAnnotationNextToken, nextAnnotationPageItems) =
+            next
+            ->ApolloHooksQuery.fetchMoreResultGet
+            ->Belt.Option.flatMap(d =>
+                GetAnnotationCollection.unsafeToCache(d)##getAnnotationCollection
+                ->Js.Null.toOption
+              )
+            ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
+            ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+            ->Belt.Option.map(d =>
+                (
+                  d##nextToken,
+                  d##items->Js.Null.toOption->Belt.Option.getWithDefault([||]),
+                )
+              )
+            ->Belt.Option.getWithDefault((Js.Null.empty, [||]));
+          let newAnnotationPageItems =
+            Belt.Array.concat(
+              prevAnnotationPageItems,
+              nextAnnotationPageItems,
+            )
+            ->Js.Null.return;
+
+          prev
+          ->GetAnnotationCollection.unsafeToCache
+          ->GetAnnotationCollection.setAnnotationPageItems(
+              newAnnotationPageItems,
+            )
+          ->GetAnnotationCollection.setNextToken(newAnnotationNextToken)
+          ->GetAnnotationCollection.unsafeCacheToJson;
         };
         let _ = query.fetchMore(~variables, ~updateQuery, ());
         ();
