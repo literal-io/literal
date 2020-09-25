@@ -26,6 +26,21 @@ module CreatorsIdAnnotationCollectionsId = {
     creatorUsername: string,
     annotationCollectionIdComponent: string,
   };
+
+  [@decco]
+  type searchParams = {annotationId: option(string)};
+
+  let makeSearch = search =>
+    Webapi.Url.URLSearchParams.(
+      [|search.annotationId->Belt.Option.map(a => ("annotationId", a))|]
+      ->Belt.Array.keepMap(p => p)
+      ->makeWithArray
+      ->toString
+    );
+
+  let parseSearch = search => {
+    annotationId: Webapi.Url.URLSearchParams.get("annotationId", search),
+  };
 };
 
 module Authenticate = {

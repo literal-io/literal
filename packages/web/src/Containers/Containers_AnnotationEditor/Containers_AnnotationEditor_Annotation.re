@@ -126,7 +126,7 @@ let handleUpdateCache =
                     "items":
                       Js.Null.return({
                         "__typename": "ModelAnnotationPageItemConnection",
-                        "nextToken": Js.Null.empty,
+                        "nextToken": Js.Null.return(""),
                         "items":
                           Js.Null.return([|
                             {

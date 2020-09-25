@@ -28,12 +28,18 @@ module Data = {
       React.useEffect1(
         () => {
           let _ = onAnnotationIdChange(activeAnnotation##id);
+          if (activeIdx + 25 > Js.Array2.length(annotations)) {
+            let _ = onFetchMore();
+            ();
+          };
           None;
         },
         [|activeAnnotation|],
       );
 
-    let handleIdxChange = idx => setActiveIdx(_ => idx);
+    let handleIdxChange = idx => {
+      setActiveIdx(_ => idx);
+    };
 
     <div
       className={Cn.fromList([
@@ -78,6 +84,7 @@ let make =
       ~annotationCollectionIdComponent,
       ~onAnnotationIdChange,
       ~authentication: Hooks_CurrentUserInfo_Types.state,
+      ~initialAnnotationId,
       ~rehydrated,
     ) => {
   let (_, query) =
@@ -117,7 +124,6 @@ let make =
       ->Belt.Option.flatMap(d => d##items)
       ->Belt.Option.flatMap(d => d##nextToken);
 
-    /** FIXME: collections manually inserted into cache will have null nextToken, how do we still know to fetch? **/
     let _ =
       switch (nextToken, authentication) {
       | (Some(nextToken), Authenticated(currentUser)) when !query.loading =>
@@ -132,7 +138,8 @@ let make =
                 ~annotationCollectionIdComponent,
                 (),
               ),
-            ~nextToken,
+            ~nextToken=?
+              Js.String2.length(nextToken) > 0 ? Some(nextToken) : None,
             (),
           );
         let updateQuery = (prev, next: ApolloHooksQuery.updateQueryOptions) => {
@@ -236,7 +243,7 @@ let make =
       <Data
         onAnnotationIdChange
         onFetchMore=handleFetchMore
-        initialAnnotationId=None
+        initialAnnotationId
         currentUser
         annotationCollection
         annotations

@@ -1,6 +1,7 @@
 type router = {
   query: Js.Json.t,
   pathname: string,
+  asPath: string,
 };
 
 module Router = {
