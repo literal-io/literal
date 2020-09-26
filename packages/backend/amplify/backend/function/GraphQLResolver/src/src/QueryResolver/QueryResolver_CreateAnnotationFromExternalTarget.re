@@ -246,7 +246,32 @@ let createAnnotation = (~input, ~text) => {
           `ANNOTATION
         |],
         "id": id,
-        "body": None,
+        "body": Some([|
+          {
+            "textualBody": Some({
+               "id": Some(Lib_AnnotationCollection.(
+                   makeIdFromComponent(
+                     ~creatorUsername=input.creatorUsername,
+                     ~annotationCollectionIdComponent=
+                      recentAnnotationCollectionIdComponent,
+                    ()
+                   )
+                )),
+               "value": Lib_AnnotationCollection.recentAnnotationCollectionLabel,
+               "purpose": Some([|`TAGGING|]),
+               "rights": None,
+               "accessibility": None,
+               "format": Some(`TEXT_PLAIN),
+               "textDirection": Some(`LTR),
+               "language": Some(`EN_US),
+               "processingLanguage": Some(`EN_US),
+               "type": Some(`TEXTUAL_BODY),
+            }),
+            "externalBody": None,
+            "choiceBody": None,
+            "specificBody": None
+          }
+        |]),
         "target": [|
           {
             "textualTarget": None,

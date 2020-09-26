@@ -28,8 +28,6 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.apollographql.apollo.GraphQLCall;
 import com.apollographql.apollo.api.Response;
 import com.apollographql.apollo.exception.ApolloException;
@@ -38,7 +36,6 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
 
@@ -47,11 +44,15 @@ import javax.annotation.Nonnull;
 import io.literal.R;
 import io.literal.factory.AWSMobileClientFactory;
 import io.literal.factory.AppSyncClientFactory;
+import io.literal.lib.AnnotationCollectionLib;
+import io.literal.lib.AnnotationLib;
 import io.literal.lib.Constants;
 import io.literal.lib.ContentResolverLib;
 import io.literal.lib.Crypto;
 import io.literal.lib.WebEvent;
+import io.literal.lib.WebRoutes;
 import io.literal.ui.view.WebView;
+import type.AnnotationBodyInput;
 import type.AnnotationTargetInput;
 import type.AnnotationType;
 import type.CreateAnnotationFromExternalTargetInput;
@@ -62,6 +63,8 @@ import type.Language;
 import type.Motivation;
 import type.ResourceType;
 import type.TextDirection;
+import type.TextualBodyInput;
+import type.TextualBodyType;
 import type.TextualTargetInput;
 
 public class ShareTargetHandler extends AppCompatActivity {
@@ -183,6 +186,28 @@ public class ShareTargetHandler extends AppCompatActivity {
                                     .id(annotationId)
                                     .motivation(Collections.singletonList(Motivation.HIGHLIGHTING))
                                     .creatorUsername(creatorUsername)
+                                    .body(
+                                            Collections.singletonList(
+                                                    AnnotationBodyInput
+                                                            .builder()
+                                                            .textualBody(
+                                                                    TextualBodyInput
+                                                                            .builder()
+                                                                            .id(AnnotationCollectionLib.makeId(
+                                                                                    creatorUsername,
+                                                                                    Constants.RECENT_ANNOTATION_COLLECTION_LABEL
+                                                                            ))
+                                                                            .value(Constants.RECENT_ANNOTATION_COLLECTION_LABEL)
+                                                                            .purpose(Collections.singletonList(Motivation.TAGGING))
+                                                                            .format(Format.TEXT_PLAIN)
+                                                                            .textDirection(TextDirection.LTR)
+                                                                            .language(Language.EN_US)
+                                                                            .type(TextualBodyType.TEXTUAL_BODY)
+                                                                            .build()
+                                                            )
+                                                            .build()
+                                            )
+                                    )
                                     .target(Collections.singletonList(
                                             AnnotationTargetInput
                                                     .builder()
@@ -390,11 +415,18 @@ public class ShareTargetHandler extends AppCompatActivity {
                         }
 
                         Intent intent = new Intent(ShareTargetHandler.this, MainActivity.class);
-                        intent.setData(Uri.parse(annotation.id()));
+                        Uri annotationUri = Uri.parse(
+                                WebRoutes.creatorsIdAnnotationCollectionIdAnnotationId(
+                                        AWSMobileClient.getInstance().getUsername(),
+                                        Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT,
+                                        AnnotationLib.idComponentFromId(annotation.id())
+                                )
+                        );
+                        intent.setData(annotationUri);
                         PendingIntent pendingIntent = PendingIntent.getActivity(ShareTargetHandler.this, 0, intent, 0);
 
                         String textualTargetValue = null;
-                        for (GetAnnotationForNotificationQuery.Target target: annotation.target()) {
+                        for (GetAnnotationForNotificationQuery.Target target : annotation.target()) {
                             GetAnnotationForNotificationQuery.AsTextualTarget textualTarget = target.asTextualTarget();
                             if (textualTarget != null) {
                                 textualTargetValue = textualTarget.value();
