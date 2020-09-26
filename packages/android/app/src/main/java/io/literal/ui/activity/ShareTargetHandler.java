@@ -172,8 +172,15 @@ public class ShareTargetHandler extends AppCompatActivity {
         String creatorUsername = AWSMobileClient.getInstance().getUsername();
         try {
             String valueHash = Crypto.sha256Hex(text);
-            String annotationId = Constants.WEB_HOST + "/creators/" + creatorUsername + "/annotations/" + valueHash;
-            String uri = Constants.WEB_HOST + "/creators/" + creatorUsername + "/annotations/new?id=" + valueHash;
+            String annotationId = WebRoutes.creatorsIdAnnotationId(
+                    Constants.API_HOST,
+                    creatorUsername,
+                    valueHash
+            );
+            String uri = WebRoutes.creatorsIdAnnotationsNewAnnotationId(
+                    creatorUsername,
+                    valueHash
+            );
             webView.loadUrl(uri);
 
             CreateAnnotationMutation createHighlightMutation = CreateAnnotationMutation
@@ -277,8 +284,15 @@ public class ShareTargetHandler extends AppCompatActivity {
 
         String screenshotId = UUID.randomUUID().toString();
         String creatorUsername = AWSMobileClient.getInstance().getUsername();
-        String annotationId = Constants.WEB_HOST + "/creators/" + creatorUsername + "/annotations/" + screenshotId;
-        String uri = Constants.WEB_HOST + "/creators/" + creatorUsername + "/annotations/new?id=" + screenshotId;
+        String annotationId = WebRoutes.creatorsIdAnnotationId(
+                Constants.API_HOST,
+                creatorUsername,
+                screenshotId
+        );
+        String uri = WebRoutes.creatorsIdAnnotationsNewAnnotationId(
+                creatorUsername,
+                screenshotId
+        );
         webView.loadUrl(uri);
 
         JSONObject s3TransferUtilityJson = AppSyncClientFactory

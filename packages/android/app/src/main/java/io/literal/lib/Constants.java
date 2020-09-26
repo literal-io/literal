@@ -6,6 +6,7 @@ public class Constants {
     public static final String LOG_TAG = "Literal";
 
     public static final String WEB_HOST = BuildConfig.DEBUG ? "http://localhost:3000" : "https://literal.io";
+    public static final String API_HOST = "https://literal.io";
 
     public static final String NOTIFICATION_CHANNEL_ANNOTATION_CREATED_ID = "ANNOTATION_CREATED";
     public static final String NOTIFICATION_CHANNEL_ANNOTATION_CREATED_NAME = "Annotation created";

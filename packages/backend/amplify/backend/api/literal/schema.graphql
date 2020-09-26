@@ -458,7 +458,9 @@ type Agent
   email: [String]
   homepage: [String]
 
-  # non-spec
+  """
+  Non-spec: creator relationship for the Annotation
+  """
   username: String!
 }
 

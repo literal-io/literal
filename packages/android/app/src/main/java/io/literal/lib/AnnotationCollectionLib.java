@@ -5,6 +5,7 @@ public class AnnotationCollectionLib {
         try {
             String idComponent = Crypto.sha256Hex(labelText);
             return WebRoutes.creatorsIdAnnotationCollectionId(
+                    Constants.API_HOST,
                     creatorUsername,
                     idComponent
             );
