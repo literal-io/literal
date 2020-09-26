@@ -1,7 +1,7 @@
 open Styles;
-open Containers_NoteEditor_Base_Types;
+open Containers_AnnotationEditor_Base_Types;
 
-let styles = [%raw "require('./Containers_NoteEditor_Base.module.css')"];
+let styles = [%raw "require('./Containers_AnnotationEditor_Base.module.css')"];
 
 [@react.component]
 let make =
@@ -45,14 +45,19 @@ let make =
               | `Nonexhaustive => None
               | `TextualBody(body) =>
                 Lib_GraphQL.Annotation.isBodyTag(body)
-                  ? Some({text: body##value, id: None}) : None
+                  ? Some({text: body##value, id: body##id}) : None
               }
             );
           {partial: "", commits, filterResults: [||]};
         })
       ->Belt.Option.getWithDefault({
           partial: "",
-          commits: [||],
+          commits: [|
+            {
+              text: Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel,
+              id: None,
+            },
+          |],
           filterResults: [||],
         })
     );
@@ -77,7 +82,7 @@ let make =
     setTagsState(tagsState => {
       let updatedCommits =
         s.commits
-        ->Belt.Array.map(text => {
+        ->Belt.Array.map(({text}) => {
             switch (
               Belt.Array.getBy(tagsState.commits, tag => tag.text === text),
               tagsState.filterResults
@@ -138,14 +143,14 @@ let make =
       "overflow-y-auto",
     ])}>
     <div className={cn(["px-6", "pb-4", "pt-16"])}>
-      <TextInput.Highlight
+      <TextInput.Annotation
         className={cn([styles##underline])}
         onTextChange=handleTextChange
         textValue=textState
-        tagsValue={
-          TextInput_Tags.Value.partial: tagsState.partial,
-          commits: tagsState.commits->Belt.Array.map(t => t.text),
-        }
+        tagsValue={TextInput_Tags.Value.fromTagsState(
+          ~state=tagsState,
+          ~currentUser,
+        )}
         onTagsChange=handleTagsChange
         tagsInputRef
         ?placeholder

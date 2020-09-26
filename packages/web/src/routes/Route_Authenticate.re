@@ -1,7 +1,5 @@
 open Styles;
 
-let _ = AwsAmplify.(inst->configure(Constants.awsAmplifyConfig));
-
 [@react.component]
 let default = () => {
   let authentication = Hooks_CurrentUserInfo.use();
@@ -12,10 +10,15 @@ let default = () => {
         let _ =
           switch (authentication) {
           | Authenticated(currentUser) =>
-            Routes.CreatorsIdAnnotations.path(
-              ~creatorUsername=currentUser.username,
+            Routes.CreatorsIdAnnotationCollectionsId.(
+              Next.Router.replaceWithAs(
+                staticPath,
+                path(
+                  ~creatorUsername=currentUser.username,
+                  ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
+                ),
+              )
             )
-            ->Next.Router.replace
           | _ => ()
           };
         None;

@@ -1,11 +1,11 @@
 open Styles;
-open Containers_NoteEditor_NewFromShare_GraphQL;
+open Containers_AnnotationEditor_NewFromShare_GraphQL;
 
 [@react.component]
 let make = (~annotationFragment as annotation, ~currentUser) => {
   let (editorValue, setEditorValue) =
     React.useState(() =>
-      Containers_NoteEditor_Base_Types.{text: "", tags: [||]}
+      Containers_AnnotationEditor_Base_Types.{text: "", tags: [||]}
     );
 
   let (patchAnnotationMutation, _s, _f) =
@@ -141,7 +141,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
   let handleChange = value => setEditorValue(_ => value);
 
   <>
-    <Containers_NoteEditor_Base
+    <Containers_AnnotationEditor_Base
       annotationFragment=annotation
       onChange=handleChange
       autoFocus=true

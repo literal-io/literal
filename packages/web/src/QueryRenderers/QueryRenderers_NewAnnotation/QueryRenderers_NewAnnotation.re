@@ -12,6 +12,6 @@ let make = (~currentUser, ~initialPhaseState=?) =>
       "relative",
       "overflow-y-auto",
     ])}>
-    <Containers_NewNoteHeader />
-    <Containers_NoteEditor_New currentUser ?initialPhaseState />
+    <Containers_NewAnnotationHeader />
+    <Containers_AnnotationEditor_New currentUser ?initialPhaseState />
   </div>;

@@ -1,5 +1,5 @@
 open Styles;
-let styles = [%raw "require('./TextInput_Highlight.module.css')"];
+let styles = [%raw "require('./TextInput_Annotation.module.css')"];
 
 [@react.component]
 let make =

@@ -2,6 +2,7 @@ module GetAnnotationFragment = [%graphql
   {|
     fragment editorNotesAnnotationFragment on Annotation {
       id
+      created
       body {
         ... on TextualBody {
           id
@@ -53,7 +54,6 @@ module PatchAnnotationMutation = [%graphql
     patchAnnotation(input: $input) {
       annotation {
         ...GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
-        ...Containers_NoteHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerAnnotationFragment")
       }
     }
   }

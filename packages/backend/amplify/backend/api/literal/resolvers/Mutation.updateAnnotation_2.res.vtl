@@ -83,6 +83,7 @@
         "id": $annotationPageId,
         "type": ["ANNOTATION_PAGE"],
         "partOf": $annotationCollectionId,
+        "partOfAnnotationCollectionId": $annotationCollectionId,
         "startIndex": 0,
         "creatorUsername": $ctx.stash.creatorUsername,
         "created": $util.time.nowISO8601(),
@@ -114,7 +115,9 @@
         "label": $body.value,
         "total": 1,
         "first": $annotationPageId,
+        "firstAnnotationPageId": $annotationPageId,
         "last": $annotationPageId,
+        "lastAnnotationPageId": $annotationPageId
         "creatorUsername": $identity,
         "created": $util.time.nowISO8601(),
         "modified": $util.time.nowISO8601(),

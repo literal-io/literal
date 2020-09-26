@@ -1,5 +1,5 @@
 open Styles;
-open Containers_NoteEditor_New_GraphQL;
+open Containers_AnnotationEditor_New_GraphQL;
 
 [@bs.deriving jsConverter]
 type phase = [ | `PhasePrompt | `PhaseTextInput];
@@ -17,45 +17,101 @@ type action =
   | SetPhase(phase);
 
 let updateCache = (~currentUser, ~input) => {
-  let cacheQuery =
-    QueryRenderers_Notes_GraphQL.ListAnnotations.Query.make(
-      ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-      (),
-    );
+  let newAnnotation =
+    input
+    ->CreateAnnotationMutation.json_of_CreateAnnotationInput
+    ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput;
+
   let _ =
-    QueryRenderers_Notes_GraphQL.ListAnnotations.readCache(
-      ~query=cacheQuery,
-      ~client=Providers_Apollo.client,
-      (),
-    )
-    ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
-    ->Belt.Option.flatMap(listAnnotations => listAnnotations##items)
-    ->Belt.Option.forEach(annotations => {
+    newAnnotation##body
+    ->Belt.Option.map(bodies =>
+        bodies->Belt.Array.keep(body =>
+          body##purpose
+          ->Js.Null.toOption
+          ->Belt.Option.map(d => d->Belt.Array.some(p => p === "TAGGING"))
+          ->Belt.Option.getWithDefault(false)
+          &&
+          body##__typename == "TextualBody"
+          && body##id->Js.Null.toOption->Belt.Option.isSome
+        )
+      )
+    ->Belt.Option.getWithDefault([||])
+    ->Belt.Array.forEach(tag => {
+        let cacheQuery =
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
+            ~creatorUsername=
+              currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+            ~id=tag##id->Js.Null.toOption->Belt.Option.getExn,
+            (),
+          );
+        let data =
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.readCache(
+            ~query=cacheQuery,
+            ~client=Providers_Apollo.client,
+            (),
+          );
         let newAnnotation =
           input
           ->CreateAnnotationMutation.json_of_CreateAnnotationInput
           ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput;
+        let newData =
+          switch (data) {
+          | Some(data) =>
+            let items =
+              data##getAnnotationCollection
+              ->Js.Null.toOption
+              ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
+              ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+              ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+              ->Belt.Option.getWithDefault([||]);
+            let newItems =
+              Js.Null.return(
+                Belt.Array.concat(
+                  [|
+                    {
+                      "__typename": "AnnotationPageItem",
+                      "annotation": newAnnotation,
+                    },
+                  |],
+                  items,
+                ),
+              );
 
-        let newAnnotations =
-          Belt.Array.concat(annotations, [|newAnnotation|]);
-
-        let newData = {
-          "listAnnotations":
-            Some({
-              "items": Some(newAnnotations),
-              "__typename": "ModelAnnotationConnection",
-            }),
-          "__typename": "Query",
-        };
-
+            QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setAnnotationPageItems(
+              data,
+              newItems,
+            );
+          | None => {
+              "__typename": "Query",
+              "getAnnotationCollection":
+                Js.Null.return({
+                  "__typename": "AnnotationCollection",
+                  "label": tag##value,
+                  "first":
+                    Js.Null.return({
+                      "__typename": "AnnotationPage",
+                      "items":
+                        Js.Null.return({
+                          "__typename": "ModelAnnotationPageItemConnection",
+                          "nextToken": Js.Null.return(""),
+                          "items":
+                            Js.Null.return([|
+                              {
+                                "__typename": "AnnotationPageItem",
+                                "annotation": newAnnotation,
+                              },
+                            |]),
+                        }),
+                    }),
+                }),
+            }
+          };
         let _ =
-          QueryRenderers_Notes_GraphQL.ListAnnotations.(
-            writeCache(
-              ~query=cacheQuery,
-              ~client=Providers_Apollo.client,
-              ~data=newData,
-              (),
-            )
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
+            ~query=cacheQuery,
+            ~client=Providers_Apollo.client,
+            ~data=newData,
+            (),
           );
         ();
       });
@@ -67,7 +123,15 @@ module PhaseTextInput = {
   let make = (~currentUser) => {
     let (editorValue, setEditorValue) =
       React.useState(() =>
-        Containers_NoteEditor_Base_Types.{text: "", tags: [||]}
+        Containers_AnnotationEditor_Base_Types.{
+          text: "",
+          tags: [|
+            {
+              text: Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel,
+              id: None,
+            },
+          |],
+        }
       );
     let (createAnnotationMutation, _s, _f) =
       ApolloHooks.useMutation(CreateAnnotationMutation.definition);
@@ -153,18 +217,18 @@ module PhaseTextInput = {
                |],
                "body": Js.Array2.length(body) > 0 ? Some(body) : None,
              };
+
              let variables =
                CreateAnnotationMutation.makeVariables(~input, ());
 
              let _ = createAnnotationMutation(~variables, ());
              let _ = updateCache(~currentUser, ~input);
              let _ =
-               Routes.CreatorsIdAnnotationsId.(
+               Routes.CreatorsIdAnnotationCollectionsId.(
                  Next.Router.pushWithAs(
                    staticPath,
                    path(
-                     ~annotationIdComponent=
-                       Lib_GraphQL.Annotation.idComponent(id),
+                     ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
                      ~creatorUsername=currentUser.username,
                    ),
                  )
@@ -177,7 +241,7 @@ module PhaseTextInput = {
     let handleChange = value => setEditorValue(_ => value);
 
     <>
-      <Containers_NoteEditor_Base
+      <Containers_AnnotationEditor_Base
         onChange=handleChange
         autoFocus=true
         placeholder="Lorem Ipsum"

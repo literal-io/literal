@@ -1,64 +1,85 @@
-open Containers_NoteHeader_GraphQL;
+open Containers_AnnotationCollectionHeader_GraphQL;
 open Styles;
 
+let handleUpdateCache = (~input, ~annotation) => {
+  let _ =
+    annotation##body
+    ->Belt.Option.getWithDefault([||])
+    ->Belt.Array.keepMap(body =>
+        switch (body) {
+        | `TextualBody(body) when Lib_GraphQL.Annotation.isBodyTag(body) =>
+          Some(body)
+        | _ => None
+        }
+      )
+    ->Belt.Array.forEach(tag => {
+        let cacheQuery =
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
+            ~creatorUsername=input##creatorUsername,
+            ~id=tag##id->Belt.Option.getExn,
+            (),
+          );
+        let data =
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.readCache(
+            ~query=cacheQuery,
+            ~client=Providers_Apollo.client,
+            (),
+          );
+        let _ =
+          data
+          ->Belt.Option.flatMap(d =>
+              d##getAnnotationCollection->Js.Null.toOption
+            )
+          ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
+          ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+          ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+          ->Belt.Option.forEach(items => {
+              let newItems =
+                items
+                ->Belt.Array.keep(d => d##annotation##id != input##id)
+                ->Js.Null.return;
+              let newData =
+                QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setAnnotationPageItems(
+                  data->Belt.Option.getExn,
+                  newItems,
+                );
+              let _ =
+                QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
+                  ~query=cacheQuery,
+                  ~client=Providers_Apollo.client,
+                  ~data=newData,
+                  (),
+                );
+              ();
+            });
+
+        ();
+      });
+  ();
+};
+
 [@react.component]
-let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
+let make =
+    (
+      ~annotationFragment as annotation=?,
+      ~annotationCollectionFragment as annotationCollection=?,
+      ~currentUser=?,
+    ) => {
   let (deleteAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(
-      Containers_NoteHeader_GraphQL.DeleteAnnotationMutation.definition,
+      Containers_AnnotationCollectionHeader_GraphQL.DeleteAnnotationMutation.definition,
     );
 
   let handleDelete = (~annotation, ~currentUser) => {
-    let variables =
-      DeleteAnnotationMutation.makeVariables(
-        ~input={
-          "creatorUsername":
-            AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-          "id": annotation##id,
-        },
-        (),
-      );
+    let input = {
+      "creatorUsername":
+        AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+      "id": annotation##id,
+    };
+    let variables = DeleteAnnotationMutation.makeVariables(~input, ());
 
     let _ = deleteAnnotationMutation(~variables, ());
-    let cacheQuery =
-      QueryRenderers_Notes_GraphQL.ListAnnotations.Query.make(
-        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-        (),
-      );
-    let _ =
-      QueryRenderers_Notes_GraphQL.ListAnnotations.readCache(
-        ~query=cacheQuery,
-        ~client=Providers_Apollo.client,
-        (),
-      )
-      ->Belt.Option.flatMap(cachedQuery => cachedQuery##listAnnotations)
-      ->Belt.Option.flatMap(listAnnotations => listAnnotations##items)
-      ->Belt.Option.forEach(annotations => {
-          let newAnnotations =
-            annotations->Belt.Array.keep(cachedAnnotation =>
-              switch (cachedAnnotation) {
-              | Some(cachedAnnotation) =>
-                cachedAnnotation##id !== annotation##id
-              | None => false
-              }
-            );
-          let newData = {
-            "listAnnotations":
-              Some({
-                "__typename": "ModelAnnotationConnection",
-                "items": Some(newAnnotations),
-              }),
-            "__typename": "Query",
-          };
-          let _ =
-            QueryRenderers_Notes_GraphQL.ListAnnotations.writeCache(
-              ~query=cacheQuery,
-              ~client=Providers_Apollo.client,
-              ~data=newData,
-              (),
-            );
-          ();
-        });
+    let _ = handleUpdateCache(~input, ~annotation);
     ();
   };
 
@@ -110,7 +131,9 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
           "leading-none",
           "text-xl",
         ])}>
-        {React.string("recent")}
+        {annotationCollection
+         ->Belt.Option.map(ac => React.string(ac##label))
+         ->Belt.Option.getWithDefault(React.null)}
       </h1>
       <div className={cn(["flex", "flex-row"])}>
         <MaterialUi.IconButton

@@ -10,7 +10,7 @@ type labelBeginsWith = {
 let make =
     (
       ~currentUser,
-      ~tagsState: Containers_NoteEditor_Base_Types.tagState,
+      ~tagsState: Containers_AnnotationEditor_Base_Types.tagState,
       ~onTagResults,
       ~onTagClicked,
     ) => {
@@ -53,7 +53,7 @@ let make =
             | Some(_) => None
             | None =>
               Some(
-                Containers_NoteEditor_Base_Types.{
+                Containers_AnnotationEditor_Base_Types.{
                   text: annotationCollection##label,
                   id: Some(annotationCollection##id),
                 },

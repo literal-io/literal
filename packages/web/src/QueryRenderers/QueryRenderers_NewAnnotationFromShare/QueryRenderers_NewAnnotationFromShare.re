@@ -1,5 +1,5 @@
 open Styles;
-open QueryRenderers_NewNoteFromShare_GraphQL;
+open QueryRenderers_NewAnnotationFromShare_GraphQL;
 
 let pollInterval = 500;
 let pollTimeout = 15 * 1000;
@@ -18,11 +18,11 @@ module Data = {
         "relative",
         "overflow-y-auto",
       ])}>
-      <Containers_NewNoteFromShareHeader
+      <Containers_NewAnnotationFromShareHeader
         currentUser
         annotationFragment={annotation##headerAnnotationFragment}
       />
-      <Containers_NoteEditor_NewFromShare
+      <Containers_AnnotationEditor_NewFromShare
         currentUser
         annotationFragment={annotation##editorAnnotationFragment}
       />
@@ -34,7 +34,7 @@ module Loading = {
   [@react.component]
   let make = () => {
     <>
-      <Containers_NewNoteFromShareHeader />
+      <Containers_NewAnnotationFromShareHeader />
       <TextInput_Loading className={cn(["px-6", "pb-4", "pt-16"])} />
       <FloatingActionButton
         className={cn(["fixed", "right-0", "bottom-0", "m-6", "z-10"])}
@@ -125,15 +125,17 @@ let make =
         path={Routes.CreatorsIdAnnotationsNew.path(
           ~creatorUsername=currentUser.username,
         )}
-        query={Raw.merge(
+        staticPath=Routes.CreatorsIdAnnotationsNew.staticPath
+        search={Raw.merge(
           Alert.(query_encode({alert: noDataAlert})),
           Routes.CreatorsIdAnnotationsNew.queryParams_encode({
             id: None,
             initialPhaseState: Some(`PhaseTextInput),
             creatorUsername: currentUser.username,
           }),
-        )}
-      />
+        )}>
+        <Loading />
+      </Redirect>
     }
   | (NoData, true, Authenticated(currentUser), _)
   | (Error(_), true, Authenticated(currentUser), _) =>
@@ -141,15 +143,17 @@ let make =
       path={Routes.CreatorsIdAnnotationsNew.path(
         ~creatorUsername=currentUser.username,
       )}
-      query={Raw.merge(
+      staticPath=Routes.CreatorsIdAnnotationsNew.staticPath
+      search={Raw.merge(
         Alert.(query_encode({alert: noDataAlert})),
         Routes.CreatorsIdAnnotationsNew.queryParams_encode({
           id: None,
           initialPhaseState: Some(`PhaseTextInput),
           creatorUsername: currentUser.username,
         }),
-      )}
-    />
+      )}>
+      <Loading />
+    </Redirect>
   | (_, _, Unauthenticated, _) => <Loading />
   };
 };
