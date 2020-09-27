@@ -1,25 +1,26 @@
 {
-    "production": {
-        "awscloudformation": {
-            "AuthRoleName": "amplify-literal-production-114446-authRole",
-            "UnauthRoleArn": "arn:aws:iam::046525304497:role/amplify-literal-production-114446-unauthRole",
-            "AuthRoleArn": "arn:aws:iam::046525304497:role/amplify-literal-production-114446-authRole",
-            "Region": "us-east-1",
-            "DeploymentBucketName": "amplify-literal-production-114446-deployment",
-            "UnauthRoleName": "amplify-literal-production-114446-unauthRole",
-            "StackName": "amplify-literal-production-114446",
-            "StackId": "arn:aws:cloudformation:us-east-1:046525304497:stack/amplify-literal-production-114446/cc4d0500-5b12-11ea-883c-12002b7e66d1",
-            "AmplifyAppId": "d3kn1jmjzilue"
-        },
-        "categories": {
-            "auth": {
-                "literalAuth": {
-                    "googleClientId": "886430267359-qekh9bd4phv3hkp9h3pptdk8uvmjr0un.apps.googleusercontent.com"
-                }
-            },
-            "function": {
-                "CloudfrontOriginRequest": {}
-            }
+  "production": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-literal-production-114446-authRole",
+      "UnauthRoleArn": "arn:aws:iam::046525304497:role/amplify-literal-production-114446-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::046525304497:role/amplify-literal-production-114446-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-literal-production-114446-deployment",
+      "UnauthRoleName": "amplify-literal-production-114446-unauthRole",
+      "StackName": "amplify-literal-production-114446",
+      "StackId": "arn:aws:cloudformation:us-east-1:046525304497:stack/amplify-literal-production-114446/cc4d0500-5b12-11ea-883c-12002b7e66d1",
+      "AmplifyAppId": "d3kn1jmjzilue"
+    },
+    "categories": {
+      "auth": {
+        "literalAuth": {
+          "googleClientId": "886430267359-qekh9bd4phv3hkp9h3pptdk8uvmjr0un.apps.googleusercontent.com",
+          "hostedUIProviderCreds": "[{\"ProviderName\":\"Google\",\"client_id\":\"886430267359-qekh9bd4phv3hkp9h3pptdk8uvmjr0un.apps.googleusercontent.com\",\"client_secret\":\"PAHnTMcYshwJQjIj2fHnIYck\"}]"
         }
+      },
+      "function": {
+        "CloudfrontOriginRequest": {}
+      }
     }
+  }
 }
