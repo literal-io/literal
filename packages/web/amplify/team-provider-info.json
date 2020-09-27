@@ -22,5 +22,29 @@
         "CloudfrontOriginRequest": {}
       }
     }
+  },
+  "staging": {
+    "awscloudformation": {
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-literal-staging-211408-deployment",
+      "UnauthRoleName": "amplify-literal-staging-211408-unauthRole",
+      "StackName": "amplify-literal-staging-211408",
+      "StackId": "arn:aws:cloudformation:us-east-1:046525304497:stack/amplify-literal-staging-211408/c067b540-005e-11eb-aa67-0e80bfdca6c9",
+      "AuthRoleName": "amplify-literal-staging-211408-authRole",
+      "UnauthRoleArn": "arn:aws:iam::046525304497:role/amplify-literal-staging-211408-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::046525304497:role/amplify-literal-staging-211408-authRole"
+    },
+    "categories": {
+      "function": {
+        "GraphQLResolver": {},
+        "CloudfrontOriginRequest": {},
+        "PostAuthentication": {}
+      },
+      "auth": {
+        "literalAuth": {
+          "hostedUIProviderCreds": "[{\"ProviderName\":\"Google\",\"client_id\":\"886430267359-qekh9bd4phv3hkp9h3pptdk8uvmjr0un.apps.googleusercontent.com\",\"client_secret\":\"PAHnTMcYshwJQjIj2fHnIYck\"}]"
+        }
+      }
+    }
   }
 }

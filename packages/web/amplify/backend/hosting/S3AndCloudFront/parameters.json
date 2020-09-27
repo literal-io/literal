@@ -1,8 +1,4 @@
 {
-    "bucketName": "literal-web-hosting-production",
-
-    "cloudfrontDistributionAlias": "literal.io",
-    "cloudfrontAcmCertificateArn": "arn:aws:acm:us-east-1:046525304497:certificate/849a7756-2bfb-4f9e-b722-be9dd13426d5",
-
+    "bucketName": "literal-web-hosting",
     "route53HostedZoneId": "Z006015628PR9YJTD1DZD"
 }
