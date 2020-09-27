@@ -28,16 +28,12 @@ type event = {
 
 let routes = [|
   (
-    [%re "/^\/creators\/.+\/annotations$/"],
-    "/creators/[creatorUsername]/annotations.html"
-  ),
-  (
     [%re "/^\/creators\/.+\/annotations\/new$/"],
     "/creators/[creatorUsername]/annotations/new.html"
   ),
   (
-    [%re "/^\/creators\/.+\/annotations\/.+$/"],
-    "/creators/[creatorUsername]/annotations/[annotationIdComponent].html"
+    [%re "/^\/creators\/.+\/annotation-collections\/.+$/"],
+    "/creators/[creatorUsername]/annotation-collections/[annotationCollectionIdComponent].html"
   ),
 |];
 
