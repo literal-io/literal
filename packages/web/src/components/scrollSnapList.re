@@ -49,6 +49,7 @@ module Container = {
       });
 
     let onScroll = ev => {
+      let _ = ReactEvent.UI.persist(ev);
       let _ = ReactEvent.UI.stopPropagation(ev);
       let (scroll, containerDimen) =
         switch (direction) {
@@ -80,7 +81,10 @@ module Container = {
     };
 
     <div
-      onScroll=?{hasScrolledToInitialIdx ? Some(onScroll) : None}
+      onScroll=?{
+        hasScrolledToInitialIdx && Js.Array2.length(children) > 0
+          ? Some(onScroll) : None
+      }
       ref={containerRef->ReactDOMRe.Ref.domRef}
       className={cn([
         "h-full",
