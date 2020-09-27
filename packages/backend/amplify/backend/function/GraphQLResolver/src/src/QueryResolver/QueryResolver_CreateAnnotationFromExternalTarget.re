@@ -233,7 +233,7 @@ let createAnnotation = (~input, ~text) => {
       let _ = Externals_Node.Crypto.update(hash, text);
       let digest = Externals_Node.Crypto.digest(hash, "hex");
 
-      Lib_Constants.appOrigin ++ "/creators/" ++ input.creatorUsername ++ "/annotations/" ++ digest;
+      Lib_Constants.apiOrigin ++ "/creators/" ++ input.creatorUsername ++ "/annotations/" ++ digest;
     };
     
   let mutation = 

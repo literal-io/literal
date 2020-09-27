@@ -1,10 +1,22 @@
-$util.qr($ctx.stash.put("constants", {
-  "ORIGIN": "https://literal.io",
-  "ANNOTATION_COLLECTION_TABLE": "AnnotationCollection-rkihsloeqbdabdpebem3fqqjuy-production",
-  "ANNOTATION_PAGE_TABLE": "AnnotationPage-rkihsloeqbdabdpebem3fqqjuy-production",
-  "ANNOTATION_PAGE_ITEM_TABLE": "AnnotationPageItem-rkihsloeqbdabdpebem3fqqjuy-production",
-  "ANNOTATION_TABLE": "Annotation-rkihsloeqbdabdpebem3fqqjuy-production"
-}))
+#if( $ctx.graphQLAPIId == "rkihsloeqbdabdpebem3fqqjuy" )
+  ## production
+  $util.qr($ctx.stash.put("constants", {
+    "ORIGIN": "https://literal.io",
+    "ANNOTATION_COLLECTION_TABLE": "AnnotationCollection-rkihsloeqbdabdpebem3fqqjuy-production",
+    "ANNOTATION_PAGE_TABLE": "AnnotationPage-rkihsloeqbdabdpebem3fqqjuy-production",
+    "ANNOTATION_PAGE_ITEM_TABLE": "AnnotationPageItem-rkihsloeqbdabdpebem3fqqjuy-production",
+    "ANNOTATION_TABLE": "Annotation-rkihsloeqbdabdpebem3fqqjuy-production"
+  }))
+#else
+  ## staging 
+  $util.qr($ctx.stash.put("constants", {
+    "ORIGIN": "https://staging.literal.io",
+    "ANNOTATION_COLLECTION_TABLE": "AnnotationCollection-to6hgjbvbjb7roq46jyzhxr2my-staging",
+    "ANNOTATION_PAGE_TABLE": "AnnotationPage-to6hgjbvbjb7roq46jyzhxr2my-staging",
+    "ANNOTATION_PAGE_ITEM_TABLE": "AnnotationPageItem-to6hgjbvbjb7roq46jyzhxr2my-staging",
+    "ANNOTATION_TABLE": "Annotation-to6hgjbvbjb7roq46jyzhxr2my-staging"
+  }))
+#end
 
 #if( $util.isNullOrEmpty($authMode) && !$util.isNull($ctx.identity) && !$util.isNull($ctx.identity.sub) && !$util.isNull($ctx.identity.issuer) && !$util.isNull($ctx.identity.username) && !$util.isNull($ctx.identity.claims) && !$util.isNull($ctx.identity.sourceIp) && !$util.isNull($ctx.identity.defaultAuthStrategy) )
   #set( $authMode = "userPools" )

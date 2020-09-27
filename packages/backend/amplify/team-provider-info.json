@@ -39,7 +39,8 @@
       "function": {
         "GraphQLResolver": {},
         "CloudfrontOriginRequest": {},
-        "PostAuthentication": {}
+        "PostAuthentication": {},
+        "literalAuthPostAuthentication": {}
       }
     }
   }

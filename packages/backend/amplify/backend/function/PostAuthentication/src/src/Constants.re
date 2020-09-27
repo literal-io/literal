@@ -1,4 +1,5 @@
 module Env = {
+  [@bs.val] external env: string = "process.env.ENV";
   [@bs.val] external region: string = "process.env.REGION";
   [@bs.val]
   external apiLiteralGraphQLAPIEndpointOutput: string =
@@ -13,3 +14,7 @@ module Env = {
   external authLiteralAuthUserPooWebClientId: string =
     "process.env.AUTH_LITERALAUTH_USERPOOLWEBCLIENTID";
 };
+
+let apiOrigin = Env.env === "production"
+  ? "https://literal.io"
+  : "https://staging.literal.io"

@@ -18,7 +18,7 @@ let handleCreateProfile = (~username, ~email) => {
   let mutation =
     CreateAgentMutation.make(
       ~input={
-        "id": "https://literal.io/agents/" ++ username,
+        "id": Constants.apiOrigin ++ "/agents/" ++ username,
         "type": `PERSON,
         "username": username,
         "email": Some([|Some(email)|]),
