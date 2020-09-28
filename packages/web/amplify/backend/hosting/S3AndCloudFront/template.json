@@ -8,14 +8,20 @@
     "bucketName": {
       "Type": "String"
     },
-    "cloudfrontDistributionAlias": {
-      "Type": "String"
-    },
-    "cloudfrontAcmCertificateArn": {
-      "Type": "String"
-    },
     "route53HostedZoneId": {
       "Type": "String"
+    }
+  },
+  "Mappings": {
+    "Env": {
+      "production": {
+        "cloudfrontDistributionAlias": "literal.io",
+        "cloudfrontAcmCertificateArn": "arn:aws:acm:us-east-1:046525304497:certificate/849a7756-2bfb-4f9e-b722-be9dd13426d5"
+      },
+      "staging": {
+        "cloudfrontDistributionAlias": "staging.literal.io",
+        "cloudfrontAcmCertificateArn": "arn:aws:acm:us-east-1:046525304497:certificate/d5bd3aac-21ba-480f-ab6e-b1e8bb16eaa5"
+      }
     }
   },
   "Conditions": {
@@ -158,13 +164,25 @@
           "HttpVersion": "http2",
           "ViewerCertificate": {
             "AcmCertificateArn": {
-              "Ref": "cloudfrontAcmCertificateArn"
+              "Fn::FindInMap": [
+                "Env",
+                {
+                  "Ref": "env"
+                },
+                "cloudfrontAcmCertificateArn"
+              ]
             },
             "SslSupportMethod": "sni-only"
           },
           "Aliases": [
             {
-              "Ref": "cloudfrontDistributionAlias"
+              "Fn::FindInMap": [
+                "Env",
+                {
+                  "Ref": "env"
+                },
+                "cloudfrontDistributionAlias"
+              ]
             }
           ],
           "DefaultCacheBehavior": {
@@ -306,4 +324,3 @@
     }
   }
 }
-

@@ -1,4 +1,5 @@
 module Env = {
+  [@bs.val] external env: string = "process.env.ENV";
   [@bs.val] external region: string = "process.env.REGION";
   [@bs.val]
   external apiLiteralGraphQLAPIEndpointOutput: string =
@@ -22,4 +23,6 @@ let gcloudServiceAccountFilename =
 
 let highlightBoundingBoxScoreThreshold = 0.3;
 
-let appOrigin = "https://literal.io";
+let apiOrigin = Env.env === "production" 
+  ? "https://literal.io"
+  : "https://staging.literal.io";

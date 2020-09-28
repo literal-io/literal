@@ -4,11 +4,16 @@ module GetAnnotationCollection = {
       query getAnnotationCollection($creatorUsername: String!, $id: String!, $nextToken: String) {
         getAnnotationCollection(creatorUsername: $creatorUsername, id: $id) {
           ...Containers_AnnotationCollectionHeader_GraphQL.GetAnnotationCollectionFragment.AnnotationCollectionHeader_AnnotationCollection @bsField(name: "annotationCollectionHeader")
+          __typename
           first {
+            __typename
             items(limit: 100, sortDirection: DESC, nextToken: $nextToken) {
+              __typename
               nextToken
               items {
+                __typename
                 annotation {
+                  __typename
                   created
                   id
                   ...Containers_AnnotationEditor_Annotation_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")

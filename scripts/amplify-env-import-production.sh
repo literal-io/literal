@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Used for scaffolding a new environment based on production. 
+
 set -e
 IFS='|'
 OWN_PATH=`realpath $0`

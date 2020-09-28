@@ -1,4 +1,5 @@
 const R = require("ramda");
+const amplifyConfig = require("./amplify/.config/local-env-info.json");
 
 module.exports = {
   devIndicators: {
@@ -28,6 +29,15 @@ module.exports = {
             },
           },
           R.pathOr([], ["module", "rules"], config)
+        )
+      ),
+      R.assocPath(
+        ["plugins"],
+        R.append(
+          new webpack.DefinePlugin({
+            "process.env.AMPLIFY_ENV": JSON.stringify(amplifyConfig.envName),
+          }),
+          R.pathOr([], ["plugins"], config)
         )
       )
     )(config);

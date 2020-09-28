@@ -6,6 +6,15 @@ type window;
 external window: option(window) = "window";
 let isBrowser = window->Js.Option.isSome;
 
+module Env = {
+  [@bs.val] external nodeEnv: string = "process.env.NODE_ENV";
+  [@bs.val] external amplifyEnv: string = "process.env.AMPLIFY_ENV";
+}
+
+let apiOrigin = Env.amplifyEnv === "production"
+  ? "https://literal.io"
+  : "https://staging.literal.io";
+
 %raw
 {|
   const domains = awsAmplifyConfig.oauth.redirectSignIn.split(",")
@@ -14,7 +23,7 @@ let isBrowser = window->Js.Option.isSome;
       d.startsWith(
         process.env.NODE_ENV === 'development'
         ? 'http://'
-        : 'https://'
+        : apiOrigin 
       )
     )
   awsAmplifyConfig.oauth.redirectSignIn = domain

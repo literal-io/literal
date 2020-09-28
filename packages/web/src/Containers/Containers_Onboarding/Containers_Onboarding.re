@@ -7,8 +7,9 @@ let onboardingNotes = [|
 |];
 
 let updateCache = (~currentUser, ~createAnnotationInputs) => {
-  let _ =
+  let tagAnnotationTuples =
     createAnnotationInputs
+    ->Belt.Array.reverse
     ->Belt.Array.map(annotationInput =>
         annotationInput
         ->OnboardingMutation.json_of_CreateAnnotationInput
@@ -30,87 +31,114 @@ let updateCache = (~currentUser, ~createAnnotationInputs) => {
             isTag ? Some((annotation, body)) : None;
           })
       )
-    ->Belt.Array.concatMany
-    ->Belt.Array.forEach(((annotation, tag)) => {
-        let cacheQuery =
-          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
-            ~creatorUsername=
-              currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-            ~id=tag##id->Js.Null.toOption->Belt.Option.getExn,
-            (),
-          );
-        let data =
-          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.readCache(
-            ~query=cacheQuery,
-            ~client=Providers_Apollo.client,
-            (),
-          );
-        let newData =
-          switch (data) {
-          | Some(data) =>
-            let items =
-              data##getAnnotationCollection
-              ->Js.Null.toOption
-              ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
-              ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
-              ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
-              ->Belt.Option.getWithDefault([||]);
-            let newItems =
-              Js.Null.return(
-                Belt.Array.concat(
-                  [|
-                    {
-                      "__typename": "AnnotationPageItem",
-                      "annotation": annotation,
-                    },
-                  |],
-                  items,
-                ),
-              );
+    ->Belt.Array.concatMany;
 
-            QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setAnnotationPageItems(
-              data,
-              newItems,
-            );
-          | None => {
-              "__typename": "Query",
-              "getAnnotationCollection":
-                Js.Null.return({
-                  "__typename": "AnnotationCollection",
-                  "label": tag##value,
-                  "first":
-                    Js.Null.return({
-                      "__typename": "AnnotationPage",
-                      "items":
-                        Js.Null.return({
-                          "__typename": "ModelAnnotationPageItemConnection",
-                          "nextToken": Js.Null.return(""),
-                          "items":
-                            Js.Null.return([|
+  let annotationsByTagId =
+    tagAnnotationTuples->Belt.Array.reduce(
+      Js.Dict.empty(),
+      (agg, (annotation, tag)) => {
+        let tagId = tag##id->Js.Null.toOption->Belt.Option.getExn;
+        let annotations =
+          agg
+          ->Js.Dict.get(tagId)
+          ->Belt.Option.map(a => Belt.Array.concat(a, [|annotation|]))
+          ->Belt.Option.getWithDefault([|annotation|]);
+        let _ = Js.Dict.set(agg, tagId, annotations);
+        agg;
+      },
+    );
+  let tagsByTagId =
+    tagAnnotationTuples
+    ->Belt.Array.map(((_, tag)) => tag)
+    ->Belt.Array.reduce(
+        Js.Dict.empty(),
+        (agg, tag) => {
+          let tagId = tag##id->Js.Null.toOption->Belt.Option.getExn;
+          let _ = Js.Dict.set(agg, tagId, tag);
+          agg;
+        },
+      );
+
+  annotationsByTagId
+  ->Js.Dict.entries
+  ->Belt.Array.forEach(((tagId, annotations)) => {
+      let cacheQuery =
+        QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
+          ~creatorUsername=
+            currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+          ~id=tagId,
+          (),
+        );
+      let data =
+        QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.readCache(
+          ~query=cacheQuery,
+          ~client=Providers_Apollo.client,
+          (),
+        );
+      let tag = tagsByTagId->Js.Dict.unsafeGet(tagId);
+      let newData =
+        switch (data) {
+        | Some(data) when data##getAnnotationCollection != Js.null =>
+          let items =
+            data##getAnnotationCollection
+            ->Js.Null.toOption
+            ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
+            ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+            ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+            ->Belt.Option.getWithDefault([||]);
+          let newItems =
+            annotations
+            ->Belt.Array.map(a =>
+                {"__typename": "AnnotationPageItem", "annotation": a}
+              )
+            ->Belt.Array.concat(items)
+            ->Js.Null.return;
+
+          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setAnnotationPageItems(
+            data,
+            newItems,
+          );
+        | _ => {
+            "__typename": "Query",
+            "getAnnotationCollection":
+              Js.Null.return({
+                "__typename": "AnnotationCollection",
+                "label": tag##value,
+                "first":
+                  Js.Null.return({
+                    "__typename": "AnnotationPage",
+                    "items":
+                      Js.Null.return({
+                        "__typename": "ModelAnnotationPageItemConnection",
+                        "nextToken": Js.Null.empty,
+                        "items":
+                          annotations
+                          ->Belt.Array.map(a =>
                               {
                                 "__typename": "AnnotationPageItem",
-                                "annotation": annotation,
-                              },
-                            |]),
-                        }),
-                    }),
-                }),
-            }
-          };
-        let _ =
-          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
-            ~query=cacheQuery,
-            ~client=Providers_Apollo.client,
-            ~data=newData,
-            (),
-          );
-        ();
-      });
+                                "annotation": a,
+                              }
+                            )
+                          ->Js.Null.return,
+                      }),
+                  }),
+              }),
+          }
+        };
+      let _ =
+        QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
+          ~query=cacheQuery,
+          ~client=Providers_Apollo.client,
+          ~data=newData,
+          (),
+        );
+      ();
+    });
   ();
 };
 
 [@react.component]
-let make = (~currentUser) => {
+let make = (~currentUser, ~onAnnotationIdChange) => {
   let (onboardingMutation, _s, _f) =
     ApolloHooks.useMutation(OnboardingMutation.definition);
 

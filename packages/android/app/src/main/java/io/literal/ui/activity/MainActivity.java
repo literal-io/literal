@@ -1,24 +1,22 @@
 package io.literal.ui.activity;
 
-import io.literal.R;
-import io.literal.factory.AWSMobileClientFactory;
-import io.literal.factory.AppSyncClientFactory;
-import io.literal.lib.Constants;
-
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.UserStateDetails;
 
+import io.literal.R;
+import io.literal.factory.AWSMobileClientFactory;
+import io.literal.lib.Constants;
+import io.literal.lib.WebRoutes;
 import io.literal.ui.view.WebView;
 
 public class MainActivity extends AppCompatActivity {
@@ -79,9 +77,9 @@ public class MainActivity extends AppCompatActivity {
 
         String username = AWSMobileClient.getInstance().getUsername();
         String defaultUrl =
-            username != null
-                ? Constants.WEB_HOST + "/creators/" + username + "/annotation-collections/" + Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT
-                : Constants.WEB_HOST + "/authenticate";
+                username != null
+                        ? WebRoutes.creatorsIdAnnotationCollectionId(username, Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT)
+                        : WebRoutes.authenticate();
 
         if (savedInstanceState == null) {
             Intent intent = getIntent();
@@ -101,12 +99,11 @@ public class MainActivity extends AppCompatActivity {
     private void handleSignedOut() {
         webView.initialize(this);
         webView.requestFocus();
-        webView.loadUrl(Constants.WEB_HOST + "/authenticate");
+        webView.loadUrl(WebRoutes.authenticate());
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState)
-    {
+    protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         if (this.webView != null) {
             webView.saveState(outState);
@@ -114,8 +111,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState)
-    {
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         if (this.webView != null) {
             this.webView.restoreState(savedInstanceState);

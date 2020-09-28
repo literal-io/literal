@@ -216,7 +216,7 @@ let make =
         )
     ) {
     | None when isRecentAnnotationCollection =>
-      <Containers_Onboarding currentUser />
+      <Containers_Onboarding currentUser onAnnotationIdChange />
     | None =>
       <Redirect
         staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath
@@ -229,7 +229,7 @@ let make =
     | Some((_, annotations))
         when
           isRecentAnnotationCollection && Js.Array2.length(annotations) == 0 =>
-      <Containers_Onboarding currentUser />
+      <Containers_Onboarding currentUser onAnnotationIdChange />
     | Some((_, annotations)) when Js.Array2.length(annotations) == 0 =>
       <Redirect
         staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath

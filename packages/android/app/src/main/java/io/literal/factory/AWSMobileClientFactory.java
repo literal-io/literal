@@ -2,6 +2,7 @@ package io.literal.factory;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
@@ -20,10 +21,17 @@ import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
 
 import io.literal.R;
+import io.literal.lib.Constants;
 
 public class AWSMobileClientFactory {
 
+    public enum AmplifyEnvironment {
+        STAGING,
+        PRODUCTION
+    }
+
     public static volatile TransferUtility transferUtility;
+    public static volatile AmplifyEnvironment amplifyEnvironment;
 
     static CountDownLatch initializationLatch = new CountDownLatch(1);
 
@@ -53,6 +61,8 @@ public class AWSMobileClientFactory {
         initializeClient(context, null);
         initializationLatch.await();
     }
+
+    public static AmplifyEnvironment getAmplifyEnvironment() { return amplifyEnvironment; }
 
     public static TransferUtility getTransferUtility(Context context) {
         if (transferUtility == null) {
@@ -102,12 +112,22 @@ public class AWSMobileClientFactory {
             JSONObject defaultJson = authJson.getJSONObject("Default");
             JSONObject oauthJson = defaultJson.getJSONObject("OAuth");
 
+            // Prune OAuth URIs used by other environments, we only care about the literal://
+            // protocol.
             String signInRedirectURIs = oauthJson.getString("SignInRedirectURI");
             String signOutRedirectURIs = oauthJson.getString("SignOutRedirectURI");
-
             oauthJson.put("SignInRedirectURI", parseUrisToProtocol(signInRedirectURIs));
             oauthJson.put("SignOutRedirectURI", parseUrisToProtocol(signOutRedirectURIs));
+
+            // Parse the Amplify environment from the hosted OAuth sub domain.
+            String webDomain = oauthJson.getString("WebDomain");
+            if (webDomain.startsWith("literal-staging")) {
+                amplifyEnvironment = AmplifyEnvironment.STAGING;
+            } else {
+                amplifyEnvironment = AmplifyEnvironment.PRODUCTION;
+            }
         } catch (JSONException ex) {
+            Log.d(Constants.LOG_TAG, "Unable to parse AWSConfiguration", ex);
             return new AWSConfiguration(configuration);
         }
 

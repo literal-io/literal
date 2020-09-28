@@ -3,7 +3,6 @@ package io.literal.ui.view;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
@@ -11,13 +10,11 @@ import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebMessagePortCompat;
 import androidx.webkit.WebViewCompat;
@@ -33,6 +30,7 @@ import java.util.UUID;
 import io.literal.BuildConfig;
 import io.literal.lib.Constants;
 import io.literal.lib.WebEvent;
+import io.literal.lib.WebRoutes;
 
 public class WebView extends android.webkit.WebView {
 
@@ -78,7 +76,7 @@ public class WebView extends android.webkit.WebView {
                             .toJSON()
                             .toString()
                     ),
-                    Uri.parse(Constants.WEB_HOST)
+                    Uri.parse(WebRoutes.getWebHost())
             );
         }
     }
@@ -125,7 +123,7 @@ public class WebView extends android.webkit.WebView {
             WebViewCompat.postWebMessage(
                     this,
                     new WebMessageCompat("", new WebMessagePortCompat[]{channel[1]}),
-                    Uri.parse(Constants.WEB_HOST)
+                    Uri.parse(WebRoutes.getWebHost())
             );
         }
     }
@@ -151,7 +149,7 @@ public class WebView extends android.webkit.WebView {
                                             .toJSON()
                                             .toString()
                             ),
-                            Uri.parse(Constants.WEB_HOST)
+                            Uri.parse(WebRoutes.getWebHost())
                     );
                 } else {
                     this.loadUrl(prev);
@@ -164,12 +162,14 @@ public class WebView extends android.webkit.WebView {
         return super.onKeyDown(keyCode, event);
     }
 
-    private class JavascriptInterface {
-        @android.webkit.JavascriptInterface
-        public boolean isWebview() { return true; }
-    }
-
     public interface PageFinishedCallback {
         public void onPageFinished(android.webkit.WebView view, String Url);
+    }
+
+    private class JavascriptInterface {
+        @android.webkit.JavascriptInterface
+        public boolean isWebview() {
+            return true;
+        }
     }
 }
