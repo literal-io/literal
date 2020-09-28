@@ -1,8 +1,31 @@
 package io.literal.lib;
 
+import io.literal.BuildConfig;
+import io.literal.factory.AWSMobileClientFactory;
+
 public class WebRoutes {
-    public static String authentication() {
-        return Constants.WEB_HOST + "/authentication";
+
+    public static String getAPIHost() {
+        if (
+                AWSMobileClientFactory.getAmplifyEnvironment() ==
+                        AWSMobileClientFactory.AmplifyEnvironment.PRODUCTION
+        ) {
+            return "https://literal.io";
+        } else {
+            return "https://staging.literal.io";
+        }
+    }
+
+    public static String getWebHost() {
+        if (BuildConfig.DEBUG) {
+            return "http://localhost:3000";
+        } else {
+            return getAPIHost();
+        }
+    }
+
+    public static String authenticate() {
+        return getWebHost() + "/authenticate";
     }
 
     public static String creatorsIdAnnotationId(
@@ -17,14 +40,14 @@ public class WebRoutes {
             String creatorUsername,
             String annotationIdComponent
     ) {
-        return Constants.WEB_HOST + "/creators/" + creatorUsername + "/annotations/new?id=" + annotationIdComponent;
+        return getWebHost() + "/creators/" + creatorUsername + "/annotations/new?id=" + annotationIdComponent;
     }
 
     public static String creatorsIdAnnotationId(
             String creatorUsername,
             String annotationIdComponent
     ) {
-        return creatorsIdAnnotationId(Constants.WEB_HOST, creatorUsername, annotationIdComponent);
+        return creatorsIdAnnotationId(getWebHost(), creatorUsername, annotationIdComponent);
     }
 
     public static String creatorsIdAnnotationCollectionId(
@@ -39,7 +62,7 @@ public class WebRoutes {
             String creatorUsername,
             String annotationCollectionIdComponent
     ) {
-        return creatorsIdAnnotationCollectionId(Constants.WEB_HOST, creatorUsername, annotationCollectionIdComponent);
+        return creatorsIdAnnotationCollectionId(getWebHost(), creatorUsername, annotationCollectionIdComponent);
     }
 
     public static String creatorsIdAnnotationCollectionIdAnnotationId(
@@ -56,6 +79,6 @@ public class WebRoutes {
             String annotationCollectionIdComponent,
             String annotationIdComponent
     ) {
-        return creatorsIdAnnotationCollectionIdAnnotationId(Constants.WEB_HOST, creatorUsername, annotationCollectionIdComponent, annotationIdComponent) + "?annotationId=" + annotationIdComponent;
+        return creatorsIdAnnotationCollectionIdAnnotationId(getWebHost(), creatorUsername, annotationCollectionIdComponent, annotationIdComponent) + "?annotationId=" + annotationIdComponent;
     }
 }

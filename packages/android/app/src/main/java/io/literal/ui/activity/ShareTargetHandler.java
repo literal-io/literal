@@ -173,7 +173,7 @@ public class ShareTargetHandler extends AppCompatActivity {
         try {
             String valueHash = Crypto.sha256Hex(text);
             String annotationId = WebRoutes.creatorsIdAnnotationId(
-                    Constants.API_HOST,
+                    WebRoutes.getAPIHost(),
                     creatorUsername,
                     valueHash
             );
@@ -285,7 +285,7 @@ public class ShareTargetHandler extends AppCompatActivity {
         String screenshotId = UUID.randomUUID().toString();
         String creatorUsername = AWSMobileClient.getInstance().getUsername();
         String annotationId = WebRoutes.creatorsIdAnnotationId(
-                Constants.API_HOST,
+                WebRoutes.getAPIHost(),
                 creatorUsername,
                 screenshotId
         );
