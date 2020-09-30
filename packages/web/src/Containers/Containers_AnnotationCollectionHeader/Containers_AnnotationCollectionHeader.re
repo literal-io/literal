@@ -86,6 +86,11 @@ let make =
   let createButton =
     <MaterialUi.IconButton
       size=`Small
+      onClick={_ => {
+        let _ =
+          Service_Analytics.(track(Click({action: "create", label: None})));
+        ();
+      }}
       edge=MaterialUi.IconButton.Edge._end
       _TouchRippleProps={
         "classes": {
@@ -142,7 +147,11 @@ let make =
           onClick={_ =>
             switch (annotation, currentUser) {
             | (Some(annotation), Some(currentUser)) =>
-              handleDelete(~annotation, ~currentUser)
+              let _ =
+                Service_Analytics.(
+                  track(Click({action: "delete", label: None}))
+                );
+              handleDelete(~annotation, ~currentUser);
             | _ => ()
             }
           }

@@ -11,7 +11,13 @@ let make = () => {
     <MaterialUi.IconButton
       size=`Small
       edge=MaterialUi.IconButton.Edge.start
-      onClick={_ => handleClose()}
+      onClick={_ => {
+        let _ =
+          Service_Analytics.(
+            track(Click({action: "close", label: None}))
+          );
+        handleClose()
+      }}
       _TouchRippleProps={
         "classes": {
           "child": cn(["bg-white"]),

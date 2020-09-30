@@ -170,6 +170,13 @@ let make =
              <MaterialUi.Button
                variant=`Text
                fullWidth=true
+               onClick={_ => {
+                 let _ =
+                   Service_Analytics.(
+                     track(Click({action: "tag", label: Some(text)}))
+                   );
+                 ();
+               }}
                classes={MaterialUi.Button.Classes.make(
                  ~root=Cn.fromList(["mb-1"]),
                  ~text=

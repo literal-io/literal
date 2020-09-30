@@ -27,6 +27,8 @@
     "reason-apollo",
     "reason-apollo-hooks",
     "@literal-io/bs-aws-appsync",
+    "@literal-io/bs-amplitude",
+    "@literal-io/apollo-link-analytics",
     "@jsiebern/bs-material-ui"
   ],
   "ppx-flags": [

@@ -289,7 +289,13 @@ module PhasePrompt = {
         <MaterialUi.IconButton
           size=`Medium
           edge=MaterialUi.IconButton.Edge.start
-          onClick={_ => onCreateFromText()}
+          onClick={_ => {
+            let _ =
+              Service_Analytics.(
+                track(Click({action: "create from text", label: None}))
+              );
+            onCreateFromText();
+          }}
           _TouchRippleProps={
             "classes": {
               "child": cn(["bg-white"]),
@@ -309,7 +315,13 @@ module PhasePrompt = {
         <MaterialUi.IconButton
           size=`Medium
           edge=MaterialUi.IconButton.Edge.start
-          onClick={_ => onCreateFromFile()}
+          onClick={_ => {
+            let _ =
+              Service_Analytics.(
+                track(Click({action: "create from file", label: None}))
+              );
+            onCreateFromFile();
+          }}
           _TouchRippleProps={
             "classes": {
               "child": cn(["bg-white"]),

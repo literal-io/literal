@@ -9,6 +9,7 @@ let isBrowser = window->Js.Option.isSome;
 module Env = {
   [@bs.val] external nodeEnv: string = "process.env.NODE_ENV";
   [@bs.val] external amplifyEnv: string = "process.env.AMPLIFY_ENV";
+  [@bs.val] external amplitudeApiKey: string = "process.env.AMPLITUDE_API_KEY";
 }
 
 let apiOrigin = Env.amplifyEnv === "production"

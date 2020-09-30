@@ -36,6 +36,9 @@ module.exports = {
         R.append(
           new webpack.DefinePlugin({
             "process.env.AMPLIFY_ENV": JSON.stringify(amplifyConfig.envName),
+            "process.env.AMPLITUDE_API_KEY": JSON.stringify(
+              "390bccc68484055cef405613213849e5"
+            ),
           }),
           R.pathOr([], ["plugins"], config)
         )

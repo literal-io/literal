@@ -78,7 +78,7 @@ let make =
     );
 
   let handleTextChange = s => setTextState(_ => s);
-  let handleTagsChange = (s: TextInput_Tags.Value.t) =>
+  let handleTagsChange = (s: TextInput_Tags.Value.t) => {
     setTagsState(tagsState => {
       let updatedCommits =
         s.commits
@@ -94,12 +94,36 @@ let make =
             }
           });
 
+      let _ =
+        updatedCommits->Belt.Array.map(({id, text}) => {
+          switch (id) {
+          | None =>
+            Lib_GraphQL.AnnotationCollection.makeId(
+              ~label=text,
+              ~creatorUsername=
+                currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+            )
+            |> Js.Promise.then_(id =>
+                 Js.Promise.resolve({id: Some(id), text})
+               )
+          | Some(_) => Js.Promise.resolve({id, text})
+          }
+        })
+        |> Js.Promise.all
+        |> Js.Promise.then_(commitsWithIds => {
+             setTagsState(tagsState =>
+               {...tagsState, commits: commitsWithIds}
+             );
+             Js.Promise.resolve();
+           });
+
       {
         partial: s.partial,
         commits: updatedCommits,
         filterResults: tagsState.filterResults,
       };
     });
+  };
 
   let handleTagsFilterResults = s =>
     setTagsState(tagsState => {...tagsState, filterResults: s});

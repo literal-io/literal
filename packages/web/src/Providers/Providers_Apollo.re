@@ -4,7 +4,6 @@ let _ = AwsAmplify.(inst->configure(Constants.awsAmplifyConfig));
 
 let fragmentTypes = [%raw "require('../../fragment-types.json')"];
 
-
 /** FIXME: more sophisticated authTokens cache **/
 let authTokens = ref(None);
 let authenticatedClientAuthOptions = {
@@ -76,6 +75,19 @@ let appSyncLinkOptions =
       AwsAmplify.Auth.(inst->currentCredentials),
     mandatorySignIn: false,
   };
+
+let analyticsLink =
+  ApolloLinkAnalytics.make((operation, _data) => {
+    Service_Analytics.(
+      {
+        operationName: operation->ApolloLink.operationName,
+        variables: operation->ApolloLink.variables,
+      }
+      ->graphQLOperation
+      ->track
+    )
+  });
+
 let appSyncLink = AwsAppSync.Client.createAppSyncLink(appSyncLinkOptions);
 
 let appSyncCache =
@@ -91,7 +103,10 @@ let client =
   AwsAppSync.Client.(
     makeWithOptions(
       appSyncLinkOptions,
-      {link: Some(appSyncLink), cache: Some(appSyncCache)},
+      {
+        link: Some(ApolloLinks.from([|analyticsLink, appSyncLink|])),
+        cache: Some(appSyncCache),
+      },
     )
   );
 
