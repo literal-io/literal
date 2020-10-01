@@ -53,13 +53,13 @@ export default function App({
         <link rel="icon" type="image/png" href="/favicon-32.png" />
       </Head>
       <AuthenticationProvider.make>
-        <ErrorBoundary>
+        <ErrorBoundary.make>
           <ApolloProvider.make
             render={(rehydrated) => (
               <Component rehydrated={rehydrated} {...pageProps} />
             )}
           />
-        </ErrorBoundary>
+        </ErrorBoundary.make>
       </AuthenticationProvider.make>
     </>
   );

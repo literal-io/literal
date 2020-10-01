@@ -168,7 +168,6 @@ let make =
     ])}>
     <div className={cn(["px-6", "pb-4", "pt-16"])}>
       <TextInput.Annotation
-        className={cn([styles##underline])}
         onTextChange=handleTextChange
         textValue=textState
         tagsValue={TextInput_Tags.Value.fromTagsState(

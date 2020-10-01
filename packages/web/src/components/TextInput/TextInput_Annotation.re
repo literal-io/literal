@@ -8,8 +8,7 @@ let make =
       ~textValue,
       ~tagsValue,
       ~onTagsChange,
-      ~className=?,
-      ~inputClasses=[],
+      ~disabled=?,
       ~autoFocus=?,
       ~placeholder=?,
       ~tagsInputRef=?,
@@ -84,6 +83,7 @@ let make =
       value=textValue
       ?placeholder
       ?autoFocus
+      ?disabled
       inputProps={
         "onKeyDown": handleTextKeyDown,
         "inputRef": textInputRef->ReactDOMRe.Ref.domRef->Js.Option.some,
@@ -91,6 +91,7 @@ let make =
       }
     />
     <TextInput_Tags
+      ?disabled
       onChange=onTagsChange
       onKeyDown=handleTagsKeyDown
       value=tagsValue

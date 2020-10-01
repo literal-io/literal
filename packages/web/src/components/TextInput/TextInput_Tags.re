@@ -42,7 +42,7 @@ module Value = {
 
 [@react.component]
 let make =
-  React.forwardRef((~value, ~onChange, ~onKeyDown=?, ~className=?, ref_) => {
+  React.forwardRef((~value, ~onChange, ~onKeyDown=?, ~className=?, ~disabled=?, ref_) => {
     let keyEventHandled = React.useRef(false);
 
     let handleChange = ev => {
@@ -170,6 +170,7 @@ let make =
              <MaterialUi.Button
                variant=`Text
                fullWidth=true
+               ?disabled
                onClick={_ => {
                  let _ =
                    Service_Analytics.(
@@ -215,6 +216,7 @@ let make =
        ->React.array}
       <div className={Cn.fromList(["mx-2", "mt-2"])}>
         <MaterialUi.TextField
+          ?disabled
           value={MaterialUi.TextField.Value.string(value.partial)}
           onChange=handleChange
           fullWidth=true

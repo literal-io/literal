@@ -87,6 +87,7 @@ let make =
       ~initialAnnotationId,
       ~rehydrated,
     ) => {
+
   let (_, query) =
     ApolloHooks.useQuery(
       ~skip=

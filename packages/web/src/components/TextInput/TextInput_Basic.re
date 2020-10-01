@@ -9,6 +9,7 @@ let make =
       ~onFocus=?,
       ~onBlur=?,
       ~inputClasses=MaterialUi.Input.Classes.make(),
+      ~disabled=?,
       ~value,
       ~autoFocus=?,
       ~placeholder=?,
@@ -83,6 +84,7 @@ let make =
 
     <MaterialUi.TextField
       key={fontFaceLoaded ? "loaded" : "loading"}
+      ?disabled
       ?label
       ?placeholder
       ?autoFocus

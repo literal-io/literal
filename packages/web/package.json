@@ -35,6 +35,7 @@
     "@material-ui/core": "^4.11.0",
     "@material-ui/lab": "^4.0.0-alpha.56",
     "@reasonml-community/graphql-ppx": "^0.7.2",
+    "@sentry/browser": "^5.24.2",
     "amazon-cognito-identity-js": "^4.3.4",
     "amplitude-js": "^7.2.2",
     "apollo-cache-inmemory": "^1.6.6",
