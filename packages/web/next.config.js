@@ -39,6 +39,9 @@ module.exports = {
             "process.env.AMPLITUDE_API_KEY": JSON.stringify(
               "390bccc68484055cef405613213849e5"
             ),
+            "process.env.SENTRY_DSN": JSON.stringify(
+              "https://2ca22f543045459bbe86e915bb94953e@o455440.ingest.sentry.io/5447049"
+            ),
           }),
           R.pathOr([], ["plugins"], config)
         )

@@ -81,3 +81,5 @@ external initWithOptions:
 [@bs.send]
 external logEventWithProperties: (instance, string, Js.Json.t) => unit =
   "logEvent";
+
+[@bs.send] external setUserId: (instance, string) => unit = "setUserId";

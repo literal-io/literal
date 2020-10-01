@@ -47,11 +47,11 @@ let use = () => {
              | Some(currentUser) => Authenticated(currentUser)
              | None => Unauthenticated
              };
-           setCurrentUserInfo(_ => newAuthenticationState);
+           setCurrentUserInfo(newAuthenticationState);
            Js.Promise.resolve();
          })
       |> Js.Promise.catch(_ => {
-           setCurrentUserInfo(_ => Unauthenticated);
+           setCurrentUserInfo(Unauthenticated);
            Js.Promise.resolve();
          });
     ();

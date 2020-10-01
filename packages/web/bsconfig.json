@@ -29,6 +29,7 @@
     "@literal-io/bs-aws-appsync",
     "@literal-io/bs-amplitude",
     "@literal-io/apollo-link-analytics",
+    "@literal-io/bs-sentry",
     "@jsiebern/bs-material-ui"
   ],
   "ppx-flags": [

@@ -1,0 +1,24 @@
+{
+  "name": "@literal-io/bs-sentry",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "bsb:build": "bsb -make-world",
+    "bsb:start": "bsb -make-world -w",
+    "bsb:clean": "bsb -clean-world"
+  },
+  "author": "Daniel Ramirez <javamonn@gmail.com>",
+  "homepage": "https://literal.io",
+  "repository": "https://github.com/javamonn/literal-io/tree/master/packages/bs-sentry",
+  "description": "BuckleScript bindings to @sentry/browser.",
+  "keywords": [
+    "bucklescript",
+    "reason",
+    "sentry"
+  ],
+  "license": "MIT - Hippocratic 1.2",
+  "devDependencies": {
+    "@sentry/browser": "^5.24.2",
+    "bs-platform": "^8.2.0"
+  }
+}

@@ -7,6 +7,7 @@ import Router from "next/router";
 
 import AuthenticationProvider from "../Providers/Providers_Authentication.js";
 import ApolloProvider from "../Providers/Providers_Apollo.js";
+import ErrorBoundary from "../components/ErrorBoundary/ErrorBoundary.js"
 import { page, track } from "../services/Service_Analytics.js";
 
 import * as React from "react";
@@ -52,11 +53,13 @@ export default function App({
         <link rel="icon" type="image/png" href="/favicon-32.png" />
       </Head>
       <AuthenticationProvider.make>
-        <ApolloProvider.make
-          render={(rehydrated) => (
-            <Component rehydrated={rehydrated} {...pageProps} />
-          )}
-        />
+        <ErrorBoundary>
+          <ApolloProvider.make
+            render={(rehydrated) => (
+              <Component rehydrated={rehydrated} {...pageProps} />
+            )}
+          />
+        </ErrorBoundary>
       </AuthenticationProvider.make>
     </>
   );
