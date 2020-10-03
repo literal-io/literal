@@ -121,6 +121,8 @@ let updateCache = (~currentUser, ~input) => {
 module PhaseTextInput = {
   [@react.component]
   let make = (~currentUser) => {
+    let (textValue, setTextValue) = React.useState(() => "")
+    let (tagsValue, setTagsValue) = React.useState(() => 
     let (editorValue, setEditorValue) =
       React.useState(() =>
         Containers_AnnotationEditor_Base_Types.{
@@ -242,7 +244,7 @@ module PhaseTextInput = {
 
     <>
       <Containers_AnnotationEditor_Base
-        onChange=handleChange
+        onChange=handleTextChange
         autoFocus=true
         placeholder="Lorem Ipsum"
         currentUser

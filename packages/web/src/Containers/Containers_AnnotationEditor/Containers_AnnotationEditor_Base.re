@@ -7,7 +7,6 @@ let styles = [%raw "require('./Containers_AnnotationEditor_Base.module.css')"];
 let make =
     (
       ~annotationFragment as annotation=?,
-      ~isActive=true,
       ~onChange,
       ~currentUser,
       ~autoFocus=?,
@@ -34,128 +33,51 @@ let make =
       ->Belt.Option.getWithDefault("")
     );
 
-  let (tagsState, setTagsState) =
-    React.useState(() =>
-      annotation
-      ->Belt.Option.flatMap(a => a##body)
-      ->Belt.Option.map(bodies => {
-          let commits =
-            bodies->Belt.Array.keepMap(body =>
-              switch (body) {
-              | `Nonexhaustive => None
-              | `TextualBody(body) =>
-                Lib_GraphQL.Annotation.isBodyTag(body)
-                  ? Some({text: body##value, id: body##id}) : None
-              }
-            );
-          {partial: "", commits, filterResults: [||]};
-        })
-      ->Belt.Option.getWithDefault({
-          partial: "",
-          commits: [|
-            {
-              text: Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel,
-              id: None,
-            },
-          |],
-          filterResults: [||],
-        })
-    );
-  let tagsInputRef = React.useRef(Js.Nullable.null);
-
   let _ =
-    React.useEffect2(
+    React.useEffect1(
       () => {
-        let _ = onChange({tags: tagsState.commits, text: textState});
+        let _ = onChange(textState);
         None;
       },
-      (
-        textState,
-        tagsState.commits
-        ->Belt.Array.map(c => c.text)
-        ->Js.Array2.joinWith("-"),
-      ),
+      [|textState|],
     );
 
   let handleTextChange = s => setTextState(_ => s);
-  let handleTagsChange = (s: TextInput_Tags.Value.t) => {
-    setTagsState(tagsState => {
-      let updatedCommits =
-        s.commits
-        ->Belt.Array.map(({text}) => {
-            switch (
-              Belt.Array.getBy(tagsState.commits, tag => tag.text === text),
-              tagsState.filterResults
-              ->Belt.Array.getBy(tag => tag.text === text),
-            ) {
-            | (Some(tag), _) => tag
-            | (_, Some(tag)) => tag
-            | _ => {id: None, text}
-            }
-          });
 
-      let _ =
-        updatedCommits->Belt.Array.map(({id, text}) => {
-          switch (id) {
-          | None =>
-            Lib_GraphQL.AnnotationCollection.makeId(
-              ~label=text,
-              ~creatorUsername=
-                currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-            )
-            |> Js.Promise.then_(id =>
-                 Js.Promise.resolve({id: Some(id), text})
-               )
-          | Some(_) => Js.Promise.resolve({id, text})
+  let tagsValue =
+    annotation
+    ->Belt.Option.flatMap(a => a##body)
+    ->Belt.Option.map(bodies =>
+        bodies->Belt.Array.keepMap(body =>
+          switch (body) {
+          | `TextualBody(body) when Lib_GraphQL.Annotation.isBodyTag(body) =>
+            let href =
+              body##id
+              ->Belt.Option.map(id =>
+                  Lib_GraphQL.AnnotationCollection.(
+                    makeIdFromComponent(
+                      ~annotationCollectionIdComponent=idComponent(id),
+                      ~creatorUsername=
+                        currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                      ~origin=
+                        Webapi.Dom.(window->Window.location->Location.origin),
+                      (),
+                    )
+                  )
+                );
+            Some(TagsList.{text: body##value, id: body##id, href});
+          | `Nonexhaustive => None
+          | _ => None
           }
-        })
-        |> Js.Promise.all
-        |> Js.Promise.then_(commitsWithIds => {
-             setTagsState(tagsState =>
-               {...tagsState, commits: commitsWithIds}
-             );
-             Js.Promise.resolve();
-           });
-
-      {
-        partial: s.partial,
-        commits: updatedCommits,
-        filterResults: tagsState.filterResults,
-      };
-    });
-  };
-
-  let handleTagsFilterResults = s =>
-    setTagsState(tagsState => {...tagsState, filterResults: s});
-
-  let handleTagsFilterClicked = tag => {
-    let _ =
-      setTagsState(tagsState =>
+        )
+      )
+    ->Belt.Option.getWithDefault([|
         {
-          partial: "",
-          filterResults: tagsState.filterResults,
-          commits: Belt.Array.concat(tagsState.commits, [|tag|]),
-        }
-      );
-    let _ =
-      Js.Global.setTimeout(
-        () => {
-          let _ =
-            switch (tagsInputRef.current->Js.Nullable.toOption) {
-            | Some(inputElem) =>
-              let _ =
-                inputElem
-                ->Webapi.Dom.Element.unsafeAsHtmlElement
-                ->Webapi.Dom.HtmlElement.focus;
-              ();
-            | None => ()
-            };
-          ();
+          text: Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel,
+          id: None,
+          href: None
         },
-        0,
-      );
-    ();
-  };
+      |]);
 
   <div
     className={cn([
@@ -170,23 +92,10 @@ let make =
       <TextInput.Annotation
         onTextChange=handleTextChange
         textValue=textState
-        tagsValue={TextInput_Tags.Value.fromTagsState(
-          ~state=tagsState,
-          ~currentUser,
-        )}
-        onTagsChange=handleTagsChange
-        tagsInputRef
+        tagsValue
         ?placeholder
         ?autoFocus
       />
-      {isActive && Js.String.length(tagsState.partial) > 0
-         ? <QueryRenderers_TagsFilter
-             tagsState
-             onTagResults=handleTagsFilterResults
-             onTagClicked=handleTagsFilterClicked
-             currentUser
-           />
-         : <div className={Cn.fromList(["h-6"])} />}
     </div>
   </div>;
 };

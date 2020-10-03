@@ -7,7 +7,6 @@ let make =
       ~onTextChange,
       ~textValue,
       ~tagsValue,
-      ~onTagsChange,
       ~disabled=?,
       ~autoFocus=?,
       ~placeholder=?,
@@ -22,35 +21,6 @@ let make =
     | Some(tagsInputRef) => tagsInputRef
     | None => ownRef
     };
-  };
-
-  let handleTagsKeyDown = ev => {
-    let _ = ev->ReactEvent.Keyboard.persist;
-    let handled =
-      switch (ev->ReactEvent.Keyboard.keyCode) {
-      | 8
-          /*** backspace **/
-          when
-            Js.String.length(tagsValue.TextInput_Tags.Value.partial) === 0
-            && Js.Array.length(tagsValue.commits) === 0 =>
-        switch (textInputRef.current->Js.Nullable.toOption) {
-        | Some(inputElem) =>
-          let _ =
-            inputElem
-            ->Webapi.Dom.Element.unsafeAsHtmlElement
-            ->Webapi.Dom.HtmlElement.focus;
-          true;
-        | None => false
-        }
-      | _ => false
-      };
-    let _ =
-      if (handled) {
-        let _ = ev->ReactEvent.Keyboard.preventDefault;
-        let _ = ev->ReactEvent.Keyboard.stopPropagation;
-        ();
-      };
-    ();
   };
 
   let handleTextKeyDown = ev => {
@@ -90,13 +60,6 @@ let make =
         "disableUnderline": false,
       }
     />
-    <TextInput_Tags
-      ?disabled
-      onChange=onTagsChange
-      onKeyDown=handleTagsKeyDown
-      value=tagsValue
-      className={cn(["pt-8", "pb-4"])}
-      ref={tagsInputRef->ReactDOMRe.Ref.domRef}
-    />
+    <TagsList value=tagsValue />
   </>;
 };

@@ -57,12 +57,23 @@ module ErrorDisplay = {
         "pb-4",
         "pt-16",
       ])}>
+      <div>
+        <TextInput_Annotation
+          disabled=true
+          onTextChange={_ => ()}
+          textValue="\"Many intelligence reports in war are contradictory; even more are false, and most are uncertain... In short, most intelligence is false.\""
+          tagsValue=[|
+            TagsList.{text: "carl von clausewitz", id: None, href: None},
+          |]
+        />
+      </div>
       <div
         className={Cn.fromList([
           "flex",
           "flex-col",
           "justify-start",
           "items-start",
+          "mb-16",
         ])}>
         <h1
           className={Cn.fromList([
@@ -123,18 +134,6 @@ module ErrorDisplay = {
           variant=`Outlined>
           {React.string("Retry")}
         </MaterialUi.Button>
-      </div>
-      <div>
-        <TextInput_Annotation
-          disabled=true
-          onTextChange={_ => ()}
-          onTagsChange={_ => ()}
-          textValue="\"Many intelligence reports in war are contradictory; even more are false, and most are uncertain... In short, most intelligence is false.\""
-          tagsValue=TextInput_Tags.Value.{
-            commits: [|{text: "carl von clausewitz", id: None, href: None}|],
-            partial: "",
-          }
-        />
       </div>
     </div>;
   };

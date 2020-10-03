@@ -44,9 +44,9 @@ module.exports = {
         "white-o50": "rgba(255, 255, 255, 0.5)",
       },
       textColor: {
-        lightPrimary: "rgba(255, 255, 255, .87)",
-        lightSecondary: "rgba(255, 255, 255, .62)",
-        lightDisabled: "rgba(255, 255, 255, .38)"
+        lightPrimary: "rgba(255, 255, 255, .92)",
+        lightSecondary: "rgba(255, 255, 255, .72)",
+        lightDisabled: "rgba(255, 255, 255, .50)"
       }
     },
   },

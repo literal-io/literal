@@ -69,6 +69,15 @@ module Data = {
            </ScrollSnapList.Item>
          )}
       </ScrollSnapList.Container>
+      <Containers_NewTagInput
+        currentUser
+        annotationFragment={
+          annotations
+          ->Belt.Array.get(activeIdx)
+          ->Belt.Option.getExn
+          ->(a => a##newTagInputFragment)
+        }
+      />
     </div>;
   };
 };
@@ -87,7 +96,6 @@ let make =
       ~initialAnnotationId,
       ~rehydrated,
     ) => {
-
   let (_, query) =
     ApolloHooks.useQuery(
       ~skip=
