@@ -22,7 +22,7 @@ module Data = {
         currentUser
         annotationFragment={annotation##headerAnnotationFragment}
       />
-      <Containers_AnnotationEditor_NewFromShare
+      <Containers_NewAnnotationFromShareEditor
         currentUser
         annotationFragment={annotation##editorAnnotationFragment}
       />

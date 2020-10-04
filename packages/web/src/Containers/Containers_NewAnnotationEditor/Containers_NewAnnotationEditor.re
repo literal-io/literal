@@ -1,5 +1,5 @@
 open Styles;
-open Containers_AnnotationEditor_New_GraphQL;
+open Containers_NewAnnotationEditor_GraphQL;
 
 [@bs.deriving jsConverter]
 type phase = [ | `PhasePrompt | `PhaseTextInput];
@@ -121,20 +121,28 @@ let updateCache = (~currentUser, ~input) => {
 module PhaseTextInput = {
   [@react.component]
   let make = (~currentUser) => {
-    let (textValue, setTextValue) = React.useState(() => "")
-    let (tagsValue, setTagsValue) = React.useState(() => 
-    let (editorValue, setEditorValue) =
+    let (textValue, setTextValue) = React.useState(() => "");
+    let (tagsValue, setTagsValue) =
       React.useState(() =>
-        Containers_AnnotationEditor_Base_Types.{
-          text: "",
-          tags: [|
-            {
-              text: Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel,
-              id: None,
-            },
-          |],
-        }
+        [|
+          TagsList.{
+            text: Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel,
+            id:
+              Some(
+                Lib_GraphQL.AnnotationCollection.(
+                  makeIdFromComponent(
+                    ~creatorUsername=
+                      currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                    ~annotationCollectionIdComponent=recentAnnotationCollectionIdComponent,
+                    (),
+                  )
+                ),
+              ),
+            href: None,
+          },
+        |]
       );
+
     let (createAnnotationMutation, _s, _f) =
       ApolloHooks.useMutation(CreateAnnotationMutation.definition);
 
@@ -143,11 +151,11 @@ module PhaseTextInput = {
         Lib_GraphQL.Annotation.makeId(
           ~creatorUsername=
             AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-          ~textualTargetValue=editorValue.text,
+          ~textualTargetValue=textValue,
         );
 
       let bodyPromise =
-        editorValue.tags
+        tagsValue
         ->Belt.Array.map(tag => {
             let id =
               switch (tag.id) {
@@ -211,7 +219,7 @@ module PhaseTextInput = {
                        "textDirection": Some(`LTR),
                        "accessibility": None,
                        "rights": None,
-                       "value": editorValue.text,
+                       "value": textValue,
                        "id": None,
                      }),
                    "externalTarget": None,
@@ -240,16 +248,26 @@ module PhaseTextInput = {
       ();
     };
 
-    let handleChange = value => setEditorValue(_ => value);
+    let handleTextChange = value => setTextValue(_ => value);
 
-    <>
-      <Containers_AnnotationEditor_Base
-        onChange=handleTextChange
-        autoFocus=true
-        placeholder="Lorem Ipsum"
-        currentUser
-      />
-      {Js.String.length(editorValue.text) > 0
+    <div
+      className={Cn.fromList([
+        "w-full",
+        "h-full",
+        "bg-black",
+        "flex",
+        "flex-col",
+        "overflow-y-auto",
+      ])}>
+      <div className={Cn.fromList(["px-6", "pb-4", "pt-16"])}>
+        <TextInput.Annotation
+          onTextChange=handleTextChange
+          textValue
+          tagsValue
+          autoFocus=true
+        />
+      </div>
+      {Js.String.length(textValue) > 0
          ? <FloatingActionButton
              onClick={_ev => handleSave()}
              className={cn(["fixed", "right-0", "bottom-0", "m-6", "z-10"])}>
@@ -260,7 +278,7 @@ module PhaseTextInput = {
              />
            </FloatingActionButton>
          : React.null}
-    </>;
+    </div>;
   };
 };
 

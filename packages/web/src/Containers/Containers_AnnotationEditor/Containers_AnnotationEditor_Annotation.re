@@ -14,7 +14,7 @@ let handleSave =
   );
 
 [@react.component]
-let make = (~annotationFragment as annotation, ~isActive, ~currentUser) => {
+let make = (~annotationFragment as annotation, ~currentUser) => {
   let (patchAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(PatchAnnotationMutation.definition);
 

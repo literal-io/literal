@@ -74,8 +74,18 @@ let make =
     ->Belt.Option.getWithDefault([|
         {
           text: Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel,
-          id: None,
-          href: None
+          id:
+            Some(
+              Lib_GraphQL.AnnotationCollection.(
+                makeIdFromComponent(
+                  ~creatorUsername=
+                    currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                  ~annotationCollectionIdComponent=recentAnnotationCollectionIdComponent,
+                  (),
+                )
+              ),
+            ),
+          href: None,
         },
       |]);
 

@@ -1,10 +1,14 @@
 open Containers_NewTagInput_GraphQL;
 
 let handleUpdateCache = (~annotation, ~currentUser, ~tag) => {
+  let cacheAnnotation =
+    QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.parsedAnnotationToCache(
+      annotation,
+    );
   let cacheQuery =
     QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
       ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-      ~id=addedTag.id->Belt.Option.getExn,
+      ~id=tag##id->Belt.Option.getExn,
       (),
     );
   let data =
@@ -40,7 +44,7 @@ let handleUpdateCache = (~annotation, ~currentUser, ~tag) => {
         "getAnnotationCollection":
           Js.Null.return({
             "__typename": "AnnotationCollection",
-            "label": addedTag.text,
+            "label": tag##value,
             "first":
               Js.Null.return({
                 "__typename": "AnnotationPage",
@@ -128,6 +132,7 @@ let make = (~currentUser, ~annotationFragment as annotation, ~disabled=?) => {
                  {"set": Some({"body": Some(bodyInput), "target": None})},
                |],
              },
+             ()
            );
          let _ =
            handleUpdateCache(

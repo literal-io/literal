@@ -1,6 +1,6 @@
 module GetAnnotationFragment = [%graphql
   {|
-    fragment newTagInputAnnotationFragment on Annotation {
+    fragment NewTagInputAnnotation on Annotation {
       id
       created
       body {
@@ -27,7 +27,7 @@ module PatchAnnotationMutation = [%graphql
     mutation PatchAnnotation($input: PatchAnnotationInput!) {
       patchAnnotation(input: $input) {
         annotation {
-          ...GetAnnotationFragment.NewTagInputAnnotationFragment @bsField(name: "newTagInputAnnotationFragment")
+          ...GetAnnotationFragment.NewTagInputAnnotation @bsField(name: "newTagInputAnnotationFragment")
         }
       }
     }
