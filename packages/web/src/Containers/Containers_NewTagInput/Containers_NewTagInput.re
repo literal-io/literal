@@ -82,7 +82,7 @@ let make = (~currentUser, ~annotationFragment as annotation, ~disabled=?) => {
 
   let handleValueChange = value => setPendingValue(_ => value);
   let handleValueCommit = value => {
-    Lib_GraphQL.AnnotationCollection.makeId(
+    let _ = Lib_GraphQL.AnnotationCollection.makeId(
       ~creatorUsername=AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
       ~label=value,
     )
@@ -154,9 +154,17 @@ let make = (~currentUser, ~annotationFragment as annotation, ~disabled=?) => {
            );
          patchAnnotationMutation(~variables, ());
        });
+    ();
   };
 
   <TextInput_Tags
+    className={Cn.fromList([
+      "absolute",
+      "bottom-0",
+      "left-0",
+      "right-0",
+      "px-2",
+    ])}
     ?disabled
     onValueChange=handleValueChange
     onValueCommit=handleValueCommit

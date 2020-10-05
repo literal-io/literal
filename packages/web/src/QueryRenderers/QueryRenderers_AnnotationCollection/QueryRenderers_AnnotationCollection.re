@@ -196,11 +196,13 @@ let make =
     ();
   };
 
+  Js.log3(query, rehydrated, authentication);
+
   switch (query, rehydrated, authentication) {
   | (_, false, _)
   | (_, _, Loading)
   | ({data: None, loading: true}, _, _) => <Loading />
-  | ({data: Some(data)}, true, Authenticated(currentUser)) =>
+  | ({data: Some(data), loading}, true, Authenticated(currentUser)) =>
     let isRecentAnnotationCollection =
       annotationCollectionIdComponent
       == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent;
@@ -223,8 +225,9 @@ let make =
             })
         )
     ) {
+    | None when loading => <Loading />
     | None when isRecentAnnotationCollection =>
-      <Containers_Onboarding currentUser onAnnotationIdChange />
+      <Containers_Onboarding currentUser onAnnotationIdChange />;
     | None =>
       <Redirect
         staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath
@@ -237,7 +240,7 @@ let make =
     | Some((_, annotations))
         when
           isRecentAnnotationCollection && Js.Array2.length(annotations) == 0 =>
-      <Containers_Onboarding currentUser onAnnotationIdChange />
+      <Containers_Onboarding currentUser onAnnotationIdChange />;
     | Some((_, annotations)) when Js.Array2.length(annotations) == 0 =>
       <Redirect
         staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath
