@@ -63,7 +63,6 @@ module Data = {
              key={annotation##id} direction=ScrollSnapList.Horizontal>
              <Containers_AnnotationEditor_Annotation
                annotationFragment={annotation##editorAnnotationFragment}
-               isActive={annotation##id === activeAnnotation##id}
                currentUser
              />
            </ScrollSnapList.Item>

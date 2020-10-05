@@ -113,7 +113,19 @@ let make = (~currentUser, ~annotationFragment as annotation, ~disabled=?) => {
                | `Nonexhaustive => None
                | `TextualBody(body) =>
                  Some({
-                   "textualBody": Some(body),
+                   "textualBody":
+                     Some({
+                       "id": body##id,
+                       "format": body##format,
+                       "processingLanguage": body##processingLanguage,
+                       "language": body##language,
+                       "textDirection": body##textDirection,
+                       "accessibility": body##accessibility,
+                       "rights": body##rights,
+                       "purpose": body##purpose,
+                       "value": body##value,
+                       "type": Some(`TEXTUAL_BODY),
+                     }),
                    "externalBody": None,
                    "choiceBody": None,
                    "specificBody": None,
@@ -132,7 +144,7 @@ let make = (~currentUser, ~annotationFragment as annotation, ~disabled=?) => {
                  {"set": Some({"body": Some(bodyInput), "target": None})},
                |],
              },
-             ()
+             (),
            );
          let _ =
            handleUpdateCache(

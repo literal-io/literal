@@ -18,6 +18,32 @@ module GetAnnotationFragment = [%graphql
           rights
         }
       }
+      target {
+        ... on TextualTarget {
+          value
+          __typename
+
+          textualTargetId: id
+          format
+          language
+          processingLanguage
+          textDirection
+          accessibility
+          rights
+        }
+        ... on ExternalTarget {
+          __typename
+
+          externalTargetId: id
+          format
+          language
+          processingLanguage
+          textDirection
+          type_: type
+          accessibility
+          rights
+        }
+      }
     }
   |}
 ];
