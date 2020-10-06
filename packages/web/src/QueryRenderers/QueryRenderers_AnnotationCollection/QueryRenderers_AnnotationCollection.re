@@ -196,8 +196,6 @@ let make =
     ();
   };
 
-  Js.log3(query, rehydrated, authentication);
-
   switch (query, rehydrated, authentication) {
   | (_, false, _)
   | (_, _, Loading)

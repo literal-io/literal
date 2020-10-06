@@ -22,16 +22,18 @@ export const createAnnotation = /* GraphQL */ `
         type
         label
         total
-        created
+        firstAnnotationPageId
+        lastAnnotationPageId
         creatorUsername
+        created
         modified
       }
       annotationPageItems {
         id
-        annotationPageId
-        annotationId
         created
         modified
+        annotationId
+        annotationPageId
         creatorUsername
       }
       annotationPage {
@@ -41,6 +43,9 @@ export const createAnnotation = /* GraphQL */ `
         startIndex
         created
         modified
+        partOfAnnotationCollectionId
+        nextAnnotationPageId
+        prevAnnotationPageId
         creatorUsername
       }
     }
@@ -67,16 +72,18 @@ export const updateAnnotation = /* GraphQL */ `
         type
         label
         total
-        created
+        firstAnnotationPageId
+        lastAnnotationPageId
         creatorUsername
+        created
         modified
       }
       createdAnnotationPageItems {
         id
-        annotationPageId
-        annotationId
         created
         modified
+        annotationId
+        annotationPageId
         creatorUsername
       }
       createdAnnotationPages {
@@ -86,6 +93,9 @@ export const updateAnnotation = /* GraphQL */ `
         startIndex
         created
         modified
+        partOfAnnotationCollectionId
+        nextAnnotationPageId
+        prevAnnotationPageId
         creatorUsername
       }
       deletedAnnotationCollectionIds
@@ -133,16 +143,18 @@ export const patchAnnotation = /* GraphQL */ `
         type
         label
         total
-        created
+        firstAnnotationPageId
+        lastAnnotationPageId
         creatorUsername
+        created
         modified
       }
       createdAnnotationPageItems {
         id
-        annotationPageId
-        annotationId
         created
         modified
+        annotationId
+        annotationPageId
         creatorUsername
       }
       createdAnnotationPages {
@@ -152,6 +164,9 @@ export const patchAnnotation = /* GraphQL */ `
         startIndex
         created
         modified
+        partOfAnnotationCollectionId
+        nextAnnotationPageId
+        prevAnnotationPageId
         creatorUsername
       }
       deletedAnnotationCollectionIds
@@ -239,7 +254,7 @@ export const createAnnotationFromExternalTarget = /* GraphQL */ `
         value
       }
       creatorUsername
-      creator {
+      generator {
         id
         type
         name
@@ -251,7 +266,7 @@ export const createAnnotationFromExternalTarget = /* GraphQL */ `
         created
         modified
       }
-      generator {
+      creator {
         id
         type
         name

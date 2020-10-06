@@ -92,7 +92,7 @@
         "MemorySize": "1024",
         "Timeout": "25",
         "Code": {
-          "S3Bucket": "amplify-literal-production-114446-deployment",
+          "S3Bucket": "amplify-literal-staging-211408-deployment",
           "S3Key": "amplify-builds/GraphQLResolver-5471417a482b72543046-build.zip"
         },
         "Layers": [

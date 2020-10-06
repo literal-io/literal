@@ -38,7 +38,9 @@ export default function App({
   }
 
   React.useEffect(() => {
-    track(page({ route, asPath, query }));
+    window.requestIdleCallback(() => { 
+      track(page({ route, asPath, query }));
+    })
   }, [asPath, route, query]);
 
   return (

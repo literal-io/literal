@@ -1,5 +1,3 @@
-open Styles;
-
 let styles = [%raw "require('./TextInput_Tags.module.css')"];
 
 [@react.component]
@@ -23,6 +21,7 @@ let make =
       };
     };
     let keyEventHandled = React.useRef(false);
+    let (isFocused, setIsFocused) = React.useState(_ => false);
 
     let handleChange = ev => {
       let _ = ev->ReactEvent.Form.persist;
@@ -88,11 +87,17 @@ let make =
       ();
     };
 
-    let handleBlur = ev => {
-      let _ = ReactEvent.Focus.persist(ev);
+    let handleBlur = _ => {
       if (Js.String.length(value) > 0) {
         onValueChange("");
       };
+      let _ = setIsFocused(_ => false);
+      ();
+    };
+
+    let handleFocus = _ => {
+      let _ = setIsFocused(_ => true);
+      ();
     };
 
     <MaterialUi.TextField
@@ -102,22 +107,35 @@ let make =
       fullWidth=true
       multiline=true
       classes={MaterialUi.TextField.Classes.make(
-        ~root=Cn.fromList([
-          "border-t",
-          "border-solid",
-          "border-lightDisabled",
-          "py-2",
-          Cn.take(className)
-        ]),
+        ~root=
+          Cn.fromList([
+            "border-t",
+            "border-solid",
+            "py-2",
+            "transition-colors",
+            "duration-300",
+            "ease-in-out",
+            isFocused ? "border-lightPrimary" : "border-lightDisabled",
+            Cn.take(className),
+          ]),
         (),
       )}
       _InputProps={
+        "disableUnderline": true,
         "startAdornment":
           <MaterialUi.InputAdornment position=`Start>
             <Svg
               icon=Svg.label
               placeholderViewBox="0 0 24 24"
-              className={Cn.fromList(["w-6", "h-6", "opacity-50", "mr-2"])}
+              className={Cn.fromList([
+                "w-6",
+                "h-6",
+                "mr-2",
+                "transition-opacity",
+                "duration-300",
+                "ease-in-out",
+                isFocused ? "opacity-75" : "opacity-50"
+              ])}
             />
           </MaterialUi.InputAdornment>,
         "classes":
@@ -140,6 +158,7 @@ let make =
         "onKeyUp": handleKeyUp,
         "onKeyDown": handleKeyDown,
         "onBlur": handleBlur,
+        "onFocus": handleFocus,
         "ref": inputRef->ReactDOMRe.Ref.domRef,
       }
     />;

@@ -21,60 +21,62 @@
   $util.error("Annotation does not exist.", "ValidationError")
 #end
 
-#set( $ctx.stash.newTags = [] )
-#foreach( $body in $util.defaultIfNull($ctx.stash.newBody, []) )
-  #set( $isTextualBody = $body.type == "TEXTUAL_BODY" )
-  #set( $hasId = !$util.isNull($body.id) )
-  #set( $hasTag = false )
-  #foreach( $motivation in $util.defaultIfNull($body.purpose, []) )
-    #if( $motivation == "TAGGING" )
-      #set( $hasTag = true )
+#if( !$util.isNull($ctx.stash.newBody) )
+  #set( $ctx.stash.newTags = [] )
+  #foreach( $body in $util.defaultIfNull($ctx.stash.newBody, []) )
+    #set( $isTextualBody = $body.type == "TEXTUAL_BODY" )
+    #set( $hasId = !$util.isNull($body.id) )
+    #set( $hasTag = false )
+    #foreach( $motivation in $util.defaultIfNull($body.purpose, []) )
+      #if( $motivation == "TAGGING" )
+        #set( $hasTag = true )
+      #end
+    #end
+
+    #if( $isTextualBody && $hasId && $hasTag )
+      $util.qr($ctx.stash.newTags.add($body)) 
     #end
   #end
 
-  #if( $isTextualBody && $hasId && $hasTag )
-    $util.qr($ctx.stash.newTags.add($body)) 
-  #end
-#end
+  #set( $ctx.stash.oldTags = [] )
+  #foreach( $body in $util.defaultIfNull($ctx.stash.oldAnnotationResult.body, []) )
+    #set( $isTextualBody = $body.type == "TEXTUAL_BODY" )
+    #set( $hasId = !$util.isNull($body.id) )
+    #set( $hasTag = false )
+    #foreach( $motivation in $util.defaultIfNull($body.purpose, []) )
+      #if( $motivation == "TAGGING" )
+        #set( $hasTag = true )
+      #end
+    #end
 
-#set( $ctx.stash.oldTags = [] )
-#foreach( $body in $util.defaultIfNull($ctx.stash.oldAnnotationResult.body, []) )
-  #set( $isTextualBody = $body.type == "TEXTUAL_BODY" )
-  #set( $hasId = !$util.isNull($body.id) )
-  #set( $hasTag = false )
-  #foreach( $motivation in $util.defaultIfNull($body.purpose, []) )
-    #if( $motivation == "TAGGING" )
-      #set( $hasTag = true )
+    #if( $isTextualBody && $hasId && $hasTag )
+      $util.qr($ctx.stash.oldTags.add($body))
     #end
   #end
 
-  #if( $isTextualBody && $hasId && $hasTag )
-    $util.qr($ctx.stash.oldTags.add($body))
-  #end
-#end
 
-
-## Diff old (i.e. currently persisted) and new (i.e. patch input) tags, and
-## fetch associated AnnotationCollection so we can propagate updates correctly.
-#foreach( $tag in $ctx.stash.oldTags )
-  #set( $isRemoved = true )
-  #foreach( $tag0 in $ctx.stash.newTags )
-    #if( $tag0.id == $tag.id )
-      #set( $isRemoved = false )
+  ## Diff old (i.e. currently persisted) and new (i.e. patch input) tags, and
+  ## fetch associated AnnotationCollection so we can propagate updates correctly.
+  #foreach( $tag in $ctx.stash.oldTags )
+    #set( $isRemoved = true )
+    #foreach( $tag0 in $ctx.stash.newTags )
+      #if( $tag0.id == $tag.id )
+        #set( $isRemoved = false )
+      #end
     #end
-  #end
 
-  ## Tag is newly removed from the annotation.
-  #if( $isRemoved )
-    #set( $operation = {
-      "table": $ctx.stash.constants.ANNOTATION_COLLECTION_TABLE,
-      "key": {
-        "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
-        "id": $util.dynamodb.toDynamoDB($tag.id)
-      }
-    } )
+    ## Tag is newly removed from the annotation.
+    #if( $isRemoved )
+      #set( $operation = {
+        "table": $ctx.stash.constants.ANNOTATION_COLLECTION_TABLE,
+        "key": {
+          "creatorUsername": $util.dynamodb.toDynamoDB($ctx.stash.creatorUsername),
+          "id": $util.dynamodb.toDynamoDB($tag.id)
+        }
+      } )
 
-    $util.qr($ctx.stash.transactGetItems.add($operation))
+      $util.qr($ctx.stash.transactGetItems.add($operation))
+    #end
   #end
 #end
 

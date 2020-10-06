@@ -1,6 +1,27 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
+export const annotationCollectionLabelAutocomplete = /* GraphQL */ `
+  query AnnotationCollectionLabelAutocomplete(
+    $input: AnnotationCollectionLabelAutocompleteInput!
+  ) {
+    annotationCollectionLabelAutocomplete(input: $input) {
+      items {
+        context
+        id
+        type
+        label
+        total
+        firstAnnotationPageId
+        lastAnnotationPageId
+        creatorUsername
+        created
+        modified
+      }
+      nextToken
+    }
+  }
+`;
 export const listAgents = /* GraphQL */ `
   query ListAgents(
     $username: String
@@ -158,7 +179,7 @@ export const getAnnotation = /* GraphQL */ `
         value
       }
       creatorUsername
-      creator {
+      generator {
         id
         type
         name
@@ -170,7 +191,7 @@ export const getAnnotation = /* GraphQL */ `
         created
         modified
       }
-      generator {
+      creator {
         id
         type
         name
@@ -208,8 +229,10 @@ export const listAnnotationCollections = /* GraphQL */ `
         type
         label
         total
-        created
+        firstAnnotationPageId
+        lastAnnotationPageId
         creatorUsername
+        created
         modified
       }
       nextToken
@@ -224,8 +247,22 @@ export const getAnnotationCollection = /* GraphQL */ `
       type
       label
       total
-      created
+      firstAnnotationPageId
+      last {
+        context
+        id
+        type
+        startIndex
+        created
+        modified
+        partOfAnnotationCollectionId
+        nextAnnotationPageId
+        prevAnnotationPageId
+        creatorUsername
+      }
+      lastAnnotationPageId
       creatorUsername
+      created
       modified
       creator {
         id
@@ -246,17 +283,44 @@ export const getAnnotationCollection = /* GraphQL */ `
         startIndex
         created
         modified
+        partOfAnnotationCollectionId
+        nextAnnotationPageId
+        prevAnnotationPageId
         creatorUsername
       }
-      last {
+    }
+  }
+`;
+export const listAnnotationCollectionsByLabel = /* GraphQL */ `
+  query ListAnnotationCollectionsByLabel(
+    $creatorUsername: String
+    $label: ModelStringKeyConditionInput
+    $sortDirection: ModelSortDirection
+    $filter: ModelAnnotationCollectionFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listAnnotationCollectionsByLabel(
+      creatorUsername: $creatorUsername
+      label: $label
+      sortDirection: $sortDirection
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+    ) {
+      items {
         context
         id
         type
-        startIndex
+        label
+        total
+        firstAnnotationPageId
+        lastAnnotationPageId
+        creatorUsername
         created
         modified
-        creatorUsername
       }
+      nextToken
     }
   }
 `;
@@ -264,10 +328,10 @@ export const getAnnotationPageItem = /* GraphQL */ `
   query GetAnnotationPageItem($creatorUsername: String!, $id: ID!) {
     getAnnotationPageItem(creatorUsername: $creatorUsername, id: $id) {
       id
-      annotationPageId
-      annotationId
       created
       modified
+      annotationId
+      annotationPageId
       creatorUsername
       creator {
         id
@@ -300,6 +364,9 @@ export const getAnnotationPageItem = /* GraphQL */ `
         startIndex
         created
         modified
+        partOfAnnotationCollectionId
+        nextAnnotationPageId
+        prevAnnotationPageId
         creatorUsername
       }
     }
@@ -324,10 +391,10 @@ export const listAnnotationPageItems = /* GraphQL */ `
     ) {
       items {
         id
-        annotationPageId
-        annotationId
         created
         modified
+        annotationId
+        annotationPageId
         creatorUsername
       }
       nextToken
@@ -358,6 +425,9 @@ export const listAnnotationPages = /* GraphQL */ `
         startIndex
         created
         modified
+        partOfAnnotationCollectionId
+        nextAnnotationPageId
+        prevAnnotationPageId
         creatorUsername
       }
       nextToken
@@ -373,6 +443,9 @@ export const getAnnotationPage = /* GraphQL */ `
       startIndex
       created
       modified
+      partOfAnnotationCollectionId
+      nextAnnotationPageId
+      prevAnnotationPageId
       creatorUsername
       creator {
         id
@@ -392,8 +465,10 @@ export const getAnnotationPage = /* GraphQL */ `
         type
         label
         total
-        created
+        firstAnnotationPageId
+        lastAnnotationPageId
         creatorUsername
+        created
         modified
       }
       items {
@@ -406,6 +481,9 @@ export const getAnnotationPage = /* GraphQL */ `
         startIndex
         created
         modified
+        partOfAnnotationCollectionId
+        nextAnnotationPageId
+        prevAnnotationPageId
         creatorUsername
       }
       prev {
@@ -415,6 +493,9 @@ export const getAnnotationPage = /* GraphQL */ `
         startIndex
         created
         modified
+        partOfAnnotationCollectionId
+        nextAnnotationPageId
+        prevAnnotationPageId
         creatorUsername
       }
     }

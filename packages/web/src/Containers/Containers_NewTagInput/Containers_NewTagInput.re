@@ -152,6 +152,7 @@ let make = (~currentUser, ~annotationFragment as annotation, ~disabled=?) => {
              ~currentUser,
              ~tag=commitBodyInput##textualBody->Belt.Option.getExn,
            );
+         let _ = setPendingValue(_ => "");
          patchAnnotationMutation(~variables, ());
        });
     ();
