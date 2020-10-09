@@ -25,12 +25,15 @@ module TagTextField = {
           inputRef.current
           ->Js.Nullable.toOption
           ->Belt.Option.forEach(el => {
+              let htmlElement =
+                el->Webapi.Dom.HtmlElement.ofElement->Belt.Option.getExn;
+
               let _ =
-                Webapi.Dom.HtmlElement.addEventListener(
-                  "contextmenu",
-                  disableContextMenu,
-                  el->Webapi.Dom.HtmlElement.ofElement->Belt.Option.getExn,
-                );
+                htmlElement
+                |> Webapi.Dom.HtmlElement.addEventListener(
+                     "contextmenu",
+                     disableContextMenu,
+                   );
               ();
             });
 
@@ -113,10 +116,14 @@ module TagTextField = {
     <MaterialUi.TextField
       ref={inputRef->ReactDOMRe.Ref.domRef}
       value={MaterialUi.TextField.Value.string(value)}
-      autoFocus=true
       onChange=handleChange
+      autoFocus=true
       fullWidth=true
       multiline=true
+      classes={MaterialUi.TextField.Classes.make(
+        ~root=Cn.fromList(["mx-2", "mb-1"]),
+        (),
+      )}
       _InputProps={
         "classes":
           MaterialUi.Input.Classes.make(
@@ -187,7 +194,8 @@ module TagButton = {
         );
       });
 
-    let handleTouchStart = _ => {
+    let handleTouchStart = ev => {
+      let _ = ev->ReactEvent.Touch.persist;
       timeoutId.current =
         Some(
           Js.Global.setTimeout(
@@ -195,7 +203,7 @@ module TagButton = {
               onLongPress();
               ();
             },
-            600,
+            500,
           ),
         );
     };
