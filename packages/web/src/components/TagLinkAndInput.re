@@ -2,47 +2,8 @@ module TextField = {
   [@react.component]
   let make = (~text, ~onChange, ~onBlur) => {
     let keyEventHandled = React.useRef(false);
-    let inputRef = React.useRef(Js.Nullable.null);
 
     let (value, setValue) = React.useState(() => text);
-
-    let _ =
-      React.useEffect0(() => {
-        let disableContextMenu = ev => {
-          let _ = Webapi.Dom.Event.preventDefault(ev);
-          ();
-        };
-
-        let _ =
-          inputRef.current
-          ->Js.Nullable.toOption
-          ->Belt.Option.forEach(el => {
-              let htmlElement =
-                el->Webapi.Dom.HtmlElement.ofElement->Belt.Option.getExn;
-
-              let _ =
-                htmlElement
-                |> Webapi.Dom.HtmlElement.addEventListener(
-                     "contextmenu",
-                     disableContextMenu,
-                   );
-              ();
-            });
-
-        Some(
-          () => {
-            inputRef.current
-            ->Js.Nullable.toOption
-            ->Belt.Option.forEach(el => {
-                Webapi.Dom.HtmlElement.removeEventListener(
-                  "contextmenu",
-                  disableContextMenu,
-                  el->Webapi.Dom.HtmlElement.ofElement->Belt.Option.getExn,
-                )
-              })
-          },
-        );
-      });
 
     let handleChange = ev => {
       let data =
@@ -70,7 +31,7 @@ module TextField = {
             if (Js.String.length(newValue) === 0) {
               ev->ReactEvent.Form.stopPropagation;
             };
-          Some(value);
+          Some(newValue);
         | _ => None
         };
 
@@ -108,11 +69,9 @@ module TextField = {
 
     React.cloneElement(
       <MaterialUi.TextareaAutosize
-        ref={inputRef->ReactDOMRe.Ref.domRef}
         onChange=handleChange
         value={MaterialUi.TextareaAutosize.Value.string(value)}
         className={Cn.fromList([
-          "mb-1",
           "font-sans",
           "text-lightPrimary",
           "font-medium",
@@ -135,45 +94,16 @@ module TextField = {
 module Link = {
   [@react.component]
   let make = (~href, ~text, ~disabled=?, ~onLongPress) => {
-    let buttonRef = React.useRef(Js.Nullable.null);
     let timeoutId = React.useRef(None);
 
     let _ =
       React.useEffect0(() => {
-        let disableContextMenu = ev => {
-          let _ = Webapi.Dom.Event.preventDefault(ev);
-          ();
-        };
-
-        let _ =
-          buttonRef.current
-          ->Js.Nullable.toOption
-          ->Belt.Option.forEach(el => {
-              let _ =
-                Webapi.Dom.HtmlElement.addEventListener(
-                  "contextmenu",
-                  disableContextMenu,
-                  el->Webapi.Dom.HtmlElement.ofElement->Belt.Option.getExn,
-                );
-              ();
-            });
-
         Some(
           () => {
             timeoutId.current->Belt.Option.forEach(Js.Global.clearTimeout);
             timeoutId.current = None;
-
-            buttonRef.current
-            ->Js.Nullable.toOption
-            ->Belt.Option.forEach(el => {
-                Webapi.Dom.HtmlElement.removeEventListener(
-                  "contextmenu",
-                  disableContextMenu,
-                  el->Webapi.Dom.HtmlElement.ofElement->Belt.Option.getExn,
-                )
-              });
           },
-        );
+        )
       });
 
     let handleTouchStart = ev => {
@@ -185,7 +115,7 @@ module Link = {
               onLongPress();
               ();
             },
-            500,
+            400,
           ),
         );
     };
@@ -211,15 +141,10 @@ module Link = {
     };
 
     <span
-      ref={buttonRef->ReactDOMRe.Ref.domRef}
       onTouchStart=handleTouchStart
       onTouchEnd=handleTouchEnd
       onClick=handleClick
       className={Cn.fromList([
-        "mb-1",
-        "border-b",
-        "border-white",
-        "border-opacity-50",
         "font-sans",
         "text-lightPrimary",
         "font-medium",
@@ -235,8 +160,51 @@ module Link = {
 [@react.component]
 let make = (~href, ~text, ~disabled=?, ~onChange) => {
   let (isEditing, setIsEditing) = React.useState(_ => false);
+  let elemRef = React.useRef(Js.Nullable.null);
+  let _ =
+    React.useEffect0(() => {
+      let disableContextMenu = ev => {
+        let _ = Webapi.Dom.Event.preventDefault(ev);
+        ();
+      };
 
-  isEditing
-    ? <TextField text onChange onBlur={_ => setIsEditing(_ => false)} />
-    : <Link text href ?disabled onLongPress={_ => setIsEditing(_ => true)} />;
+      let _ =
+        elemRef.current
+        ->Js.Nullable.toOption
+        ->Belt.Option.forEach(el => {
+            let _ =
+              Webapi.Dom.HtmlElement.addEventListener(
+                "contextmenu",
+                disableContextMenu,
+                el->Webapi.Dom.HtmlElement.ofElement->Belt.Option.getExn,
+              );
+            ();
+          });
+      None;
+    });
+
+  <div
+    ref={elemRef->ReactDOMRe.Ref.domRef}
+    className={Cn.fromList([
+      isEditing
+        ? Cn.fromList([
+            "flex",
+            "items-stretch",
+            "flex-col",
+            "border-lightPrimary",
+          ])
+        : Cn.fromList(["inline-flex", "flex-col", "border-lightDisabled"]),
+      "border-b",
+      "transition-all",
+      "duration-300",
+    ])}>
+    {isEditing
+       ? <TextField text onChange onBlur={_ => setIsEditing(_ => false)} />
+       : <Link
+           text
+           href
+           ?disabled
+           onLongPress={_ => setIsEditing(_ => true)}
+         />}
+  </div>;
 };
