@@ -54,9 +54,11 @@ module TextField = {
         let keyCode = ReactEvent.Keyboard.keyCode(ev);
         if (keyCode === 13 /*** enter **/ && Js.String2.length(value) > 0) {
           onChange(Some(value));
+          onBlur();
         } else if (keyCode === 8  /*** backspace **/
                    && Js.String2.length(value) === 0) {
           onChange(None);
+          onBlur();
         };
       };
 

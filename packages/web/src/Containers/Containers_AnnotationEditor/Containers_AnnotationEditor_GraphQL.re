@@ -50,12 +50,12 @@ module GetAnnotationFragment = [%graphql
 
 module PatchAnnotationMutation = [%graphql
   {|
-  mutation PatchAnnotation($input: PatchAnnotationInput!) {
-    patchAnnotation(input: $input) {
-      annotation {
-        ...GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
+    mutation PatchAnnotation($input: PatchAnnotationInput!) {
+      patchAnnotation(input: $input) {
+        annotation {
+          ...GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
+        }
       }
     }
-  }
-|}
+  |}
 ];

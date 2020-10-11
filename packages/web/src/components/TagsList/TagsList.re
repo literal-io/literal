@@ -30,7 +30,7 @@ let make = (~value, ~onChange, ~disabled=?) => {
     value
     ->Belt.Array.keep(({text}) => text != "recent")
     ->Belt.Array.mapWithIndex((idx, tag) =>
-        <li className={Cn.fromList(["mb-5"])}>
+        <li className={Cn.fromList(["mb-5"])} key={tag.text}>
           <TagLinkAndInput
             key={tag.text}
             onChange={newText => handleChange(~newText, ~idx)}

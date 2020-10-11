@@ -142,6 +142,7 @@ module PhaseTextInput = {
           },
         |]
       );
+    let (pendingTagValue, setPendingTagValue) = React.useState(_ => "");
 
     let (createAnnotationMutation, _s, _f) =
       ApolloHooks.useMutation(CreateAnnotationMutation.definition);
@@ -231,8 +232,8 @@ module PhaseTextInput = {
              let variables =
                CreateAnnotationMutation.makeVariables(~input, ());
 
-             let _ = createAnnotationMutation(~variables, ());
              let _ = updateCache(~currentUser, ~input);
+             let _ = createAnnotationMutation(~variables, ());
              let _ =
                Routes.CreatorsIdAnnotationCollectionsId.(
                  Next.Router.pushWithAs(
@@ -250,6 +251,56 @@ module PhaseTextInput = {
 
     let handleTextChange = value => setTextValue(_ => value);
     let handleTagsChange = value => setTagsValue(_ => value);
+    let handlePendingTagChange = value => setPendingTagValue(_ => value);
+    let handlePendingTagCommit = value => {
+      let _ =
+        setTagsValue(tags =>
+          Js.Array2.concat(
+            [|
+              Containers_AnnotationEditor_Types.{
+                text: value,
+                id: None,
+                href: None,
+              },
+            |],
+            tags,
+          )
+        );
+      let _ = setPendingTagValue(_ => "");
+      let _ =
+        Lib_GraphQL.AnnotationCollection.makeId(
+          ~creatorUsername=
+            currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+          ~label=value,
+        )
+        |> Js.Promise.then_(id => {
+             let _ =
+               setTagsValue(tags => {
+                 tags
+                 ->Belt.Array.getIndexBy(tag => tag.text === value)
+                 ->Belt.Option.map(idx => {
+                     let copy = Js.Array2.copy(tags);
+                     let _ =
+                       Js.Array2.spliceInPlace(
+                         tags,
+                         ~pos=idx,
+                         ~remove=1,
+                         ~add=[|
+                           Containers_AnnotationEditor_Types.{
+                             text: value,
+                             id: Some(id),
+                             href: None,
+                           },
+                         |],
+                       );
+                     copy;
+                   })
+                 ->Belt.Option.getWithDefault(tags)
+               });
+             Js.Promise.resolve();
+           });
+      ();
+    };
 
     <div
       className={Cn.fromList([
@@ -266,20 +317,37 @@ module PhaseTextInput = {
           onTagsChange=handleTagsChange
           textValue
           tagsValue
+          placeholder="Lorem Ipsum..."
           autoFocus=true
         />
       </div>
-      {Js.String.length(textValue) > 0
-         ? <FloatingActionButton
-             onClick={_ev => handleSave()}
-             className={cn(["fixed", "right-0", "bottom-0", "m-6", "z-10"])}>
-             <Svg
-               placeholderViewBox="0 0 24 24"
-               className={cn(["w-10", "h-10", "pointer-events-none"])}
-               icon=Svg.done_
-             />
-           </FloatingActionButton>
-         : React.null}
+      <div
+        className={Cn.fromList([
+          "absolute",
+          "bottom-0",
+          "left-0",
+          "right-0",
+          "flex",
+          "flex-col",
+          "items-end",
+        ])}>
+        {Js.String.length(textValue) > 0
+           ? <FloatingActionButton
+               onClick={_ev => handleSave()} className={cn(["m-6", "z-10"])}>
+               <Svg
+                 placeholderViewBox="0 0 24 24"
+                 className={cn(["w-10", "h-10", "pointer-events-none"])}
+                 icon=Svg.done_
+               />
+             </FloatingActionButton>
+           : React.null}
+        <TextInput_Tags
+          className={Cn.fromList(["px-2"])}
+          onValueChange=handlePendingTagChange
+          onValueCommit=handlePendingTagCommit
+          value=pendingTagValue
+        />
+      </div>
     </div>;
   };
 };
