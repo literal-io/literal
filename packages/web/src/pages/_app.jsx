@@ -1,5 +1,5 @@
 import "../app.css";
-import "typeface-open-sans";
+import "typeface-titillium-web";
 import "typeface-domine";
 
 import Head from "next/head";

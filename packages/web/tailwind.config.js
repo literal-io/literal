@@ -3,7 +3,7 @@ module.exports = {
   theme: {
     fontFamily: {
       sans: [
-        "Open Sans",
+        "Titillium Web",
         "system-ui",
         "-apple-system",
         "BlinkMacSystemFont",

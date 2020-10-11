@@ -5,6 +5,7 @@ let styles = [%raw "require('./TextInput_Annotation.module.css')"];
 let make =
     (
       ~onTextChange,
+      ~onTagsChange,
       ~textValue,
       ~tagsValue,
       ~disabled=?,
@@ -60,6 +61,6 @@ let make =
         "disableUnderline": false,
       }
     />
-    <TagsList value=tagsValue />
+    <TagsList value=tagsValue onChange=onTagsChange />
   </>;
 };

@@ -125,7 +125,7 @@ module PhaseTextInput = {
     let (tagsValue, setTagsValue) =
       React.useState(() =>
         [|
-          TagsList.{
+          Containers_AnnotationEditor_Types.{
             text: Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel,
             id:
               Some(
@@ -249,6 +249,7 @@ module PhaseTextInput = {
     };
 
     let handleTextChange = value => setTextValue(_ => value);
+    let handleTagsChange = value => setTagsValue(_ => value);
 
     <div
       className={Cn.fromList([
@@ -262,6 +263,7 @@ module PhaseTextInput = {
       <div className={Cn.fromList(["px-6", "pb-4", "pt-16"])}>
         <TextInput.Annotation
           onTextChange=handleTextChange
+          onTagsChange=handleTagsChange
           textValue
           tagsValue
           autoFocus=true

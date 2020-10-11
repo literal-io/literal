@@ -1,18 +1,30 @@
 let styles = [%raw "require('./TagsList.module.css')"];
 
-type tag = {
-  id: option(string),
-  href: option(string),
-  text: string,
-};
-
 [@react.component]
-let make = (~value, ~disabled=?) => {
-  let handleChange = (~tag, ~idx) =>
-    /** TODO **/
-    {
-      ();
-    };
+let make = (~value, ~onChange, ~disabled=?) => {
+  let handleChange = (~newText, ~idx) => {
+    let newTag =
+      value
+      ->Belt.Array.get(idx)
+      ->Belt.Option.flatMap(tag =>
+          newText->Belt.Option.map(text =>
+            Containers_AnnotationEditor_Types.{...tag, text}
+          )
+        );
+    let newValue = Belt.Array.copy(value);
+    let _ =
+      Js.Array2.spliceInPlace(
+        newValue,
+        ~pos=idx,
+        ~remove=1,
+        ~add=
+          switch (newTag) {
+          | Some(newTag) => [|newTag|]
+          | None => [||]
+          },
+      );
+    onChange(newValue);
+  };
 
   let tags =
     value
@@ -21,7 +33,7 @@ let make = (~value, ~disabled=?) => {
         <li className={Cn.fromList(["mb-5"])}>
           <TagLinkAndInput
             key={tag.text}
-            onChange={tag => handleChange(~tag, ~idx)}
+            onChange={newText => handleChange(~newText, ~idx)}
             text={tag.text}
             href={tag.href}
             ?disabled

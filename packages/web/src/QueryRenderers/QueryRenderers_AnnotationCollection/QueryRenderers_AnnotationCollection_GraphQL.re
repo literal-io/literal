@@ -16,7 +16,7 @@ module GetAnnotationCollection = {
                   __typename
                   created
                   id
-                  ...Containers_AnnotationEditor_Annotation_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
+                  ...Containers_AnnotationEditor_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
                   ...Containers_AnnotationCollectionHeader_GraphQL.GetAnnotationFragment.AnnotationCollectionHeader_Annotation @bsField(name: "annotationCollectionHeader")
                   ...Containers_NewTagInput_GraphQL.GetAnnotationFragment.NewTagInputAnnotation @bsField(name: "newTagInputFragment")
                 }

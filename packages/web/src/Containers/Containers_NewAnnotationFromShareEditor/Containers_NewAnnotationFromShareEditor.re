@@ -44,7 +44,13 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
                       )
                     )
                   );
-              Some(TagsList.{text: body##value, id: body##id, href});
+              Some(
+                Containers_AnnotationEditor_Types.{
+                  text: body##value,
+                  id: body##id,
+                  href,
+                },
+              );
             | `Nonexhaustive => None
             | _ => None
             }
@@ -197,6 +203,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
   };
 
   let handleTextChange = value => setTextValue(_ => value);
+  let handleTagsChange = value => setTagsValue(_ => value);
 
   <div
     className={Cn.fromList([
@@ -210,6 +217,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
     <div className={Cn.fromList(["px-6", "pb-4", "pt-16"])}>
       <TextInput.Annotation
         onTextChange=handleTextChange
+        onTagsChange=handleTagsChange
         textValue
         tagsValue
         placeholder="Lorem Ipsum"
