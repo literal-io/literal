@@ -148,7 +148,7 @@ module Link = {
       onClick=handleClick
       className={Cn.fromList([
         "font-sans",
-        "text-lightPrimary",
+        "text-lightSecondary",
         "font-medium",
         "text-lg",
         "normal-case",

@@ -1,5 +1,16 @@
 open QueryRenderers_AnnotationCollection_GraphQL;
 
+module Loading = {
+  [@react.component]
+  let make = () => {
+    <div className={Cn.fromList(["w-full", "h-full", "bg-black"])}>
+      <Containers_AnnotationCollectionHeader />
+      <TextInput_Loading className={Cn.fromList(["px-6", "pb-4", "pt-16"])} />
+      <Containers_NewTagInput />
+    </div>;
+  };
+};
+
 module Data = {
   [@react.component]
   let make =
@@ -22,7 +33,12 @@ module Data = {
         ->Belt.Option.getWithDefault(0)
       );
 
-    let activeAnnotation = annotations->Belt.Array.getExn(activeIdx);
+    let activeAnnotation =
+      annotations
+      ->Belt.Array.get(activeIdx)
+      ->Belt.Option.getWithDefault(
+          Belt.Array.getExn(annotations, Js.Array2.length(annotations) - 1),
+        );
 
     let _ =
       React.useEffect1(
@@ -70,12 +86,7 @@ module Data = {
       </ScrollSnapList.Container>
       <Containers_NewTagInput
         currentUser
-        annotationFragment={
-          annotations
-          ->Belt.Array.get(activeIdx)
-          ->Belt.Option.getExn
-          ->(a => a##newTagInputFragment)
-        }
+        annotationFragment={activeAnnotation##newTagInputFragment}
       />
     </div>;
   };
@@ -225,7 +236,7 @@ let make =
     ) {
     | None when loading => <Loading />
     | None when isRecentAnnotationCollection =>
-      <Containers_Onboarding currentUser onAnnotationIdChange />;
+      <Containers_Onboarding currentUser onAnnotationIdChange />
     | None =>
       <Redirect
         staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath
@@ -238,7 +249,7 @@ let make =
     | Some((_, annotations))
         when
           isRecentAnnotationCollection && Js.Array2.length(annotations) == 0 =>
-      <Containers_Onboarding currentUser onAnnotationIdChange />;
+      <Containers_Onboarding currentUser onAnnotationIdChange />
     | Some((_, annotations)) when Js.Array2.length(annotations) == 0 =>
       <Redirect
         staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath

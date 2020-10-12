@@ -52,12 +52,13 @@ module ErrorDisplay = {
         "bg-black",
         "flex",
         "flex-col",
-        "justify-between",
+        "justify-around",
         "px-6",
         "pb-4",
         "pt-16",
       ])}>
-      <div>
+      <div
+        className={Cn.fromList(["flex", "justify-center", "items-center"])}>
         <Svg
           icon=Svg.logo
           placeholderViewBox="0 0 24 24"

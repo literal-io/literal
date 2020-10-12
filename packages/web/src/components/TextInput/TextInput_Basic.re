@@ -1,5 +1,3 @@
-open Styles;
-
 let styles = [%raw "require('./TextInput_Basic.module.css')"];
 [@react.component]
 let make =
@@ -104,7 +102,7 @@ let make =
               ~input=
                 Cn.(
                   fromList([
-                    "text-lightSecondary",
+                    "text-lightPrimary",
                     "font-serif",
                     "text-lg",
                     "leading-relaxed",

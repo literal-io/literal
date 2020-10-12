@@ -70,9 +70,8 @@ let updateCacheForNewTag = (~tag, ~currentUser, ~cacheAnnotation) => {
       ~client=Providers_Apollo.client,
       (),
     );
-  let newData =
-    switch (data) {
-    | Some(data) =>
+  let _ =
+    data->Belt.Option.forEach(data => {
       let items =
         data##getAnnotationCollection
         ->Js.Null.toOption
@@ -88,42 +87,20 @@ let updateCacheForNewTag = (~tag, ~currentUser, ~cacheAnnotation) => {
           ),
         );
 
-      QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setAnnotationPageItems(
-        data,
-        newItems,
-      );
-    | None => {
-        "__typename": "Query",
-        "getAnnotationCollection":
-          Js.Null.return({
-            "__typename": "AnnotationCollection",
-            "label": tag##value,
-            "first":
-              Js.Null.return({
-                "__typename": "AnnotationPage",
-                "items":
-                  Js.Null.return({
-                    "__typename": "ModelAnnotationPageItemConnection",
-                    "nextToken": Js.Null.return(""),
-                    "items":
-                      Js.Null.return([|
-                        {
-                          "__typename": "AnnotationPageItem",
-                          "annotation": cacheAnnotation,
-                        },
-                      |]),
-                  }),
-              }),
-          }),
-      }
-    };
-  let _ =
-    QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
-      ~query=cacheQuery,
-      ~client=Providers_Apollo.client,
-      ~data=newData,
-      (),
-    );
+      let newData =
+        QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setAnnotationPageItems(
+          data,
+          newItems,
+        );
+      let _ =
+        QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
+          ~query=cacheQuery,
+          ~client=Providers_Apollo.client,
+          ~data=newData,
+          (),
+        );
+      ();
+    });
   ();
 };
 

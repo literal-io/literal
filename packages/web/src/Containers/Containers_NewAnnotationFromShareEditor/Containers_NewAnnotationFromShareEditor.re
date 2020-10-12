@@ -1,4 +1,3 @@
-open Styles;
 open Containers_NewAnnotationFromShareEditor_GraphQL;
 
 [@react.component]
@@ -74,6 +73,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
           },
         |])
     );
+  let (pendingTagValue, setPendingTagValue) = React.useState(_ => "");
 
   let (patchAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(PatchAnnotationMutation.definition);
@@ -204,6 +204,55 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
 
   let handleTextChange = value => setTextValue(_ => value);
   let handleTagsChange = value => setTagsValue(_ => value);
+  let handlePendingTagChange = value => setPendingTagValue(_ => value);
+  let handlePendingTagCommit = value => {
+    let _ =
+      setTagsValue(tags =>
+        Js.Array2.concat(
+          [|
+            Containers_AnnotationEditor_Types.{
+              text: value,
+              id: None,
+              href: None,
+            },
+          |],
+          tags,
+        )
+      );
+    let _ = setPendingTagValue(_ => "");
+    let _ =
+      Lib_GraphQL.AnnotationCollection.makeId(
+        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+        ~label=value,
+      )
+      |> Js.Promise.then_(id => {
+           let _ =
+             setTagsValue(tags => {
+               tags
+               ->Belt.Array.getIndexBy(tag => tag.text === value)
+               ->Belt.Option.map(idx => {
+                   let copy = Js.Array2.copy(tags);
+                   let _ =
+                     Js.Array2.spliceInPlace(
+                       tags,
+                       ~pos=idx,
+                       ~remove=1,
+                       ~add=[|
+                         Containers_AnnotationEditor_Types.{
+                           text: value,
+                           id: Some(id),
+                           href: None,
+                         },
+                       |],
+                     );
+                   copy;
+                 })
+               ->Belt.Option.getWithDefault(tags)
+             });
+           Js.Promise.resolve();
+         });
+    ();
+  };
 
   <div
     className={Cn.fromList([
@@ -224,14 +273,31 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
         autoFocus=true
       />
     </div>
-    <FloatingActionButton
-      onClick={_ev => handleSave()}
-      className={cn(["fixed", "right-0", "bottom-0", "m-6", "z-10"])}>
-      <Svg
-        placeholderViewBox="0 0 24 24"
-        className={cn(["w-10", "h-10", "pointer-events-none"])}
-        icon=Svg.done_
+    <div
+      className={Cn.fromList([
+        "absolute",
+        "bottom-0",
+        "left-0",
+        "right-0",
+        "flex",
+        "flex-col",
+        "items-end",
+      ])}>
+      <FloatingActionButton
+        onClick={_ev => handleSave()}
+        className={Cn.fromList(["fixed", "right-0", "bottom-0", "m-6", "z-10"])}>
+        <Svg
+          placeholderViewBox="0 0 24 24"
+          className={Cn.fromList(["w-10", "h-10", "pointer-events-none"])}
+          icon=Svg.done_
+        />
+      </FloatingActionButton>
+      <TextInput_Tags
+        className={Cn.fromList(["px-2"])}
+        onValueChange=handlePendingTagChange
+        onValueCommit=handlePendingTagCommit
+        value=pendingTagValue
       />
-    </FloatingActionButton>
+    </div>
   </div>;
 };
