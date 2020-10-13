@@ -112,6 +112,17 @@ module Storage = {
 
   [@bs.send] external get: (t, string) => Js.Promise.t(string) = "get";
 
+  type putResult = {key: string};
+  type putConfig = {
+    contentType: string,
+    level: string,
+  };
+
+  [@bs.send]
+  external put:
+    (t, string, Webapi.File.t, option(putConfig)) => Js.Promise.t(putResult) =
+    "put";
+
   type getConfig = {
     level: string, // private|protected|public
     download: bool,

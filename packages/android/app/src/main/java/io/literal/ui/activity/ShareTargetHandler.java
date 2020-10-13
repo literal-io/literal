@@ -306,9 +306,10 @@ public class ShareTargetHandler extends AppCompatActivity {
         File file = ContentResolverLib.toFile(this, imageUri, filePath);
 
         TransferUtility transferUtility = AWSMobileClientFactory.getTransferUtility(getApplicationContext());
+        // FIXME: use private bucket
         TransferObserver transferObserver = transferUtility.upload(
                 bucket,
-                "public/screenshot/" + screenshotId,
+                "public/screenshots/" + screenshotId,
                 file
         );
         transferObserver.setTransferListener(new TransferListener() {

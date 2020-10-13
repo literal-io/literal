@@ -1,5 +1,33 @@
 [@react.component]
-let make = (~onCreateFromText, ~onCreateFromFile) =>
+let make = (~onCreateFromText, ~onCreateFromFile) => {
+  let inputRef = React.useRef(Js.Nullable.null);
+  let handleFileInputChange = ev => {
+    let files = ReactEvent.Form.target(ev)##files;
+    let _ =
+      Js.Array2.length(files) > 0
+        ? files->Belt.Array.getExn(0)->onCreateFromFile
+        : Sentry.captureMessage("Expected files, but got none.");
+    ();
+  };
+
+  let handleFileButtonClick = _ => {
+    let _ =
+      Service_Analytics.(
+        track(Click({action: "create from file", label: None}))
+      );
+    let _ =
+      inputRef.current
+      ->Js.Nullable.toOption
+      ->Belt.Option.forEach(elem => {
+          let _ =
+            elem
+            ->Webapi.Dom.Element.unsafeAsHtmlElement
+            ->Webapi.Dom.HtmlElement.click;
+          ();
+        });
+    ();
+  };
+
   <div
     className={Cn.fromList([
       "flex",
@@ -50,13 +78,7 @@ let make = (~onCreateFromText, ~onCreateFromFile) =>
       <MaterialUi.IconButton
         size=`Medium
         edge=MaterialUi.IconButton.Edge.start
-        onClick={_ => {
-          let _ =
-            Service_Analytics.(
-              track(Click({action: "create from file", label: None}))
-            );
-          onCreateFromFile();
-        }}
+        onClick={_ => handleFileButtonClick()}
         _TouchRippleProps={
           "classes": {
             "child": Cn.fromList(["bg-white"]),
@@ -73,5 +95,18 @@ let make = (~onCreateFromText, ~onCreateFromFile) =>
           icon=Svg.textSnippet
         />
       </MaterialUi.IconButton>
+      <input
+        type_="file"
+        accept="image/*"
+        ref={inputRef->ReactDOM.Ref.domRef}
+        onChange=handleFileInputChange
+        className={Cn.fromList([
+          "absolute",
+          "inset-x-0",
+          "inset-y-0",
+          "opacity-0",
+        ])}
+      />
     </div>
   </div>;
+};

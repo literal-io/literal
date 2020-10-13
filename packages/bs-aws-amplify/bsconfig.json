@@ -14,7 +14,7 @@
     }
   ],
   "suffix": ".bs.js",
-  "bs-dependencies": [],
+  "bs-dependencies": ["bs-webapi"],
   "ppx-flags": [],
   "refmt": 3
 }
