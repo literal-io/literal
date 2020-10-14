@@ -126,14 +126,7 @@ let make =
           ~creatorUsername=currentUser.username,
         )}
         staticPath=Routes.CreatorsIdAnnotationsNew.staticPath
-        search={Raw.merge(
-          Alert.(query_encode({alert: noDataAlert})),
-          Routes.CreatorsIdAnnotationsNew.queryParams_encode({
-            id: None,
-            initialPhaseState: Some(`PhaseTextInput),
-            creatorUsername: currentUser.username,
-          }),
-        )}>
+        search=Alert.(query_encode({alert: noDataAlert}))>
         <Loading />
       </Redirect>
     }
@@ -144,14 +137,7 @@ let make =
         ~creatorUsername=currentUser.username,
       )}
       staticPath=Routes.CreatorsIdAnnotationsNew.staticPath
-      search={Raw.merge(
-        Alert.(query_encode({alert: noDataAlert})),
-        Routes.CreatorsIdAnnotationsNew.queryParams_encode({
-          id: None,
-          initialPhaseState: Some(`PhaseTextInput),
-          creatorUsername: currentUser.username,
-        }),
-      )}>
+      search=Alert.(query_encode({alert: noDataAlert}))>
       <Loading />
     </Redirect>
   | (_, _, Unauthenticated, _) => <Loading />

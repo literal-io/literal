@@ -16,14 +16,23 @@ let default = (~rehydrated) => {
       [|authentication|],
     );
 
+  Js.log3(
+    router.Next.query,
+    authentication,
+    Routes.CreatorsIdAnnotationsNew.queryParams_decode(router.Next.query),
+  );
+
   <>
     {switch (
        authentication,
        Routes.CreatorsIdAnnotationsNew.queryParams_decode(router.Next.query),
      ) {
-     | (Unauthenticated, _) => <Loading />
+     | (Unauthenticated, _) => 
+      Js.log("loading 1");
+      <Loading />
      | (_, Ok({id: Some(annotationIdComponent), creatorUsername}))
          when Js.String.length(annotationIdComponent) > 0 =>
+        Js.log("new annotation from share");
        <QueryRenderers_NewAnnotationFromShare
          annotationId={Lib_GraphQL.Annotation.makeIdFromComponent(
            ~creatorUsername,
@@ -32,11 +41,14 @@ let default = (~rehydrated) => {
          authentication
          rehydrated
        />
-     | (Loading, _) => <Loading />
-     | _ when !rehydrated => <Loading />
-     | (Authenticated(currentUser), Ok({initialPhaseState})) =>
-       <QueryRenderers_NewAnnotation currentUser ?initialPhaseState />
+     | (Loading, _) => 
+        Js.log("loading 2");
+       <Loading />
+     | _ when !rehydrated =>
+        Js.log("loading 3");
+        <Loading />
      | (Authenticated(currentUser), _) =>
+        Js.log("new annotation");
        <QueryRenderers_NewAnnotation currentUser />
      }}
     <Alert query={router.query} />

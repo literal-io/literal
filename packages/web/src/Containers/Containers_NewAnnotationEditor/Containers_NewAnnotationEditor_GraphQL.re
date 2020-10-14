@@ -16,6 +16,7 @@ module CreateAnnotationFromExternalTargetMutation = [%graphql
       createAnnotationFromExternalTarget(input: $input) {
         id
         ...Containers_NewAnnotationFromShareEditor_GraphQL.GetAnnotationFragment.EditorNewFromShareAnnotationFragment @bsField(name: "editorNewFromShareAnnotationFragment")
+        ...Containers_NewAnnotationFromShareHeader_GraphQL.GetAnnotationFragment.HeaderAnnotationFragment @bsField(name: "headerNewFromShareAnnotationFragment")
       }
     }
   |}

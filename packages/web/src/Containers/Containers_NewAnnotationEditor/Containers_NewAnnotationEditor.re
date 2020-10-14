@@ -1,18 +1,6 @@
-[@bs.deriving jsConverter]
-type phase = [ | `PhasePrompt | `PhaseTextInput | `PhaseFileInput];
-type phaseData = option(Webapi.File.t);
-type phaseState = {
-  phase,
-  data: phaseData,
-};
+open Containers_NewAnnotationEditor_Types;
 
-let phase_encode = p => p->phaseToJs->Js.Json.string;
-let phase_decode = json =>
-  switch (json->Js.Json.decodeString->Belt.Option.flatMap(phaseFromJs)) {
-  | Some(p) => Ok(p)
-  | None =>
-    Error(Decco.{path: "", message: "Not a phase value.", value: json})
-  };
+let noDataAlert = "Unable to parse image. Make sure the text is clearly highlighted and try again, or enter the text manually.";
 
 [@bs.deriving accessors]
 type action =
@@ -43,12 +31,34 @@ let make =
     ();
   };
 
+  let handleError = _ => {
+    let _ = `PhasePrompt->setPhase->dispatchPhaseAction;
+    let search =
+      Redirect.encodeSearch(Alert.(query_encode({alert: noDataAlert})));
+
+    let _ =
+      Next.Router.replaceWithAs(
+        Routes.CreatorsIdAnnotationsNew.staticPath,
+        Routes.CreatorsIdAnnotationsNew.path(
+          ~creatorUsername=
+            currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+        )
+        ++ search,
+      );
+    ();
+  };
+
   switch (phaseState) {
   | {phase: `PhaseTextInput} =>
     <Containers_NewAnnotationEditor_PhaseTextInput currentUser />
   | {phase: `PhaseFileInput, data: Some(file)} =>
-    <Containers_NewAnnotationEditor_PhaseFileInput currentUser file />
-  | {phase: `PhasePrompt} | _ =>
+    <Containers_NewAnnotationEditor_PhaseFileInput
+      currentUser
+      file
+      onError=handleError
+    />
+  | {phase: `PhasePrompt}
+  | _ =>
     <Containers_NewAnnotationEditor_PhasePrompt
       onCreateFromFile=handleCreateFromFile
       onCreateFromText=handleCreateFromText

@@ -8,7 +8,6 @@ module CreatorsIdAnnotationsNew = {
   type queryParams = {
     creatorUsername: string,
     id: option(string),
-    initialPhaseState: option(Containers_NewAnnotationEditor_Types.phase),
   };
 };
 
