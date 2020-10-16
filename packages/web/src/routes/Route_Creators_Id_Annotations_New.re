@@ -1,6 +1,12 @@
 [@react.component]
 let default = (~rehydrated) => {
   let router = Next.Router.useRouter();
+  let searchParams =
+    router.asPath
+    ->Js.String2.split("?")
+    ->Belt.Array.get(1)
+    ->Belt.Option.getWithDefault("")
+    ->Webapi.Url.URLSearchParams.make;
   let authentication = Hooks_CurrentUserInfo.use();
 
   let _ =
@@ -16,23 +22,28 @@ let default = (~rehydrated) => {
       [|authentication|],
     );
 
-  Js.log3(
-    router.Next.query,
-    authentication,
-    Routes.CreatorsIdAnnotationsNew.queryParams_decode(router.Next.query),
-  );
+  let handleClear = () =>
+    switch (authentication) {
+    | Authenticated(currentUser) =>
+      Next.Router.replaceWithAs(
+        Routes.CreatorsIdAnnotationsNew.staticPath,
+        Routes.CreatorsIdAnnotationsNew.path(
+          ~creatorUsername=
+            currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+        ),
+      )
+    | _ => ()
+    };
 
   <>
     {switch (
        authentication,
-       Routes.CreatorsIdAnnotationsNew.queryParams_decode(router.Next.query),
+       Routes.CreatorsIdAnnotationsNew.params_decode(router.Next.query),
+       searchParams |> Webapi.Url.URLSearchParams.get("id"),
      ) {
-     | (Unauthenticated, _) => 
-      Js.log("loading 1");
-      <Loading />
-     | (_, Ok({id: Some(annotationIdComponent), creatorUsername}))
+     | (Unauthenticated, _, _) => <Loading />
+     | (_, Ok({creatorUsername}), Some(annotationIdComponent))
          when Js.String.length(annotationIdComponent) > 0 =>
-        Js.log("new annotation from share");
        <QueryRenderers_NewAnnotationFromShare
          annotationId={Lib_GraphQL.Annotation.makeIdFromComponent(
            ~creatorUsername,
@@ -41,17 +52,12 @@ let default = (~rehydrated) => {
          authentication
          rehydrated
        />
-     | (Loading, _) => 
-        Js.log("loading 2");
-       <Loading />
-     | _ when !rehydrated =>
-        Js.log("loading 3");
-        <Loading />
-     | (Authenticated(currentUser), _) =>
-        Js.log("new annotation");
+     | (Loading, _, _) => <Loading />
+     | _ when !rehydrated => <Loading />
+     | (Authenticated(currentUser), _, _) =>
        <QueryRenderers_NewAnnotation currentUser />
      }}
-    <Alert query={router.query} />
+    <Alert urlSearchParams=searchParams onClear=handleClear />
   </>;
 };
 

@@ -2,8 +2,7 @@ open Containers_NewAnnotationEditor_GraphQL;
 
 type phase =
   | PhaseLoading
-  | PhaseData(CreateAnnotationFromExternalTargetMutation.t)
-
+  | PhaseData(CreateAnnotationFromExternalTargetMutation.t);
 
 module PhaseLoading = {
   [@react.component]
@@ -47,6 +46,26 @@ let make = (~currentUser, ~file, ~onError) => {
           )
         )
         |> Js.Promise.then_(result => {
+             let s3Url = {
+               let bucketName =
+                 AwsAmplify.Config.(
+                   Constants.awsAmplifyConfig->userFilesS3BucketGet
+                 );
+               let currentUserId =
+                 currentUser
+                 ->AwsAmplify.Auth.CurrentUserInfo.id
+                 ->Belt.Option.getExn;
+
+               "s3://"
+               ++ bucketName
+               ++ "/private/"
+               ++ currentUserId
+               ++ "/"
+               ++ result.AwsAmplify.Storage.key;
+             };
+
+             Js.log2(s3Url, currentUser);
+
              let creatorUsername =
                currentUser->AwsAmplify.Auth.CurrentUserInfo.username;
              let variables =
@@ -68,7 +87,7 @@ let make = (~currentUser, ~file, ~onError) => {
                      "rights": None,
                      "accessibility": None,
                      "textDirection": Some(`LTR),
-                     "id": result.AwsAmplify.Storage.key,
+                     "id": s3Url,
                    },
                  },
                  (),
@@ -105,22 +124,19 @@ let make = (~currentUser, ~file, ~onError) => {
   | PhaseData(data) =>
     switch (data##createAnnotationFromExternalTarget) {
     | Some(data) =>
-      <div
-        className={Cn.fromList([
-          "flex",
-          "flex-col",
-          "relative",
-          "overflow-y-auto",
-        ])}>
-        <Containers_NewAnnotationFromShareHeader
-          currentUser
-          annotationFragment={data##headerNewFromShareAnnotationFragment}
-        />
-        <Containers_NewAnnotationFromShareEditor
-          currentUser
-          annotationFragment={data##editorNewFromShareAnnotationFragment}
-        />
-      </div>
+      <Redirect
+        path={Routes.CreatorsIdAnnotationsNew.path(
+          ~creatorUsername=currentUser.username,
+        )}
+        staticPath=Routes.CreatorsIdAnnotationsNew.staticPath
+        search=Routes.CreatorsIdAnnotationsNew.(
+          searchParams_encode({
+            id: data##id->Lib_GraphQL.Annotation.idComponent->Js.Option.some,
+          })
+        )>
+        <PhaseLoading />
+      </Redirect>
+
     | None => <PhaseError onError />
     }
   };

@@ -94,8 +94,12 @@ let request = r =>
          ->Belt.Array.concatMany
          ->(
              arr =>
-               Js.Array.length(arr) > 0
-                 ? Js.Promise.resolve(Some(arr)) : Js.Promise.resolve(None)
+                if (Js.Array.length(arr) > 0) {
+                  Js.Promise.resolve(Some(arr))
+                } else {
+                  Js.log("HighlightBoundingBoxDetector: No valid bounding boxes detected.");
+                  Js.Promise.resolve(None)
+                }
            )
        | Belt.Result.Error(e) =>
          Js.log(e);

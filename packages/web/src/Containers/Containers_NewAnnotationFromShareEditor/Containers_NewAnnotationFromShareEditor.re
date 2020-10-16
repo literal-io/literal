@@ -285,7 +285,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       ])}>
       <FloatingActionButton
         onClick={_ev => handleSave()}
-        className={Cn.fromList(["fixed", "right-0", "bottom-0", "m-6", "z-10"])}>
+        className={Cn.fromList(["m-6", "z-10"])}>
         <Svg
           placeholderViewBox="0 0 24 24"
           className={Cn.fromList(["w-10", "h-10", "pointer-events-none"])}

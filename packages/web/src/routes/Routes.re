@@ -5,10 +5,10 @@ module CreatorsIdAnnotationsNew = {
     "/creators/" ++ creatorUsername ++ "/annotations/new";
 
   [@decco]
-  type queryParams = {
-    creatorUsername: string,
-    id: option(string),
-  };
+  type params = {creatorUsername: string};
+
+  [@decco]
+  type searchParams = {id: option(string)};
 };
 
 module CreatorsIdAnnotationCollectionsId = {
