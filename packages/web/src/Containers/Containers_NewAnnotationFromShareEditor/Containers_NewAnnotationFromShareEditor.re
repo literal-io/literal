@@ -131,68 +131,99 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
         Lib_GraphQL.Annotation.targetInputFromTarget,
       );
     };
-    let updateBodyInput = {
-      tagsValue->Belt.Array.map(tag => {
-        let id =
-          switch (tag.id) {
-          | Some(id) => Js.Promise.resolve(id)
-          | None =>
-            Lib_GraphQL.AnnotationCollection.makeId(
-              ~creatorUsername=
-                AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-              ~label=tag.text,
-            )
-          };
-        id
-        |> Js.Promise.then_(id =>
-             Js.Promise.resolve({
-               "textualBody":
-                 Some({
-                   "id": Some(id),
-                   "value": tag.text,
-                   "purpose": Some([|`TAGGING|]),
-                   "rights": None,
-                   "accessibility": None,
-                   "format": Some(`TEXT_PLAIN),
-                   "textDirection": Some(`LTR),
-                   "language": Some(`EN_US),
-                   "processingLanguage": Some(`EN_US),
-                   "type": Some(`TEXTUAL_BODY),
-                 }),
-               "externalBody": None,
-               "choiceBody": None,
-               "specificBody": None,
-             })
-           );
-      });
-    };
+    let tagsWithIds =
+      tagsValue
+      ->Belt.Array.map(tag => {
+          let id =
+            switch (tag.id) {
+            | Some(id) => Js.Promise.resolve(id)
+            | None =>
+              Lib_GraphQL.AnnotationCollection.makeId(
+                ~creatorUsername=
+                  AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                ~label=tag.text,
+              )
+            };
+          id
+          |> Js.Promise.then_(id =>
+               Js.Promise.resolve({...tag, id: Some(id)})
+             );
+        })
+      ->Js.Promise.all;
+
+    let updateBodyInput =
+      tagsWithIds
+      |> Js.Promise.then_(tags =>
+           tags
+           ->Belt.Array.map((tag: Containers_AnnotationEditor_Types.tag) =>
+               {
+                 "textualBody":
+                   Some({
+                     "id": tag.id,
+                     "value": tag.text,
+                     "purpose": Some([|`TAGGING|]),
+                     "rights": None,
+                     "accessibility": None,
+                     "format": Some(`TEXT_PLAIN),
+                     "textDirection": Some(`LTR),
+                     "language": Some(`EN_US),
+                     "processingLanguage": Some(`EN_US),
+                     "type": Some(`TEXTUAL_BODY),
+                   }),
+                 "externalBody": None,
+                 "choiceBody": None,
+                 "specificBody": None,
+               }
+             )
+           ->Js.Promise.resolve
+         );
 
     let _ =
-      Js.Promise.all(updateBodyInput)
+      updateBodyInput
       |> Js.Promise.then_(updateBodyInput => {
-           let variables =
-             PatchAnnotationMutation.makeVariables(
-               ~input={
-                 "id": annotation##id,
-                 "creatorUsername":
-                   AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-                 "operations": [|
-                   {
-                     "set":
-                       Some({"body": Some(updateBodyInput), "target": None}),
-                   },
-                   {
-                     "set":
-                       Some({
-                         "body": None,
-                         "target": Some(updateTargetInput),
-                       }),
-                   },
-                 |],
+           let input = {
+             "id": annotation##id,
+             "creatorUsername":
+               AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+             "operations": [|
+               {
+                 "set": Some({"body": Some(updateBodyInput), "target": None}),
                },
-               (),
-             );
-           patchAnnotationMutation(~variables, ());
+               {
+                 "set":
+                   Some({"body": None, "target": Some(updateTargetInput)}),
+               },
+             |],
+           };
+           let _ =
+             tagsWithIds
+             |> Js.Promise.then_(tags => {
+                  let _ =
+                    Containers_NewAnnotationFromShareEditor_Apollo.updateCache(
+                      ~annotation,
+                      ~tags,
+                      ~currentUser,
+                      ~patchAnnotationMutationInput=input,
+                    );
+                  Js.Promise.resolve();
+                });
+           let variables = PatchAnnotationMutation.makeVariables(~input, ());
+           let mutationResult = patchAnnotationMutation(~variables, ());
+
+           let _ =
+             if (!Webview.isWebview()) {
+               Routes.CreatorsIdAnnotationCollectionsId.(
+                 Next.Router.pushWithAs(
+                   staticPath,
+                   path(
+                     ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
+                     ~creatorUsername=currentUser.username,
+                   ),
+                 )
+               );
+             };
+
+           mutationResult;
          })
       |> Js.Promise.then_(_ => {
            let _ =
@@ -204,6 +235,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
 
   let handleTextChange = value => setTextValue(_ => value);
   let handleTagsChange = value => setTagsValue(_ => value);
+
   let handlePendingTagChange = value => setPendingTagValue(_ => value);
   let handlePendingTagCommit = value => {
     let _ =
@@ -263,7 +295,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       "flex-col",
       "overflow-y-auto",
     ])}>
-    <div className={Cn.fromList(["px-6", "pb-4", "pt-16"])}>
+    <div className={Cn.fromList(["px-6", "py-16"])}>
       <TextInput.Annotation
         onTextChange=handleTextChange
         onTagsChange=handleTagsChange
@@ -293,7 +325,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
         />
       </FloatingActionButton>
       <TextInput_Tags
-        className={Cn.fromList(["px-2"])}
+        className={Cn.fromList(["px-2", "z-10", "bg-black"])}
         onValueChange=handlePendingTagChange
         onValueCommit=handlePendingTagCommit
         value=pendingTagValue

@@ -100,12 +100,7 @@ let make = (~onCreateFromText, ~onCreateFromFile) => {
         accept="image/*"
         ref={inputRef->ReactDOM.Ref.domRef}
         onChange=handleFileInputChange
-        className={Cn.fromList([
-          "absolute",
-          "inset-x-0",
-          "inset-y-0",
-          "opacity-0",
-        ])}
+        className={Cn.fromList(["absolute", "opacity-0", "-z-10"])}
       />
     </div>
   </div>;

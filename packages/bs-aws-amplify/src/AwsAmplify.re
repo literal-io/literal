@@ -119,7 +119,12 @@ module Storage = {
   };
 
   [@bs.send]
-  external put:
+  external putBlob:
+    (t, string, Webapi.Blob.t, option(putConfig)) => Js.Promise.t(putResult) =
+    "put";
+
+  [@bs.send]
+  external putFile:
     (t, string, Webapi.File.t, option(putConfig)) => Js.Promise.t(putResult) =
     "put";
 

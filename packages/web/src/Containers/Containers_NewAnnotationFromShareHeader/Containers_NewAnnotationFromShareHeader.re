@@ -79,10 +79,13 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
           (),
         );
 
+      let _ = handleUpdateCache(~annotation, ~currentUser);
+      if (!Webview.isWebview()) {
+        Next.Router.back();
+      };
       let _ =
         deleteAnnotationMutation(~variables, ())
         |> Js.Promise.then_(_ => {
-             let _ = handleUpdateCache(~annotation, ~currentUser);
              let _ =
                Webview.(
                  postMessage(WebEvent.make(~type_="ACTIVITY_FINISH"))

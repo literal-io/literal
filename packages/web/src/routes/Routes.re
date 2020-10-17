@@ -8,7 +8,10 @@ module CreatorsIdAnnotationsNew = {
   type params = {creatorUsername: string};
 
   [@decco]
-  type searchParams = {id: option(string)};
+  type searchParams = {
+    id: option(string),
+    fileUrl: option(string),
+  };
 };
 
 module CreatorsIdAnnotationCollectionsId = {

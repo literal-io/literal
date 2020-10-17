@@ -119,11 +119,13 @@ module Data = {
 
     <TextInput_Tags
       className={Cn.fromList([
+        "z-10",
         "absolute",
         "bottom-0",
         "left-0",
         "right-0",
         "px-2",
+        "bg-black"
       ])}
       onValueChange=handleValueChange
       onValueCommit=handleValueCommit

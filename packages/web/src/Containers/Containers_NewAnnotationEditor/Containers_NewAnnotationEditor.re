@@ -4,21 +4,18 @@ let noDataAlert = "Unable to parse image. Make sure the text is clearly highligh
 
 [@bs.deriving accessors]
 type action =
-  | SetPhase(phase)
-  | SetPhaseAndData(phase, phaseData);
+  | SetPhase(phase);
 
 [@react.component]
-let make =
-    (~currentUser, ~initialPhaseState=`PhasePrompt, ~initialPhaseData=None) => {
+let make = (~currentUser, ~initialPhaseState=`PhasePrompt) => {
   let (phaseState, dispatchPhaseAction) =
     React.useReducer(
       (state, action) => {
         switch (action) {
-        | SetPhase(nextPhase) => {phase: nextPhase, data: None}
-        | SetPhaseAndData(nextPhase, data) => {phase: nextPhase, data}
+        | SetPhase(nextPhase) => nextPhase
         }
       },
-      {phase: initialPhaseState, data: initialPhaseData},
+      initialPhaseState,
     );
 
   let handleCreateFromText = () => {
@@ -26,18 +23,16 @@ let make =
     ();
   };
   let handleCreateFromFile = file => {
-    let _ =
-      dispatchPhaseAction(setPhaseAndData(`PhaseFileInput, Some(file)));
-    ();
-  };
-
-  let handleError = _ => {
-    let _ = `PhasePrompt->setPhase->dispatchPhaseAction;
+    let fileUrl = Webapi.Url.createObjectURL(file);
     let search =
-      Redirect.encodeSearch(Alert.(query_encode({alert: noDataAlert})));
-
+      "?"
+      ++ Routes.CreatorsIdAnnotationsNew.(
+           searchParams_encode({id: None, fileUrl: Some(fileUrl)})
+         )
+         ->Externals_URLSearchParams.makeWithJson
+         ->Externals_URLSearchParams.toString;
     let _ =
-      Next.Router.replaceWithAs(
+      Next.Router.pushWithAs(
         Routes.CreatorsIdAnnotationsNew.staticPath,
         Routes.CreatorsIdAnnotationsNew.path(
           ~creatorUsername=
@@ -49,16 +44,9 @@ let make =
   };
 
   switch (phaseState) {
-  | {phase: `PhaseTextInput} =>
+  | `PhaseTextInput =>
     <Containers_NewAnnotationEditor_PhaseTextInput currentUser />
-  | {phase: `PhaseFileInput, data: Some(file)} =>
-    <Containers_NewAnnotationEditor_PhaseFileInput
-      currentUser
-      file
-      onError=handleError
-    />
-  | {phase: `PhasePrompt}
-  | _ =>
+  | `PhasePrompt =>
     <Containers_NewAnnotationEditor_PhasePrompt
       onCreateFromFile=handleCreateFromFile
       onCreateFromText=handleCreateFromText

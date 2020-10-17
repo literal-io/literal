@@ -1,10 +1,5 @@
 [@bs.deriving jsConverter]
-type phase = [ | `PhasePrompt | `PhaseTextInput | `PhaseFileInput];
-type phaseData = option(Webapi.File.t);
-type phaseState = {
-  phase,
-  data: phaseData,
-};
+type phase = [ | `PhasePrompt | `PhaseTextInput];
 
 let phase_encode = p => p->phaseToJs->Js.Json.string;
 let phase_decode = json =>

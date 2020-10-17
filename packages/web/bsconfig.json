@@ -22,6 +22,7 @@
     "@literal-io/bs-aws-amplify",
     "decco",
     "bs-webapi",
+    "bs-fetch",
     "reason-react",
     "re-classnames",
     "reason-apollo",

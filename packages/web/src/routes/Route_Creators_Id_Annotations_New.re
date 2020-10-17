@@ -40,21 +40,32 @@ let default = (~rehydrated) => {
        authentication,
        Routes.CreatorsIdAnnotationsNew.params_decode(router.Next.query),
        searchParams |> Webapi.Url.URLSearchParams.get("id"),
+       searchParams |> Webapi.Url.URLSearchParams.get("fileUrl"),
      ) {
-     | (Unauthenticated, _, _) => <Loading />
-     | (_, Ok({creatorUsername}), Some(annotationIdComponent))
-         when Js.String.length(annotationIdComponent) > 0 =>
+     | (Unauthenticated, _, _, _) => <Loading />
+     | (_, Ok(_), _, Some(fileUrl)) =>
        <QueryRenderers_NewAnnotationFromShare
-         annotationId={Lib_GraphQL.Annotation.makeIdFromComponent(
-           ~creatorUsername,
-           ~annotationIdComponent,
-         )}
+         fileUrl=?{Some(fileUrl)}
          authentication
          rehydrated
        />
-     | (Loading, _, _) => <Loading />
+     | (_, Ok({creatorUsername}), Some(annotationIdComponent), _)
+         when Js.String.length(annotationIdComponent) > 0 =>
+       <QueryRenderers_NewAnnotationFromShare
+         annotationId=?{
+           Some(
+             Lib_GraphQL.Annotation.makeIdFromComponent(
+               ~creatorUsername,
+               ~annotationIdComponent,
+             ),
+           )
+         }
+         authentication
+         rehydrated
+       />
+     | (Loading, _, _, _) => <Loading />
      | _ when !rehydrated => <Loading />
-     | (Authenticated(currentUser), _, _) =>
+     | (Authenticated(currentUser), _, _, _) =>
        <QueryRenderers_NewAnnotation currentUser />
      }}
     <Alert urlSearchParams=searchParams onClear=handleClear />
