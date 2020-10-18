@@ -33,6 +33,17 @@ module Config = {
   let make = t;
 };
 
+module Credentials = {
+  type t;
+
+  [@bs.module "@aws-amplify/core"] external inst: t = "Credentials";
+
+  [@bs.send]
+  external setSession:
+    (t, AmazonCognitoIdentity.userSession, [@bs.as "session"] _) => unit =
+    "set";
+};
+
 module Auth = {
   module JwtToken = {
     type t;
@@ -57,10 +68,6 @@ module Auth = {
       username: string,
       attributes: Js.Json.t,
     };
-  };
-
-  module Credentials = {
-    type t;
   };
 
   type t;
@@ -102,6 +109,10 @@ module Auth = {
   external federatedSignInWithResponse:
     (t, string, federatedSignInResponse) => unit =
     "federatedSignIn";
+
+  [@bs.send]
+  external createCognitoUser: (t, string) => AmazonCognitoIdentity.cognitoUser =
+    "createCognitoUser";
 };
 
 module Storage = {

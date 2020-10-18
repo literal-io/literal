@@ -164,6 +164,8 @@ public class WebEvent {
                     // FIXME: getUserAttributes is slow - separate network call?
                     result.put("attributes", new JSONObject(/*awsMobileClient.getUserAttributes()*/));
                     result.put("id", awsMobileClient.getIdentityId());
+
+                    Log.i(Constants.LOG_TAG, "GetUserInfo: " + result.toString());
                     return result;
 
                 } catch (Exception e) {

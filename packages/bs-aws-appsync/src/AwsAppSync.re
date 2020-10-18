@@ -6,7 +6,7 @@ module Client = {
     [@bs.optional]
     jwtToken: unit => Js.Promise.t(AwsAmplify.Auth.JwtToken.t),
     [@bs.optional]
-    credentials: unit => Js.Promise.t(AwsAmplify.Auth.Credentials.t),
+    credentials: unit => Js.Promise.t(AwsAmplify.Credentials.t),
   };
 
   let authWithCognitoUserPools = (~jwtToken) =>
@@ -21,7 +21,7 @@ module Client = {
     disableOffline: bool,
     mandatorySignIn: bool,
     complexObjectsCredentials:
-      unit => Js.Promise.t(AwsAmplify.Auth.Credentials.t),
+      unit => Js.Promise.t(AwsAmplify.Credentials.t),
   };
   [@bs.module "aws-appsync"]
   external createAppSyncLink:

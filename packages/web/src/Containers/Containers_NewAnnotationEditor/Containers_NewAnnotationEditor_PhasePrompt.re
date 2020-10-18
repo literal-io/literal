@@ -2,6 +2,8 @@
 let make = (~onCreateFromText, ~onCreateFromFile) => {
   let inputRef = React.useRef(Js.Nullable.null);
   let handleFileInputChange = ev => {
+    let _ = ev->ReactEvent.Form.persist;
+    Js.log2("handleFileInputChange", ev);
     let files = ReactEvent.Form.target(ev)##files;
     let _ =
       Js.Array2.length(files) > 0
