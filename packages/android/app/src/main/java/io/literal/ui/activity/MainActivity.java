@@ -64,10 +64,8 @@ public class MainActivity extends AppCompatActivity {
                         Uri[] absoluteUrls = new Uri[value.length];
                         for (int idx = 0; idx < value.length; idx++) {
                             File file = ContentResolverLib.toFile(MainActivity.this, value[idx], UUID.randomUUID().toString());
-                            Log.d(Constants.LOG_TAG, "URI: " + Uri.parse(file.getAbsolutePath()).toString());
                             absoluteUrls[idx] = Uri.fromFile(file);
                         }
-                        Log.d(Constants.LOG_TAG, "URIs: " + absoluteUrls.toString());
                         filePathCallback.onReceiveValue(absoluteUrls);
                     }
                 });

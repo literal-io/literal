@@ -11,7 +11,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -49,6 +53,7 @@ import io.literal.lib.AnnotationLib;
 import io.literal.lib.Constants;
 import io.literal.lib.ContentResolverLib;
 import io.literal.lib.Crypto;
+import io.literal.lib.FileActivityResultCallback;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.ui.view.WebView;
@@ -72,6 +77,8 @@ public class ShareTargetHandler extends AppCompatActivity {
     private WebView webView;
     private ViewGroup splash;
     private ViewGroup layout;
+    private ActivityResultLauncher<String> getFileContent;
+    private FileActivityResultCallback fileActivityResultCallback = new FileActivityResultCallback();
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -104,6 +111,26 @@ public class ShareTargetHandler extends AppCompatActivity {
             public void onError(Exception e) {
                 Log.e(Constants.LOG_TAG, "Unable to initializeClient: ", e);
                 handleSignedOut();
+            }
+        });
+
+        getFileContent = registerForActivityResult(new ActivityResultContracts.GetContent(), fileActivityResultCallback);
+        this.webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(android.webkit.WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+                fileActivityResultCallback.setFilePathCallback(new ValueCallback<Uri[]>() {
+                    @Override
+                    public void onReceiveValue(Uri[] value) {
+                        Uri[] absoluteUrls = new Uri[value.length];
+                        for (int idx = 0; idx < value.length; idx++) {
+                            File file = ContentResolverLib.toFile(ShareTargetHandler.this, value[idx], UUID.randomUUID().toString());
+                            absoluteUrls[idx] = Uri.fromFile(file);
+                        }
+                        filePathCallback.onReceiveValue(absoluteUrls);
+                    }
+                });
+                getFileContent.launch("image/*");
+                return true;
             }
         });
     }
@@ -284,6 +311,7 @@ public class ShareTargetHandler extends AppCompatActivity {
 
         String screenshotId = UUID.randomUUID().toString();
         String creatorUsername = AWSMobileClient.getInstance().getUsername();
+        String creatorIdentityId = AWSMobileClient.getInstance().getIdentityId();
         String annotationId = WebRoutes.creatorsIdAnnotationId(
                 WebRoutes.getAPIHost(),
                 creatorUsername,
@@ -306,10 +334,9 @@ public class ShareTargetHandler extends AppCompatActivity {
         File file = ContentResolverLib.toFile(this, imageUri, filePath);
 
         TransferUtility transferUtility = AWSMobileClientFactory.getTransferUtility(getApplicationContext());
-        // FIXME: use private bucket
         TransferObserver transferObserver = transferUtility.upload(
                 bucket,
-                "public/screenshots/" + screenshotId,
+                "private/" + creatorIdentityId + "/screenshots/" + screenshotId,
                 file
         );
         transferObserver.setTransferListener(new TransferListener() {
