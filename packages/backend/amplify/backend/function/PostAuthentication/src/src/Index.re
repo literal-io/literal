@@ -33,7 +33,36 @@ let handleCreateProfile = (~username, ~email) => {
     ~query=mutation##query,
     ~variables=mutation##variables,
     ~operationName="CreateAgent",
-  );
+  )
+  |> Js.Promise.then_(r => {
+    let parseResult =
+      switch (r->Js.Json.decodeObject) {
+        | Some(o) =>
+          switch (o->Js.Dict.get("data"), o->Js.Dict.get("errors")) {
+            | (_, Some(errors)) =>
+              Js.log2(
+                "[Error] CreateAgentMutation errors:",
+                Js.Json.stringifyAny(errors)
+              );
+              None;
+            | (Some(data), _) =>
+              Some(data);
+            | (None, None) =>
+              Js.log2(
+                "[Error] Unhandled CreateAgentMutation result:",
+                Js.Json.stringifyAny(r)
+              );
+              None;
+          }
+        | None =>
+          Js.log2(
+            "[Error] Unable to parse CreateAgentMutation result:",
+            Js.Json.stringifyAny(r)
+          );
+          None;
+      };
+    Js.Promise.resolve(parseResult);
+  });
 };
 
 let handler = event => {
@@ -48,14 +77,14 @@ let handler = event => {
         )
       )
     | Belt.Result.Error(e) =>
-      Js.log("Unable to decode event.");
+      Js.log("[Error] Unable to decode event.");
       Js.Exn.raiseError(e.message);
     };
 
   op
   |> Js.Promise.then_(_ => Js.Promise.resolve(event))
   |> Js.Promise.catch(e => {
-       Js.log2("Unable to handle event.", e);
+       Js.log2("[Error] Unable to handle event.", e);
        Js.Promise.resolve(event);
      });
 };

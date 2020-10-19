@@ -6,6 +6,22 @@
       "Type": "String"
     }
   },
+  "Mappings": {
+    "Env": {
+      "production": {
+        "literalAuthUserPoolId": "us-east-1_EWCESLVzL",
+        "literalGraphQLAPIId": "rkihsloeqbdabdpebem3fqqjuy",
+        "literalGraphQLAPIEndpoint": "https://2dxxqoarong2jd4ukbeugsg5t4.appsync-api.us-east-1.amazonaws.com/graphql",
+        "literalStorageBucketName": "literal-storage114446-production"
+      },
+      "staging": {
+        "literalAuthUserPoolId": "us-east-1_CC0LGz1V2",
+        "literalGraphQLAPIId": "to6hgjbvbjb7roq46jyzhxr2my",
+        "literalGraphQLAPIEndpoint": "https://bmxw7qjae5bwrh2ponhutmos6e.appsync-api.us-east-1.amazonaws.com/graphql",
+        "literalStorageBucketName": "literal-storage211408-staging"
+      }
+    }
+  },
   "Conditions": {
     "ShouldNotCreateEnvResources": {
       "Fn::Equals": [
@@ -50,6 +66,42 @@
             },
             "REGION": {
               "Ref": "AWS::Region"
+            },
+            "API_LITERAL_GRAPHQLAPIIDOUTPUT": {
+              "Fn::FindInMap": [
+                "Env",
+                {
+                  "Ref": "env"
+                },
+                "literalGraphQLAPIId"
+              ]
+            },
+            "API_LITERAL_GRAPHQLAPIENDPOINTOUTPUT": {
+              "Fn::FindInMap": [
+                "Env",
+                {
+                  "Ref": "env"
+                },
+                "literalGraphQLAPIEndpoint"
+              ]
+            },
+            "STORAGE_LITERALSTORAGE_BUCKETNAME": {
+              "Fn::FindInMap": [
+                "Env",
+                {
+                  "Ref": "env"
+                },
+                "literalStorageBucketName"
+              ]
+            },
+            "AUTH_LITERALAUTH_USERPOOLID": {
+              "Fn::FindInMap": [
+                "Env",
+                {
+                  "Ref": "env"
+                },
+                "literalAuthUserPoolId"
+              ]
             }
           }
         },
@@ -63,7 +115,7 @@
         "Timeout": "25",
         "Code": {
           "S3Bucket": "amplify-literal-staging-211408-deployment",
-          "S3Key": "amplify-builds/PostAuthentication-674445386f626c72794b-build.zip"
+          "S3Key": "amplify-builds/PostAuthentication-5342394638476f7a736f-build.zip"
         }
       }
     },

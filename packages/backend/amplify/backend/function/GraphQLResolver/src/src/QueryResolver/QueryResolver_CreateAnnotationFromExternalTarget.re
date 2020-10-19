@@ -80,7 +80,7 @@ let cropImageToHighlight = (predictions, imageBuffer) => {
      })
   |> Js.Promise.then_(r => r->Js.Option.some->Js.Promise.resolve)
   |> Js.Promise.catch(e => {
-       Js.log(e);
+       Js.log2("[Error] cropImageToHighlight: ", e);
        Js.Promise.resolve(None);
      });
 };
@@ -120,8 +120,6 @@ let parseTextFromExternalTarget = input => {
     );
   let eligible = eligibleRegex->Js.Re.test_(input.externalTarget.id);
 
-  Js.log4("eligible", eligible, eligibleRegex, input.externalTarget.id);
-
   if (eligible) {
     let {bucket, key}: Externals_AmazonS3URI.t =
       Externals_AmazonS3URI.make(input.externalTarget.id);
@@ -130,7 +128,6 @@ let parseTextFromExternalTarget = input => {
     )
     ->Lib_OptionPromise.fromPromise
     ->Lib_OptionPromise.map(s3GetResult => {
-        Js.log("Received object from S3.");
         let imageBuffer = s3GetResult.Externals_AWS.S3.body;
         let requestData =
           Service_HighlightBoundingBoxDetector.{
@@ -151,7 +148,6 @@ let parseTextFromExternalTarget = input => {
         ->Lib_OptionPromise.map(r => r->cropImageToHighlight(imageBuffer));
       })
     ->Lib_OptionPromise.map(croppedImageBuffer => {
-        Js.log("Received response from HighlightBoundingBoxDetector.");
         Externals_GoogleCloud.Vision.(
           client({keyFilename: Lib_Constants.gcloudServiceAccountFilename})
           ->documentTextDetection({
@@ -163,7 +159,6 @@ let parseTextFromExternalTarget = input => {
         |> Js.Promise.then_(r => r->Js.Option.some->Js.Promise.resolve);
       })
     ->Lib_OptionPromise.mapOption(textDetectionResponse => {
-        Js.log("Received textDetectionResponse.");
         textDetectionResponse
         ->Belt.Array.get(0)
         ->Belt.Option.map(r =>
@@ -363,7 +358,7 @@ let resolver = (ctx: Lib_Lambda.event) =>
                  switch (o->Js.Dict.get("data"), o->Js.Dict.get("errors")) {
                  | (_, Some(errors)) =>
                    Js.log2(
-                     "CreateAnnotationMutation errors:",
+                     "[Error] CreateAnnotationMutation errors:",
                      Js.Json.stringifyAny(errors),
                    );
                    None;
@@ -376,14 +371,14 @@ let resolver = (ctx: Lib_Lambda.event) =>
                   ->Belt.Option.map(o => renameTargetIds(o))
                  | (None, None) =>
                    Js.log2(
-                     "Unhandled CreateAnnotationMutation response:",
+                     "[Error] Unhandled CreateAnnotationMutation response:",
                      Js.Json.stringifyAny(r),
                    );
                    None;
                  }
                | None =>
                  Js.log2(
-                   "Unable to parse CreateAnnotationMutation result:",
+                   "[Error] Unable to parse CreateAnnotationMutation result:",
                    Js.Json.stringifyAny(r),
                  );
                  None;
@@ -392,6 +387,6 @@ let resolver = (ctx: Lib_Lambda.event) =>
            })
       )
   | Belt.Result.Error(e) =>
-    Js.log2("Unable to decode arguments", e);
+    Js.log2("[Error] Unable to decode arguments", e);
     Js.Promise.resolve(None);
   };

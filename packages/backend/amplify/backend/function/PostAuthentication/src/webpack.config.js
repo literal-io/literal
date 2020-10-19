@@ -11,13 +11,17 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
   },
   plugins: [
-    new webpack.EnvironmentPlugin([
-      "NODE_ENV",
-      "API_LITERAL_GRAPHQLAPIENDPOINTOUTPUT",
-      "STORAGE_LITERALSTORAGE_BUCKETNAME",
-      "AUTH_LITERALAUTH_USERPOOLID",
-      "AUTH_LITERALAUTH_USERPOOLWEBCLIENTID",
-      "REGION",
-    ]),
+    new webpack.EnvironmentPlugin(
+      process.env.NODE_ENV === "production"
+        ? ["AUTH_LITERALAUTH_USERPOOLWEBCLIENTID"]
+        : [
+            "NODE_ENV",
+            "API_LITERAL_GRAPHQLAPIENDPOINTOUTPUT",
+            "STORAGE_LITERALSTORAGE_BUCKETNAME",
+            "AUTH_LITERALAUTH_USERPOOLID",
+            "AUTH_LITERALAUTH_USERPOOLWEBCLIENTID",
+            "REGION",
+          ]
+    ),
   ],
 };
