@@ -15,6 +15,11 @@
         "literalAuth": {
           "hostedUIProviderCreds": "[{\"ProviderName\":\"Google\",\"client_id\":\"886430267359-qekh9bd4phv3hkp9h3pptdk8uvmjr0un.apps.googleusercontent.com\",\"client_secret\":\"PAHnTMcYshwJQjIj2fHnIYck\"}]"
         }
+      },
+      "function": {
+        "GraphQLResolver": {},
+        "CloudfrontOriginRequest": {},
+        "PostAuthentication": {}
       }
     }
   },

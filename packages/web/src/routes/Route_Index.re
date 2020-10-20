@@ -54,6 +54,13 @@ let default = () => {
         {React.string("Literal is a textual annotation management system.")}
       </h1>
       <a
+        onClick={_ => {
+          let _ =
+            Service_Analytics.(
+              track(Click({action: "start cta", label: Some("Start now")}))
+            );
+          ();
+        }}
         href=waitlistFormUrl
         className={cn([
           "text-white",
@@ -167,4 +174,4 @@ let default = () => {
   </div>;
 };
 
-let page = "index.js"
+let page = "index.js";

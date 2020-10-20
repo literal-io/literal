@@ -1,1 +1,9 @@
+#set( $ctx.stash.output.annotation = $ctx.stash.oldAnnotationResult )
+#if( !$util.isNull($ctx.stash.newBody) )
+  #set( $ctx.stash.output.annotation.body = $ctx.stash.newBody )
+#end
+#if( !$util.isNull($ctx.stash.newTarget) )
+  #set( $ctx.stash.output.annotation.target = $ctx.stash.newTarget )
+#end
+
 $util.toJson($ctx.stash.output)

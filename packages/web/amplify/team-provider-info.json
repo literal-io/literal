@@ -19,7 +19,9 @@
         }
       },
       "function": {
-        "CloudfrontOriginRequest": {}
+        "CloudfrontOriginRequest": {},
+        "GraphQLResolver": {},
+        "PostAuthentication": {}
       }
     }
   },

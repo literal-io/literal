@@ -22,11 +22,16 @@
     "@literal-io/bs-aws-amplify",
     "decco",
     "bs-webapi",
+    "bs-fetch",
     "reason-react",
     "re-classnames",
     "reason-apollo",
     "reason-apollo-hooks",
     "@literal-io/bs-aws-appsync",
+    "@literal-io/bs-amplitude",
+    "@literal-io/apollo-link-analytics",
+    "@literal-io/bs-sentry",
+    "@literal-io/bs-amazon-cognito-identity-js",
     "@jsiebern/bs-material-ui"
   ],
   "ppx-flags": [

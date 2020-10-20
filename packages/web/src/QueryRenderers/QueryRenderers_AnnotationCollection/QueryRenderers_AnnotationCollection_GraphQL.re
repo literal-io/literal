@@ -16,8 +16,9 @@ module GetAnnotationCollection = {
                   __typename
                   created
                   id
-                  ...Containers_AnnotationEditor_Annotation_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
+                  ...Containers_AnnotationEditor_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
                   ...Containers_AnnotationCollectionHeader_GraphQL.GetAnnotationFragment.AnnotationCollectionHeader_Annotation @bsField(name: "annotationCollectionHeader")
+                  ...Containers_NewTagInput_GraphQL.GetAnnotationFragment.NewTagInputAnnotation @bsField(name: "newTagInputFragment")
                 }
               }
             }
@@ -97,6 +98,70 @@ module GetAnnotationCollection = {
       }),
   };
 
+  let parsedTextualBodyToCache = d => {
+    "__typename": "TextualBody",
+    "id": d##id->Js.Null.fromOption,
+    "value": d##value,
+    "purpose":
+      d##purpose
+      ->Belt.Option.map(d =>
+          d->Belt.Array.map(d =>
+            switch (d) {
+            | `TAGGING => "TAGGING"
+            | `ACCESSING => "ACCESSING"
+            | `BOOKMARKING => "BOOKMARKING"
+            | `CLASSIFYING => "CLASSIFYING"
+            | `COMMENTING => "COMMENTING"
+            | `DESCRIBING => "DESCRIBING"
+            | `EDITING => "EDITING"
+            | `HIGHLIGHTING => "HIGHLIGHTING"
+            | `IDENTIFYING => "IDENTIFYING"
+            | `LINKING => "LINKING"
+            | `MODERATING => "MODERATING"
+            | `QUESTIONING => "QUESTIONING"
+            | `REPLYING => "REPLYING"
+            }
+          )
+        )
+      ->Js.Null.fromOption,
+    "format":
+      d##format
+      ->Belt.Option.map(d =>
+          switch (d) {
+          | `TEXT_PLAIN => "TEXT_PLAIN"
+          }
+        )
+      ->Js.Null.fromOption,
+    "language":
+      d##language
+      ->Belt.Option.map(d =>
+          switch (d) {
+          | `EN_US => "EN_US"
+          }
+        )
+      ->Js.Null.fromOption,
+    "processingLanguage":
+      d##processingLanguage
+      ->Belt.Option.map(d =>
+          switch (d) {
+          | `EN_US => "EN_US"
+          }
+        )
+      ->Js.Null.fromOption,
+    "accessibility": d##accessibility->Js.Null.fromOption,
+    "rights": d##rights->Js.Null.fromOption,
+    "textDirection":
+      d##textDirection
+      ->Belt.Option.map(d =>
+          switch (d) {
+          | `LTR => "LTR"
+          | `RTL => "RTL"
+          | `AUTO => "AUTO"
+          }
+        )
+      ->Js.Null.fromOption,
+  };
+
   let parsedAnnotationToCache = (annotation): cacheAnnotation => {
     "__typename": "Annotation",
     "created": annotation##created->Js.Null.fromOption,
@@ -111,71 +176,7 @@ module GetAnnotationCollection = {
               | `Nonexhaustive => None
               }
             )
-          ->Belt.Array.map(d =>
-              {
-                "__typename": "TextualBody",
-                "id": d##id->Js.Null.fromOption,
-                "value": d##value,
-                "purpose":
-                  d##purpose
-                  ->Belt.Option.map(d =>
-                      d->Belt.Array.map(d =>
-                        switch (d) {
-                        | `TAGGING => "TAGGING"
-                        | `ACCESSING => "ACCESSING"
-                        | `BOOKMARKING => "BOOKMARKING"
-                        | `CLASSIFYING => "CLASSIFYING"
-                        | `COMMENTING => "COMMENTING"
-                        | `DESCRIBING => "DESCRIBING"
-                        | `EDITING => "EDITING"
-                        | `HIGHLIGHTING => "HIGHLIGHTING"
-                        | `IDENTIFYING => "IDENTIFYING"
-                        | `LINKING => "LINKING"
-                        | `MODERATING => "MODERATING"
-                        | `QUESTIONING => "QUESTIONING"
-                        | `REPLYING => "REPLYING"
-                        }
-                      )
-                    )
-                  ->Js.Null.fromOption,
-                "format":
-                  d##format
-                  ->Belt.Option.map(d =>
-                      switch (d) {
-                      | `TEXT_PLAIN => "TEXT_PLAIN"
-                      }
-                    )
-                  ->Js.Null.fromOption,
-                "language":
-                  d##language
-                  ->Belt.Option.map(d =>
-                      switch (d) {
-                      | `EN_US => "EN_US"
-                      }
-                    )
-                  ->Js.Null.fromOption,
-                "processingLanguage":
-                  d##processingLanguage
-                  ->Belt.Option.map(d =>
-                      switch (d) {
-                      | `EN_US => "EN_US"
-                      }
-                    )
-                  ->Js.Null.fromOption,
-                "accessibility": d##accessibility->Js.Null.fromOption,
-                "rights": d##rights->Js.Null.fromOption,
-                "textDirection":
-                  d##textDirection
-                  ->Belt.Option.map(d =>
-                      switch (d) {
-                      | `LTR => "LTR"
-                      | `RTL => "RTL"
-                      | `AUTO => "AUTO"
-                      }
-                    )
-                  ->Js.Null.fromOption,
-              }
-            )
+          ->Belt.Array.map(parsedTextualBodyToCache)
         )
       ->Js.Null.fromOption,
     "target":

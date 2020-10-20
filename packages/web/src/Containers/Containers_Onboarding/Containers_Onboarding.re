@@ -1,141 +1,32 @@
 open Containers_Onboarding_GraphQL;
+open Containers_Onboarding_Apollo;
 
 let onboardingNotes = [|
-  "Welcome to Literal.\n\nLiteral is an annotation management system. Annotations from books that you read will appear here.\n\nScroll right to learn more.",
-  "Literal is best used to capture annotations while you're reading. Literal is agnostic about where and how you currently read text, and supports annotations made within a web browser, PDF reader, and more.\n\nTo create a note, highlight the text and use your device's share dialog to share it to the Literal application. If there is no share dialog, screenshot the highlight and share the screenshot to the Literal application.\n\nScroll right to learn more.",
-  "Annotations are organized primarily based on tags and bi-directional links between tags in order to retain context and build connections.\n\nIf you have any questions, reach out to hello@literal.io.\n\nOnce you've created some annotations, feel free to delete these introductory example annotations.",
+  (
+    "Welcome to Literal.\n\nLiteral is an annotation management system. Annotations from books, text, and articles that you read will appear here.\n\nSwipe left to learn more.",
+    None,
+  ),
+  (
+    "Literal is best used to capture annotations while you're reading. Literal is agnostic about where and how you read text, and supports annotations made within a web browser, PDF reader, and more.\n\nTo create an annotation, highlight the text and use your device's share dialog to share it to the Literal application. If there is no share dialog, screenshot the highlight and share the screenshot to the Literal application. You can also tap the \"+\" icon in the upper right hand corner of the screen to manually create an annotation.\n\nSwipe left to learn more.",
+    None,
+  ),
+  (
+    "Annotations are organized primarily based on tags and bi-directional links between tags in order to retain context and build connections.\n\nTo add a tag to an annotation, write text into the input at the bottom of the screen and tap your device's \"enter\" key. Tags appear in a list at the bottom of an annotation.\n\nTap on a tag assocated with this annotation to explore.\n\n If you have any questions, feel free to reach out to hello@literal.io. Once you've created some annotations, feel free to delete these introductory example annotations.",
+    Some([|"knowledge"|]),
+  ),
+  (
+    "With no effort, he had learned English, French, Portuguese and Latin. I suspect, however, that he was not very capable of thought. To think is to forget differences, generalize, make abstractions. In the teeming world of Funes, there were only details, almost immediate in their presence.",
+    Some([|"jorge luis borges", "knowledge"|]),
+  ),
+  (
+    "I have fought sixty battles and I have learned nothing which I did not know at the beginning. Look at Caesar; he fought the first like the last.",
+    Some([|"napoleon", "knowledge"|]),
+  ),
+  (
+    "Many intelligence reports in war are contradictory; even more are false, and most are uncertain... In short, most intelligence is false.",
+    Some([|"carl von clausewitz", "knowledge"|]),
+  ),
 |];
-
-let updateCache = (~currentUser, ~createAnnotationInputs) => {
-  let tagAnnotationTuples =
-    createAnnotationInputs
-    ->Belt.Array.reverse
-    ->Belt.Array.map(annotationInput =>
-        annotationInput
-        ->OnboardingMutation.json_of_CreateAnnotationInput
-        ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput
-      )
-    ->Belt.Array.map(annotation =>
-        annotation##body
-        ->Js.Null.toOption
-        ->Belt.Option.getWithDefault([||])
-        ->Belt.Array.keepMap(body => {
-            let isTag =
-              body##purpose
-              ->Js.Null.toOption
-              ->Belt.Option.map(d => d->Belt.Array.some(p => p == "TAGGING"))
-              ->Belt.Option.getWithDefault(false)
-              &&
-              body##__typename == "TextualBody"
-              && body##id->Js.Null.toOption->Belt.Option.isSome;
-            isTag ? Some((annotation, body)) : None;
-          })
-      )
-    ->Belt.Array.concatMany;
-
-  let annotationsByTagId =
-    tagAnnotationTuples->Belt.Array.reduce(
-      Js.Dict.empty(),
-      (agg, (annotation, tag)) => {
-        let tagId = tag##id->Js.Null.toOption->Belt.Option.getExn;
-        let annotations =
-          agg
-          ->Js.Dict.get(tagId)
-          ->Belt.Option.map(a => Belt.Array.concat(a, [|annotation|]))
-          ->Belt.Option.getWithDefault([|annotation|]);
-        let _ = Js.Dict.set(agg, tagId, annotations);
-        agg;
-      },
-    );
-  let tagsByTagId =
-    tagAnnotationTuples
-    ->Belt.Array.map(((_, tag)) => tag)
-    ->Belt.Array.reduce(
-        Js.Dict.empty(),
-        (agg, tag) => {
-          let tagId = tag##id->Js.Null.toOption->Belt.Option.getExn;
-          let _ = Js.Dict.set(agg, tagId, tag);
-          agg;
-        },
-      );
-
-  annotationsByTagId
-  ->Js.Dict.entries
-  ->Belt.Array.forEach(((tagId, annotations)) => {
-      let cacheQuery =
-        QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
-          ~creatorUsername=
-            currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-          ~id=tagId,
-          (),
-        );
-      let data =
-        QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.readCache(
-          ~query=cacheQuery,
-          ~client=Providers_Apollo.client,
-          (),
-        );
-      let tag = tagsByTagId->Js.Dict.unsafeGet(tagId);
-      let newData =
-        switch (data) {
-        | Some(data) when data##getAnnotationCollection != Js.null =>
-          let items =
-            data##getAnnotationCollection
-            ->Js.Null.toOption
-            ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
-            ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
-            ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
-            ->Belt.Option.getWithDefault([||]);
-          let newItems =
-            annotations
-            ->Belt.Array.map(a =>
-                {"__typename": "AnnotationPageItem", "annotation": a}
-              )
-            ->Belt.Array.concat(items)
-            ->Js.Null.return;
-
-          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setAnnotationPageItems(
-            data,
-            newItems,
-          );
-        | _ => {
-            "__typename": "Query",
-            "getAnnotationCollection":
-              Js.Null.return({
-                "__typename": "AnnotationCollection",
-                "label": tag##value,
-                "first":
-                  Js.Null.return({
-                    "__typename": "AnnotationPage",
-                    "items":
-                      Js.Null.return({
-                        "__typename": "ModelAnnotationPageItemConnection",
-                        "nextToken": Js.Null.empty,
-                        "items":
-                          annotations
-                          ->Belt.Array.map(a =>
-                              {
-                                "__typename": "AnnotationPageItem",
-                                "annotation": a,
-                              }
-                            )
-                          ->Js.Null.return,
-                      }),
-                  }),
-              }),
-          }
-        };
-      let _ =
-        QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
-          ~query=cacheQuery,
-          ~client=Providers_Apollo.client,
-          ~data=newData,
-          (),
-        );
-      ();
-    });
-  ();
-};
 
 [@react.component]
 let make = (~currentUser, ~onAnnotationIdChange) => {
@@ -149,50 +40,86 @@ let make = (~currentUser, ~onAnnotationIdChange) => {
       let createAnnotationInputs =
         onboardingNotes
         ->Belt.Array.reverse
-        ->Belt.Array.mapWithIndex((idx, text) => {
+        ->Belt.Array.mapWithIndex((idx, (text, tags)) => {
             let _ = baseTs->Js.Date.setMilliseconds(float_of_int(idx));
             let ts = baseTs->Js.Date.toISOString;
-            Lib_GraphQL.Annotation.makeId(
-              ~creatorUsername=
-                AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-              ~textualTargetValue=text,
-            )
-            |> Js.Promise.then_(id =>
+            let tagsWithIdsP =
+              tags
+              ->Belt.Option.getWithDefault([||])
+              ->Belt.Array.map(tag =>
+                  Lib_GraphQL.AnnotationCollection.makeId(
+                    ~creatorUsername=
+                      AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                    ~label=tag,
+                  )
+                  |> Js.Promise.then_(id =>
+                       Js.Promise.resolve(
+                         Containers_AnnotationEditor_Types.{
+                           id: Some(id),
+                           text: tag,
+                           href: None,
+                         },
+                       )
+                     )
+                )
+              ->Belt.Array.concat([|
+                  Js.Promise.resolve(
+                    Containers_AnnotationEditor_Types.{
+                      id:
+                        Some(
+                          Lib_GraphQL.AnnotationCollection.(
+                            makeIdFromComponent(
+                              ~creatorUsername=
+                                currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                              ~annotationCollectionIdComponent=recentAnnotationCollectionIdComponent,
+                              (),
+                            )
+                          ),
+                        ),
+                      text: "recent",
+                      href: None,
+                    },
+                  ),
+                |])
+              ->Js.Promise.all;
+
+            let annotationIdP =
+              Lib_GraphQL.Annotation.makeId(
+                ~creatorUsername=
+                  AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                ~textualTargetValue=text,
+              );
+
+            Js.Promise.all2((annotationIdP, tagsWithIdsP))
+            |> Js.Promise.then_(((annotationId, tagsWithIds)) =>
                  Js.Promise.resolve({
                    "context": [|Lib_GraphQL.Annotation.defaultContext|],
                    "type": [|`ANNOTATION|],
-                   "id": id,
+                   "id": annotationId,
                    "body":
-                     Some([|
-                       {
-                         "textualBody":
-                           Some({
-                             "id":
-                               Some(
-                                 Lib_GraphQL.AnnotationCollection.(
-                                   makeIdFromComponent(
-                                     ~creatorUsername=
-                                       currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-                                     ~annotationCollectionIdComponent=recentAnnotationCollectionIdComponent,
-                                     (),
-                                   )
-                                 ),
-                               ),
-                             "value": "recent",
-                             "purpose": Some([|`TAGGING|]),
-                             "rights": None,
-                             "accessibility": None,
-                             "format": Some(`TEXT_PLAIN),
-                             "textDirection": Some(`LTR),
-                             "language": Some(`EN_US),
-                             "processingLanguage": Some(`EN_US),
-                             "type": Some(`TEXTUAL_BODY),
-                           }),
-                         "externalBody": None,
-                         "choiceBody": None,
-                         "specificBody": None,
-                       },
-                     |]),
+                     tagsWithIds
+                     ->Belt.Array.map(
+                         (Containers_AnnotationEditor_Types.{text, id}) =>
+                         {
+                           "textualBody":
+                             Some({
+                               "id": id,
+                               "value": text,
+                               "purpose": Some([|`TAGGING|]),
+                               "rights": None,
+                               "accessibility": None,
+                               "format": Some(`TEXT_PLAIN),
+                               "textDirection": Some(`LTR),
+                               "language": Some(`EN_US),
+                               "processingLanguage": Some(`EN_US),
+                               "type": Some(`TEXTUAL_BODY),
+                             }),
+                           "externalBody": None,
+                           "choiceBody": None,
+                           "specificBody": None,
+                         }
+                       )
+                     ->Js.Option.some,
                    "created": Some(ts->Js.Json.string),
                    "modified": Some(ts->Js.Json.string),
                    "generated": Some(ts->Js.Json.string),

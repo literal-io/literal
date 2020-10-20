@@ -1,5 +1,5 @@
 import "../app.css";
-import "typeface-open-sans";
+import "typeface-titillium-web";
 import "typeface-domine";
 
 import Head from "next/head";
@@ -7,6 +7,8 @@ import Router from "next/router";
 
 import AuthenticationProvider from "../Providers/Providers_Authentication.js";
 import ApolloProvider from "../Providers/Providers_Apollo.js";
+import ErrorBoundary from "../components/ErrorBoundary/ErrorBoundary.js"
+import { page, track } from "../services/Service_Analytics.js";
 
 import * as React from "react";
 
@@ -14,7 +16,11 @@ if (global.window) {
   require("../webview.js").initialize();
 }
 
-export default function App({ Component, pageProps, router: { asPath } }) {
+export default function App({
+  Component,
+  pageProps,
+  router: { asPath, route, query },
+}) {
   // Next.js currently does not allow trailing slash in a route.
   // This is a client side redirect in case trailing slash occurs.
   // https://github.com/zeit/next.js/issues/5214
@@ -31,6 +37,12 @@ export default function App({ Component, pageProps, router: { asPath } }) {
     }
   }
 
+  React.useEffect(() => {
+    window.requestIdleCallback(() => { 
+      track(page({ route, asPath, query }));
+    })
+  }, [asPath, route, query]);
+
   return (
     <>
       <Head>
@@ -43,14 +55,13 @@ export default function App({ Component, pageProps, router: { asPath } }) {
         <link rel="icon" type="image/png" href="/favicon-32.png" />
       </Head>
       <AuthenticationProvider.make>
-        <ApolloProvider.make
-          render={(rehydrated) =>
-            <Component
-              rehydrated={rehydrated} 
-              {...pageProps} 
-            />
-          }
-        />
+        <ErrorBoundary.make>
+          <ApolloProvider.make
+            render={(rehydrated) => (
+              <Component rehydrated={rehydrated} {...pageProps} />
+            )}
+          />
+        </ErrorBoundary.make>
       </AuthenticationProvider.make>
     </>
   );

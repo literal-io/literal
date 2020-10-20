@@ -1,5 +1,3 @@
-open Styles;
-
 let styles = [%raw "require('./TextInput_Basic.module.css')"];
 [@react.component]
 let make =
@@ -9,6 +7,7 @@ let make =
       ~onFocus=?,
       ~onBlur=?,
       ~inputClasses=MaterialUi.Input.Classes.make(),
+      ~disabled=?,
       ~value,
       ~autoFocus=?,
       ~placeholder=?,
@@ -83,6 +82,7 @@ let make =
 
     <MaterialUi.TextField
       key={fontFaceLoaded ? "loaded" : "loading"}
+      ?disabled
       ?label
       ?placeholder
       ?autoFocus
@@ -102,7 +102,7 @@ let make =
               ~input=
                 Cn.(
                   fromList([
-                    "text-lightSecondary",
+                    "text-lightPrimary",
                     "font-serif",
                     "text-lg",
                     "leading-relaxed",

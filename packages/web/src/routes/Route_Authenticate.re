@@ -62,7 +62,18 @@ let default = () => {
       />
     </div>
     <MaterialUi.Button
-      onClick={_ => handleAuthenticateGoogle()}
+      onClick={_ => {
+        let _ =
+          Service_Analytics.(
+            track(
+              Click({
+                action: "authenticate",
+                label: Some("Sign In With Google"),
+              }),
+            )
+          );
+        handleAuthenticateGoogle();
+      }}
       _TouchRippleProps={
         "classes": {
           "child": cn(["bg-white"]),

@@ -12,7 +12,6 @@ import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.mobile.client.UserStateListener;
 
 import io.literal.R;
-import io.literal.factory.AWSMobileClientFactory;
 import io.literal.lib.Constants;
 
 public class AuthenticationHandler extends AppCompatActivity {

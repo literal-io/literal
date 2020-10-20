@@ -1,6 +1,12 @@
 [@react.component]
 let default = (~rehydrated) => {
   let router = Next.Router.useRouter();
+  let searchParams =
+    router.asPath
+    ->Js.String2.split("?")
+    ->Belt.Array.get(1)
+    ->Belt.Option.getWithDefault("")
+    ->Webapi.Url.URLSearchParams.make;
   let authentication = Hooks_CurrentUserInfo.use();
 
   let _ =
@@ -16,30 +22,53 @@ let default = (~rehydrated) => {
       [|authentication|],
     );
 
+  let handleClear = () =>
+    switch (authentication) {
+    | Authenticated(currentUser) =>
+      Next.Router.replaceWithAs(
+        Routes.CreatorsIdAnnotationsNew.staticPath,
+        Routes.CreatorsIdAnnotationsNew.path(
+          ~creatorUsername=
+            currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+        ),
+      )
+    | _ => ()
+    };
+
   <>
     {switch (
        authentication,
-       Routes.CreatorsIdAnnotationsNew.queryParams_decode(router.Next.query),
+       Routes.CreatorsIdAnnotationsNew.params_decode(router.Next.query),
+       searchParams |> Webapi.Url.URLSearchParams.get("id"),
+       searchParams |> Webapi.Url.URLSearchParams.get("fileUrl"),
      ) {
-     | (Unauthenticated, _) => <Loading />
-     | (_, Ok({id: Some(annotationIdComponent), creatorUsername}))
-         when Js.String.length(annotationIdComponent) > 0 =>
+     | (Unauthenticated, _, _, _) => <Loading />
+     | (_, Ok(_), _, Some(fileUrl)) =>
        <QueryRenderers_NewAnnotationFromShare
-         annotationId={Lib_GraphQL.Annotation.makeIdFromComponent(
-           ~creatorUsername,
-           ~annotationIdComponent,
-         )}
+         fileUrl=?{Some(fileUrl)}
          authentication
          rehydrated
        />
-     | (Loading, _) => <Loading />
+     | (_, Ok({creatorUsername}), Some(annotationIdComponent), _)
+         when Js.String.length(annotationIdComponent) > 0 =>
+       <QueryRenderers_NewAnnotationFromShare
+         annotationId=?{
+           Some(
+             Lib_GraphQL.Annotation.makeIdFromComponent(
+               ~creatorUsername,
+               ~annotationIdComponent,
+             ),
+           )
+         }
+         authentication
+         rehydrated
+       />
+     | (Loading, _, _, _) => <Loading />
      | _ when !rehydrated => <Loading />
-     | (Authenticated(currentUser), Ok({initialPhaseState})) =>
-       <QueryRenderers_NewAnnotation currentUser ?initialPhaseState />
-     | (Authenticated(currentUser), _) =>
+     | (Authenticated(currentUser), _, _, _) =>
        <QueryRenderers_NewAnnotation currentUser />
      }}
-    <Alert query={router.query} />
+    <Alert urlSearchParams=searchParams onClear=handleClear />
   </>;
 };
 

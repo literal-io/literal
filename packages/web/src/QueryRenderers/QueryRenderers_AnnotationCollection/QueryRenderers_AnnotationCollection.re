@@ -1,5 +1,16 @@
 open QueryRenderers_AnnotationCollection_GraphQL;
 
+module Loading = {
+  [@react.component]
+  let make = () => {
+    <div className={Cn.fromList(["w-full", "h-full", "bg-black"])}>
+      <Containers_AnnotationCollectionHeader />
+      <TextInput_Loading className={Cn.fromList(["px-6", "pb-4", "pt-16"])} />
+      <Containers_NewTagInput />
+    </div>;
+  };
+};
+
 module Data = {
   [@react.component]
   let make =
@@ -22,7 +33,12 @@ module Data = {
         ->Belt.Option.getWithDefault(0)
       );
 
-    let activeAnnotation = annotations->Belt.Array.getExn(activeIdx);
+    let activeAnnotation =
+      annotations
+      ->Belt.Array.get(activeIdx)
+      ->Belt.Option.getWithDefault(
+          Belt.Array.getExn(annotations, Js.Array2.length(annotations) - 1),
+        );
 
     let _ =
       React.useEffect1(
@@ -61,14 +77,17 @@ module Data = {
         {annotations->Belt.Array.map(annotation =>
            <ScrollSnapList.Item
              key={annotation##id} direction=ScrollSnapList.Horizontal>
-             <Containers_AnnotationEditor_Annotation
+             <Containers_AnnotationEditor
                annotationFragment={annotation##editorAnnotationFragment}
-               isActive={annotation##id === activeAnnotation##id}
                currentUser
              />
            </ScrollSnapList.Item>
          )}
       </ScrollSnapList.Container>
+      <Containers_NewTagInput
+        currentUser
+        annotationFragment={activeAnnotation##newTagInputFragment}
+      />
     </div>;
   };
 };
@@ -192,7 +211,7 @@ let make =
   | (_, false, _)
   | (_, _, Loading)
   | ({data: None, loading: true}, _, _) => <Loading />
-  | ({data: Some(data)}, true, Authenticated(currentUser)) =>
+  | ({data: Some(data), loading}, true, Authenticated(currentUser)) =>
     let isRecentAnnotationCollection =
       annotationCollectionIdComponent
       == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent;
@@ -215,6 +234,7 @@ let make =
             })
         )
     ) {
+    | None when loading => <Loading />
     | None when isRecentAnnotationCollection =>
       <Containers_Onboarding currentUser onAnnotationIdChange />
     | None =>

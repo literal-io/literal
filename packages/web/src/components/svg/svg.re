@@ -10,6 +10,7 @@ let arrowRight: string = [%raw "require('./arrow-right.svg')"];
 let add: string = [%raw "require('./add.svg')"];
 let textFields: string = [%raw "require('./text-fields.svg')"];
 let textSnippet: string = [%raw "require('./text-snippet.svg')"];
+let label: string = [%raw "require('./label.svg')"];
 
 type state = {
   isLoading: bool,

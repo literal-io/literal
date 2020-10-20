@@ -10,7 +10,7 @@ exception DeccoDecodeError(Decco.decodeError);
 
 exception AuthenticationRequired;
 
-// TODO: sentry
+/** FIXME: sentry **/
 let report = exn => {
   Js.Console.trace();
   Js.Console.log(exn);

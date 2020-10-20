@@ -22,7 +22,7 @@ module Data = {
         currentUser
         annotationFragment={annotation##headerAnnotationFragment}
       />
-      <Containers_AnnotationEditor_NewFromShare
+      <Containers_NewAnnotationFromShareEditor
         currentUser
         annotationFragment={annotation##editorAnnotationFragment}
       />
@@ -36,124 +36,279 @@ module Loading = {
     <>
       <Containers_NewAnnotationFromShareHeader />
       <TextInput_Loading className={cn(["px-6", "pb-4", "pt-16"])} />
-      <FloatingActionButton
-        className={cn(["fixed", "right-0", "bottom-0", "m-6", "z-10"])}
-        disabled=true>
-        <MaterialUi.CircularProgress
-          size={MaterialUi.CircularProgress.Size.int(26)}
-          classes={MaterialUi.CircularProgress.Classes.make(
-            ~colorPrimary=cn(["text-black"]),
-            (),
-          )}
+      <div
+        className={Cn.fromList([
+          "absolute",
+          "bottom-0",
+          "left-0",
+          "right-0",
+          "flex",
+          "flex-col",
+          "items-end",
+        ])}>
+        <FloatingActionButton
+          onClick={_ev => ()}
+          className={Cn.fromList(["m-6", "z-10"])}
+          disabled=true>
+          <MaterialUi.CircularProgress
+            size={MaterialUi.CircularProgress.Size.int(26)}
+            classes={MaterialUi.CircularProgress.Classes.make(
+              ~colorPrimary=cn(["text-black"]),
+              (),
+            )}
+          />
+        </FloatingActionButton>
+        <TextInput_Tags
+          className={Cn.fromList(["px-2", "bg-black", "z-10"])}
+          onValueChange={_ => ()}
+          onValueCommit={_ => ()}
+          value=""
+          disabled=true
         />
-      </FloatingActionButton>
+      </div>
     </>;
   };
 };
 
-module Empty = {
+module FromAnnotationId = {
   [@react.component]
-  let make = () => React.string("Not Found...");
-};
+  let make = (~currentUser, ~annotationId) => {
+    let (isLoaded, setIsLoaded) = React.useState(_ => false);
+    let (query, _fullQuery) =
+      ApolloHooks.useQuery(
+        ~variables=
+          GetAnnotationQuery.makeVariables(
+            ~id=annotationId,
+            ~creatorUsername=
+              AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+            (),
+          ),
+        ~pollInterval=isLoaded ? 0 : pollInterval,
+        GetAnnotationQuery.definition,
+      );
 
-[@react.component]
-let make =
-    (
-      ~annotationId,
-      ~authentication: Hooks_CurrentUserInfo_Types.state,
-      ~rehydrated,
-    ) => {
-  let (isLoaded, setIsLoaded) = React.useState(_ => false);
-  let (query, _fullQuery) =
-    ApolloHooks.useQuery(
-      ~variables=
-        GetAnnotationQuery.makeVariables(
-          ~id=annotationId,
-          ~creatorUsername=
-            switch (authentication) {
-            | Authenticated(currentUser) =>
-              AwsAmplify.Auth.CurrentUserInfo.(currentUser->username)
-            | _ => ""
-            },
-          (),
-        ),
-      ~pollInterval=isLoaded ? 0 : pollInterval,
-      ~skip=
-        switch (authentication) {
-        | Authenticated(_) when rehydrated => false
-        | _ when !rehydrated => true
-        | Loading
-        | Unauthenticated => true
-        },
-      GetAnnotationQuery.definition,
-    );
+    let _ =
+      React.useEffect0(() => {
+        let timeoutId =
+          Js.Global.setTimeout(() => setIsLoaded(_ => true), pollTimeout);
+        Some(() => {Js.Global.clearTimeout(timeoutId)});
+      });
 
-  let _ =
-    React.useEffect0(() => {
-      let timeoutId =
-        Js.Global.setTimeout(() => setIsLoaded(_ => true), pollTimeout);
-      Some(() => {Js.Global.clearTimeout(timeoutId)});
-    });
-
-  let _ =
-    React.useEffect1(
-      () => {
-        let _ =
-          switch (query) {
-          | Data(data) =>
-            switch (data##getAnnotation) {
-            | Some(_) => setIsLoaded(_ => true)
+    let _ =
+      React.useEffect1(
+        () => {
+          let _ =
+            switch (query) {
+            | Data(data) =>
+              switch (data##getAnnotation) {
+              | Some(_) => setIsLoaded(_ => true)
+              | _ => ()
+              }
             | _ => ()
-            }
-          | _ => ()
-          };
-        None;
-      },
-      [|query|],
-    );
-
-  switch (query, rehydrated, authentication, isLoaded) {
-  | (Loading, _, _, _)
-  | (_, false, _, _)
-  | (_, _, Loading, _)
-  | (_, _, _, false) => <Loading />
-  | (Data(data), _, Authenticated(currentUser), true) =>
-    switch (data##getAnnotation) {
-    | Some(annotation) => <Data annotation currentUser />
-    | None =>
+            };
+          None;
+        },
+        [|query|],
+      );
+    switch (query, isLoaded) {
+    | (Loading, _)
+    | (_, false) => <Loading />
+    | (Data(data), true) =>
+      switch (data##getAnnotation) {
+      | Some(annotation) => <Data annotation currentUser />
+      | None =>
+        <Redirect
+          path={Routes.CreatorsIdAnnotationsNew.path(
+            ~creatorUsername=currentUser.username,
+          )}
+          staticPath=Routes.CreatorsIdAnnotationsNew.staticPath
+          search=Alert.(query_encode({alert: noDataAlert}))>
+          <Loading />
+        </Redirect>
+      }
+    | (NoData, true)
+    | (Error(_), true) =>
       <Redirect
         path={Routes.CreatorsIdAnnotationsNew.path(
           ~creatorUsername=currentUser.username,
         )}
         staticPath=Routes.CreatorsIdAnnotationsNew.staticPath
-        search={Raw.merge(
-          Alert.(query_encode({alert: noDataAlert})),
-          Routes.CreatorsIdAnnotationsNew.queryParams_encode({
-            id: None,
-            initialPhaseState: Some(`PhaseTextInput),
-            creatorUsername: currentUser.username,
-          }),
-        )}>
+        search=Alert.(query_encode({alert: noDataAlert}))>
         <Loading />
       </Redirect>
-    }
-  | (NoData, true, Authenticated(currentUser), _)
-  | (Error(_), true, Authenticated(currentUser), _) =>
+    };
+  };
+};
+
+module FromFileUrl = {
+  type phase =
+    | PhaseLoading
+    | PhaseData(CreateAnnotationFromExternalTargetMutation.t);
+
+  [@react.component]
+  let make = (~currentUser, ~fileUrl) => {
+    let (createAnnotationFromExternalTargetMutation, _s, _f) =
+      ApolloHooks.useMutation(
+        CreateAnnotationFromExternalTargetMutation.definition,
+      );
+    let (phase, setPhase) = React.useState(() => PhaseLoading);
+
+    let handleError = () => {
+      let search =
+        "?"
+        ++ Alert.{alert: noDataAlert}
+           ->Alert.query_encode
+           ->Externals_URLSearchParams.makeWithJson
+           ->Externals_URLSearchParams.toString;
+
+      Next.Router.replaceWithAs(
+        Routes.CreatorsIdAnnotationsNew.staticPath,
+        Routes.CreatorsIdAnnotationsNew.path(
+          ~creatorUsername=
+            currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+        )
+        ++ search,
+      );
+    };
+
+    let _ =
+      React.useEffect0(() => {
+        let fileId = Uuid.makeV4();
+        let _ =
+          Fetch.fetch(fileUrl)
+          |> Js.Promise.then_(Fetch.Response.blob)
+          |> Js.Promise.then_(blob =>
+               AwsAmplify.Storage.(
+                 inst->putBlob(
+                   "screenshots/" ++ fileId,
+                   blob,
+                   Some({
+                     contentType: blob->Webapi.Blob.type_,
+                     level: "private",
+                   }),
+                 )
+               )
+             )
+          |> Js.Promise.then_(result => {
+               let s3Url = {
+                 let bucketName =
+                   AwsAmplify.Config.(
+                     Constants.awsAmplifyConfig->userFilesS3BucketGet
+                   );
+                 let currentUserId =
+                   currentUser
+                   ->AwsAmplify.Auth.CurrentUserInfo.id
+                   ->Belt.Option.getExn;
+
+                 "s3://"
+                 ++ bucketName
+                 ++ "/private/"
+                 ++ currentUserId
+                 ++ "/"
+                 ++ result.AwsAmplify.Storage.key;
+               };
+
+               let creatorUsername =
+                 currentUser->AwsAmplify.Auth.CurrentUserInfo.username;
+               let variables =
+                 CreateAnnotationFromExternalTargetMutation.makeVariables(
+                   ~input={
+                     "creatorUsername": creatorUsername,
+                     "annotationId":
+                       Some(
+                         Lib_GraphQL.Annotation.makeIdFromComponent(
+                           ~creatorUsername,
+                           ~annotationIdComponent=fileId,
+                         ),
+                       ),
+                     "externalTarget": {
+                       "format": Some(`TEXT_PLAIN),
+                       "language": Some(`EN_US),
+                       "processingLanguage": Some(`EN_US),
+                       "type": Some(`IMAGE),
+                       "rights": None,
+                       "accessibility": None,
+                       "textDirection": Some(`LTR),
+                       "id": s3Url,
+                     },
+                   },
+                   (),
+                 );
+               createAnnotationFromExternalTargetMutation(~variables, ());
+             })
+          |> Js.Promise.then_(((result, _)) => {
+               let _ =
+                 setPhase(currentPhase =>
+                   switch (result) {
+                   | ApolloHooks.Mutation.Errors(errors) =>
+                     errors->Belt.Array.forEach(error => {
+                       Error.(report(GraphQLError(error)))
+                     });
+
+                     handleError();
+                     currentPhase;
+                   | NoData =>
+                     handleError();
+                     currentPhase;
+                   | Data(result) => PhaseData(result)
+                   }
+                 );
+               Js.Promise.resolve();
+             })
+          |> Js.Promise.catch(exn => {
+               let _ = Error.report(exn);
+               let _ = handleError();
+               Js.Promise.resolve();
+             });
+        None;
+      });
+    switch (phase) {
+    | PhaseLoading => <Loading />
+    | PhaseData(data) =>
+      switch (data##createAnnotationFromExternalTarget) {
+      | Some(data) => <Data annotation=data currentUser />
+      | None =>
+        <Redirect
+          path={Routes.CreatorsIdAnnotationsNew.path(
+            ~creatorUsername=currentUser.username,
+          )}
+          staticPath=Routes.CreatorsIdAnnotationsNew.staticPath
+          search=Alert.{alert: noDataAlert}>
+          <Loading />
+        </Redirect>
+      }
+    };
+  };
+};
+
+[@react.component]
+let make =
+    (
+      ~fileUrl=?,
+      ~annotationId=?,
+      ~authentication: Hooks_CurrentUserInfo_Types.state,
+      ~rehydrated,
+    ) => {
+  switch (rehydrated, authentication, annotationId, fileUrl) {
+  | (_, Unauthenticated, _, _) =>
     <Redirect
-      path={Routes.CreatorsIdAnnotationsNew.path(
-        ~creatorUsername=currentUser.username,
-      )}
-      staticPath=Routes.CreatorsIdAnnotationsNew.staticPath
-      search={Raw.merge(
-        Alert.(query_encode({alert: noDataAlert})),
-        Routes.CreatorsIdAnnotationsNew.queryParams_encode({
-          id: None,
-          initialPhaseState: Some(`PhaseTextInput),
-          creatorUsername: currentUser.username,
-        }),
-      )}>
+      staticPath={Routes.Authenticate.path()}
+      path={Routes.Authenticate.path()}>
       <Loading />
     </Redirect>
-  | (_, _, Unauthenticated, _) => <Loading />
+  | (_, Authenticated(currentUser), None, None) =>
+    <Redirect
+      path={Routes.CreatorsIdAnnotationsNew.path(
+        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+      )}
+      staticPath=Routes.CreatorsIdAnnotationsNew.staticPath>
+      <Loading />
+    </Redirect>
+  | (_, Loading, _, _)
+  | (false, _, _, _) => <Loading />
+  | (true, Authenticated(currentUser), Some(annotationId), _) =>
+    <FromAnnotationId currentUser annotationId />
+  | (true, Authenticated(currentUser), _, Some(fileUrl)) =>
+    <FromFileUrl currentUser fileUrl />
   };
 };

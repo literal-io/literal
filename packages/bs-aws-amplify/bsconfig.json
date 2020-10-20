@@ -14,7 +14,7 @@
     }
   ],
   "suffix": ".bs.js",
-  "bs-dependencies": [],
+  "bs-dependencies": ["bs-webapi", "@literal-io/bs-amazon-cognito-identity-js"],
   "ppx-flags": [],
   "refmt": 3
 }

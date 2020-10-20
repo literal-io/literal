@@ -79,10 +79,13 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
           (),
         );
 
+      let _ = handleUpdateCache(~annotation, ~currentUser);
+      if (!Webview.isWebview()) {
+        Next.Router.back();
+      };
       let _ =
         deleteAnnotationMutation(~variables, ())
         |> Js.Promise.then_(_ => {
-             let _ = handleUpdateCache(~annotation, ~currentUser);
              let _ =
                Webview.(
                  postMessage(WebEvent.make(~type_="ACTIVITY_FINISH"))
@@ -101,7 +104,11 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
     <MaterialUi.IconButton
       size=`Small
       edge=MaterialUi.IconButton.Edge.start
-      onClick={_ => handleClose()}
+      onClick={_ => {
+        let _ =
+          Service_Analytics.(track(Click({action: "close", label: None})));
+        handleClose();
+      }}
       _TouchRippleProps={
         "classes": {
           "child": cn(["bg-white"]),

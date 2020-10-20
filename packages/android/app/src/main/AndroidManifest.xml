@@ -14,7 +14,6 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:requestLegacyExternalStorage="true"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
@@ -31,18 +30,16 @@
         <activity
             android:name=".ui.activity.ShareTargetHandler"
             android:configChanges="orientation|screenSize">
-            <intent-filter>
+            <intent-filter
+                android:label="Annotate">
                 <action android:name="android.intent.action.SEND" />
-
                 <category android:name="android.intent.category.DEFAULT" />
-
                 <data android:mimeType="image/*" />
             </intent-filter>
-            <intent-filter>
+            <intent-filter
+                android:label="Annotate">
                 <action android:name="android.intent.action.SEND" />
-
                 <category android:name="android.intent.category.DEFAULT" />
-
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>

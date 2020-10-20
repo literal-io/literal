@@ -5,10 +5,12 @@ module CreatorsIdAnnotationsNew = {
     "/creators/" ++ creatorUsername ++ "/annotations/new";
 
   [@decco]
-  type queryParams = {
-    creatorUsername: string,
+  type params = {creatorUsername: string};
+
+  [@decco]
+  type searchParams = {
     id: option(string),
-    initialPhaseState: option(Containers_AnnotationEditor_New_Types.phase),
+    fileUrl: option(string),
   };
 };
 

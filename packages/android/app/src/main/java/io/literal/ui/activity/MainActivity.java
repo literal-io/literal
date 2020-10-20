@@ -6,27 +6,41 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.UserStateDetails;
 
+import java.io.File;
+import java.util.UUID;
+
 import io.literal.R;
 import io.literal.factory.AWSMobileClientFactory;
 import io.literal.lib.Constants;
+import io.literal.lib.ContentResolverLib;
+import io.literal.lib.FileActivityResultCallback;
 import io.literal.lib.WebRoutes;
 import io.literal.ui.view.WebView;
 
 public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
+    private ActivityResultLauncher<String> getFileContent;
+
+    private FileActivityResultCallback fileActivityResultCallback = new FileActivityResultCallback();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        getFileContent = registerForActivityResult(new ActivityResultContracts.GetContent(), fileActivityResultCallback);
 
         this.webView = findViewById(R.id.webview);
         ViewGroup splash = findViewById(R.id.splash);
@@ -38,6 +52,25 @@ public class MainActivity extends AppCompatActivity {
             public void onPageFinished(android.webkit.WebView view, String Url) {
                 view.setVisibility(View.VISIBLE);
                 layout.removeView(splash);
+            }
+        });
+
+        this.webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(android.webkit.WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+                fileActivityResultCallback.setFilePathCallback(new ValueCallback<Uri[]>() {
+                    @Override
+                    public void onReceiveValue(Uri[] value) {
+                        Uri[] absoluteUrls = new Uri[value.length];
+                        for (int idx = 0; idx < value.length; idx++) {
+                            File file = ContentResolverLib.toFile(MainActivity.this, value[idx], UUID.randomUUID().toString());
+                            absoluteUrls[idx] = Uri.fromFile(file);
+                        }
+                        filePathCallback.onReceiveValue(absoluteUrls);
+                    }
+                });
+                getFileContent.launch("image/*");
+                return true;
             }
         });
 
