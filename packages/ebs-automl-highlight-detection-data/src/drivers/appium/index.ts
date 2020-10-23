@@ -85,28 +85,34 @@ export class AppiumDriver implements Driver {
   };
 
   getScreenshot = async ({
+    href,
     domain,
     outputPath,
+    forceNavigate,
   }: {
     href: string;
     outputPath: string;
     domain: DOMAIN;
+    forceNavigate: boolean;
   }): Promise<SelectionAnnotation[]> => {
     if (!this.context) {
       throw new Error("Driver uninitialized");
     }
+    console.log('getScreenshot', href)
 
     const orientation =
       Math.random() > 0.66 ? Orientation.LANDSCAPE : Orientation.PORTRAIT;
     const currentOrientation = await this.context.getOrientation();
+    const currentHref = await this.context.execute(() => window.location.href);
 
     if (currentOrientation !== orientation) {
       await this.context.setOrientation(orientation);
     }
 
     await this.context.switchContext(AppiumContext.CHROMIUM);
-
-    await this.context.navigateTo(parsers[domain].getUrl());
+    if (forceNavigate || !parsers[domain].isUrlEqual(currentHref, href)) {
+      await this.context.navigateTo(href);
+    }
 
     const { annotations, size } = await browserInject(
       domain,
@@ -114,6 +120,7 @@ export class AppiumDriver implements Driver {
     );
 
     if (annotations.length === 0) {
+      console.error("annotations.length === 0, exiting early.")
       return [];
     }
 
@@ -141,9 +148,9 @@ export class AppiumDriver implements Driver {
       : 0;
 
     /**
-     * Creating a selection within JS doesn't trigger Chrome's text selection 
-     * action menu. For realism, we want the normal UI that comes up to 
-     * appear. Using the highlight coords, tap in the center and wait a 
+     * Creating a selection within JS doesn't trigger Chrome's text selection
+     * action menu. For realism, we want the normal UI that comes up to
+     * appear. Using the highlight coords, tap in the center and wait a
      * short period to have chrome display the UI.
      */
     const {
@@ -174,6 +181,7 @@ export class AppiumDriver implements Driver {
       return !window.getSelection().isCollapsed;
     });
     if (!selectionExists) {
+      console.error("Selection cleared, exiting early.")
       return [];
     }
     await this.context.switchContext(AppiumContext.NATIVE_APP);
@@ -228,10 +236,12 @@ export class AppiumDriver implements Driver {
     );
 
     const screenshotData = await this.context.takeScreenshot();
+
     writeFileSync(outputPath, screenshotData, { encoding: "base64" });
 
     await this.context.switchContext(AppiumContext.CHROMIUM);
 
+    console.log('getScreenshot complete', outputPath)
     return reframedBoundingBoxes;
   };
 

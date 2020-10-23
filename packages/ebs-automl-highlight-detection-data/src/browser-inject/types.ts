@@ -15,6 +15,7 @@ export interface ParserInterface {
   parse(scope: InjectScope): Text[];
   getUrl(): string;
   getBoundaryAncestorSelector(): string;
+  isUrlEqual(url1: string, url2: string): boolean;
 }
 
 export type SerializedScope = { [key: string]: string };
