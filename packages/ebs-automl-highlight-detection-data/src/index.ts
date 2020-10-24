@@ -40,11 +40,9 @@ const execTask = async (task: Task) => {
     forceNavigate: false,
   });
 
-  if (!DEBUG) {
-    await storage
-      .bucket(GCLOUD_BUCKET_NAME)
-      .upload(outputPath, { destination: `${task.jobId}/${fileName}` });
-  }
+  await storage
+    .bucket(GCLOUD_BUCKET_NAME)
+    .upload(outputPath, { destination: `${task.jobId}/${fileName}` });
 
   return annotations.map((a) => ({
     url: `gs://${GCLOUD_BUCKET_NAME}/${task.jobId}/${fileName}`,

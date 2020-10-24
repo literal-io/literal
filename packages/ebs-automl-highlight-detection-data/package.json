@@ -5,8 +5,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "",
-    "start:production": "concurrently -k -n \"emulator,appium,client\" \"npm run emulator:start\" \"npm run appium:start\" \"npm run client-driver:start\"",
+    "start": "npm run emulator:start && concurrently -k -n \"appium,client\" \"npm run appium:start\" \"npm run client-driver:start\"",
     "clean": "rm -rf dist && rm -f output/screenshot/*",
     "ts:build": "tsc",
     "ts:watch": "tsc -w",

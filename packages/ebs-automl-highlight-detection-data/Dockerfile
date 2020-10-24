@@ -4,6 +4,7 @@ FROM thyrlian/android-sdk
 RUN sdkmanager --update && \
   sdkmanager \
     "emulator" \
+    "platform-tools" \
     "platforms;android-30" \
     "system-images;android-30;google_apis;x86" && \
   /opt/license_accepter.sh && \
@@ -27,4 +28,4 @@ ADD ./ ./ebs-automl-highlight-detection-data
 WORKDIR ./ebs-automl-highlight-detection-data 
 RUN npm install
 
-CMD npm run start:production
+CMD npm run start

@@ -5,4 +5,5 @@
 
 node_modules
 dist
-output
+output/screenshot/manifest.csv
+output/screenshot/*.png

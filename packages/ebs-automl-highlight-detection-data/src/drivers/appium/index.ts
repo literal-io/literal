@@ -53,7 +53,7 @@ export class AppiumDriver implements Driver {
       port: 4723,
       capabilities: {
         platformName: "Android",
-        platformVersion: "10",
+        platformVersion: "11",
         deviceName: device,
         browserName: browser,
       },
@@ -98,18 +98,17 @@ export class AppiumDriver implements Driver {
     if (!this.context) {
       throw new Error("Driver uninitialized");
     }
-    console.log('getScreenshot', href)
 
     const orientation =
       Math.random() > 0.66 ? Orientation.LANDSCAPE : Orientation.PORTRAIT;
     const currentOrientation = await this.context.getOrientation();
-    const currentHref = await this.context.execute(() => window.location.href);
 
     if (currentOrientation !== orientation) {
       await this.context.setOrientation(orientation);
     }
 
     await this.context.switchContext(AppiumContext.CHROMIUM);
+    const currentHref = await this.context.execute(() => window.location.href);
     if (forceNavigate || !parsers[domain].isUrlEqual(currentHref, href)) {
       await this.context.navigateTo(href);
     }
