@@ -1,5 +1,5 @@
 import { resolve } from "path";
-import { writeFileSync } from "fs";
+import { writeFileSync, mkdirSync } from "fs";
 
 import { v4 as uuid } from "uuid";
 import * as R from "ramda";
@@ -81,13 +81,11 @@ const processResults = async (
   const manifestPath = resolve(OUTPUT_DIR, "manifest.csv");
   writeFileSync(manifestPath, csv);
 
-  if (!DEBUG) {
-    await storage
-      .bucket(GCLOUD_BUCKET_NAME)
-      .upload(manifestPath, { destination: `${jobId}/manifest.csv` });
+  await storage
+    .bucket(GCLOUD_BUCKET_NAME)
+    .upload(manifestPath, { destination: `${jobId}/manifest.csv` });
 
-    console.log(`Upload complete. Job ID: ${jobId}`);
-  }
+  console.log(`Upload complete. Job ID: ${jobId}`);
 };
 
 (async () => {
@@ -97,6 +95,9 @@ const processResults = async (
     device: "Android Emulator",
   });
   const jobId = uuid();
+
+  mkdirSync(OUTPUT_DIR, { recursive: true })
+
   const tasks = R.sortBy(
     R.prop("href"),
     R.times(() => {
@@ -128,6 +129,9 @@ const processResults = async (
         maxTimeout: Infinity,
         factor: 1,
         retries: 10,
+        onFailedAttempt: (error) => {
+          console.error('failed attempt', error)
+        }
       }
     ).catch((err) => {
       console.error(err)

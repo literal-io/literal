@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL": "https://s3.amazonaws.com/automl-highlight-detection-data-deployment/cluster.json",
+        "Parameters": {
+          "EnvironmentName": {
+            "Ref": "AWS::StackName"
+          }
+        }
+      }
+    }
+  }
+}
