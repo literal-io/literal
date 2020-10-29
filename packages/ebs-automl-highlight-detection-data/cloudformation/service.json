@@ -5,12 +5,15 @@
       "Description": "ECS cluster the ECS Service should execute on",
       "Type": "String"
     },
+    "EnvironmentName": {
+      "Type": "String"
+    },
     "DesiredCount": {
       "Description": "Count of tasks to run within the service",
       "Type": "Number",
       "Default": 2
     },
-    "Image": {
+    "DockerImageUrl": {
       "Description": "URL of container image",
       "Type": "String"
     }
@@ -28,13 +31,17 @@
     "TaskDefinition": {
       "Type": "AWS::ECS::TaskDefinition",
       "Properties": {
-        "Family": "automl-highlight-detection-data",
+        "Family": {
+          "Ref": "EnvironmentName"
+        },
         "ContainerDefinitions": [
           {
-            "Name": "automl-highlight-detection-data",
+            "Name": {
+              "Ref": "EnvironmentName"
+            },
             "Essential": true,
             "Image": {
-              "Ref": "Image"
+              "Ref": "DockerImageUrl"
             },
             "Memory": "1024",
             "LogConfiguration": {
