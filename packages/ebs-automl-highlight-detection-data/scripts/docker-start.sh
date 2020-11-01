@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker run --privileged ebs-automl-highlight-detection-data
+docker run automl-highlight-detection-data:latest

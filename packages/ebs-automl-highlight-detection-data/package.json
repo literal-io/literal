@@ -5,13 +5,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npm run emulator:start && concurrently -k -n \"appium,client\" \"npm run appium:start\" \"npm run client-driver:start\"",
+    "start": "npm run emulator:start && concurrently -k -n \"appium,client\" \"npm run appium:start\" \"npm run client-driver:start:production\"",
     "clean": "rm -rf dist && rm -f output/screenshot/*",
     "ts:build": "tsc",
     "ts:watch": "tsc -w",
     "appium:start": "appium --relaxed-security",
     "client-driver:start": "npm run clean && npm run ts:build && node dist",
-    "client-driver:start:production": "npm run clean && npm run ts:build && NODE_ENV=production OUTPUT_SIZE=1000 node dist",
+    "client-driver:start:production": "npm run clean && npm run ts:build && NODE_ENV=production OUTPUT_SIZE=500 node dist",
     "emulator:start": "./scripts/emulator-start.sh"
   },
   "author": "",

@@ -28,6 +28,9 @@
           },
           "Cluster": {
             "Fn::GetAtt": ["Cluster", "Outputs.Cluster"]
+          },
+          "DockerImageUrl": {
+            "Ref": "ServiceDockerImageUrl"
           }
         }
       }

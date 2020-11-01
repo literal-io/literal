@@ -1,5 +1,5 @@
 {
-  "Description": "ECS Service for automl-highlight-detection-data",
+  "Description": "ECS Service configuration for automl-highlight-detection-data",
   "Parameters": {
     "Cluster": {
       "Description": "ECS cluster the ECS Service should execute on",
@@ -23,9 +23,8 @@
       "Type": "AWS::ECS::Service",
       "Properties": {
         "Cluster": { "Ref": "Cluster" },
-        "Role": { "Ref": "ServiceRole" },
         "DesiredCount": { "Ref": "DesiredCount" },
-        "TaskDefinition": { "Ref": "TaskDefintion" }
+        "TaskDefinition": { "Ref": "TaskDefinition" }
       }
     },
     "TaskDefinition": {
@@ -43,12 +42,14 @@
             "Image": {
               "Ref": "DockerImageUrl"
             },
-            "Memory": "1024",
+            "Memory": "3884",
+            "Cpu": "2048",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
                 "awslogs-group": { "Ref": "CloudWatchLogsGroup" },
-                "awslogs-region": { "Ref": "AWS::Region" }
+                "awslogs-region": { "Ref": "AWS::Region" },
+                "awslogs-create-group": true
               }
             }
           }

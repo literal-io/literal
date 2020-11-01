@@ -53,7 +53,7 @@ export class AppiumDriver implements Driver {
       port: 4723,
       capabilities: {
         platformName: "Android",
-        platformVersion: "11",
+        platformVersion: "7.1",
         deviceName: device,
         browserName: browser,
       },
