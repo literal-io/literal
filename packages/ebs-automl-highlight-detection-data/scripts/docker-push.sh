@@ -1,6 +1,11 @@
+#!/bin/bash
+
+set -ex
+
 IMAGE_NAME=automl-highlight-detection-data
-AWS_REGION=us-east-1
-AWS_ACCOUNT_ID=046525304497
-REPOSITORY_TAG="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}:latest"
+GCP_HOSTNAME=us.gcr.io
+GCP_PROJECT_ID=literal-269716
+
+REPOSITORY_TAG="${GCP_HOSTNAME}/${GCP_PROJECT_ID}/${IMAGE_NAME}"
 
 docker push $REPOSITORY_TAG

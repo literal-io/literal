@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker run automl-highlight-detection-data:latest
+docker run --privileged automl-highlight-detection-data:latest
