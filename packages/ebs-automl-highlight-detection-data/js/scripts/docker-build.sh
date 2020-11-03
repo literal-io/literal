@@ -2,7 +2,7 @@
 
 set -ex
 
-IMAGE_NAME=automl-highlight-detection-data
+IMAGE_NAME=automl-highlight-detection-data-node
 GCP_HOSTNAME=us.gcr.io
 GCP_PROJECT_ID=literal-269716
 

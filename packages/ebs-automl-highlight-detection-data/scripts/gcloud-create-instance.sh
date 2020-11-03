@@ -13,7 +13,7 @@ CREATE_DISK=false
 
 # instance config
 INSTANCE_ID=1
-MACHINE_TYPE=n1-standard-1
+MACHINE_TYPE=n1-standard-4
 
 # image config
 IMAGE_NAME=automl-highlight-detection-data
