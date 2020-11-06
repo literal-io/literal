@@ -34,12 +34,15 @@ sudo add-apt-repository \
    $(lsb_release -cs) \
    stable"
 sudo apt-get update
-sudo apt-get install -y docker-ce-cli containerd.io
-sudo apt-get install -y docker-ce
+sudo apt-get install -y containerd.io
+sudo apt-get install -y docker-ce docker-ce-cli
 sudo groupadd docker
 sudo usermod -aG docker $USER
 newgrp docker
 yes | gcloud auth configure-docker
 
-# start the container
-docker run -d --privileged --log-driver=gcplogs "$IMAGE_URL" 
+# pull repo
+git clone --single-branch --branch feat-improve-automl-highlight-detection-data https://github.com/javamonn/literal.git 
+
+# start the containers
+cd literal && ./scripts/docker-start-prodcution

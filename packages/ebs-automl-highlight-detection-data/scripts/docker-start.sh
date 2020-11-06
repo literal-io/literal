@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker run --privileged automl-highlight-detection-data:latest
+docker-compose -f docker-compose.dev.yml --build up
