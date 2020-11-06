@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -x
 
 IMAGE_URL=us.gcr.io/literal-269716/automl-highlight-detection-data:latest
 
@@ -34,15 +34,19 @@ sudo add-apt-repository \
    $(lsb_release -cs) \
    stable"
 sudo apt-get update
-sudo apt-get install -y containerd.io
-sudo apt-get install -y docker-ce docker-ce-cli
+sudo apt-get install -y containerd.io docker-ce docker-ce-cli
 sudo groupadd docker
 sudo usermod -aG docker $USER
 newgrp docker
 yes | gcloud auth configure-docker
 
+# install docker compose
+sudo curl -L "https://github.com/docker/compose/releases/download/1.27.4/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
 # pull repo
 git clone --single-branch --branch feat-improve-automl-highlight-detection-data https://github.com/javamonn/literal.git 
 
 # start the containers
-cd literal && ./scripts/docker-start-prodcution
+# LD_LIBRARY_PATH issue: https://github.com/google-github-actions/setup-gcloud/issues/128
+cd ./literal/packages/ebs-automl-highlight-detection-data && LD_LIBRARY_PATH=/usr/local/lib ./scripts/docker-start-production.sh

@@ -7,7 +7,7 @@ services:
     logging:
       driver: gcplogs
     restart: always
-    cpus: 0.8
+    cpus: 3.5
     ports:
       - 5037:5037
       - 4723:4723
@@ -17,7 +17,7 @@ services:
       - android
     logging:
       driver: gcplogs
-    cpus: 0.2
+    cpus: .5
     environment:
       ANDROID_EMULATOR_HOSTNAME: android
       ANDROID_EMULATOR_PORT: 5037
