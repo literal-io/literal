@@ -1,18 +1,17 @@
 {
-  "name": "@literal-io/automl-highlight-detection-data",
+  "name": "@literal-io/automl-highlight-detection-data-node",
   "private": true,
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npm run emulator:start && concurrently -k -n \"appium,client\" \"npm run appium:start\" \"npm run client-driver:start:production\"",
+    "start": "npm run emulator:await && npm run client-driver:start:production",
     "clean": "rm -rf dist && rm -f output/screenshot/*",
     "ts:build": "tsc",
     "ts:watch": "tsc -w",
-    "appium:start": "appium --relaxed-security",
     "client-driver:start": "npm run clean && npm run ts:build && node dist",
     "client-driver:start:production": "npm run clean && npm run ts:build && NODE_ENV=production OUTPUT_SIZE=500 node dist",
-    "emulator:start": "./scripts/emulator-start.sh"
+    "emulator:await": "./scripts/wait-for-emulator.sh"
   },
   "author": "",
   "license": "ISC",
@@ -21,7 +20,6 @@
     "@types/ramda": "^0.26.43",
     "@types/request": "^2.48.4",
     "@types/uuid": "^7.0.0",
-    "appium": "^1.17.0",
     "p-limit": "^2.2.2",
     "p-retry": "^4.2.0",
     "p-series": "^2.1.0",

@@ -1,3 +1,13 @@
+FROM thyrlian/android-sdk
+
+# install android deps needed by appium
+RUN sdkmanager --update && \
+  sdkmanager \
+    "platform-tools" \
+    "platforms;android-30" \
+    "build-tools;30.0.2" && \
+  /opt/license_accepter.sh
+
 # install nvm
 ENV NVM_DIR /root/.nvm
 ENV NODE_VERSION 12.19.0
@@ -16,4 +26,4 @@ ADD ./ ./ebs-automl-highlight-detection-data
 WORKDIR ./ebs-automl-highlight-detection-data 
 RUN npm install
 
-CMD npm run start
+ENTRYPOINT npm run start

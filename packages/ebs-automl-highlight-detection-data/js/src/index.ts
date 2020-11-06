@@ -89,59 +89,63 @@ const processResults = async (
 };
 
 (async () => {
-  const driver = new AppiumDriver();
-  await driver.initializeContext({
-    browser: "Chrome",
-    device: "Android Emulator",
-  });
-  const jobId = uuid();
+  try {
+    const driver = new AppiumDriver();
+    await driver.initializeContext({
+      browser: "Chrome",
+      device: "Android Emulator",
+    });
+    const jobId = uuid();
 
-  mkdirSync(OUTPUT_DIR, { recursive: true })
+    mkdirSync(OUTPUT_DIR, { recursive: true })
 
-  const tasks = R.sortBy(
-    R.prop("href"),
-    R.times(() => {
-      const domain = Object.values(DOMAIN)[
-        Math.floor(Math.random() * Object.values(DOMAIN).length)
-      ];
-      const href = parsers[domain].getUrl();
-      return {
-        jobId,
-        driver,
-        domain,
-        href,
-      };
-    }, OUTPUT_SIZE)
-  );
-  const taskThunks = tasks.map((task: Task) => () =>
-    pRetry(
-      () =>
-        execTask(task).then((res) => {
-          if (res.length === 0) {
-            // if we didn't return annotations for any reason, throw
-            // an error so that the task is retried.
-            throw new Error();
+    const tasks = R.sortBy(
+      R.prop("href"),
+      R.times(() => {
+        const domain = Object.values(DOMAIN)[
+          Math.floor(Math.random() * Object.values(DOMAIN).length)
+        ];
+        const href = parsers[domain].getUrl();
+        return {
+          jobId,
+          driver,
+          domain,
+          href,
+        };
+      }, OUTPUT_SIZE)
+    );
+    const taskThunks = tasks.map((task: Task) => () =>
+      pRetry(
+        () =>
+          execTask(task).then((res) => {
+            if (res.length === 0) {
+              // if we didn't return annotations for any reason, throw
+              // an error so that the task is retried.
+              throw new Error();
+            }
+            return res;
+          }),
+        {
+          minTimeout: 1,
+          maxTimeout: Infinity,
+          factor: 1,
+          retries: 10,
+          onFailedAttempt: (error) => {
+            console.error('failed attempt', error)
           }
-          return res;
-        }),
-      {
-        minTimeout: 1,
-        maxTimeout: Infinity,
-        factor: 1,
-        retries: 10,
-        onFailedAttempt: (error) => {
-          console.error('failed attempt', error)
         }
-      }
-    ).catch((err) => {
-      console.error(err)
-      return []
-    })
-  );
+      ).catch((err) => {
+        console.error(err)
+        return []
+      })
+    );
 
-  const results = await pSeries(taskThunks).then(R.flatten);
+    const results = await pSeries(taskThunks).then(R.flatten);
 
-  await processResults(jobId, results);
+    await processResults(jobId, results);
 
-  await driver.cleanup();
+    await driver.cleanup()
+  } catch (ex) {
+    console.error("uncaught exception", ex)
+  }
 })();

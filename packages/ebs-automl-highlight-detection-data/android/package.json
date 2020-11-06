@@ -1,0 +1,17 @@
+{
+  "name": "@literal-io/automl-highlight-detection-data-android",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run appium:start",
+    "appium:start": "appium --relaxed-security"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "appium": "^1.17.0"
+  },
+  "devDependencies": {}
+}

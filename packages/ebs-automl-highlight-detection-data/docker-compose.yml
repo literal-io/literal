@@ -1,0 +1,25 @@
+version: "2.4"
+
+services:
+  android:
+    image: us.gcr.io/literal-269716/automl-highlight-detection-data-android:latest
+    privileged: true
+    logging:
+      driver: gcplogs
+    restart: always
+    cpus: 0.8
+    ports:
+      - 5037:5037
+      - 4723:4723
+  node:
+    image: us.gcr.io/literal-269716/automl-highlight-detection-data-node:latest
+    depends_on:
+      - android
+    logging:
+      driver: gcplogs
+    cpus: 0.2
+    environment:
+      ANDROID_EMULATOR_HOSTNAME: android
+      ANDROID_EMULATOR_PORT: 5037
+      APPIUM_HOSTNAME: "android"
+      APPIUM_PORT: 4723

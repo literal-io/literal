@@ -50,7 +50,8 @@ export class AppiumDriver implements Driver {
     device: string;
   }) => {
     const opts = {
-      port: 4723,
+      port: parseInt(process.env.APPIUM_PORT),
+      hostname: process.env.APPIUM_HOSTNAME,
       capabilities: {
         platformName: "Android",
         platformVersion: "11",
@@ -119,7 +120,7 @@ export class AppiumDriver implements Driver {
     );
 
     if (annotations.length === 0) {
-      console.error("annotations.length === 0, exiting early.")
+      console.error("annotations.length === 0, exiting early.");
       return [];
     }
 
@@ -180,7 +181,7 @@ export class AppiumDriver implements Driver {
       return !window.getSelection().isCollapsed;
     });
     if (!selectionExists) {
-      console.error("Selection cleared, exiting early.")
+      console.error("Selection cleared, exiting early.");
       return [];
     }
     await this.context.switchContext(AppiumContext.NATIVE_APP);
@@ -240,7 +241,7 @@ export class AppiumDriver implements Driver {
 
     await this.context.switchContext(AppiumContext.CHROMIUM);
 
-    console.log('getScreenshot complete', outputPath)
+    console.log("getScreenshot complete", outputPath);
     return reframedBoundingBoxes;
   };
 
