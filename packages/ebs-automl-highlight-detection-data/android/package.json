@@ -6,12 +6,12 @@
   "main": "index.js",
   "scripts": {
     "start": "npm run appium:start",
-    "appium:start": "appium --relaxed-security"
+    "appium:start": "appium --relaxed-security --allow-insecure chromedriver_autodownload"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "appium": "^1.17.0"
+    "appium": "^1.18.3"
   },
   "devDependencies": {}
 }
