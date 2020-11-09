@@ -4,11 +4,21 @@ export enum DOMAIN {
   RIBBONFARM = "ribbonfarm",
 }
 
+export type ViewportSize = { width: number; height: number };
+
 export interface InjectScope {
+  getViewportSize(): ViewportSize;
   getTextNodes(el: HTMLElement): Text[];
-  getRandomRange(textNodes: Text[], boundaryAncestorSelector: string): Range;
-  scrollToRange(range: Range): void;
-  getSelectionAnnotations(range: Range): SelectionAnnotation[];
+  getRandomRange(
+    textNodes: Text[],
+    boundaryAncestorSelector: string,
+    size: ViewportSize
+  ): Range;
+  scrollToRange(range: Range, size: ViewportSize): void;
+  getSelectionAnnotations(
+    range: Range,
+    size: ViewportSize
+  ): SelectionAnnotation[];
 }
 
 export interface ParserInterface {

@@ -1,3 +1,5 @@
 #!/bin/bash
 
-docker-compose -f docker-compose.dev.yml --build up
+set -ex
+
+docker-compose -f docker-compose.dev.yml up --build

@@ -12,4 +12,5 @@ done
 
 echo "waiting for device to boot"
 adb -L $ADB_EMULATOR_HOST wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done;'
+
 echo "device boot completed"
