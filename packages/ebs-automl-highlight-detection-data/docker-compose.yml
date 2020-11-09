@@ -18,6 +18,7 @@ services:
     logging:
       driver: gcplogs
     cpus: .5
+    restart: always
     environment:
       ANDROID_EMULATOR_HOSTNAME: android
       ANDROID_EMULATOR_PORT: 5037
