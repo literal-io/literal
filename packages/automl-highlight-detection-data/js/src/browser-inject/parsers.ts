@@ -53,6 +53,9 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
 
       // open all closed sections
       document
@@ -129,6 +132,9 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
 
       document.querySelectorAll("a").forEach((el) => {
         el.removeAttribute("href");
@@ -176,6 +182,9 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
 
       document.querySelectorAll("a").forEach((el) => {
         el.removeAttribute("href");
@@ -190,5 +199,22 @@ export const parsers: { [domain: string]: ParserInterface } = {
       return scope.getTextNodes(document.querySelector(".entry-content"));
     },
     getBoundaryAncestorSelector: () => "p",
+  },
+  [DOMAIN.PROJECT_GUTENBERG]: {
+    getUrl: () => {
+      const urls = [
+        "http://web.archive.org/web/20201110155804/http://www.gutenberg.org/files/2701/2701-h/2701-h.htm",
+        "http://web.archive.org/web/20201109153710/http://www.gutenberg.org/files/1946/1946-h/1946-h.htm",
+        "http://web.archive.org/web/20200731222303/http://www.gutenberg.org/files/42324/42324-h/42324-h.htm",
+        "http://web.archive.org/web/20201022141836/http://www.gutenberg.org/files/42671/42671-h/42671-h.htm",
+        "http://web.archive.org/web/20201106022415/https://www.gutenberg.org/files/25344/25344-h/25344-h.htm",
+        "http://web.archive.org/web/20201110000023/https://gutenberg.org/files/11/11-h/11-h.htm",
+        "http://web.archive.org/web/20201106232638/http://www.gutenberg.org/files/5200/5200-h/5200-h.htm",
+        "https://web.archive.org/web/20200523202814/https://www.gutenberg.org/files/1080/1080-h/1080-h.htm",
+        "https://web.archive.org/web/20201107062000/http://www.gutenberg.org/files/844/844-h/844-h.htm",
+        "https://web.archive.org/web/20200629050206/https://www.gutenberg.org/files/16328/16328-h/16328-h.htm",
+      ];
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
   },
 };

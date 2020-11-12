@@ -112,6 +112,16 @@ export class AppiumDriver implements Driver {
     const currentHref = await this.context.execute(() => window.location.href);
     if (forceNavigate || !parsers[domain].isUrlEqual(currentHref, href)) {
       await this.context.navigateTo(href);
+
+      await this.context.switchContext(AppiumContext.NATIVE_APP);
+      await this.context
+        .findElement("id", "com.android.chrome:id/infobar_close_button")
+        .then((id) => {
+          if (id) {
+            return this.context.$(id).then((el) => el.click());
+          }
+        });
+      await this.context.switchContext(AppiumContext.CHROMIUM);
     }
 
     const { annotations, size } = await browserInject(
@@ -120,7 +130,11 @@ export class AppiumDriver implements Driver {
     );
 
     if (annotations.length === 0) {
-      console.error("annotations.length === 0, exiting early.");
+      console.error("[error] annotations.length === 0, exiting early.");
+      console.debug(
+        "[debug] ",
+        JSON.stringify({ annotations, size, orientation })
+      );
       return [];
     }
 
@@ -162,16 +176,18 @@ export class AppiumDriver implements Driver {
       yRelativeMin * size.height * pixelRatio,
       yRelativeMax * size.height * pixelRatio,
     ];
+    const tapX = Math.min(
+      xMin + (xMax - xMin) / 2,
+      viewportRect.left + viewportRect.width - 1
+    );
+    const tapY = Math.min(
+      yMin + (yMax - yMin) / 2 + chromeToolbarHeight + statusBarHeight,
+      viewportRect.top + viewportRect.height - 1
+    );
     await this.context.touchAction({
       action: "tap",
-      x: Math.min(
-        xMin + (xMax - xMin) / 2,
-        viewportRect.left + viewportRect.width - 1
-      ),
-      y: Math.min(
-        yMin + (yMax - yMin) / 2 + chromeToolbarHeight + statusBarHeight,
-        viewportRect.top + viewportRect.height - 1
-      ),
+      x: tapX,
+      y: tapY,
     });
     await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -181,7 +197,19 @@ export class AppiumDriver implements Driver {
       return !window.getSelection().isCollapsed;
     });
     if (!selectionExists) {
-      console.error("Selection cleared, exiting early.");
+      console.error("[error] Selection cleared, exiting early.");
+      console.debug(
+        "[debug] ",
+        JSON.stringify({
+          annotations,
+          size,
+          orientation,
+          viewportRect,
+          xRelativeMin,
+          yRelativeMin,
+          yRelativeMax,
+        })
+      );
       return [];
     }
     await this.context.switchContext(AppiumContext.NATIVE_APP);
