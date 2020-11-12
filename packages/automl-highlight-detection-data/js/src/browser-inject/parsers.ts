@@ -6,8 +6,18 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const urls = [
         "https://web.archive.org/web/20200913110219/https://en.m.wikipedia.org/wiki/Cat_gap",
         "https://web.archive.org/web/20200816082257/https://en.m.wikipedia.org/wiki/Fossil_record",
-        "https://web.archive.org/web/20161124065336/https://en.m.wikipedia.org/wiki/Exoskeletons",
+        "https://web.archive.org/web/20201108164151/http://en.m.wikipedia.org/wiki/Napoleon",
+        "https://web.archive.org/web/20201110120538/https://en.m.wikipedia.org/wiki/First_French_Empire",
+        "https://web.archive.org/web/20201018092015/https://en.m.wikipedia.org/wiki/French_First_Republic",
+        "https://web.archive.org/web/20201018092015/https://en.m.wikipedia.org/wiki/Reign_of_Terror",
+        "https://web.archive.org/web/20200916071206/https://en.m.wikipedia.org/wiki/Fall_of_Maximilien_Robespierre",
+        "https://web.archive.org/web/20201002005328/https://en.m.wikipedia.org/wiki/Purge",
+        "https://web.archive.org/web/20201001123859/https://en.m.wikipedia.org/wiki/Night_of_the_Long_Knives",
+        "https://web.archive.org/web/20201002013423/https://en.m.wikipedia.org/wiki/Paul_von_Hindenburg",
         "https://web.archive.org/web/20161111063316/https://en.m.wikipedia.org/wiki/Human_skeleton",
+        "https://web.archive.org/web/20200922140454/https://en.m.wikipedia.org/wiki/Franco-Prussian_War",
+        "https://web.archive.org/web/20201002081606/https://en.m.wikipedia.org/wiki/Kingdom_of_Prussia",
+        "https://web.archive.org/web/20200805005128/https://en.m.wikipedia.org/wiki/Frederick_I,_Elector_of_Brandenburg",
         "https://web.archive.org/web/20161025050725/https://en.m.wikipedia.org/wiki/Human_iron_metabolism",
         "https://web.archive.org/web/20161020233813/https://en.m.wikipedia.org/wiki/Mammals",
         "https://web.archive.org/web/20161012192447/https://en.m.wikipedia.org/wiki/Organism",
@@ -41,7 +51,7 @@ export const parsers: { [domain: string]: ParserInterface } = {
     parse: (scope: InjectScope): Text[] => {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
-        wmHeader.remove()
+        wmHeader.remove();
       }
 
       // open all closed sections
@@ -117,7 +127,7 @@ export const parsers: { [domain: string]: ParserInterface } = {
     parse: (scope: InjectScope): Text[] => {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
-        wmHeader.remove()
+        wmHeader.remove();
       }
 
       document.querySelectorAll("a").forEach((el) => {
@@ -164,7 +174,7 @@ export const parsers: { [domain: string]: ParserInterface } = {
     parse: (scope: InjectScope): Text[] => {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
-        wmHeader.remove()
+        wmHeader.remove();
       }
 
       document.querySelectorAll("a").forEach((el) => {
