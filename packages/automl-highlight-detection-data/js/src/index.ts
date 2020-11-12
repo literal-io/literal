@@ -97,7 +97,7 @@ const processResults = async (
     });
     const jobId = uuid();
 
-    mkdirSync(OUTPUT_DIR, { recursive: true })
+    mkdirSync(OUTPUT_DIR, { recursive: true });
 
     const tasks = R.sortBy(
       R.prop("href"),
@@ -131,12 +131,13 @@ const processResults = async (
           factor: 1,
           retries: 10,
           onFailedAttempt: (error) => {
-            console.error('failed attempt', error)
-          }
+            console.error("failed attempt", error);
+          },
         }
       ).catch((err) => {
-        console.error(err)
-        return []
+        console.error(err);
+        driver.cleanup()
+        throw err;
       })
     );
 
@@ -144,8 +145,8 @@ const processResults = async (
 
     await processResults(jobId, results);
 
-    await driver.cleanup()
+    await driver.cleanup();
   } catch (ex) {
-    console.error("uncaught exception", ex)
+    console.error("uncaught exception", ex);
   }
 })();

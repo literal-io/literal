@@ -10,7 +10,7 @@
     "ts:build": "tsc",
     "ts:watch": "tsc -w",
     "client-driver:start": "npm run clean && npm run ts:build && node dist",
-    "client-driver:start:production": "npm run clean && npm run ts:build && NODE_ENV=production OUTPUT_SIZE=2500 node dist",
+    "client-driver:start:production": "npm run clean && npm run ts:build && NODE_ENV=production OUTPUT_SIZE=250 node dist",
     "emulator:await": "./scripts/wait-for-emulator.sh"
   },
   "author": "",
