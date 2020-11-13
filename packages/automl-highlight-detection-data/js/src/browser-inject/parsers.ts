@@ -200,6 +200,7 @@ export const parsers: { [domain: string]: ParserInterface } = {
     },
     getBoundaryAncestorSelector: () => "p",
   },
+  /**
   [DOMAIN.PROJECT_GUTENBERG]: {
     getUrl: () => {
       const urls = [
@@ -217,4 +218,5 @@ export const parsers: { [domain: string]: ParserInterface } = {
       return urls[Math.floor(Math.random() * urls.length)];
     },
   },
+  **/
 };

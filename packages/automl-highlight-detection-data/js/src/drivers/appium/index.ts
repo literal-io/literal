@@ -19,18 +19,9 @@ enum AppiumContext {
   CHROMIUM = "CHROMIUM",
 }
 
-interface SystemBar {
-  visible: boolean;
-  height: number;
-  width: number;
-}
-interface AndroidSystemBars {
-  statusBar: SystemBar;
-  navigationBar: SystemBar;
-}
-
 type AndroidCapabilities = WebDriver.DesiredCapabilities & {
   pixelRatio: number;
+  statBarHeight: number;
   viewportRect: {
     width: number;
     height: number;
@@ -64,12 +55,11 @@ export class AppiumDriver implements Driver {
     this.context = await webdriver(opts);
   };
 
-  getViewportRect = async () => {
+  getViewportRect = async (orientation: Orientation) => {
     if (!this.context) {
       throw new Error("Driver uninitialized");
     }
 
-    const orientation = await this.context.getOrientation();
     const rect = this.getCapabilities().viewportRect;
 
     return orientation === Orientation.PORTRAIT
@@ -113,6 +103,7 @@ export class AppiumDriver implements Driver {
     if (forceNavigate || !parsers[domain].isUrlEqual(currentHref, href)) {
       await this.context.navigateTo(href);
 
+      /**
       await this.context.switchContext(AppiumContext.NATIVE_APP);
       await this.context
         .findElement("id", "com.android.chrome:id/infobar_close_button")
@@ -122,6 +113,7 @@ export class AppiumDriver implements Driver {
           }
         });
       await this.context.switchContext(AppiumContext.CHROMIUM);
+      **/
     }
 
     const { annotations, size } = await browserInject(
@@ -154,12 +146,8 @@ export class AppiumDriver implements Driver {
       .catch((_err) => 0);
 
     const pixelRatio = this.getCapabilities().pixelRatio;
-    const viewportRect = await this.getViewportRect();
-    const systemBars: AndroidSystemBars = (await this.context.getSystemBars()) as any;
-
-    const statusBarHeight = systemBars.statusBar.visible
-      ? systemBars.statusBar.height
-      : 0;
+    const viewportRect = await this.getViewportRect(orientation);
+    const statusBarHeight = this.getCapabilities().statBarHeight;
 
     /**
      * Creating a selection within JS doesn't trigger Chrome's text selection
@@ -224,14 +212,8 @@ export class AppiumDriver implements Driver {
         label,
       }) => {
         const [xMin, xMax, yMin, yMax] = [
-          xRelativeMin * size.width * pixelRatio +
-            (orientation === Orientation.LANDSCAPE
-              ? systemBars.navigationBar.width
-              : 0),
-          xRelativeMax * size.width * pixelRatio +
-            (orientation === Orientation.LANDSCAPE
-              ? systemBars.navigationBar.width
-              : 0),
+          xRelativeMin * size.width * pixelRatio,
+          xRelativeMax * size.width * pixelRatio,
           yRelativeMin * size.height * pixelRatio +
             chromeToolbarHeight +
             statusBarHeight,
@@ -239,17 +221,12 @@ export class AppiumDriver implements Driver {
             chromeToolbarHeight +
             statusBarHeight,
         ];
+
         const viewportHeight =
           viewportRect.height +
           statusBarHeight +
-          (orientation === Orientation.PORTRAIT
-            ? systemBars.navigationBar.height
-            : 0);
-        const viewportWidth =
-          viewportRect.width +
-          (orientation === Orientation.LANDSCAPE
-            ? systemBars.navigationBar.width
-            : 0);
+          (orientation === Orientation.PORTRAIT ? statusBarHeight : 0);
+        const viewportWidth = viewportRect.width;
 
         return {
           label,

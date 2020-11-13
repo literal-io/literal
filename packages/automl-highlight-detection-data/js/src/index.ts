@@ -129,7 +129,7 @@ const processResults = async (
           minTimeout: 1,
           maxTimeout: Infinity,
           factor: 1,
-          retries: 20,
+          retries: 10,
           onFailedAttempt: (error) => {
             console.error("failed attempt", error);
           },
