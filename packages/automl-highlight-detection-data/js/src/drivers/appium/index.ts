@@ -50,10 +50,11 @@ export class AppiumDriver implements Driver {
     device: string;
   }) => {
     const opts = {
-      port: 4723,
+      port: parseInt(process.env.APPIUM_PORT),
+      hostname: process.env.APPIUM_HOSTNAME,
       capabilities: {
         platformName: "Android",
-        platformVersion: "10",
+        platformVersion: "11",
         deviceName: device,
         browserName: browser,
       },
@@ -85,12 +86,15 @@ export class AppiumDriver implements Driver {
   };
 
   getScreenshot = async ({
+    href,
     domain,
     outputPath,
+    forceNavigate,
   }: {
     href: string;
     outputPath: string;
     domain: DOMAIN;
+    forceNavigate: boolean;
   }): Promise<SelectionAnnotation[]> => {
     if (!this.context) {
       throw new Error("Driver uninitialized");
@@ -105,8 +109,20 @@ export class AppiumDriver implements Driver {
     }
 
     await this.context.switchContext(AppiumContext.CHROMIUM);
+    const currentHref = await this.context.execute(() => window.location.href);
+    if (forceNavigate || !parsers[domain].isUrlEqual(currentHref, href)) {
+      await this.context.navigateTo(href);
 
-    await this.context.navigateTo(parsers[domain].getUrl());
+      await this.context.switchContext(AppiumContext.NATIVE_APP);
+      await this.context
+        .findElement("id", "com.android.chrome:id/infobar_close_button")
+        .then((id) => {
+          if (id) {
+            return this.context.$(id).then((el) => el.click());
+          }
+        });
+      await this.context.switchContext(AppiumContext.CHROMIUM);
+    }
 
     const { annotations, size } = await browserInject(
       domain,
@@ -114,6 +130,11 @@ export class AppiumDriver implements Driver {
     );
 
     if (annotations.length === 0) {
+      console.error("[error] annotations.length === 0, exiting early.");
+      console.debug(
+        "[debug] ",
+        JSON.stringify({ annotations, size, orientation })
+      );
       return [];
     }
 
@@ -141,9 +162,9 @@ export class AppiumDriver implements Driver {
       : 0;
 
     /**
-     * Creating a selection within JS doesn't trigger Chrome's text selection 
-     * action menu. For realism, we want the normal UI that comes up to 
-     * appear. Using the highlight coords, tap in the center and wait a 
+     * Creating a selection within JS doesn't trigger Chrome's text selection
+     * action menu. For realism, we want the normal UI that comes up to
+     * appear. Using the highlight coords, tap in the center and wait a
      * short period to have chrome display the UI.
      */
     const {
@@ -155,16 +176,18 @@ export class AppiumDriver implements Driver {
       yRelativeMin * size.height * pixelRatio,
       yRelativeMax * size.height * pixelRatio,
     ];
+    const tapX = Math.min(
+      xMin + (xMax - xMin) / 2,
+      viewportRect.left + viewportRect.width - 1
+    );
+    const tapY = Math.min(
+      yMin + (yMax - yMin) / 2 + chromeToolbarHeight + statusBarHeight,
+      viewportRect.top + viewportRect.height - 1
+    );
     await this.context.touchAction({
       action: "tap",
-      x: Math.min(
-        xMin + (xMax - xMin) / 2,
-        viewportRect.left + viewportRect.width - 1
-      ),
-      y: Math.min(
-        yMin + (yMax - yMin) / 2 + chromeToolbarHeight + statusBarHeight,
-        viewportRect.top + viewportRect.height - 1
-      ),
+      x: tapX,
+      y: tapY,
     });
     await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -174,6 +197,19 @@ export class AppiumDriver implements Driver {
       return !window.getSelection().isCollapsed;
     });
     if (!selectionExists) {
+      console.error("[error] Selection cleared, exiting early.");
+      console.debug(
+        "[debug] ",
+        JSON.stringify({
+          annotations,
+          size,
+          orientation,
+          viewportRect,
+          xRelativeMin,
+          yRelativeMin,
+          yRelativeMax,
+        })
+      );
       return [];
     }
     await this.context.switchContext(AppiumContext.NATIVE_APP);
@@ -228,10 +264,12 @@ export class AppiumDriver implements Driver {
     );
 
     const screenshotData = await this.context.takeScreenshot();
+
     writeFileSync(outputPath, screenshotData, { encoding: "base64" });
 
     await this.context.switchContext(AppiumContext.CHROMIUM);
 
+    console.log("getScreenshot complete", outputPath);
     return reframedBoundingBoxes;
   };
 

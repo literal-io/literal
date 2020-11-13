@@ -48,38 +48,33 @@ export const browserInject = (
       return {
         annotations: [],
         text: "",
-        size: {
-          height: document.documentElement.clientHeight,
-          width: document.documentElement.clientWidth,
-        },
+        size: scope.getViewportSize(),
       };
     }
 
     const range = scope.getRandomRange(
       textNodes,
-      scope.getBoundaryAncestorSelector()
+      scope.getBoundaryAncestorSelector(),
+      scope.getViewportSize()
     );
     if (!range) {
       return {
         annotations: [],
         text: "",
-        size: {
-          height: document.documentElement.clientHeight,
-          width: document.documentElement.clientWidth,
-        },
+        size: scope.getViewportSize(),
       };
     }
 
-    scope.scrollToRange(range);
+    scope.scrollToRange(range, scope.getViewportSize());
 
-    const annotations = scope.getSelectionAnnotations(range);
+    const annotations = scope.getSelectionAnnotations(
+      range,
+      scope.getViewportSize()
+    );
     return {
       annotations,
       text: window.getSelection().toString(),
-      size: {
-        height: document.documentElement.clientHeight,
-        width: document.documentElement.clientWidth,
-      },
+      size: scope.getViewportSize(),
     };
   }, JSON.stringify(serializedScope));
 };

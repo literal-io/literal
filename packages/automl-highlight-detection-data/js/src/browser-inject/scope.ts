@@ -1,6 +1,14 @@
-import { InjectScope, SelectionAnnotation } from "./types";
+import { InjectScope, SelectionAnnotation, ViewportSize } from "./types";
 
 export const scope: InjectScope = {
+  getViewportSize: (): ViewportSize => {
+    const targetElem =
+      window.document.compatMode === "BackCompat"
+        ? window.document.body
+        : window.document.documentElement;
+
+    return { width: targetElem.clientWidth, height: targetElem.clientHeight };
+  },
   getTextNodes: (el: HTMLElement): Text[] => {
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
     const nodes = [];
@@ -11,9 +19,9 @@ export const scope: InjectScope = {
   },
   getRandomRange: (
     textNodes: Text[],
-    boundaryAncestorSelector: string
+    boundaryAncestorSelector: string,
+    { height: viewportHeight }: ViewportSize
   ): Range => {
-    const viewportHeight = document.documentElement.clientHeight;
     const startNodeIdx = Math.round(Math.random() * (textNodes.length - 1));
     const startNode = textNodes[startNodeIdx];
 
@@ -61,13 +69,13 @@ export const scope: InjectScope = {
 
     return tries === 0 ? null : range;
   },
-  scrollToRange: (range: Range) => {
+  scrollToRange: (range: Range, { width, height }: ViewportSize) => {
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
 
     const bb = range.getBoundingClientRect();
-    const maxYOffset = document.documentElement.clientHeight - bb.height;
-    const maxXOffset = document.documentElement.clientWidth - bb.width;
+    const maxYOffset = width - bb.height;
+    const maxXOffset = height - bb.width;
 
     // scroll the range into view, with some random offset
     window.scroll(
@@ -79,9 +87,10 @@ export const scope: InjectScope = {
         maxYOffset * Math.random()
     );
   },
-  getSelectionAnnotations: (range: Range): SelectionAnnotation[] => {
-    const vWidth = document.documentElement.clientWidth;
-    const vHeight = document.documentElement.clientHeight;
+  getSelectionAnnotations: (
+    range: Range,
+    { width: vWidth, height: vHeight }: ViewportSize
+  ): SelectionAnnotation[] => {
     const bb = range.getBoundingClientRect();
 
     const startRange = new Range();

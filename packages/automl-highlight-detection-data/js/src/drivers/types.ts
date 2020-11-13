@@ -5,6 +5,8 @@ export interface Driver {
   getScreenshot(arg: {
     outputPath: string;
     domain: DOMAIN;
+    href: string;
+    forceNavigate: boolean
   }): Promise<SelectionAnnotation[]>;
   cleanup(): Promise<void>;
 }

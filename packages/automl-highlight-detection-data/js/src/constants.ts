@@ -6,8 +6,6 @@ export const OUTPUT_SIZE = parseInt(process.env.OUTPUT_SIZE || "20");
 console.log("DEBUG: ", DEBUG)
 console.log("OUTPUT_SIZE: ", OUTPUT_SIZE)
 
-export const DRIVER = "appium"; // 'playwright'
-
 export const OUTPUT_DIR = resolve(__dirname, "../output/screenshot");
 export const GCLOUD_SERVICE_ACCOUNT_FILENAME = resolve(
   __dirname,

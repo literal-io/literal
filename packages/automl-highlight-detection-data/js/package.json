@@ -1,16 +1,17 @@
 {
-  "name": "@javamonn/automl-highlight-detection-data",
+  "name": "@literal-io/automl-highlight-detection-data-node",
   "private": true,
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npm run clean && npm run ts:build && node dist",
-    "start:production": "npm run clean && npm run ts:build && NODE_ENV=production OUTPUT_SIZE=1000 node dist",
+    "start": "npm run emulator:await && npm run client-driver:start:production",
     "clean": "rm -rf dist && rm -f output/screenshot/*",
     "ts:build": "tsc",
     "ts:watch": "tsc -w",
-    "appium:start": "appium --relaxed-security"
+    "client-driver:start": "npm run clean && npm run ts:build && node dist",
+    "client-driver:start:production": "npm run clean && npm run ts:build && NODE_ENV=production OUTPUT_SIZE=100 node dist",
+    "emulator:await": "./scripts/wait-for-emulator.sh"
   },
   "author": "",
   "license": "ISC",
@@ -19,11 +20,9 @@
     "@types/ramda": "^0.26.43",
     "@types/request": "^2.48.4",
     "@types/uuid": "^7.0.0",
-    "appium": "^1.17.0",
     "p-limit": "^2.2.2",
     "p-retry": "^4.2.0",
     "p-series": "^2.1.0",
-    "playwright": "^0.11.1",
     "ramda": "^0.27.0",
     "uuid": "^7.0.1",
     "webdriverio": "^5.22.1"
@@ -31,6 +30,7 @@
   "devDependencies": {
     "@types/debug": "^4.1.5",
     "@types/node": "^13.7.7",
+    "concurrently": "^5.3.0",
     "typescript": "^3.8.3"
   }
 }
