@@ -5,13 +5,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npm run appium:start",
-    "appium:start": "appium --relaxed-security --allow-insecure chromedriver_autodownload"
+    "start": "concurrently -k -n \"emulator,appium \" \"npm run emulator:start\" \"npm run appium:start\"",
+    "appium:start": "appium --relaxed-security --allow-insecure chromedriver_autodownload",
+    "emulator:start": "./scripts/emulator-start.sh"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "appium": "^1.18.3"
+    "appium": "^1.18.3",
+    "concurrently": "^5.3.0"
   },
   "devDependencies": {}
 }

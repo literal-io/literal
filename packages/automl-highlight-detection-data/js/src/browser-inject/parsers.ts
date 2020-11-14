@@ -110,7 +110,6 @@ export const parsers: { [domain: string]: ParserInterface } = {
         "https://web.archive.org/web/20201013015309/https://news.ycombinator.com/item?id=24754662",
         "https://web.archive.org/web/20201013015309/https://news.ycombinator.com/item?id=24758020",
         "https://web.archive.org/web/20201013004139/https://news.ycombinator.com/item?id=24753283",
-        "https://web.archive.org/web/20201013004139/https://news.ycombinator.com/item?id=24756902",
         "https://web.archive.org/web/20201013004139/https://news.ycombinator.com/item?id=24753564",
         "https://web.archive.org/web/20201013004139/https://news.ycombinator.com/item?id=24747667",
       ];

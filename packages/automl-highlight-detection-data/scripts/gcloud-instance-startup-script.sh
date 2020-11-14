@@ -45,7 +45,7 @@ sudo curl -L "https://github.com/docker/compose/releases/download/1.27.4/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 
 # pull repo
-git clone --single-branch --branch feat-improve-automl-highlight-detection-data https://github.com/javamonn/literal.git 
+git clone --single-branch --branch debug-gcp-process https://github.com/javamonn/literal.git 
 
 # start the containers
 # LD_LIBRARY_PATH issue: https://github.com/google-github-actions/setup-gcloud/issues/128

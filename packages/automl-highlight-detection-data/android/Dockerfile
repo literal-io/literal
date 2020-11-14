@@ -32,4 +32,4 @@ WORKDIR ./ebs-automl-highlight-detection-data-android
 
 RUN npm install
 
-ENTRYPOINT ./scripts/emulator-start.sh
+ENTRYPOINT npm run start 
