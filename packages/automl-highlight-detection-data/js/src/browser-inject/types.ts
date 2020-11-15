@@ -2,7 +2,7 @@ export enum DOMAIN {
   WIKIPEDIA = "wikipedia",
   HACKERNEWS = "hackernews",
   RIBBONFARM = "ribbonfarm",
-//  PROJECT_GUTENBERG = "project_gutenberg",
+  PROJECT_GUTENBERG = "project_gutenberg",
 }
 
 export type ViewportSize = { width: number; height: number };

@@ -2,12 +2,10 @@ import { InjectScope, SelectionAnnotation, ViewportSize } from "./types";
 
 export const scope: InjectScope = {
   getViewportSize: (): ViewportSize => {
-    const targetElem =
-      window.document.compatMode === "BackCompat"
-        ? window.document.body
-        : window.document.documentElement;
-
-    return { width: targetElem.clientWidth, height: targetElem.clientHeight };
+    return {
+      width: (window as any).visualViewport.width,
+      height: (window as any).visualViewport.height,
+    };
   },
   getTextNodes: (el: HTMLElement): Text[] => {
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
