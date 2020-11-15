@@ -118,6 +118,9 @@ export class AppiumDriver implements Driver {
           if (id) {
             return this.context.$(id).then((el) => el.click());
           }
+        })
+        .catch(() => {
+          /** noop **/
         });
       await this.context.switchContext(AppiumContext.CHROMIUM);
     }
@@ -226,8 +229,6 @@ export class AppiumDriver implements Driver {
     }
     await this.context.switchContext(AppiumContext.NATIVE_APP);
 
-    console.log(JSON.stringify(systemBars));
-
     /**
      * Bounding boxes were calculated relative to DOM viewport, adjust to overall
      * device viewport.
@@ -266,8 +267,6 @@ export class AppiumDriver implements Driver {
                 viewportRect.width + systemBars.navigationBar.width,
                 viewportRect.height,
               ];
-
-        console.log(viewportWidth, viewportHeight);
 
         return {
           label,
