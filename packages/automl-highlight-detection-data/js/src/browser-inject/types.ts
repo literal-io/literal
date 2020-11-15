@@ -5,7 +5,7 @@ export enum DOMAIN {
   PROJECT_GUTENBERG = "project_gutenberg",
 }
 
-export type ViewportSize = { width: number; height: number };
+export type ViewportSize = { width: number; height: number; scale: number };
 
 export interface InjectScope {
   getViewportSize(): ViewportSize;

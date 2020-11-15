@@ -30,6 +30,7 @@ type Rect = {
 type AndroidCapabilities = WebDriver.DesiredCapabilities & {
   statBarHeight: number;
   viewportRect: Rect;
+  pixelRatio: number;
 };
 
 export class AppiumDriver implements Driver {
@@ -155,6 +156,7 @@ export class AppiumDriver implements Driver {
       .catch((_err) => 0);
 
     const statusBarHeight = this.getCapabilities().statBarHeight;
+    const devicePixelRatio = this.getCapabilities().pixelRatio;
     const systemBars = (await this.context.getSystemBars()) as any;
     const viewportRect = await this.getViewportRect();
 
@@ -169,20 +171,18 @@ export class AppiumDriver implements Driver {
       boundingBox: { xRelativeMin, xRelativeMax, yRelativeMin, yRelativeMax },
     } = annotations.find(({ label }) => label === "highlight");
     const [xMin, xMax, yMin, yMax] = [
-      xRelativeMin * viewportRect.width +
+      xRelativeMin * size.width * size.scale * devicePixelRatio +
         (orientation === Orientation.LANDSCAPE
           ? systemBars.navigationBar.width
           : 0),
-      xRelativeMax * viewportRect.width +
+      xRelativeMax * size.width * size.scale * devicePixelRatio +
         (orientation === Orientation.LANDSCAPE
           ? systemBars.navigationBar.width
           : 0),
-      yRelativeMin *
-        (viewportRect.height - statusBarHeight - chromeToolbarHeight) +
+      yRelativeMin * (size.height * size.scale * devicePixelRatio) +
         statusBarHeight +
         chromeToolbarHeight,
-      yRelativeMax *
-        (viewportRect.height - statusBarHeight - chromeToolbarHeight) +
+      yRelativeMax * (size.height * size.scale * devicePixelRatio) +
         statusBarHeight +
         chromeToolbarHeight,
     ];
@@ -239,20 +239,18 @@ export class AppiumDriver implements Driver {
         label,
       }) => {
         const [xMin, xMax, yMin, yMax] = [
-          xRelativeMin * viewportRect.width +
+          xRelativeMin * size.width * size.scale * devicePixelRatio +
             (orientation === Orientation.LANDSCAPE
               ? systemBars.navigationBar.width
               : 0),
-          xRelativeMax * viewportRect.width +
+          xRelativeMax * size.width * size.scale * devicePixelRatio +
             (orientation === Orientation.LANDSCAPE
               ? systemBars.navigationBar.width
               : 0),
-          yRelativeMin *
-            (viewportRect.height - statusBarHeight - chromeToolbarHeight) +
+          yRelativeMin * (size.height * size.scale * devicePixelRatio) +
             statusBarHeight +
             chromeToolbarHeight,
-          yRelativeMax *
-            (viewportRect.height - statusBarHeight - chromeToolbarHeight) +
+          yRelativeMax * (size.height * size.scale * devicePixelRatio) +
             statusBarHeight +
             chromeToolbarHeight,
         ];
@@ -286,6 +284,22 @@ export class AppiumDriver implements Driver {
 
     await this.context.switchContext(AppiumContext.CHROMIUM);
 
+    console.debug(
+      "[debug] ",
+      JSON.stringify({
+        annotations,
+        size,
+        orientation,
+        viewportRect,
+        xRelativeMin,
+        yRelativeMin,
+        yRelativeMax,
+        chromeToolbarHeight,
+        statusBarHeight,
+        tapX,
+        tapY,
+      })
+    );
     console.log("getScreenshot complete", outputPath);
     return reframedBoundingBoxes;
   };

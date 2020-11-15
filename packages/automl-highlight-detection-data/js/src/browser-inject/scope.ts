@@ -5,6 +5,7 @@ export const scope: InjectScope = {
     return {
       width: (window as any).visualViewport.width,
       height: (window as any).visualViewport.height,
+      scale: (window as any).visualViewport.scale,
     };
   },
   getTextNodes: (el: HTMLElement): Text[] => {

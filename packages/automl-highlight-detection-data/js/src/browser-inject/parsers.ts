@@ -120,7 +120,7 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const getPath = (url: string) => {
         const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
         const match = archiveRegex.exec(url);
-        return match.length === 2 ? match[1] : null;
+        return match && match.length === 2 ? match[1] : null;
       };
       const path1 = getPath(url1);
       const path2 = getPath(url2);
@@ -170,7 +170,7 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const getPath = (url: string) => {
         const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
         const match = archiveRegex.exec(url);
-        return match.length === 2 ? match[1] : null;
+        return match && match.length === 2 ? match[1] : null;
       };
       const path1 = getPath(url1);
       const path2 = getPath(url2);
