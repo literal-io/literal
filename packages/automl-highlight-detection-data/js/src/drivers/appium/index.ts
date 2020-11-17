@@ -60,6 +60,8 @@ export class AppiumDriver implements Driver {
     };
 
     this.context = await webdriver(opts);
+
+    this.context.setTimeout({ pageLoad: 3 * 60 * 1000 });
   };
 
   getViewportRect = () => {
@@ -105,6 +107,8 @@ export class AppiumDriver implements Driver {
 
     if (currentOrientation !== orientation) {
       await this.context.setOrientation(orientation);
+      // wait for chrome to reflow
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     await this.context.switchContext(AppiumContext.CHROMIUM);
@@ -171,18 +175,20 @@ export class AppiumDriver implements Driver {
       boundingBox: { xRelativeMin, xRelativeMax, yRelativeMin, yRelativeMax },
     } = annotations.find(({ label }) => label === "highlight");
     const [xMin, xMax, yMin, yMax] = [
-      xRelativeMin * size.width * size.scale * devicePixelRatio +
+      Math.max(xRelativeMin, 0.0) * size.width * size.scale * devicePixelRatio +
         (orientation === Orientation.LANDSCAPE
           ? systemBars.navigationBar.width
           : 0),
-      xRelativeMax * size.width * size.scale * devicePixelRatio +
+      Math.min(xRelativeMax, 1.0) * size.width * size.scale * devicePixelRatio +
         (orientation === Orientation.LANDSCAPE
           ? systemBars.navigationBar.width
           : 0),
-      yRelativeMin * (size.height * size.scale * devicePixelRatio) +
+      Math.max(yRelativeMin, 0.0) *
+        (size.height * size.scale * devicePixelRatio) +
         statusBarHeight +
         chromeToolbarHeight,
-      yRelativeMax * (size.height * size.scale * devicePixelRatio) +
+      Math.min(yRelativeMax, 1.0) *
+        (size.height * size.scale * devicePixelRatio) +
         statusBarHeight +
         chromeToolbarHeight,
     ];
@@ -216,6 +222,7 @@ export class AppiumDriver implements Driver {
           size,
           orientation,
           viewportRect,
+          xRelativeMax,
           xRelativeMin,
           yRelativeMin,
           yRelativeMax,
@@ -239,18 +246,26 @@ export class AppiumDriver implements Driver {
         label,
       }) => {
         const [xMin, xMax, yMin, yMax] = [
-          xRelativeMin * size.width * size.scale * devicePixelRatio +
+          Math.max(xRelativeMin, 0.0) *
+            size.width *
+            size.scale *
+            devicePixelRatio +
             (orientation === Orientation.LANDSCAPE
               ? systemBars.navigationBar.width
               : 0),
-          xRelativeMax * size.width * size.scale * devicePixelRatio +
+          Math.min(xRelativeMax, 1.0) *
+            size.width *
+            size.scale *
+            devicePixelRatio +
             (orientation === Orientation.LANDSCAPE
               ? systemBars.navigationBar.width
               : 0),
-          yRelativeMin * (size.height * size.scale * devicePixelRatio) +
+          Math.max(yRelativeMin, 0.0) *
+            (size.height * size.scale * devicePixelRatio) +
             statusBarHeight +
             chromeToolbarHeight,
-          yRelativeMax * (size.height * size.scale * devicePixelRatio) +
+          Math.min(yRelativeMax, 1.0) *
+            (size.height * size.scale * devicePixelRatio) +
             statusBarHeight +
             chromeToolbarHeight,
         ];
@@ -285,15 +300,12 @@ export class AppiumDriver implements Driver {
     await this.context.switchContext(AppiumContext.CHROMIUM);
 
     console.debug(
-      "[debug] ",
       JSON.stringify({
         annotations,
+        reframedBoundingBoxes,
         size,
         orientation,
         viewportRect,
-        xRelativeMin,
-        yRelativeMin,
-        yRelativeMax,
         chromeToolbarHeight,
         statusBarHeight,
         tapX,

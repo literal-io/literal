@@ -58,6 +58,18 @@ export const parsers: { [domain: string]: ParserInterface } = {
         elem.setAttribute("disabled", "disabled");
       });
 
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
       // open all closed sections
       document
         .querySelectorAll(
@@ -140,6 +152,18 @@ export const parsers: { [domain: string]: ParserInterface } = {
         el.removeAttribute("href");
       });
 
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
       const textNodes = Array.from(document.querySelectorAll(".comment"))
         .map(scope.getTextNodes)
         //@ts-ignore: this should work fine
@@ -190,6 +214,17 @@ export const parsers: { [domain: string]: ParserInterface } = {
         el.removeAttribute("href");
       });
 
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
 
       document
         .querySelectorAll(".after-post, .post-meta, .sharedaddy, fieldset")
@@ -239,6 +274,17 @@ export const parsers: { [domain: string]: ParserInterface } = {
       document.querySelectorAll("a").forEach((el) => {
         el.removeAttribute("href");
       });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
 
       const textNodes = Array.from(document.querySelectorAll("p"))
         .map(scope.getTextNodes)
@@ -248,5 +294,476 @@ export const parsers: { [domain: string]: ParserInterface } = {
       return textNodes;
     },
     getBoundaryAncestorSelector: () => "p",
+  },
+  [DOMAIN.ACOUP]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201114132121/https://acoup.blog/2020/11/13/collections-why-military-history/",
+        "https://web.archive.org/web/20201102224056/https://acoup.blog/2020/10/16/collections-iron-how-did-they-make-it-part-ivb-work-hardening-or-hardly-working/",
+        "https://web.archive.org/web/20201112230613/https://acoup.blog/2020/10/09/collections-iron-how-did-they-make-it-part-iva-steel-yourself/",
+        "https://web.archive.org/web/20201113190722/https://acoup.blog/2020/09/25/collections-iron-how-did-they-make-it-part-ii-trees-for-blooms/",
+        "https://web.archive.org/web/20201104065529/https://acoup.blog/2020/09/18/collections-iron-how-did-they-make-it-part-i-mining/",
+        "https://web.archive.org/web/20201113164438/https://acoup.blog/2020/09/11/miscellanea-my-thoughts-on-crusader-kings-iii/",
+        "https://web.archive.org/web/20201031115300/https://acoup.blog/2020/09/04/collections-bread-how-did-they-make-it-addendum-rice/",
+        "https://web.archive.org/web/20201029202703/https://acoup.blog/2020/08/21/collections-bread-how-did-they-make-it-part-iv-markets-and-non-farmers/",
+        "https://web.archive.org/web/20201025220802/https://acoup.blog/2020/08/06/collections-bread-how-did-they-make-it-part-iii-actually-farming/",
+        "https://web.archive.org/web/20201018005620/https://acoup.blog/2020/07/31/collections-bread-how-did-they-make-it-part-ii-big-farms/",
+        "https://web.archive.org/web/20201031232803/https://acoup.blog/2020/07/24/collections-bread-how-did-they-make-it-part-i-farmers/",
+        "https://web.archive.org/web/20201003051805/https://acoup.blog/2020/07/09/collections-how-your-history-gets-made/",
+        "https://web.archive.org/web/20201114232500/https://acoup.blog/2020/07/03/collections-the-practical-case-on-why-we-need-the-humanities/",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      const actionBar = document.getElementById("actionbar");
+      if (actionBar) {
+        actionBar.remove();
+      }
+
+      return scope.getTextNodes(document.querySelector(".entry-content"));
+    },
+  },
+  [DOMAIN.ACM_BLOG]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201016173104/https://cacm.acm.org/blogs/blog-cacm/248022-what-everyone-knows-and-what-no-one-knows/fulltext",
+        "https://web.archive.org/web/20201101183146/https://cacm.acm.org/blogs/blog-cacm/247225-things-to-do-to-an-algorithm/fulltext",
+        "https://web.archive.org/web/20200730190515/https://cacm.acm.org/blogs/blog-cacm/245277-the-remote-revolution-has-to-be-driven-by-output-not-salaries/fulltext",
+        "https://web.archive.org/web/20200924021440/https://cacm.acm.org/blogs/blog-cacm/245226-is-a-nearly-zero-cost-model-plausible-for-science-and-engineering-programs/fulltext",
+        "https://web.archive.org/web/20200730190844/https://cacm.acm.org/blogs/blog-cacm/244736-hacking-the-axis/fulltext",
+        "https://web.archive.org/web/20200730191100/https://cacm.acm.org/blogs/blog-cacm/244499-the-covid-catalyst/fulltext",
+        "https://web.archive.org/web/20200730194435/https://cacm.acm.org/blogs/blog-cacm/244379-holding-a-conference-online-and-live-due-to-covid-19/fulltext",
+        "https://web.archive.org/web/20200730191100/https://cacm.acm.org/blogs/blog-cacm/244499-the-covid-catalyst/fulltext",
+        "https://web.archive.org/web/20200730194435/https://cacm.acm.org/blogs/blog-cacm/244379-holding-a-conference-online-and-live-due-to-covid-19/fulltext",
+        "https://web.archive.org/web/20200815172323/https://cacm.acm.org/blogs/blog-cacm/244188-computational-thinking-or-computational-teamwork/fulltext",
+        "https://web.archive.org/web/20200730194751/https://cacm.acm.org/blogs/blog-cacm/244198-would-there-be-computers-without-easter/fulltext",
+        "https://web.archive.org/web/20200725144609/https://cacm.acm.org/blogs/blog-cacm/243882-the-asplos-2020-online-conference-experience/fulltext",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.getElementById("articleFullText"));
+    },
+  },
+  [DOMAIN.PAUL_GRAHAM_BLOG]: {
+    getUrl: () => {
+      const urls = [
+        "http://web.archive.org/web/20201108072840/http://paulgraham.com/early.html",
+        "http://web.archive.org/web/20201108150533/http://paulgraham.com/wtax.html",
+        "http://web.archive.org/web/20201112063521/http://paulgraham.com/conformism.html",
+        "http://web.archive.org/web/20201107110007/http://paulgraham.com/orth.html",
+        "http://web.archive.org/web/20201030151043/http://paulgraham.com/cred.html",
+        "http://web.archive.org/web/20201107170124/http://paulgraham.com/useful.html",
+        "http://web.archive.org/web/20201030170158/http://paulgraham.com/noob.html",
+        "http://web.archive.org/web/20201108023057/http://www.paulgraham.com/fh.html",
+        "http://web.archive.org/web/20201104154753/http://paulgraham.com/mod.html",
+        "http://web.archive.org/web/20201030174931/http://paulgraham.com/fp.html",
+        "http://web.archive.org/web/20201111185958/http://www.paulgraham.com/kids.html",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector("font"));
+    },
+  },
+  [DOMAIN.SEC]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201030000827/https://www.sec.gov/Archives/edgar/data/1810806/000119312520227862/d908875ds1.htm",
+        "https://web.archive.org/web/20201116220437/https://www.sec.gov/Archives/edgar/data/1559720/000119312520294801/d81668ds1.htm",
+        "https://web.archive.org/web/20201030000827/https://www.sec.gov/Archives/edgar/data/1810806/000119312520227862/d908875ds1.htm",
+        "https://web.archive.org/web/20201109224957/https://www.sec.gov/Archives/edgar/data/1477720/000119312520228462/d855753ds1.htm",
+        "https://web.archive.org/web/20201108070128/https://www.sec.gov/Archives/edgar/data/1643269/000119312520227201/d821436ds1.htm",
+        "https://web.archive.org/web/20201115111400/https://www.sec.gov/Archives/edgar/data/1800667/000119312520228195/d841831ds1.htm",
+        "https://web.archive.org/web/20201116041505/https://www.sec.gov/Archives/edgar/data/1585521/000119312519083351/d642624ds1.htm",
+        "https://web.archive.org/web/20201103002558/https://www.sec.gov/Archives/edgar/data/1477333/000119312519222176/d735023ds1.htm",
+        "https://web.archive.org/web/20201108031228/https://www.sec.gov/Archives/edgar/data/1561550/000119312519227783/d745413ds1.htm",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return (
+        Array.from(document.querySelectorAll("center"))
+          .map(scope.getTextNodes)
+          //@ts-ignore: this should work fine
+          .flat()
+      );
+    },
+  },
+  [DOMAIN.THE_DIFF_SUBSTACK]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201101035820/https://diff.substack.com/p/engineering-a-conglomerate",
+        "https://web.archive.org/web/20201110155008/https://diff.substack.com/p/surfing-the-right-s-curve",
+        "https://web.archive.org/web/20201101023202/https://diff.substack.com/p/big-tech-at-the-end-of-history",
+        "https://web.archive.org/web/20200920022132/https://diff.substack.com/p/banking-when-you-cant-bank-on-anything-8a5",
+        "https://web.archive.org/web/20201115192208/https://diff.substack.com/p/banking-when-you-cant-bank-on-anything",
+        "https://web.archive.org/web/20201101031536/https://diff.substack.com/p/ant-group-and-chinas-fitful-convergence",
+        "https://web.archive.org/web/20201113054259/https://diff.substack.com/p/business-model-meta-models",
+        "https://web.archive.org/web/20201114001615/https://diff.substack.com/p/how-bubbles-and-megaprojects-parallelize",
+        "https://web.archive.org/web/20201110060533/https://diff.substack.com/p/big-tech-sees-like-a-state",
+        "https://web.archive.org/web/20201101023516/https://diff.substack.com/p/hardware-as-a-service",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector("article"));
+    },
+  },
+  [DOMAIN.PETER_TURCHIN_BLOG]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201021042338/http://peterturchin.com/cliodynamica/the-double-helix-of-inequality-and-well-being/",
+        "https://web.archive.org/web/20201002061249/http://peterturchin.com/cliodynamica/strange-disappearance/",
+        "https://web.archive.org/web/20200923132247/http://peterturchin.com/cliodynamica/the-strange-disappearance-of-cooperation-in-america-ii/",
+        "https://web.archive.org/web/20201021053127/http://peterturchin.com/cliodynamica/the-road-to-disunion/",
+        "https://web.archive.org/web/20200923163044/http://peterturchin.com/cliodynamica/below-the-surface-the-structural-demographic-roots-of-the-current-political-crisis/",
+        "https://web.archive.org/web/20201005014436/http://peterturchin.com/cliodynamica/bimodal-lawyers-how-extreme-competition-breeds-extreme-inequality/",
+        "https://web.archive.org/web/20200923161501/http://peterturchin.com/cliodynamica/living-without-a-state/",
+        "https://web.archive.org/web/20200925105439/http://peterturchin.com/cliodynamica/why-is-haiti-so-poor/",
+        "https://web.archive.org/web/20201021052540/http://peterturchin.com/cliodynamica/deep-roots/",
+        "https://web.archive.org/web/20201021040452/http://peterturchin.com/cliodynamica/an-imperfect-time-machine/",
+        "https://web.archive.org/web/20200808204723/http://peterturchin.com/cliodynamica/getting-to-norway/",
+        "https://web.archive.org/web/20200921125112/http://peterturchin.com/cliodynamica/paradoxes-of-the-nordic-model-i/",
+        "https://web.archive.org/web/20200923122713/http://peterturchin.com/cliodynamica/paradoxes-of-the-nordic-model-ii/",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector(".gdl-page-item"));
+    },
+  },
+  [DOMAIN.GITHUB_BLOG]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201101121117/https://github.blog/2020-10-29-getting-started-with-devops-automation/",
+        "https://web.archive.org/web/20201106191702/https://github.blog/2020-10-29-making-github-ci-workflow-3x-faster/",
+        "https://web.archive.org/web/20201109172045/https://github.blog/2020-10-29-building-github-introduction/",
+        "https://web.archive.org/web/20201101033644/https://github.blog/2020-10-15-how-to-get-your-organization-started-with-containerized-deployments/",
+        "https://web.archive.org/web/20201101053934/https://github.blog/2020-10-09-devops-cloud-testing/",
+        "https://web.archive.org/web/20201020002615/https://github.blog/2020-09-02-github-availability-report-august-2020/",
+        "https://web.archive.org/web/20201104182255/https://github.blog/2020-08-25-upgrading-github-to-ruby-2-7/",
+        "https://web.archive.org/web/20200928111940/https://github.blog/2020-08-18-introducing-the-rally-github-integration/",
+        "https://web.archive.org/web/20201101230810/https://github.blog/2020-08-13-why-write-adrs/",
+        "https://web.archive.org/web/20200807192251/https://github.blog/2020-07-02-how-we-launched-docs-github-com/",
+        "https://web.archive.org/web/20201026082657/https://github.blog/2020-06-18-introducing-github-super-linter-one-linter-to-rule-them-all/",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector(".post__content"));
+    },
+  },
+  [DOMAIN.GWERN_BLOG]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201111164827/http://www.gwern.net/Silk-Road",
+        "https://web.archive.org/web/20201108092305/http://www.gwern.net/Modafinil",
+        "https://web.archive.org/web/20201109035329/http://www.gwern.net/LSD-microdosing",
+        "https://web.archive.org/web/20201108182155/https://www.gwern.net/Zeo",
+        "https://web.archive.org/web/20201108162226/http://www.gwern.net/DNB-FAQ",
+        "https://web.archive.org/web/20201108100313/http://www.gwern.net/Spaced-repetition",
+        "https://web.archive.org/web/20201108001024/https://www.gwern.net/Death-Note-Anonymity",
+        "https://web.archive.org/web/20201106215038/https://www.gwern.net/Complement",
+        "https://web.archive.org/web/20201112012619/http://www.gwern.net/Google-shutdowns",
+        "https://web.archive.org/web/20201108002844/https://www.gwern.net/Ads",
+        "https://web.archive.org/web/20201111212800/https://www.gwern.net/Tanks",
+        "https://web.archive.org/web/20201109025321/http://www.gwern.net/Self-decrypting-files",
+        "https://web.archive.org/web/20201108105242/http://www.gwern.net/Archiving-URLs",
+        "https://web.archive.org/web/20201108091322/https://www.gwern.net/Terrorism-is-not-about-Terror",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector("#markdownBody"));
+    },
   },
 };

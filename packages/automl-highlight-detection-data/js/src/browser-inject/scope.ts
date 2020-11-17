@@ -77,14 +77,17 @@ export const scope: InjectScope = {
     const maxXOffset = height - bb.width;
 
     // scroll the range into view, with some random offset
-    window.scroll(
-      window.scrollX +
+    document.scrollingElement.scrollTo({
+      left:
+        window.scrollX +
         range.getBoundingClientRect().left -
         maxXOffset * Math.random(),
-      window.scrollY +
+      top:
+        window.scrollY +
         range.getBoundingClientRect().top -
-        maxYOffset * Math.random()
-    );
+        maxYOffset * Math.random(),
+      behavior: "auto",
+    });
   },
   getSelectionAnnotations: (
     range: Range,
