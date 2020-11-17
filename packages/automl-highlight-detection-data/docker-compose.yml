@@ -7,7 +7,7 @@ services:
     logging:
       driver: gcplogs
     restart: always
-    cpus: 3.5
+    cpus: 7.5
     ports:
       - 5037:5037
       - 4723:4723

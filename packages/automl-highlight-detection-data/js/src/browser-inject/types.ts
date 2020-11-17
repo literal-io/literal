@@ -2,10 +2,18 @@ export enum DOMAIN {
   WIKIPEDIA = "wikipedia",
   HACKERNEWS = "hackernews",
   RIBBONFARM = "ribbonfarm",
-  PROJECT_GUTENBERG = "project_gutenberg",
+  PROJECT_GUTENBERG = "project-gutenberg",
+  ACOUP = "acoup",
+  ACM_BLOG = "acm-blog",
+  PAUL_GRAHAM_BLOG = "paul-graham-blog",
+  SEC = 'sec',
+  THE_DIFF_SUBSTACK = 'the-diff-substack',
+  PETER_TURCHIN_BLOG = 'peter-turchin-blog',
+  GITHUB_BLOG = 'github-blog',
+  GWERN_BLOG = 'gwern-blog'
 }
 
-export type ViewportSize = { width: number; height: number };
+export type ViewportSize = { width: number; height: number; scale: number };
 
 export interface InjectScope {
   getViewportSize(): ViewportSize;

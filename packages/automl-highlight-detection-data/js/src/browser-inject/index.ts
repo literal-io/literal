@@ -25,6 +25,7 @@ export const browserInject = (
   size: {
     width: number;
     height: number;
+    scale: number;
   };
   text: string;
 }> => {

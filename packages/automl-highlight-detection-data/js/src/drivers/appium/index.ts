@@ -7,6 +7,7 @@ import {
   DOMAIN,
   parsers,
 } from "../../browser-inject";
+import { APPIUM_PORT, APPIUM_HOSTNAME } from "../../constants";
 import { Driver } from "../types";
 
 enum Orientation {
@@ -19,28 +20,25 @@ enum AppiumContext {
   CHROMIUM = "CHROMIUM",
 }
 
-interface SystemBar {
-  visible: boolean;
-  height: number;
+type Rect = {
   width: number;
-}
-interface AndroidSystemBars {
-  statusBar: SystemBar;
-  navigationBar: SystemBar;
-}
+  height: number;
+  top: number;
+  left: number;
+};
 
 type AndroidCapabilities = WebDriver.DesiredCapabilities & {
+  statBarHeight: number;
+  viewportRect: Rect;
   pixelRatio: number;
-  viewportRect: {
-    width: number;
-    height: number;
-    top: number;
-    left: number;
-  };
 };
 
 export class AppiumDriver implements Driver {
   context: WebdriverIOAsync.BrowserObject;
+  systemBars: {
+    navigationBar: { height: number; width: number };
+    statusBar: { height: number; width: number };
+  };
 
   initializeContext = async ({
     browser,
@@ -50,8 +48,8 @@ export class AppiumDriver implements Driver {
     device: string;
   }) => {
     const opts = {
-      port: parseInt(process.env.APPIUM_PORT),
-      hostname: process.env.APPIUM_HOSTNAME,
+      port: APPIUM_PORT,
+      hostname: APPIUM_HOSTNAME,
       capabilities: {
         platformName: "Android",
         platformVersion: "11",
@@ -62,23 +60,26 @@ export class AppiumDriver implements Driver {
     };
 
     this.context = await webdriver(opts);
+
+    this.context.setTimeout({ pageLoad: 3 * 60 * 1000 });
   };
 
-  getViewportRect = async () => {
+  getViewportRect = () => {
     if (!this.context) {
       throw new Error("Driver uninitialized");
     }
 
-    const orientation = await this.context.getOrientation();
-    const rect = this.getCapabilities().viewportRect;
+    /**
+     * size includes status bar but excludes navigation bar
+     */
+    return this.context.getWindowSize();
+  };
 
-    return orientation === Orientation.PORTRAIT
-      ? rect
-      : {
-          ...rect,
-          width: rect.height + rect.top,
-          height: rect.width - rect.top,
-        };
+  getSystemBars = async () => {
+    if (!this.systemBars) {
+      this.systemBars = (await this.context.getSystemBars()) as any;
+    }
+    return this.systemBars;
   };
 
   getCapabilities = () => {
@@ -106,6 +107,8 @@ export class AppiumDriver implements Driver {
 
     if (currentOrientation !== orientation) {
       await this.context.setOrientation(orientation);
+      // wait for chrome to reflow
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     await this.context.switchContext(AppiumContext.CHROMIUM);
@@ -120,6 +123,9 @@ export class AppiumDriver implements Driver {
           if (id) {
             return this.context.$(id).then((el) => el.click());
           }
+        })
+        .catch(() => {
+          /** noop **/
         });
       await this.context.switchContext(AppiumContext.CHROMIUM);
     }
@@ -153,13 +159,10 @@ export class AppiumDriver implements Driver {
       })
       .catch((_err) => 0);
 
-    const pixelRatio = this.getCapabilities().pixelRatio;
+    const statusBarHeight = this.getCapabilities().statBarHeight;
+    const devicePixelRatio = this.getCapabilities().pixelRatio;
+    const systemBars = (await this.context.getSystemBars()) as any;
     const viewportRect = await this.getViewportRect();
-    const systemBars: AndroidSystemBars = (await this.context.getSystemBars()) as any;
-
-    const statusBarHeight = systemBars.statusBar.visible
-      ? systemBars.statusBar.height
-      : 0;
 
     /**
      * Creating a selection within JS doesn't trigger Chrome's text selection
@@ -167,22 +170,36 @@ export class AppiumDriver implements Driver {
      * appear. Using the highlight coords, tap in the center and wait a
      * short period to have chrome display the UI.
      */
+
     const {
       boundingBox: { xRelativeMin, xRelativeMax, yRelativeMin, yRelativeMax },
     } = annotations.find(({ label }) => label === "highlight");
     const [xMin, xMax, yMin, yMax] = [
-      xRelativeMin * size.width * pixelRatio,
-      xRelativeMax * size.width * pixelRatio,
-      yRelativeMin * size.height * pixelRatio,
-      yRelativeMax * size.height * pixelRatio,
+      Math.max(xRelativeMin, 0.0) * size.width * size.scale * devicePixelRatio +
+        (orientation === Orientation.LANDSCAPE
+          ? systemBars.navigationBar.width
+          : 0),
+      Math.min(xRelativeMax, 1.0) * size.width * size.scale * devicePixelRatio +
+        (orientation === Orientation.LANDSCAPE
+          ? systemBars.navigationBar.width
+          : 0),
+      Math.max(yRelativeMin, 0.0) *
+        (size.height * size.scale * devicePixelRatio) +
+        statusBarHeight +
+        chromeToolbarHeight,
+      Math.min(yRelativeMax, 1.0) *
+        (size.height * size.scale * devicePixelRatio) +
+        statusBarHeight +
+        chromeToolbarHeight,
     ];
+
     const tapX = Math.min(
       xMin + (xMax - xMin) / 2,
-      viewportRect.left + viewportRect.width - 1
+      viewportRect.x + viewportRect.width - 1
     );
     const tapY = Math.min(
-      yMin + (yMax - yMin) / 2 + chromeToolbarHeight + statusBarHeight,
-      viewportRect.top + viewportRect.height - 1
+      yMin + (yMax - yMin) / 2,
+      viewportRect.y + viewportRect.height - 1
     );
     await this.context.touchAction({
       action: "tap",
@@ -205,9 +222,14 @@ export class AppiumDriver implements Driver {
           size,
           orientation,
           viewportRect,
+          xRelativeMax,
           xRelativeMin,
           yRelativeMin,
           yRelativeMax,
+          chromeToolbarHeight,
+          statusBarHeight,
+          tapX,
+          tapY,
         })
       );
       return [];
@@ -224,32 +246,40 @@ export class AppiumDriver implements Driver {
         label,
       }) => {
         const [xMin, xMax, yMin, yMax] = [
-          xRelativeMin * size.width * pixelRatio +
+          Math.max(xRelativeMin, 0.0) *
+            size.width *
+            size.scale *
+            devicePixelRatio +
             (orientation === Orientation.LANDSCAPE
               ? systemBars.navigationBar.width
               : 0),
-          xRelativeMax * size.width * pixelRatio +
+          Math.min(xRelativeMax, 1.0) *
+            size.width *
+            size.scale *
+            devicePixelRatio +
             (orientation === Orientation.LANDSCAPE
               ? systemBars.navigationBar.width
               : 0),
-          yRelativeMin * size.height * pixelRatio +
-            chromeToolbarHeight +
-            statusBarHeight,
-          yRelativeMax * size.height * pixelRatio +
-            chromeToolbarHeight +
-            statusBarHeight,
+          Math.max(yRelativeMin, 0.0) *
+            (size.height * size.scale * devicePixelRatio) +
+            statusBarHeight +
+            chromeToolbarHeight,
+          Math.min(yRelativeMax, 1.0) *
+            (size.height * size.scale * devicePixelRatio) +
+            statusBarHeight +
+            chromeToolbarHeight,
         ];
-        const viewportHeight =
-          viewportRect.height +
-          statusBarHeight +
-          (orientation === Orientation.PORTRAIT
-            ? systemBars.navigationBar.height
-            : 0);
-        const viewportWidth =
-          viewportRect.width +
-          (orientation === Orientation.LANDSCAPE
-            ? systemBars.navigationBar.width
-            : 0);
+
+        const [viewportWidth, viewportHeight] =
+          orientation === Orientation.PORTRAIT
+            ? [
+                viewportRect.width,
+                viewportRect.height + systemBars.navigationBar.height,
+              ]
+            : [
+                viewportRect.width + systemBars.navigationBar.width,
+                viewportRect.height,
+              ];
 
         return {
           label,
@@ -269,6 +299,19 @@ export class AppiumDriver implements Driver {
 
     await this.context.switchContext(AppiumContext.CHROMIUM);
 
+    console.debug(
+      JSON.stringify({
+        annotations,
+        reframedBoundingBoxes,
+        size,
+        orientation,
+        viewportRect,
+        chromeToolbarHeight,
+        statusBarHeight,
+        tapX,
+        tapY,
+      })
+    );
     console.log("getScreenshot complete", outputPath);
     return reframedBoundingBoxes;
   };

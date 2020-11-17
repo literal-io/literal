@@ -2,12 +2,11 @@ import { InjectScope, SelectionAnnotation, ViewportSize } from "./types";
 
 export const scope: InjectScope = {
   getViewportSize: (): ViewportSize => {
-    const targetElem =
-      window.document.compatMode === "BackCompat"
-        ? window.document.body
-        : window.document.documentElement;
-
-    return { width: targetElem.clientWidth, height: targetElem.clientHeight };
+    return {
+      width: (window as any).visualViewport.width,
+      height: (window as any).visualViewport.height,
+      scale: (window as any).visualViewport.scale,
+    };
   },
   getTextNodes: (el: HTMLElement): Text[] => {
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
@@ -78,14 +77,17 @@ export const scope: InjectScope = {
     const maxXOffset = height - bb.width;
 
     // scroll the range into view, with some random offset
-    window.scroll(
-      window.scrollX +
+    document.scrollingElement.scrollTo({
+      left:
+        window.scrollX +
         range.getBoundingClientRect().left -
         maxXOffset * Math.random(),
-      window.scrollY +
+      top:
+        window.scrollY +
         range.getBoundingClientRect().top -
-        maxYOffset * Math.random()
-    );
+        maxYOffset * Math.random(),
+      behavior: "auto",
+    });
   },
   getSelectionAnnotations: (
     range: Range,
