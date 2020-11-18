@@ -766,4 +766,363 @@ export const parsers: { [domain: string]: ParserInterface } = {
       return scope.getTextNodes(document.querySelector("#markdownBody"));
     },
   },
+  [DOMAIN.NATURE]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20200606090532/https://www.nature.com/articles/d41586-020-01567-3",
+        "https://web.archive.org/web/20200607011244/https://www.nature.com/articles/d41586-020-01570-8",
+        "https://web.archive.org/web/20200607132331/https://www.nature.com/articles/d41586-020-01566-4",
+        "https://web.archive.org/web/20200606123933/https://www.nature.com/articles/d41586-020-01485-4",
+        "https://web.archive.org/web/20200606035115/https://www.nature.com/articles/d41586-020-01483-6",
+        "https://web.archive.org/web/20200606062626/https://www.nature.com/articles/d41586-020-01455-w",
+        "https://web.archive.org/web/20200607132232/https://www.nature.com/articles/d41586-020-01484-5",
+        "https://web.archive.org/web/20201116094312/https://www.nature.com/articles/d41586-020-02791-7",
+        "https://web.archive.org/web/20201104164631/https://www.nature.com/articles/d41586-020-02831-2",
+        "https://web.archive.org/web/20201105053618/https://www.nature.com/articles/d41586-020-02750-2",
+        "https://web.archive.org/web/20201102222655/https://www.nature.com/articles/d41586-020-02712-8",
+        "https://web.archive.org/web/20201102222457/https://www.nature.com/articles/d41586-020-02526-8",
+        "https://web.archive.org/web/20201105060729/https://www.nature.com/articles/d41586-020-02941-x",
+        "https://web.archive.org/web/20201104153623/https://www.nature.com/articles/d41586-020-02942-w",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      // remove cookie consent header, subscription prompt
+      document
+        .querySelectorAll(".optanon-alert-box-wrapper,.c-site-messages")
+        .forEach((el) => {
+          el.remove();
+        });
+
+      return scope.getTextNodes(document.querySelector(".article__body"));
+    },
+  },
+  [DOMAIN.TONSKY_BLOG]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201030150935/https://tonsky.me/blog/tech-sucks/",
+        "https://web.archive.org/web/20201030151018/https://tonsky.me/blog/sublime/",
+        "https://web.archive.org/web/20201031035444/https://tonsky.me/blog/alpha/",
+        "https://web.archive.org/web/20201115090202/https://tonsky.me/blog/monitors/",
+        "https://web.archive.org/web/20201112214417/https://tonsky.me/blog/syncthing/",
+        "https://web.archive.org/web/20201030084230/https://tonsky.me/blog/form-cleanup/",
+        "https://web.archive.org/web/20201101073426/https://tonsky.me/blog/utils/",
+        "https://web.archive.org/web/20201030154628/https://tonsky.me/blog/performance-first/",
+        "https://web.archive.org/web/20201112184906/https://tonsky.me/blog/swiftui/",
+        "https://web.archive.org/web/20201110141858/https://tonsky.me/blog/good-times-weak-men/",
+        "https://web.archive.org/web/20201027223923/https://tonsky.me/blog/pedestal/",
+        "https://web.archive.org/web/20201023085431/https://tonsky.me/blog/uberdeps/",
+        "https://web.archive.org/web/20201107224629/https://tonsky.me/blog/hiring/",
+        "https://web.archive.org/web/20201108001701/https://tonsky.me/blog/github-redesign/",
+        "https://web.archive.org/web/20201117152504/https://tonsky.me/blog/skija/",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector(".post"));
+    },
+  },
+  [DOMAIN.FIRST_ROUND_BLOG]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201101032003if_/https://firstround.com/review/your-marketing-org-is-slow-heres-a-framework-to-move-faster/",
+        "https://web.archive.org/web/20201101031841if_/https://firstround.com/review/the-40-best-questions-to-ask-in-an-interview-how-to-go-deeper-than-whats-the-culture-like/",
+        "https://web.archive.org/web/20201101030735if_/https://firstround.com/review/drive-growth-by-picking-the-right-lane-a-customer-acquisition-playbook-for-consumer-startups/",
+        "https://web.archive.org/web/20201101004404if_/https://firstround.com/review/use-this-startups-playbook-for-running-impactful-virtual-offsites/",
+        "https://web.archive.org/web/20201101035754if_/https://firstround.com/review/6-small-steps-for-handling-the-emotional-ups-and-downs-at-work/",
+        "https://web.archive.org/web/20201101033742if_/https://firstround.com/review/this-vp-is-doing-things-differently-in-the-product-org-heres-his-playbook/",
+        "https://web.archive.org/web/20201103163043if_/https://firstround.com/review/the-ultimate-guide-to-the-founding-designer-role/",
+        "https://web.archive.org/web/20201101002428if_/https://firstround.com/review/a-founders-guide-to-writing-well/",
+        "https://web.archive.org/web/20201101144832if_/https://firstround.com/review/how-to-take-personal-development-off-the-backburner-tactical-frameworks-for-leveling-up/",
+        "https://web.archive.org/web/20201108050526if_/https://firstround.com/review/the-managers-guide-to-inclusive-leadership-small-habits-that-make-a-big-impact/",
+        "https://web.archive.org/web/20201106151417if_/https://firstround.com/review/hit-the-emotional-gym-the-founders-framework-for-emotional-fitness/",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector("._Content__"));
+    },
+  },
+  [DOMAIN.CRYTOGRAPHY_ENGINEERING_BLOG]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201118013045/https://blog.cryptographyengineering.com/2020/11/16/ok-google-please-publish-your-dkim-secret-keys/",
+        "https://web.archive.org/web/20201116205201/https://blog.cryptographyengineering.com/2016/11/24/android-n-encryption/",
+        "https://web.archive.org/web/20201116205154/https://blog.cryptographyengineering.com/2020/07/10/a-few-thoughts-about-signals-secure-value-recovery/",
+        "https://web.archive.org/web/20201116205149/https://blog.cryptographyengineering.com/2018/09/23/why-im-leaving-chrome/",
+        "https://web.archive.org/web/20201116205157/https://blog.cryptographyengineering.com/2014/08/13/whats-matter-with-pgp/",
+        "https://web.archive.org/web/20201116205212/https://blog.cryptographyengineering.com/2013/03/12/attack-of-week-rc4-is-kind-of-broken-in/",
+        "https://web.archive.org/web/20201116205208/https://blog.cryptographyengineering.com/2014/11/27/zero-knowledge-proofs-illustrated-primer/",
+        "https://web.archive.org/web/20201116205157/https://blog.cryptographyengineering.com/2018/10/19/lets-talk-about-pake/",
+        "https://web.archive.org/web/20201109215210/https://blog.cryptographyengineering.com/2012/05/19/how-to-choose-authenticated-encryption/",
+        "https://web.archive.org/web/20201116205159/https://blog.cryptographyengineering.com/2020/08/12/attack-of-the-week-voice-calls-in-lte/",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector(".entry-content"));
+    },
+  },
+  [DOMAIN.PARIS_REVIEW]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201117094532/https://www.theparisreview.org/blog/2020/11/16/we-are-built-to-forget/",
+        "https://web.archive.org/web/20201111230844/https://www.theparisreview.org/blog/2020/11/11/inside-the-american-snow-dome/",
+        "https://web.archive.org/web/20190426144812/https://www.theparisreview.org/blog/2019/04/22/the-unknowable-artist-stephane-mandelbaum/",
+        "https://web.archive.org/web/20201101061054/https://www.theparisreview.org/blog/2019/11/26/on-desolation-vija-celminss-gray/",
+        "https://web.archive.org/web/20200901210012/https://www.theparisreview.org/blog/2020/09/01/wait-what-year-is-this/",
+        "https://web.archive.org/web/20201111222716/https://www.theparisreview.org/blog/2020/11/10/redux-the-feeling-of-an-airplane-crashing/",
+        "https://web.archive.org/web/20201101065111/https://www.theparisreview.org/blog/2020/09/28/feminize-your-canon-alice-dunbar-nelson/",
+        "https://web.archive.org/web/20201111080359/https://www.theparisreview.org/blog/2020/11/10/re-covered-living-through-history/",
+        "https://web.archive.org/web/20201112085901/https://www.theparisreview.org/blog/2020/11/09/the-art-of-distance-no-33/",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      document.querySelectorAll('[role="dialog"]').forEach((elem) => {
+        elem.remove();
+      });
+
+      return scope.getTextNodes(document.querySelector(".article-body"));
+    },
+  },
+  [DOMAIN.COCKROACH_DB_BLOG]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201118000512/https://www.cockroachlabs.com/blog/why-i-left-ibm/",
+        "https://web.archive.org/web/20200921030026/https://www.cockroachlabs.com/blog/alter-column-type/",
+        "https://web.archive.org/web/20200921015819/https://www.cockroachlabs.com/blog/internal-mobility-program/",
+        "https://web.archive.org/web/20200831131909/https://www.cockroachlabs.com/blog/full-text-indexing-search/",
+        "https://web.archive.org/web/20200907124722/https://www.cockroachlabs.com/blog/database-consistency/",
+        "https://web.archive.org/web/20201004002234/https://www.cockroachlabs.com/blog/kubernetes-saas-implementation/",
+        "https://web.archive.org/web/20200921023137/https://www.cockroachlabs.com/blog/pebble-rocksdb-kv-store/",
+        "https://web.archive.org/web/20200921141220/https://www.cockroachlabs.com/blog/building-support-for-java-orm-hibernate-in-cockroachdb/",
+        "https://web.archive.org/web/20201001204653/https://www.cockroachlabs.com/blog/true-cost-cloud-database/",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      document.querySelectorAll('[role="dialog"]').forEach((elem) => {
+        elem.remove();
+      });
+
+      return scope.getTextNodes(document.querySelector(".single-blog-content"));
+    },
+  },
 };
