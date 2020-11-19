@@ -17,6 +17,12 @@ export enum DOMAIN {
   CRYTOGRAPHY_ENGINEERING_BLOG = "cryptography-engineering-blog",
   PARIS_REVIEW = "paris-review",
   COCKROACH_DB_BLOG = "cockroach-db-blog",
+  LAPHAMS_QUARTERLY = "laphams-quarterly",
+  GOOGLE_AI_BLOG = "google-ai-blog",
+  NPR_TEXT = "npr-text",
+  BOOK_FORUM = "book-forum",
+  NVIDIA_NEWS = "nvidia-news",
+  GEMSBOK_BLOG = "gemsbok-blog"
 }
 
 export type ViewportSize = { width: number; height: number; scale: number };

@@ -1125,4 +1125,366 @@ export const parsers: { [domain: string]: ParserInterface } = {
       return scope.getTextNodes(document.querySelector(".single-blog-content"));
     },
   },
+  [DOMAIN.LAPHAMS_QUARTERLY]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201118153710/https://www.laphamsquarterly.org/roundtable/hotel-heart-hudson-river-school",
+        "https://web.archive.org/web/20201116153458/https://www.laphamsquarterly.org/roundtable/more-perfect-union",
+        "https://web.archive.org/web/20201112014247/https://www.laphamsquarterly.org/animals/our-orgiastic-future",
+        "https://web.archive.org/web/20201109035606/https://www.laphamsquarterly.org/fear/fear-arrival",
+        "https://web.archive.org/web/20170801070934/http://www.laphamsquarterly.org/revolutions/no-smoke-camilo",
+        "https://web.archive.org/web/20201109015335/https://www.laphamsquarterly.org/rule-law/immune-law",
+        "https://web.archive.org/web/20201118025949/https://www.laphamsquarterly.org/discovery/queer-theorem",
+        "https://web.archive.org/web/20201108162644/https://www.laphamsquarterly.org/fashion/crusader-chic",
+        "https://web.archive.org/web/20201108135121/https://www.laphamsquarterly.org/night/fading-stars-constellation",
+        "https://web.archive.org/web/20201112032205/https://www.laphamsquarterly.org/death/last-meals",
+        "https://web.archive.org/web/20200328172939/https://www.laphamsquarterly.org/politics/great-rift",
+        "https://web.archive.org/web/20201109035717/https://www.laphamsquarterly.org/states-mind/person-ape",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector(".content-wrapper"));
+    },
+  },
+  [DOMAIN.GOOGLE_AI_BLOG]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20200810115608/https://ai.googleblog.com/2020/01/reformer-efficient-transformer.html",
+        "https://web.archive.org/web/20200810113904/https://ai.googleblog.com/2020/01/encode-tag-and-realize-controllable-and.html",
+        "https://web.archive.org/web/20200725070512/https://ai.googleblog.com/2020/01/announcing-third-workshop-and-challenge.html",
+        "https://web.archive.org/web/20200810122343/https://ai.googleblog.com/2020/01/towards-conversational-agent-that-can.html",
+        "https://web.archive.org/web/20200810122321/https://ai.googleblog.com/2020/01/releasing-drosophila-hemibrain.html",
+        "https://web.archive.org/web/20201112023705/https://ai.googleblog.com/2020/11/improving-on-device-speech-recognition.html",
+        "https://web.archive.org/web/20201111062634/https://ai.googleblog.com/2020/10/background-features-in-google-meet.html",
+        "https://web.archive.org/web/20201111121416/https://ai.googleblog.com/2020/10/experimenting-with-automatic-video.html",
+        "https://web.archive.org/web/20201105013229/https://ai.googleblog.com/2020/10/estimating-impact-of-training-data-with.html",
+        "https://web.archive.org/web/20201101095518/https://ai.googleblog.com/2020/10/rethinking-attention-with-performers.html",
+        "https://web.archive.org/web/20201101133433/https://ai.googleblog.com/2020/10/announcing-2020-award-for-inclusion.html",
+        "https://web.archive.org/web/20201108021518/https://ai.googleblog.com/2020/10/recreating-historical-streetscapes.html",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+      const banner = document.querySelector("#cookieChoiceInfo");
+      if (banner) {
+        banner.remove();
+      }
+
+      return scope.getTextNodes(document.querySelector(".post-content"));
+    },
+  },
+  [DOMAIN.NPR_TEXT]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201119010430/https://text.npr.org/936268845",
+        "https://web.archive.org/web/20201118182259/https://text.npr.org/936196364",
+        "https://web.archive.org/web/20201118162308/https://text.npr.org/935730100",
+        "https://web.archive.org/web/20201118212300/https://text.npr.org/936282353",
+        "https://web.archive.org/web/20201118222309/https://text.npr.org/936177167",
+        "https://web.archive.org/web/20201101014312/https://text.npr.org/816707182",
+        "https://web.archive.org/web/20201107042323/https://text.npr.org/932364567",
+        "https://web.archive.org/web/20201107042312/https://text.npr.org/932369007",
+        "https://web.archive.org/web/20201107062329/https://text.npr.org/932383604",
+        "https://web.archive.org/web/20201101022118/https://text.npr.org/928392673",
+        "https://web.archive.org/web/20201107062336/https://text.npr.org/931891674",
+        "https://web.archive.org/web/20201107072307/https://text.npr.org/932178353",
+        "https://web.archive.org/web/20201105162324/https://text.npr.org/931378189",
+        "https://web.archive.org/web/20201106172323/https://text.npr.org/931888744",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+      const banner = document.querySelector("#cookieChoiceInfo");
+      if (banner) {
+        banner.remove();
+      }
+
+      return scope.getTextNodes(
+        document.querySelector(".paragraphs-container")
+      );
+    },
+  },
+  [DOMAIN.BOOK_FORUM]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201116162234/https://www.bookforum.com/print/2704/the-enduring-songcraft-of-dolly-parton-24261",
+        "https://web.archive.org/web/20201111152932mp_/https://www.bookforum.com/print/2703/a-history-of-the-human-choices-that-led-to-one-of-the-century-s-worst-natural-disasters-24175",
+        "https://web.archive.org/web/20201113044409mp_/https://www.bookforum.com/print/2001/a-new-profanely-titled-tract-highlights-the-shortcomings-of-the-cottage-industry-of-pop-philosophizing-11216",
+        "https://web.archive.org/web/20201115200826mp_/https://www.bookforum.com/print/2703/necessary-errors-24174",
+        "https://web.archive.org/web/20201109060602mp_/https://www.bookforum.com/print/2703/two-french-thinkers-offer-a-manual-for-a-radically-altered-future-24172",
+        "https://web.archive.org/web/20201109163915mp_/https://www.bookforum.com/print/2704/the-chaotic-quest-to-mythologize-america-s-past-24250",
+        "https://web.archive.org/web/20201113163305mp_/https://www.bookforum.com/papertrail/mathew-ingram-looks-at-the-possibility-of-a-trump-media-venture-jonathan-franzen-is-writing-a-trilogy-24279",
+        "https://web.archive.org/web/20201105020844mp_/https://www.bookforum.com/print/2704/confronting-the-age-of-hate-in-america-24245",
+        "https://web.archive.org/web/20201102155036mp_/https://www.bookforum.com/print/2704/jeffrey-toobin-s-account-of-the-trump-impeachment-24242",
+        "https://web.archive.org/web/20201116040204mp_/https://www.bookforum.com/print/2704/the-martin-papers-24240",
+        "https://web.archive.org/web/20201101053837mp_/https://www.bookforum.com/culture/an-excerpt-from-black-spartacus-the-epic-life-of-toussaint-louverture-24235",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector(".paywall-counter"));
+    },
+  },
+  [DOMAIN.NVIDIA_NEWS]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201118205712/https://nvidianews.nvidia.com/news/nvidia-doubles-down-announces-a100-80gb-gpu-supercharging-worlds-most-powerful-gpu-for-ai-supercomputing",
+        "https://web.archive.org/web/20201116180741/https://nvidianews.nvidia.com/news/nvidia-announces-mellanox-infiniband-for-exascale-ai-supercomputing",
+        "https://web.archive.org/web/20201116142725/https://nvidianews.nvidia.com/news/nvidia-dgx-station-a100-offers-researchers-ai-data-center-in-a-box",
+        "https://web.archive.org/web/20201113190524/https://nvidianews.nvidia.com/news/hyundai-motor-group-selects-nvidia-drive-infotainment-and-ai-platform-for-all-future-hyundai-kia-and-genesis-models",
+        "https://web.archive.org/web/20201113173438/https://nvidianews.nvidia.com/news/nvidia-names-aarti-shah-to-board-of-directors",
+        "https://web.archive.org/web/20201101011348/https://nvidianews.nvidia.com/news/nvidia-sets-conference-call-for-third-quarter-financial-results-6819118",
+        "https://web.archive.org/web/20201031234651/https://nvidianews.nvidia.com/news/nvidia-smashes-performance-records-on-ai-inference",
+        "https://web.archive.org/web/20201101023803/https://nvidianews.nvidia.com/news/cineca-to-build-worlds-fastest-ai-supercomputer-with-nvidia-and-atos",
+        "https://web.archive.org/web/20201104205602/https://nvidianews.nvidia.com/news/nvidia-introduces-new-family-of-bluefield-dpus-to-bring-breakthrough-networking-storage-and-security-performance-to-every-data-center",
+        "https://web.archive.org/web/20201105173506/https://nvidianews.nvidia.com/news/nvidia-building-uks-most-powerful-supercomputer-dedicated-to-ai-research-in-healthcare",
+        "https://web.archive.org/web/20201118092721/https://nvidianews.nvidia.com/news/nvidia-unveils-jetson-nano-2gb-the-ultimate-ai-and-robotics-starter-kit-for-students-educators-robotics-hobbyists",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      const banner = document.querySelector("#cookiePolicy-layer");
+      if (banner) {
+        banner.remove();
+      }
+
+      return scope.getTextNodes(document.querySelector(".article-body"));
+    },
+  },
+  [DOMAIN.GEMSBOK_BLOG]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201022071119/https://thegemsbok.com/art-reviews-and-articles/mid-week-mission-portal-valve/",
+        "https://web.archive.org/web/20201030134911/https://thegemsbok.com/art-reviews-and-articles/book-reviews-tuesday-tome-the-stranger-albert-camus/",
+        "https://web.archive.org/web/20201030111631/https://thegemsbok.com/art-reviews-and-articles/mid-week-mission-terraria-re-logic/",
+        "https://web.archive.org/web/20201022063543/https://thegemsbok.com/art-reviews-and-articles/tuesday-tome-clockwork-orange-anthony-burgess/",
+        "https://web.archive.org/web/20201030143504/https://thegemsbok.com/art-reviews-and-articles/philosophy-articles-friday-phil-colin-radford-paradox-of-fiction/",
+        "https://web.archive.org/web/20201030081951/https://thegemsbok.com/art-reviews-and-articles/friday-phil-anthropic-principle-carl-sagan/",
+        "https://web.archive.org/web/20201030074457/https://thegemsbok.com/art-reviews-and-articles/thursday-theater-arrival-denis-villeneuve/",
+        "https://web.archive.org/web/20201030151855/https://thegemsbok.com/art-reviews-and-articles/philosophy-articles-friday-phil-free-will-foreknowledge/",
+        "https://web.archive.org/web/20201029173625/https://thegemsbok.com/art-reviews-and-articles/philosophy-articles-friday-phil-free-will-determinism-compatibilism/",
+        "https://web.archive.org/web/20201030115406/https://thegemsbok.com/art-reviews-and-articles/friday-phil-friedrich-nietzsche-truth-genealogy/",
+        "https://web.archive.org/web/20201030103945/https://thegemsbok.com/art-reviews-and-articles/friday-phil-pascals-wager/",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector("#content"));
+    },
+  },
 };
