@@ -22,7 +22,14 @@ export enum DOMAIN {
   NPR_TEXT = "npr-text",
   BOOK_FORUM = "book-forum",
   NVIDIA_NEWS = "nvidia-news",
-  GEMSBOK_BLOG = "gemsbok-blog"
+  GEMSBOK_BLOG = "gemsbok-blog",
+  THE_MARKUP = "the-markup",
+  STANFORD_NEWS = "stanford-news",
+  MIT_NEWS = "mit-news",
+  EBB_MAGAZINE = "ebb-magazine",
+  FULLFACT = "full-fact",
+  POPULA = "popula",
+  SEMIENGINEERING = "semiengineering",
 }
 
 export type ViewportSize = { width: number; height: number; scale: number };

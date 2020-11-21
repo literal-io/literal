@@ -1487,4 +1487,431 @@ export const parsers: { [domain: string]: ParserInterface } = {
       return scope.getTextNodes(document.querySelector("#content"));
     },
   },
+  [DOMAIN.THE_MARKUP]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201117130056/https://themarkup.org/election-2020/2020/11/17/targeting-trump-fans-qanon-ad-slips-through-facebooks-filters",
+        "https://web.archive.org/web/20201117170038/https://themarkup.org/google-the-giant/2020/11/10/introducing-simple-search",
+        "https://web.archive.org/web/20201115221310/https://themarkup.org/ask-the-markup/2020/11/12/how-private-is-my-pay-app",
+        "https://web.archive.org/web/20201113030111/https://themarkup.org/election-2020/2020/11/05/tech-platforms-election-moderation-promises-twitter-facebook-youtube",
+        "https://web.archive.org/web/20201119154521/https://themarkup.org/election-2020/2020/11/03/voting-machines-security-progress-by-states",
+        "https://web.archive.org/web/20201118121357/https://themarkup.org/election-2020/2020/11/02/election-misinformation-tech-social-media-platform-moderation",
+        "https://web.archive.org/web/20201119201707/https://themarkup.org/election-2020/2020/10/30/prop-22-california-gig-workers-uber-lyft-doordash-instacart",
+        "https://web.archive.org/web/20201117172614/https://themarkup.org/election-2020/2020/10/29/facebook-political-ad-targeting-algorithm-prices-trump-biden",
+        "https://web.archive.org/web/20201101023139/https://themarkup.org/google-the-giant/2020/10/20/google-antitrust-lawsuit-markup-investigations",
+        "https://web.archive.org/web/20201025085448/https://themarkup.org/ask-the-markup/2020/10/20/0-electronics-right-to-repair-ventilators-iphone",
+        "https://web.archive.org/web/20201025085453/https://themarkup.org/google-the-giant/2020/10/15/big-tech-antitrust-google-nondiscrimination-enforcement",
+        "https://web.archive.org/web/20201020064219/https://themarkup.org/coronavirus/2020/10/13/remote-exam-software-failures-privacy",
+        "https://web.archive.org/web/20201031223856/https://themarkup.org/locked-out/2020/10/06/zombie-criminal-records-housing-background-checks",
+        "https://web.archive.org/web/20201119134920/https://themarkup.org/google-the-giant/2020/11/19/as-antitrust-pressure-mounts-google-to-pull-back-benefit-to-news-sites-that-adopted-its-preferred-mobile-technology",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector(".article-body"));
+    },
+  },
+  [DOMAIN.STANFORD_NEWS]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201116032657/https://news.stanford.edu/2020/11/13/undersea-origins-earths-mysterious-love-waves/",
+        "https://web.archive.org/web/20201113170214/https://news.stanford.edu/2020/11/12/religious-clashes-india-sparked-scholars-interest-peace/",
+        "https://web.archive.org/web/20201117121920/https://news.stanford.edu/2020/11/11/lessons-handling-covid-19-another-animal-virus/",
+        "https://web.archive.org/web/20201117031627/https://news.stanford.edu/2020/11/13/faculty-senate-hears-presentation-universitys-long-range-vision/",
+        "https://web.archive.org/web/20201116010348/https://news.stanford.edu/2020/11/10/computer-model-can-predict-covid-19s-spread/",
+        "https://web.archive.org/web/20201111102637/https://news.stanford.edu/2020/11/09/forecasting-ecosystem-changes-dna/",
+        "https://web.archive.org/web/20201112020822/https://news.stanford.edu/2020/11/10/special-forces-veteran-stanford-scholar-applies-data-scholarship-conflict/",
+        "https://web.archive.org/web/20201115214103/https://news.stanford.edu/2020/11/13/long-range-vision-annual-report-details-2019-2020-activities/",
+        "https://web.archive.org/web/20201118154059/https://news.stanford.edu/2020/11/10/researchers-explain-eruption-jupiters-moon-europa/",
+        "https://web.archive.org/web/20201109131710/https://news.stanford.edu/2020/11/09/innovative-tools-bolster-stanfords-covid-19-surveillance-testing-program/",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector("#story-content"));
+    },
+  },
+  [DOMAIN.MIT_NEWS]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201118160536/https://news.mit.edu/2020/bhavik-nagda-1118",
+        "https://web.archive.org/web/20201119010044/https://news.mit.edu/2020/reasons-nuclear-overruns-1118",
+        "https://web.archive.org/web/20201117160547/https://news.mit.edu/2020/kerri-cahoy-mini-satellite-1117",
+        "https://web.archive.org/web/20201118172600/https://news.mit.edu/2020/work-of-future-final-report-1117",
+        "https://web.archive.org/web/20201118214548/https://news.mit.edu/2020/powering-through-coming-energy-transition-1118",
+        "https://web.archive.org/web/20201118202225/https://news.mit.edu/2020/phiala-shanahan-receives-kenneth-wilson-award-1118",
+        "https://web.archive.org/web/20201118195123/https://news.mit.edu/2020/identifying-structure-and-function-brain-hub-1118",
+        "https://web.archive.org/web/20201118212800/https://news.mit.edu/2020/advancing-artificial-intelligence-research-1118",
+        "https://web.archive.org/web/20201118215231/https://news.mit.edu/2020/smart-researchers-develop-gelatin-microcarrier-cell-production-1117",
+        "https://web.archive.org/web/20201118180137/https://news.mit.edu/2020/chalk-radio-shares-mits-teaching-techniques-1117",
+        "https://web.archive.org/web/20201118200420/https://news.mit.edu/2020/stem-week-event-encourages-students-see-themselves-science-technology-careers-1117",
+        "https://web.archive.org/web/20201118180530/https://news.mit.edu/2020/mitnano-immersion-lab-gaming-program-awards-seed-grants-1117",
+        "https://web.archive.org/web/20201119170536/https://news.mit.edu/2020/understanding-how-people-make-sense-information-manon-revel-1116",
+        "https://web.archive.org/web/20201117170545/https://news.mit.edu/2020/3-questions-hsin-yu-chen-treading-lightly-when-dating-universe-1113",
+        "https://web.archive.org/web/20201118180403/https://news.mit.edu/2020/j-pal-north-america-announces-housing-stability-evaluation-incubator-partners-1116",
+        "https://web.archive.org/web/20201119181538/https://news.mit.edu/2020/3-questions-john-van-reenen-impact-technology-health-care-workers-1113",
+        "https://web.archive.org/web/20201118174805/https://news.mit.edu/2020/oklo-nuclear-energy-1113",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector(".paragraph"));
+    },
+  },
+  [DOMAIN.EBB_MAGAZINE]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20200529165203/https://www.ebb-magazine.com/essays/progressive-international",
+        "https://web.archive.org/web/20200601235845/https://www.ebb-magazine.com/essays/studytube-and-the-fetishisation-of-productivity",
+        "https://web.archive.org/web/20200506151206/https://www.ebb-magazine.com/essays/postscript-to-capitalist-realism",
+        "https://web.archive.org/web/20200509124723/https://www.ebb-magazine.com/essays/lessons-from-lulzsec",
+        "https://web.archive.org/web/20200520155245/https://www.ebb-magazine.com/essays/when-workers-shot-back",
+        "https://web.archive.org/web/20200506150925/https://www.ebb-magazine.com/essays/bolsheviks-without-soviets",
+        "https://web.archive.org/web/20200527112822/https://www.ebb-magazine.com/essays/social-democracy-and-its-discontents",
+        "https://web.archive.org/web/20201110155501/https://www.ebb-magazine.com/essays/the-false-hope-of-a-biden-presidency",
+        "https://web.archive.org/web/20201110155732/https://www.ebb-magazine.com/essays/imperialism-colombias-massacres-and-what-you-can-do-about-it",
+        "https://web.archive.org/web/20201110155518/https://www.ebb-magazine.com/essays/the-force-of-nonviolence",
+        "https://web.archive.org/web/20201110155702/https://www.ebb-magazine.com/essays/tracksuits-traumas-and-class-traitors",
+        "https://web.archive.org/web/20201110155622/https://www.ebb-magazine.com/essays/against-performativity",
+        "https://web.archive.org/web/20201110155530/https://www.ebb-magazine.com/essays/pandemic-reveals-the-necessity-of-revolutionary-socialism",
+        "https://web.archive.org/web/20201110155610/https://www.ebb-magazine.com/essays/this-is-not-an-aberration",
+        "https://web.archive.org/web/20201110155533/https://www.ebb-magazine.com/essays/the-jakarta-method",
+        "https://web.archive.org/web/20201110155720/https://www.ebb-magazine.com/essays/keir-starmer-and-britains-road-to-socialism",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      const banner = document.querySelector("sqs-cookie-banner-v2");
+      if (banner) {
+        banner.remove();
+      }
+
+      return scope.getTextNodes(document.querySelector(".sqs-block-content"));
+    },
+  },
+  [DOMAIN.FULLFACT]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201105181525/https://fullfact.org/health/coronavirus-lockdown-childcare/",
+        "https://web.archive.org/web/20201105184625/https://fullfact.org/health/coronavirus-transmission-schools-claims/",
+        "https://web.archive.org/web/20201106132437/https://fullfact.org/online/covid-test-not-vaccine/",
+        "https://web.archive.org/web/20201108035626/https://fullfact.org/online/did-she-die-in-vain/",
+        "https://web.archive.org/web/20201102151415/https://fullfact.org/online/bbc-presenters-did-remove-their-poppies-they-were-wearing-them-earlier-bbc-guidelines-allow/",
+        "https://web.archive.org/web/20201106132352/https://fullfact.org/europe/brexit-support-poll/",
+        "https://web.archive.org/web/20201106112016/https://fullfact.org/health/uk-column-covid-deaths/",
+        "https://web.archive.org/web/20201101044827/https://fullfact.org/economy/lee-anderson-benefit-claim/",
+        "https://web.archive.org/web/20201106112020/https://fullfact.org/online/2020-death-toll-comparison/",
+        "https://web.archive.org/web/20201106010031/https://fullfact.org/online/vaccine-informed-consent/",
+        "https://web.archive.org/web/20201104125711/https://fullfact.org/economy/japan-soy-sauce-bake-off/",
+        "https://web.archive.org/web/20201101052606/https://fullfact.org/health/doctor-nhs-increase/",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      const banner = document.querySelector(".alert");
+      if (banner) {
+        banner.remove();
+      }
+
+      return scope.getTextNodes(document.querySelector("article"));
+    },
+  },
+  [DOMAIN.POPULA]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201113113915/https://popula.com/2020/11/13/for-shame/",
+        "https://web.archive.org/web/20200924180250/https://popula.com/2018/10/10/one-of-yall-can-write-it-down/",
+        "https://web.archive.org/web/20201003234945/https://popula.com/2020/09/16/abroad-the-distance-between-calcutta-and-california/",
+        "https://web.archive.org/web/20201101123017/https://popula.com/2018/09/25/good-bones/",
+        "https://web.archive.org/web/20201109004613/https://popula.com/2019/08/19/the-case-for-climate-rage/",
+        "https://web.archive.org/web/20201101060423/https://popula.com/2019/11/12/methods-for-droplet-vitrification-on-the-eve-of-disaster/",
+        "https://web.archive.org/web/20201112160636/https://popula.com/2020/11/12/my-three-lives-in-delhi/",
+        "https://web.archive.org/web/20201111132856/https://popula.com/2020/11/11/to-feel-right/",
+        "https://web.archive.org/web/20201108225121/https://popula.com/2020/11/08/popula-film-club-the-horror/",
+        "https://web.archive.org/web/20201106220652/https://popula.com/2020/11/06/i-headed-to-get-the-flu-vaccine-with-a-spring-in-my-step/",
+        "https://web.archive.org/web/20201106164041/https://popula.com/2020/11/06/endsars-and-the-nigerian-government/",
+        "https://web.archive.org/web/20201119053941/https://popula.com/2020/11/03/how-ya-holding-up/",
+        "https://web.archive.org/web/20201118115730/https://popula.com/2020/11/03/watch-out-the-worlds-behind-you/",
+        "https://web.archive.org/web/20201102150615/https://popula.com/2020/11/02/perp-walk/",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector("#main"));
+    },
+  },
+  [DOMAIN.SEMIENGINEERING]: {
+    getUrl: () => {
+      const urls = [
+        "https://web.archive.org/web/20201031045633/https://semiengineering.com/a-renaissance-for-semiconductors/",
+        "https://web.archive.org/web/20201101003551/https://semiengineering.com/much-smarter-manufacturing/",
+        "https://web.archive.org/web/20201101022040/https://semiengineering.com/using-verification-data-more-effectively/",
+        "https://web.archive.org/web/20201031200935/https://semiengineering.com/mask-lithography-issues-for-mature-nodes/",
+        "https://web.archive.org/web/20201031234522/https://semiengineering.com/is-hardware-assisted-verification-avoidable/",
+        "https://web.archive.org/web/20201028043036/https://semiengineering.com/making-chips-to-last-their-lifetime/",
+        "https://web.archive.org/web/20201031120419/https://semiengineering.com/are-todays-mems-gyros-good-enough/",
+        "https://web.archive.org/web/20201101010543/https://semiengineering.com/increase-in-analog-problems/",
+        "https://web.archive.org/web/20201029032531/https://semiengineering.com/performance-and-power-tradeoffs-at-7-5nm/",
+        "https://web.archive.org/web/20201101143839/https://semiengineering.com/slower-metal-bogs-down-soc-performance/",
+        "https://web.archive.org/web/20201101064120/https://semiengineering.com/defect-challenges-grow-for-ic-packaging/",
+        "https://web.archive.org/web/20201031225302/https://semiengineering.com/searching-for-power-bugs/",
+      ];
+
+      return urls[Math.floor(Math.random() * urls.length)];
+    },
+    isUrlEqual: (url1: string, url2: string): boolean => {
+      const getPath = (url: string) => {
+        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
+        const match = archiveRegex.exec(url);
+        return match && match.length === 2 ? match[1] : null;
+      };
+      const path1 = getPath(url1);
+      const path2 = getPath(url2);
+
+      return path1 && path2 && path1 === path2;
+    },
+    getBoundaryAncestorSelector: () => "p",
+    parse: (scope: InjectScope): Text[] => {
+      // preamble
+      const wmHeader = document.getElementById("wm-ipp-base");
+      if (wmHeader) {
+        wmHeader.remove();
+      }
+      document.querySelectorAll("input, textarea").forEach((elem) => {
+        elem.setAttribute("disabled", "disabled");
+      });
+      document.querySelectorAll("a").forEach((el) => {
+        el.removeAttribute("href");
+      });
+      const viewportContent =
+        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
+      let viewport = document.querySelector("meta[name='viewport']");
+      if (viewport) {
+        viewport.setAttribute("content", viewportContent);
+      } else {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "meta");
+        viewport.setAttribute("content", viewportContent);
+        document.head.appendChild(viewport);
+      }
+
+      return scope.getTextNodes(document.querySelector(".post_cnt"));
+    },
+  },
 };
