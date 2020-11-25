@@ -42,6 +42,7 @@ export interface InjectScope {
     boundaryAncestorSelector: string,
     size: ViewportSize
   ): Range;
+  styleRange(range: Range): void;
   scrollToRange(range: Range, size: ViewportSize): void;
   getSelectionAnnotations(
     range: Range,
@@ -51,7 +52,7 @@ export interface InjectScope {
 
 export interface ParserInterface {
   parse(scope: InjectScope): Text[];
-  getUrl(): string;
+  getUrls(): string[];
   getBoundaryAncestorSelector(): string;
   isUrlEqual(url1: string, url2: string): boolean;
 }

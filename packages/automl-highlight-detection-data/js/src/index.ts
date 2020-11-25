@@ -9,7 +9,6 @@ import pRetry from "p-retry";
 
 import { DOMAIN, parsers, SelectionAnnotation } from "./browser-inject";
 import {
-  DEBUG,
   OUTPUT_DIR,
   OUTPUT_SIZE,
   GCLOUD_PROJECT_ID,
@@ -99,13 +98,15 @@ const processResults = async (
 
     mkdirSync(OUTPUT_DIR, { recursive: true });
 
+    const urls = R.chain(
+      (domain) => parsers[domain].getUrls().map((url) => [domain, url]),
+      Object.values(DOMAIN)
+    );
+
     const tasks = R.sortBy(
       R.prop("href"),
       R.times(() => {
-        const domain = Object.values(DOMAIN)[
-          Math.floor(Math.random() * Object.values(DOMAIN).length)
-        ];
-        const href = parsers[domain].getUrl();
+        const [domain, href] = urls[Math.floor(Math.random() * urls.length)];
         return {
           jobId,
           driver,
@@ -136,7 +137,7 @@ const processResults = async (
         }
       ).catch((err) => {
         console.error(err);
-        driver.cleanup()
+        driver.cleanup();
         throw err;
       })
     );

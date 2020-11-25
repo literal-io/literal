@@ -20,6 +20,9 @@ enum AppiumContext {
   CHROMIUM = "CHROMIUM",
 }
 
+const RAND_PORTRAIT_ORIENTATION_THRESHOLD = 0.66;
+const RAND_SCROLL_THRESHOLD = 0.25;
+
 type Rect = {
   width: number;
   height: number;
@@ -102,7 +105,9 @@ export class AppiumDriver implements Driver {
     }
 
     const orientation =
-      Math.random() > 0.66 ? Orientation.LANDSCAPE : Orientation.PORTRAIT;
+      Math.random() > RAND_PORTRAIT_ORIENTATION_THRESHOLD
+        ? Orientation.LANDSCAPE
+        : Orientation.PORTRAIT;
     const currentOrientation = await this.context.getOrientation();
 
     if (currentOrientation !== orientation) {
@@ -116,6 +121,45 @@ export class AppiumDriver implements Driver {
     if (forceNavigate || !parsers[domain].isUrlEqual(currentHref, href)) {
       await this.context.navigateTo(href);
 
+      // scroll some in order to hide the chrome app bar, scroll position will be set by browserInject
+      // regardless.
+      /**
+      if (Math.random() > RAND_SCROLL_THRESHOLD) {
+        console.log("scrolling viewport to hide app bar");
+        const viewportRect = await this.getViewportRect();
+        const midpointX = viewportRect.width / 2;
+        const midpointY = viewportRect.height / 2;
+        await this.context
+          .findElement("id", "android:id/content")
+          .then((id) => this.context.$(id))
+          .then((el) =>
+            el.touchAction([
+              { action: "press", x: midpointX, y: midpointY },
+              {
+                action: "moveTo",
+                x: midpointX,
+                y: Math.max(midpointY - 50, 0),
+              },
+              { action: "release" },
+              { action: "press", x: midpointX, y: midpointY },
+              {
+                action: "moveTo",
+                x: midpointX,
+                y: Math.max(midpointY - 50, 0),
+              },
+              { action: "release" },
+              { action: "press", x: midpointX, y: midpointY },
+              {
+                action: "moveTo",
+                x: midpointX,
+                y: Math.max(midpointY - 50, 0),
+              },
+              { action: "release" },
+            ])
+          );
+      }
+      **/
+
       await this.context.switchContext(AppiumContext.NATIVE_APP);
       await this.context
         .findElement("id", "com.android.chrome:id/infobar_close_button")
@@ -127,6 +171,7 @@ export class AppiumDriver implements Driver {
         .catch(() => {
           /** noop **/
         });
+
       await this.context.switchContext(AppiumContext.CHROMIUM);
     }
 

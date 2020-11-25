@@ -49,6 +49,121 @@ export const scope: InjectScope = {
     let endNodeIdx;
     let endNodeOffset;
     let tries = 100;
+    const isRangeValid = (range: Range) =>
+      !range.collapsed &&
+      range.toString().trim().length > Math.min(10, maxRangeLength) &&
+      range.getBoundingClientRect().height < viewportHeight &&
+      range.getBoundingClientRect().height >= 8 &&
+      range.getBoundingClientRect().width >= 8;
+
+    const trimRangeStart = (range: Range): Range => {
+      const getStartLeafTextNode = (node: Node): Node => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return node;
+        }
+
+        if (node.hasChildNodes() && node.firstChild) {
+          return getStartLeafTextNode(node.firstChild);
+        }
+
+        // should never reach here
+        return node;
+      };
+      const getSiblingNode = (node: Node) => {
+        if (node.nextSibling) {
+          return getStartLeafTextNode(node.nextSibling);
+        }
+
+        const getParentNextSibling = (node: Node): Node => {
+          const parent = node.parentNode;
+          const parentSibling = parent.nextSibling;
+          if (parentSibling) {
+            return parentSibling;
+          }
+          return getParentNextSibling(parent);
+        };
+
+        return getStartLeafTextNode(getParentNextSibling(node));
+      };
+
+      const node = range.startContainer;
+      const rangeOfStartNode = new Range();
+      rangeOfStartNode.setStart(node, range.startOffset);
+      range.startContainer === range.endContainer
+        ? rangeOfStartNode.setEnd(node, range.endOffset)
+        : rangeOfStartNode.setEnd(node, node.textContent.length);
+      const rangeOfStartNodeBB = rangeOfStartNode.getBoundingClientRect();
+
+      // exclude this node from the range
+      if (
+        rangeOfStartNode.collapsed ||
+        rangeOfStartNode.toString().trim().length === 0 ||
+        rangeOfStartNodeBB.width === 0 ||
+        rangeOfStartNodeBB.height === 0
+      ) {
+        const nextSibling = getSiblingNode(node);
+        range.setStart(nextSibling, 0);
+
+        return trimRangeStart(range);
+      }
+
+      return range;
+    };
+
+    const trimRangeEnd = (range: Range): Range => {
+      const getEndLeafTextNode = (node: Node): Node => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return node;
+        }
+
+        if (node.hasChildNodes() && node.lastChild) {
+          return getEndLeafTextNode(node.lastChild);
+        }
+
+        // should never reach here
+        return node;
+      };
+      const getSiblingNode = (node: Node) => {
+        if (node.previousSibling) {
+          return getEndLeafTextNode(node.previousSibling);
+        }
+
+        const getParentPreviousSibling = (node: Node): Node => {
+          const parent = node.parentNode;
+          const parentSibling = parent.previousSibling;
+          if (parentSibling) {
+            return parentSibling;
+          }
+          return getParentPreviousSibling(parent);
+        };
+
+        return getEndLeafTextNode(getParentPreviousSibling(node));
+      };
+
+      const node = range.endContainer;
+      const rangeOfEndNode = new Range();
+      range.endContainer === range.startContainer
+        ? rangeOfEndNode.setStart(node, range.startOffset)
+        : rangeOfEndNode.setStart(node, 0);
+      rangeOfEndNode.setEnd(node, range.endOffset);
+      const rangeOfEndNodeBB = rangeOfEndNode.getBoundingClientRect();
+
+      // exclude this node from the range
+      if (
+        rangeOfEndNode.collapsed ||
+        rangeOfEndNode.toString().trim().length === 0 ||
+        rangeOfEndNodeBB.width === 0 ||
+        rangeOfEndNodeBB.height === 0
+      ) {
+        const prevSibling = getSiblingNode(node);
+        range.setEnd(prevSibling, prevSibling.textContent.length);
+
+        return trimRangeEnd(range);
+      }
+
+      return trimRangeEnd(trimRangeStart(range));
+    };
+
     do {
       tries--;
       endNodeIdx =
@@ -57,14 +172,7 @@ export const scope: InjectScope = {
       endNodeOffset = Math.round(Math.random() * textNodes[endNodeIdx].length);
 
       range.setEnd(textNodes[endNodeIdx], endNodeOffset);
-    } while (
-      tries > 0 &&
-      (range.collapsed ||
-        range.toString().trim().length < Math.min(10, maxRangeLength) ||
-        range.getBoundingClientRect().height > viewportHeight ||
-        range.getBoundingClientRect().height <= 8 ||
-        range.getBoundingClientRect().width <= 8)
-    );
+    } while (tries > 0 && !isRangeValid(range));
 
     return tries === 0 ? null : range;
   },
@@ -73,8 +181,8 @@ export const scope: InjectScope = {
     window.getSelection().addRange(range);
 
     const bb = range.getBoundingClientRect();
-    const maxYOffset = width - bb.height;
-    const maxXOffset = height - bb.width;
+    const maxYOffset = height - bb.height;
+    const maxXOffset = width - bb.width;
 
     // scroll the range into view, with some random offset
     document.scrollingElement.scrollTo({
@@ -88,6 +196,16 @@ export const scope: InjectScope = {
         maxYOffset * Math.random(),
       behavior: "auto",
     });
+  },
+  styleRange: (range: Range) => {
+    const node = range.commonAncestorContainer;
+    const elem =
+      node.nodeType === Node.ELEMENT_NODE
+        ? (node as HTMLElement)
+        : node.parentElement;
+
+    elem.style.lineHeight = "normal";
+    elem.style.wordBreak = "break-all";
   },
   getSelectionAnnotations: (
     range: Range,

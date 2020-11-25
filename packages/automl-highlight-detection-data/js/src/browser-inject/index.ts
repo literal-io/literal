@@ -67,6 +67,7 @@ export const browserInject = (
     }
 
     scope.scrollToRange(range, scope.getViewportSize());
+    scope.styleRange(range);
 
     const annotations = scope.getSelectionAnnotations(
       range,

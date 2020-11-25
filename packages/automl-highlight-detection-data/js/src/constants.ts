@@ -1,7 +1,7 @@
 import { resolve } from "path";
 
 export const DEBUG = process.env.NODE_ENV !== "production";
-export const OUTPUT_SIZE = parseInt(process.env.OUTPUT_SIZE || "20");
+export const OUTPUT_SIZE = parseInt(process.env.OUTPUT_SIZE || "30");
 
 const DEBUG_OUTSIDE_OF_DOCKER = false;
 
