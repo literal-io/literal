@@ -114,7 +114,7 @@
         "Runtime": "nodejs10.x",
         "Timeout": "25",
         "Code": {
-          "S3Bucket": "amplify-literal-production-114446-deployment",
+          "S3Bucket": "amplify-literal-staging-211408-deployment",
           "S3Key": "amplify-builds/PostAuthentication-5342394638476f7a736f-build.zip"
         }
       }

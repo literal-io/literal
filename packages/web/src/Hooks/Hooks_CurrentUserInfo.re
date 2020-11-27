@@ -60,7 +60,8 @@ let use = () => {
   let _ =
     React.useEffect0(() => {
       let _ = checkAuthenticationState();
-      let handleEvent = (ev: AwsAmplify.Hub.event(AwsAmplify.Hub.auth)) => {
+
+      let handleAuthEvent = (ev: AwsAmplify.Hub.event(AwsAmplify.Hub.auth)) => {
         switch (ev.payload.event) {
         | "signIn" =>
           let _ = checkAuthenticationState();
@@ -69,10 +70,27 @@ let use = () => {
         };
       };
 
-      let _ = AwsAmplify.Hub.(listen(inst, `auth(handleEvent)));
+      let handleWebviewEvent = (ev: AwsAmplify.Hub.event(Js.Json.t)) => {
+        switch (ev.payload.event) {
+        | "AUTH_SIGN_IN_RESULT" =>
+          let _ = checkAuthenticationState();
+          ();
+        | _ => ()
+        };
+      };
+
+      let _ = AwsAmplify.Hub.(listen(inst, `auth(handleAuthEvent)));
+      let _ =
+        AwsAmplify.Hub.(
+          listenWithChannel(inst, "webview", handleWebviewEvent)
+        );
       Some(
         () => {
-          let _ = AwsAmplify.Hub.(remove(inst, `auth(handleEvent)));
+          let _ = AwsAmplify.Hub.(remove(inst, `auth(handleAuthEvent)));
+          let _ =
+            AwsAmplify.Hub.(
+              removeWithChannel(inst, "webview", handleWebviewEvent)
+            );
           ();
         },
       );

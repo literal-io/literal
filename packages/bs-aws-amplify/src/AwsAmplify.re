@@ -207,7 +207,12 @@ module Hub = {
 
   [@bs.module "@aws-amplify/core"] external inst: t = "Hub";
 
-  type event('a) = {payload: 'a};
+  type payload('a) = {
+    event: string,
+    data: option('a),
+    message: option(string),
+  };
+  type event('a) = {payload: payload('a)};
 
   type auth = {event: string};
 
@@ -216,8 +221,19 @@ module Hub = {
     "listen";
 
   [@bs.send]
+  external listenWithChannel: (t, string, event(Js.Json.t) => unit) => unit =
+    "listen";
+
+  [@bs.send]
   external remove: (t, [@bs.string] [ | `auth(event(auth) => unit)]) => unit =
     "remove";
+
+  [@bs.send]
+  external removeWithChannel: (t, string, event(Js.Json.t) => unit) => unit =
+    "remove";
+
+  [@bs.send]
+  external dispatch: (t, string, payload(Js.Json.t)) => unit = "dispatch";
 };
 
 module Cache = {

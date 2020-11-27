@@ -3,6 +3,7 @@ open Styles;
 [@react.component]
 let default = () => {
   let authentication = Hooks_CurrentUserInfo.use();
+  let (isAuthenticating, setIsAuthenticating) = React.useState(() => false);
 
   let _ =
     React.useEffect1(
@@ -10,6 +11,7 @@ let default = () => {
         let _ =
           switch (authentication) {
           | Authenticated(currentUser) =>
+            setIsAuthenticating(_ => false);
             Routes.CreatorsIdAnnotationCollectionsId.(
               Next.Router.replaceWithAs(
                 staticPath,
@@ -18,7 +20,7 @@ let default = () => {
                   ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
                 ),
               )
-            )
+            );
           | _ => ()
           };
         None;
@@ -27,6 +29,7 @@ let default = () => {
     );
 
   let handleAuthenticateGoogle = () => {
+    setIsAuthenticating(_ => true);
     let didPostMessage =
       Webview.(postMessage(WebEvent.make(~type_="AUTH_SIGN_IN")));
 
@@ -82,7 +85,7 @@ let default = () => {
       }
       size=`Large
       classes={MaterialUi.Button.Classes.make(
-        ~root=cn(["py-4"]),
+        ~root=cn([Cn.on("py-4", !isAuthenticating)]),
         ~label=
           cn([
             "text-white",
@@ -96,7 +99,16 @@ let default = () => {
         (),
       )}
       variant=`Outlined>
-      {React.string("Sign In With Google")}
+      {isAuthenticating
+         ? <MaterialUi.CircularProgress
+             variant=`Indeterminate
+             size={MaterialUi.CircularProgress.Size.int(36)}
+             classes={MaterialUi.CircularProgress.Classes.make(
+               ~colorPrimary=Cn.fromList(["text-white"]),
+               (),
+             )}
+           />
+         : React.string("Sign In With Google")}
     </MaterialUi.Button>
   </div>;
 };

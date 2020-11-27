@@ -1,6 +1,7 @@
 package io.literal.lib;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -8,6 +9,7 @@ import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.HostedUIOptions;
 import com.amazonaws.mobile.client.SignInUIOptions;
 import com.amazonaws.mobile.client.UserStateDetails;
+import com.amazonaws.mobile.client.UserStateListener;
 import com.amazonaws.mobile.client.results.Tokens;
 
 import org.json.JSONException;
@@ -15,6 +17,8 @@ import org.json.JSONObject;
 
 import java.util.UUID;
 
+import io.literal.ui.activity.AuthenticationHandler;
+import io.literal.ui.activity.MainActivity;
 import io.literal.ui.view.WebView;
 
 public class WebEvent {
@@ -81,12 +85,14 @@ public class WebEvent {
                     .hostedUIOptions(hostedUIOptions)
                     .canCancel(false)
                     .build();
+
             AWSMobileClient.getInstance().showSignIn(activity, signInUIOptions, new com.amazonaws.mobile.client.Callback<UserStateDetails>() {
                 @Override
                 public void onResult(UserStateDetails result) {
                     activity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+                            Log.d(Constants.LOG_TAG, "handleSignInResult");
                             try {
                                 Tokens tokens = AWSMobileClient.getInstance().getTokens();
                                 JSONObject result = new JSONObject();

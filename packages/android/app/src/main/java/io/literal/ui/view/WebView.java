@@ -2,19 +2,13 @@ package io.literal.ui.view;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.ContentResolver;
 import android.content.Context;
-import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.webkit.MimeTypeMap;
-import android.webkit.ValueCallback;
-import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebViewClient;
 
@@ -53,9 +47,7 @@ public class WebView extends android.webkit.WebView {
 
     @SuppressLint("SetJavaScriptEnabled")
     public void initialize(Activity activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
-        }
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         this.addJavascriptInterface(new JavascriptInterface(), "literalWebview");
         WebSettings webSettings = this.getSettings();
         webSettings.setJavaScriptEnabled(true);

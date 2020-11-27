@@ -14,8 +14,7 @@
     "categories": {
       "auth": {
         "literalAuth": {
-          "googleClientId": "886430267359-qekh9bd4phv3hkp9h3pptdk8uvmjr0un.apps.googleusercontent.com",
-          "hostedUIProviderCreds": "[{\"ProviderName\":\"Google\",\"client_id\":\"886430267359-qekh9bd4phv3hkp9h3pptdk8uvmjr0un.apps.googleusercontent.com\",\"client_secret\":\"PAHnTMcYshwJQjIj2fHnIYck\"}]"
+          "googleClientId": "886430267359-qekh9bd4phv3hkp9h3pptdk8uvmjr0un.apps.googleusercontent.com"
         }
       },
       "function": {
@@ -43,9 +42,7 @@
         "PostAuthentication": {}
       },
       "auth": {
-        "literalAuth": {
-          "hostedUIProviderCreds": "[{\"ProviderName\":\"Google\",\"client_id\":\"886430267359-qekh9bd4phv3hkp9h3pptdk8uvmjr0un.apps.googleusercontent.com\",\"client_secret\":\"PAHnTMcYshwJQjIj2fHnIYck\"}]"
-        }
+        "literalAuth": {}
       }
     }
   }

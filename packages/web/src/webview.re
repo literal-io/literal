@@ -64,6 +64,20 @@ let isWebview = () =>
 
 let port: ref(option(MessagePort.t)) = ref(None);
 
+/** Used for broadcasting events we've received across the WebView via Hub. **/
+module HubEvent = {
+  type t = {
+    event: string,
+    message: option(string),
+    data: option(Js.Json.t),
+  };
+
+  let publish = (~event, ~message=?, ~data=?, ()) => {
+    let event = AwsAmplify.Hub.{event, message, data};
+    AwsAmplify.Hub.(dispatch(inst, "webview", event));
+  };
+};
+
 module WebEventHandler = {
   let handleRouterReplace = (event: option(Js.Json.t)) => {
     let _ =
@@ -79,15 +93,14 @@ module WebEventHandler = {
   };
 
   let handleSignInResult = (event: option(Js.Json.t)) => {
-    /** FIXME: include user attributes in sign in result?
     let _ =
       event->Belt.Option.map(data => {
         switch (WebEvent.authGetTokensResult_decode(data)) {
-        | Belt.Result.Ok(_) => Next.Router.replace("/notes")
+        | Belt.Result.Ok(_) =>
+          HubEvent.publish(~event="AUTH_SIGN_IN_RESULT", ())
         | _ => ()
         }
       });
-    **/
     ();
   };
 

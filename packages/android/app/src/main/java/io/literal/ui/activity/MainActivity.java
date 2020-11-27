@@ -16,6 +16,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.UserStateDetails;
+import com.amazonaws.mobile.client.UserStateListener;
+import com.amazonaws.mobileconnectors.cognitoauth.AuthClient;
 
 import java.io.File;
 import java.util.UUID;
@@ -148,6 +150,14 @@ public class MainActivity extends AppCompatActivity {
         super.onRestoreInstanceState(savedInstanceState);
         if (this.webView != null) {
             this.webView.restoreState(savedInstanceState);
+        }
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.d(Constants.LOG_TAG, "onActivityResult");
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == AuthClient.CUSTOM_TABS_ACTIVITY_CODE) {
+            AWSMobileClient.getInstance().handleAuthResponse(data);
         }
     }
 }
