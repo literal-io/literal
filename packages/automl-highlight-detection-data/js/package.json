@@ -5,7 +5,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npm run emulator:await && npm run client-driver:start",
+    "start": "npm run emulator:await && npm run client-driver:start:production",
     "clean": "rm -rf dist && rm -f output/screenshot/*",
     "ts:build": "tsc",
     "ts:watch": "tsc -w",

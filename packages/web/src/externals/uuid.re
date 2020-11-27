@@ -1,1 +1,1 @@
-[@bs.module] external makeV4: unit => string = "uuid/v4";
+[@bs.val] [@bs.module "uuid"] external makeV4: unit => string = "v4";

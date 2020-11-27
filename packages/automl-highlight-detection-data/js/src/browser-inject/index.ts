@@ -66,7 +66,11 @@ export const browserInject = (
       };
     }
 
-    scope.scrollToRange(range, scope.getViewportSize());
+    scope.scrollToRange(
+      range,
+      scope.getViewportSize(),
+      scope.getScrollOffsetHeight ? scope.getScrollOffsetHeight() : 0
+    );
     scope.styleRange(range);
 
     const annotations = scope.getSelectionAnnotations(

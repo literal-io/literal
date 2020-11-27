@@ -43,7 +43,7 @@ export interface InjectScope {
     size: ViewportSize
   ): Range;
   styleRange(range: Range): void;
-  scrollToRange(range: Range, size: ViewportSize): void;
+  scrollToRange(range: Range, size: ViewportSize, offsetHeight: number): void;
   getSelectionAnnotations(
     range: Range,
     size: ViewportSize
@@ -55,6 +55,7 @@ export interface ParserInterface {
   getUrls(): string[];
   getBoundaryAncestorSelector(): string;
   isUrlEqual(url1: string, url2: string): boolean;
+  getScrollOffsetHeight?: () => number;
 }
 
 export type SerializedScope = { [key: string]: string };

@@ -176,12 +176,16 @@ export const scope: InjectScope = {
 
     return tries === 0 ? null : range;
   },
-  scrollToRange: (range: Range, { width, height }: ViewportSize) => {
+  scrollToRange: (
+    range: Range,
+    { width, height }: ViewportSize,
+    offsetHeight: number
+  ) => {
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
 
     const bb = range.getBoundingClientRect();
-    const maxYOffset = height - bb.height;
+    const maxYOffset = height - bb.height - offsetHeight;
     const maxXOffset = width - bb.width;
 
     // scroll the range into view, with some random offset

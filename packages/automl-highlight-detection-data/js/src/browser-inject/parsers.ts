@@ -620,7 +620,14 @@ export const parsers: { [domain: string]: ParserInterface } = {
         document.head.appendChild(viewport);
       }
 
-      return scope.getTextNodes(document.querySelector(".single-content"));
+      const textNodes = Array.from(
+        document.querySelectorAll(".single-content > p")
+      )
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
+
+      return textNodes;
     },
   },
   [DOMAIN.GITHUB_BLOG]: {
@@ -763,6 +770,13 @@ export const parsers: { [domain: string]: ParserInterface } = {
 
       return path1 && path2 && path1 === path2;
     },
+    getScrollOffsetHeight: () => {
+      const header = document.querySelector(".default-header");
+      if (header) {
+        return header.clientHeight;
+      }
+      return 0;
+    },
     getBoundaryAncestorSelector: () => "p",
     parse: (scope: InjectScope): Text[] => {
       // preamble
@@ -795,7 +809,14 @@ export const parsers: { [domain: string]: ParserInterface } = {
           el.remove();
         });
 
-      return scope.getTextNodes(document.querySelector(".article__body"));
+      const textNodes = Array.from(
+        document.querySelectorAll(".article__body > p")
+      )
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
+
+      return textNodes;
     },
   },
   [DOMAIN.TONSKY_BLOG]: {
@@ -1276,6 +1297,13 @@ export const parsers: { [domain: string]: ParserInterface } = {
 
       return path1 && path2 && path1 === path2;
     },
+    getScrollOffsetHeight: () => {
+      const header = document.querySelector(".header");
+      if (header) {
+        return header.clientHeight;
+      }
+      return 0;
+    },
     getBoundaryAncestorSelector: () => "p",
     parse: (scope: InjectScope): Text[] => {
       // preamble
@@ -1340,6 +1368,13 @@ export const parsers: { [domain: string]: ParserInterface } = {
       return path1 && path2 && path1 === path2;
     },
     getBoundaryAncestorSelector: () => "p",
+    getScrollOffsetHeight: () => {
+      const header = document.querySelector(".global-nav");
+      if (header) {
+        return header.clientHeight;
+      }
+      return 0;
+    },
     parse: (scope: InjectScope): Text[] => {
       // preamble
       const wmHeader = document.getElementById("wm-ipp-base");
@@ -1478,7 +1513,14 @@ export const parsers: { [domain: string]: ParserInterface } = {
         document.head.appendChild(viewport);
       }
 
-      return scope.getTextNodes(document.querySelector(".article-body"));
+      const textNodes = Array.from(
+        document.querySelectorAll(".article-body > p")
+      )
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
+
+      return textNodes;
     },
   },
   [DOMAIN.STANFORD_NEWS]: {
@@ -1720,7 +1762,12 @@ export const parsers: { [domain: string]: ParserInterface } = {
         banner.remove();
       }
 
-      return scope.getTextNodes(document.querySelector("article > p"));
+      const textNodes = Array.from(document.querySelectorAll("article > p"))
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
+
+      return textNodes;
     },
   },
   [DOMAIN.POPULA]: {
@@ -1775,8 +1822,12 @@ export const parsers: { [domain: string]: ParserInterface } = {
         viewport.setAttribute("content", viewportContent);
         document.head.appendChild(viewport);
       }
+      const textNodes = Array.from(document.querySelectorAll("#pico > p"))
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
 
-      return scope.getTextNodes(document.querySelector("#main"));
+      return textNodes;
     },
   },
   [DOMAIN.SEMIENGINEERING]: {

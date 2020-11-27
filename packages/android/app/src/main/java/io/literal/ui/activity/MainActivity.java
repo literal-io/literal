@@ -77,18 +77,18 @@ public class MainActivity extends AppCompatActivity {
         AWSMobileClientFactory.initializeClient(this, new Callback<UserStateDetails>() {
             @Override
             public void onResult(UserStateDetails result) {
-                switch (result.getUserState()) {
-                    case SIGNED_IN:
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        switch (result.getUserState()) {
+                            case SIGNED_IN:
                                 handleSignedIn(savedInstanceState);
-                            }
-                        });
-                        break;
-                    default:
-                        handleSignedOut();
-                }
+                                break;
+                            default:
+                                handleSignedOut();
+                        }
+                    }
+                });
             }
 
             @Override

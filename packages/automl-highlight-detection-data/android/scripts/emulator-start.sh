@@ -4,7 +4,7 @@ set -ex
 
 avdmanager list device -c
 
-devices=("pixel" "Nexus 6" "pixel_xl" "3.4in WQVGA" "5.4in FWVGA" "Nexus 7")
+devices=("pixel" "Nexus 6" "pixel_xl" "Nexus 10" "Nexus 4" "Nexus 7")
 devices_size=${#devices[@]}
 index=$(($RANDOM % $devices_size))
 

@@ -273,6 +273,7 @@ export class AppiumDriver implements Driver {
           yRelativeMax,
           chromeToolbarHeight,
           statusBarHeight,
+          devicePixelRatio,
           tapX,
           tapY,
         })
