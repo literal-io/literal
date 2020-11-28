@@ -208,7 +208,8 @@ export const scope: InjectScope = {
         ? (node as HTMLElement)
         : node.parentElement;
 
-    const container: HTMLElement = elem.closest(boundaryAncestorSelector);
+    const container: HTMLElement =
+      elem.closest(boundaryAncestorSelector) || elem;
 
     container.style.lineHeight = "normal";
     container.style.wordBreak = "break-all";

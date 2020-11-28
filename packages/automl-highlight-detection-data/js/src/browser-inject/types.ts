@@ -1,6 +1,5 @@
 export enum DOMAIN {
   WIKIPEDIA = "wikipedia",
-  HACKERNEWS = "hackernews",
   RIBBONFARM = "ribbonfarm",
   PROJECT_GUTENBERG = "project-gutenberg",
   ACOUP = "acoup",
