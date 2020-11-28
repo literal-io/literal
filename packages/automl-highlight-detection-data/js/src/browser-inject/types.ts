@@ -42,7 +42,7 @@ export interface InjectScope {
     boundaryAncestorSelector: string,
     size: ViewportSize
   ): Range;
-  styleRange(range: Range): void;
+  styleRange(range: Range, boundaryAncestorSelector: string): void;
   scrollToRange(range: Range, size: ViewportSize, offsetHeight: number): void;
   getSelectionAnnotations(
     range: Range,

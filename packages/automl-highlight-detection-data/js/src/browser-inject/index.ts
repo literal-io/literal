@@ -71,7 +71,7 @@ export const browserInject = (
       scope.getViewportSize(),
       scope.getScrollOffsetHeight ? scope.getScrollOffsetHeight() : 0
     );
-    scope.styleRange(range);
+    scope.styleRange(range, scope.getBoundaryAncestorSelector());
 
     const annotations = scope.getSelectionAnnotations(
       range,

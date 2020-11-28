@@ -102,73 +102,6 @@ export const parsers: { [domain: string]: ParserInterface } = {
     },
     getBoundaryAncestorSelector: () => "section",
   },
-  [DOMAIN.HACKERNEWS]: {
-    getUrls: () => [
-      "https://web.archive.org/web/20201014022648/https://news.ycombinator.com/item?id=24770617",
-      "https://web.archive.org/web/20201014022752/https://news.ycombinator.com/item?id=24770424",
-      "https://web.archive.org/web/20201014023549/https://news.ycombinator.com/item?id=24771623",
-      "https://web.archive.org/web/20201014022706/https://news.ycombinator.com/item?id=24766682",
-      "https://web.archive.org/web/20201014022724/https://news.ycombinator.com/item?id=24767378",
-      "https://web.archive.org/web/20201014022653/https://news.ycombinator.com/item?id=24765798",
-      "https://web.archive.org/web/20201014022659/https://news.ycombinator.com/item?id=24768071",
-      "https://web.archive.org/web/20201014022702/https://news.ycombinator.com/item?id=24762449",
-      "https://web.archive.org/web/20201014022643/https://news.ycombinator.com/item?id=24766508",
-      "https://web.archive.org/web/20201014022755/https://news.ycombinator.com/item?id=24762758",
-      "https://web.archive.org/web/20201013015309/https://news.ycombinator.com/item?id=24758772",
-      "https://web.archive.org/web/20201013015309/https://news.ycombinator.com/item?id=24761116",
-      "https://web.archive.org/web/20201013015309/https://news.ycombinator.com/item?id=24757333",
-      "https://web.archive.org/web/20201013015309/https://news.ycombinator.com/item?id=24755614",
-      "https://web.archive.org/web/20201013015309/https://news.ycombinator.com/item?id=24754662",
-      "https://web.archive.org/web/20201013015309/https://news.ycombinator.com/item?id=24758020",
-      "https://web.archive.org/web/20201013004139/https://news.ycombinator.com/item?id=24753283",
-      "https://web.archive.org/web/20201013004139/https://news.ycombinator.com/item?id=24753564",
-      "https://web.archive.org/web/20201013004139/https://news.ycombinator.com/item?id=24747667",
-    ],
-    isUrlEqual: (url1: string, url2: string): boolean => {
-      const getPath = (url: string) => {
-        const archiveRegex = /https:\/\/web\.archive\.org\/web\/.*?\/(.*)/;
-        const match = archiveRegex.exec(url);
-        return match && match.length === 2 ? match[1] : null;
-      };
-      const path1 = getPath(url1);
-      const path2 = getPath(url2);
-
-      return path1 && path2 && path1 === path2;
-    },
-    parse: (scope: InjectScope): Text[] => {
-      const wmHeader = document.getElementById("wm-ipp-base");
-      if (wmHeader) {
-        wmHeader.remove();
-      }
-      document.querySelectorAll("input, textarea").forEach((elem) => {
-        elem.setAttribute("disabled", "disabled");
-      });
-
-      document.querySelectorAll("a").forEach((el) => {
-        el.removeAttribute("href");
-      });
-
-      const viewportContent =
-        "width=device-width, initial-scale=0.86, maximum-scale=0.86, minimum-scale=0.86";
-      let viewport = document.querySelector("meta[name='viewport']");
-      if (viewport) {
-        viewport.setAttribute("content", viewportContent);
-      } else {
-        viewport = document.createElement("meta");
-        viewport.setAttribute("name", "meta");
-        viewport.setAttribute("content", viewportContent);
-        document.head.appendChild(viewport);
-      }
-
-      const textNodes = Array.from(document.querySelectorAll(".comment"))
-        .map(scope.getTextNodes)
-        //@ts-ignore: this should work fine
-        .flat();
-
-      return textNodes;
-    },
-    getBoundaryAncestorSelector: () => ".comment",
-  },
   [DOMAIN.RIBBONFARM]: {
     getUrls: () => [
       "https://web.archive.org/web/20200929120305/https://www.ribbonfarm.com/2009/10/07/the-gervais-principle-or-the-office-according-to-the-office/",
@@ -1339,7 +1272,14 @@ export const parsers: { [domain: string]: ParserInterface } = {
         overlay.remove();
       }
 
-      return scope.getTextNodes(document.querySelector(".blog-article"));
+      const textNodes = Array.from(
+        document.querySelectorAll(".blog-article__content > p")
+      )
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
+
+      return textNodes;
     },
   },
   [DOMAIN.NVIDIA_NEWS]: {
@@ -1457,7 +1397,19 @@ export const parsers: { [domain: string]: ParserInterface } = {
         document.head.appendChild(viewport);
       }
 
-      return scope.getTextNodes(document.querySelector("#content"));
+      document.querySelectorAll(".a2a_kit").forEach((el) => el.remove());
+      document
+        .querySelectorAll(".share_box_label_horizontal")
+        .forEach((el) => el.remove());
+
+      const textNodes = Array.from(
+        document.querySelectorAll(".entry-content > p")
+      )
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
+
+      return textNodes;
     },
   },
   [DOMAIN.THE_MARKUP]: {
@@ -1548,6 +1500,13 @@ export const parsers: { [domain: string]: ParserInterface } = {
       return path1 && path2 && path1 === path2;
     },
     getBoundaryAncestorSelector: () => "p",
+    getScrollOffsetHeight: () => {
+      const elem = document.querySelector(".navbar");
+      if (elem) {
+        return elem.parentElement.clientHeight;
+      }
+      return 0;
+    },
     parse: (scope: InjectScope): Text[] => {
       // preamble
       const wmHeader = document.getElementById("wm-ipp-base");
@@ -1733,6 +1692,13 @@ export const parsers: { [domain: string]: ParserInterface } = {
       return path1 && path2 && path1 === path2;
     },
     getBoundaryAncestorSelector: () => "p",
+    getScrollOffsetHeight: () => {
+      const elem = document.querySelector(".navbar");
+      if (elem) {
+        return elem.clientHeight;
+      }
+      return 0;
+    },
     parse: (scope: InjectScope): Text[] => {
       // preamble
       const wmHeader = document.getElementById("wm-ipp-base");
