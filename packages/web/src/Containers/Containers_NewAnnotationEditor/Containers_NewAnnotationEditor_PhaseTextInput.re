@@ -194,7 +194,7 @@ let make = (~currentUser) => {
       "flex-col",
       "overflow-y-auto",
     ])}>
-    <div className={Cn.fromList(["px-6", "pb-4", "pt-16"])}>
+    <div className={Cn.fromList(["px-6", "pb-4", "py-16"])}>
       <TextInput.Annotation
         onTextChange=handleTextChange
         onTagsChange=handleTagsChange
@@ -230,7 +230,7 @@ let make = (~currentUser) => {
            </FloatingActionButton>
          : React.null}
       <TextInput_Tags
-        className={Cn.fromList(["px-2"])}
+        className={Cn.fromList(["px-2", "bg-black", "z-10"])}
         onValueChange=handlePendingTagChange
         onValueCommit=handlePendingTagCommit
         value=pendingTagValue

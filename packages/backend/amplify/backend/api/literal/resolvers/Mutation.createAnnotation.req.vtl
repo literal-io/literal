@@ -1,6 +1,6 @@
 #set( $ctx.stash = {} )
 
-#if( $ctx.graphQLAPIId == "rkihsloeqbdabdpebem3fqqjuy" )
+#if( $ctx.request.headers.origin == "https://literal.io" )
   ## production
   $util.qr($ctx.stash.put("constants", {
     "ORIGIN": "https://literal.io",

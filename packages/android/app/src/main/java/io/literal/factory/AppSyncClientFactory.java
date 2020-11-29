@@ -14,9 +14,17 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3Client;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
+import java.io.IOException;
+
 import io.literal.lib.Constants;
+import io.literal.lib.WebRoutes;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class AppSyncClientFactory {
 
@@ -29,6 +37,18 @@ public class AppSyncClientFactory {
         if (client == null) {
             client = AWSAppSyncClient.builder()
                     .context(context)
+                    .okHttpClient(new OkHttpClient.Builder().addNetworkInterceptor(
+                            new Interceptor() {
+                                @NotNull
+                                @Override
+                                public Response intercept(@NotNull Chain chain) throws IOException {
+                                    Request newRequest = chain.request().newBuilder()
+                                            .addHeader("origin", WebRoutes.getAPIHost())
+                                            .build();
+                                    return chain.proceed(newRequest);
+                                }
+                            }
+                    ).build())
                     .awsConfiguration(getConfiguration(context))
                     .s3ObjectManager(getS3ObjectManager(context, getConfiguration(context)))
                     .cognitoUserPoolsAuthProvider(new CognitoUserPoolsAuthProvider() {
