@@ -5,12 +5,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npm run emulator:await && npm run client-driver:start",
+    "start": "npm run emulator:await && npm run client-driver:start:production",
     "clean": "rm -rf dist && rm -f output/screenshot/*",
     "ts:build": "tsc",
     "ts:watch": "tsc -w",
     "client-driver:start": "npm run clean && npm run ts:build && node dist",
-    "client-driver:start:production": "npm run clean && npm run ts:build && NODE_ENV=production OUTPUT_SIZE=100 node dist",
+    "client-driver:start:production": "npm run clean && npm run ts:build && NODE_ENV=production OUTPUT_SIZE=50 node dist",
     "emulator:await": "./scripts/wait-for-emulator.sh"
   },
   "author": "",

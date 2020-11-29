@@ -3,15 +3,7 @@ let styles = [%raw "require('./TextInput_Tags.module.css')"];
 [@react.component]
 let make =
   React.forwardRef(
-    (
-      ~value,
-      ~onValueChange,
-      ~onKeyDown=?,
-      ~className=?,
-      ~disabled=?,
-      ~onValueCommit,
-      ref_,
-    ) => {
+    (~value, ~onValueChange, ~className=?, ~disabled=?, ~onValueCommit, ref_) => {
     /** Reuse the ref prop if one was passed in, otherwise use our own **/
     let inputRef = {
       let ownRef = React.useRef(Js.Nullable.null);
@@ -20,76 +12,24 @@ let make =
       | None => ownRef
       };
     };
-    let keyEventHandled = React.useRef(false);
     let (isFocused, setIsFocused) = React.useState(_ => false);
 
     let handleChange = ev => {
-      let _ = ev->ReactEvent.Form.persist;
-
-      let data =
-        ev
-        ->ReactEvent.Form.nativeEvent
-        ->(ev => ev##data)
-        ->Js.Nullable.toOption;
-      let inputType = ev->ReactEvent.Form.nativeEvent->(ev => ev##inputType);
-      let os = Constants.bowser()->Bowser.getOS->Bowser.getOSName;
-
       let newValue =
-        switch (inputType, data, os) {
-        | ("insertText", Some(insertedText), _) =>
-          Some(value ++ insertedText)
-        | ("insertCompositionText", Some(insertedText), Some(`Android)) =>
-          Some(insertedText)
-        | ("deleteContentBackward", _, _) when Js.String.length(value) > 0 =>
-          let newPartial =
-            Js.String2.slice(
-              value,
-              ~from=0,
-              ~to_=Js.String2.length(value) - 1,
-            );
-          let _ =
-            if (Js.String.length(newPartial) === 0) {
-              ev->ReactEvent.Form.stopPropagation;
-            };
-          Some(newPartial);
-        | _ => None
-        };
+        ev->ReactEvent.Form.nativeEvent->(ev => ev##target##value);
 
-      let _ =
-        switch (newValue) {
-        | Some(newValue) =>
-          keyEventHandled.current = true;
-          onValueChange(newValue);
-        | None => ()
-        };
-      ();
-    };
-
-    let handleKeyUp = ev => {
-      let _ =
-        if (!keyEventHandled.current) {
-          let keyCode = ReactEvent.Keyboard.keyCode(ev);
-          if (keyCode == 13 && Js.String.length(value) > 0) {
-            onValueCommit(value);
-          };
-        };
-      ();
-    };
-
-    let handleKeyDown = ev => {
-      let _ =
-        switch (onKeyDown) {
-        | Some(onKeyDown) => onKeyDown(ev)
-        | None => ()
-        };
-
-      keyEventHandled.current = ReactEvent.Keyboard.isDefaultPrevented(ev);
-      ();
+      if (Js.String2.endsWith(newValue, "\n") && Js.String.length(value) > 0) {
+        let _ = ReactEvent.Form.preventDefault(ev);
+        onValueCommit(value);
+      } else {
+        onValueChange(newValue);
+      };
     };
 
     let handleBlur = _ => {
       if (Js.String.length(value) > 0) {
-        onValueChange("");
+        let _ = onValueChange("");
+        ();
       };
       let _ = setIsFocused(_ => false);
       ();
@@ -134,7 +74,7 @@ let make =
                 "transition-opacity",
                 "duration-300",
                 "ease-in-out",
-                isFocused ? "opacity-75" : "opacity-50"
+                isFocused ? "opacity-75" : "opacity-50",
               ])}
             />
           </MaterialUi.InputAdornment>,
@@ -154,9 +94,6 @@ let make =
           ),
       }
       inputProps={
-        "onChange": handleChange,
-        "onKeyUp": handleKeyUp,
-        "onKeyDown": handleKeyDown,
         "onBlur": handleBlur,
         "onFocus": handleFocus,
         "ref": inputRef->ReactDOMRe.Ref.domRef,
