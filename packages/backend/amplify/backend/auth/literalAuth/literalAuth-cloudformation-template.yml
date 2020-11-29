@@ -25,126 +25,169 @@ Parameters:
     
   identityPoolName:
     Type: String
-                
+  
+            
+  
   allowUnauthenticatedIdentities:
     Type: String
             
   resourceNameTruncated:
     Type: String
-              
+  
+            
   userPoolName:
     Type: String
-                      
+  
+            
+        
   autoVerifiedAttributes:
     Type: CommaDelimitedList
       
   mfaConfiguration:
     Type: String
-                      
+  
+            
+        
   mfaTypes:
     Type: CommaDelimitedList
       
   smsAuthenticationMessage:
     Type: String
-              
+  
+            
   smsVerificationMessage:
     Type: String
-              
+  
+            
   emailVerificationSubject:
     Type: String
-              
+  
+            
   emailVerificationMessage:
     Type: String
-                
+  
+            
+  
   defaultPasswordPolicy:
     Type: String
-                
+            
+    
   passwordPolicyMinLength:
     Type: Number
-                  
+          
+        
   passwordPolicyCharacters:
     Type: CommaDelimitedList
-              
+      
+        
   requiredAttributes:
     Type: CommaDelimitedList
-        
+      
+  
   userpoolClientGenerateSecret:
     Type: String
-                
+            
+    
   userpoolClientRefreshTokenValidity:
     Type: Number
-                  
+          
+        
   userpoolClientWriteAttributes:
     Type: CommaDelimitedList
-              
+      
+        
   userpoolClientReadAttributes:
     Type: CommaDelimitedList
       
   userpoolClientLambdaRole:
     Type: String
-                
+  
+            
+  
   userpoolClientSetAttributes:
     Type: String
             
   useDefault:
     Type: String
-              
+  
+            
   authSelections:
     Type: String
-              
+  
+            
   resourceName:
     Type: String
-                      
+  
+            
+        
   usernameAttributes:
     Type: CommaDelimitedList
-        
+      
+  
   userPoolGroups:
     Type: String
-              
+            
+  
   adminQueries:
     Type: String
             
   triggers:
     Type: String
-                
+  
+            
+  
   hostedUI:
     Type: String
-                    
+            
+        
   userPoolGroupList:
     Type: CommaDelimitedList
-                                    
+      
+            
+            
+      
   parentStack:
     Type: String
-                
+        
+        
   permissions:
     Type: CommaDelimitedList
-              
+      
+        
   dependsOn:
     Type: CommaDelimitedList
       
   hostedUIDomainName:
     Type: String
-                      
+  
+            
+        
   authProvidersUserPool:
     Type: CommaDelimitedList
       
   hostedUIProviderMeta:
     Type: String
-                
+  
+            
+  
   thirdPartyAuth:
     Type: String
-                    
+            
+        
   authProviders:
     Type: CommaDelimitedList
       
-  hostedUIProviderCreds:
-    Type: String
-              
   oAuthMetadata:
     Type: String
-                          
+  
+            
   serviceName:
     Type: String
+  
+            
+  hostedUIProviderCreds:
+    Type: String
+  
             
 Conditions:
   ShouldNotCreateEnvResources: !Equals [ !Ref env, NONE ]
@@ -520,6 +563,9 @@ Resources:
             - ' const userPoolId = event.ResourceProperties.userPoolId;'
             - ' let hostedUIProviderMeta = JSON.parse(event.ResourceProperties.hostedUIProviderMeta);'
             - ' let hostedUIProviderCreds = JSON.parse(event.ResourceProperties.hostedUIProviderCreds);'
+            - ' if(hostedUIProviderCreds.length === 0) {'
+            - '  response.send(event, context, response.SUCCESS, {});'
+            - ' }'
             - ' if (event.RequestType == ''Delete'') {'
             - '  response.send(event, context, response.SUCCESS, {});'
             - ' }'
@@ -799,8 +845,6 @@ Outputs :
   AppClientID:
     Value: !Ref 'UserPoolClient'
     Description: The user pool app client id
-  AppClientSecret:
-    Value: !GetAtt UserPoolClientInputs.appSecret
   
    
    

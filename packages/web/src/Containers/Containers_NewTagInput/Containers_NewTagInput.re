@@ -125,7 +125,7 @@ module Data = {
         "left-0",
         "right-0",
         "px-2",
-        "bg-black"
+        "bg-black",
       ])}
       onValueChange=handleValueChange
       onValueCommit=handleValueCommit

@@ -20,6 +20,9 @@ enum AppiumContext {
   CHROMIUM = "CHROMIUM",
 }
 
+const RAND_PORTRAIT_ORIENTATION_THRESHOLD = 0.66;
+const RAND_SCROLL_THRESHOLD = 0.25;
+
 type Rect = {
   width: number;
   height: number;
@@ -101,20 +104,62 @@ export class AppiumDriver implements Driver {
       throw new Error("Driver uninitialized");
     }
 
-    const orientation =
-      Math.random() > 0.66 ? Orientation.LANDSCAPE : Orientation.PORTRAIT;
+    let orientation =
+      Math.random() > RAND_PORTRAIT_ORIENTATION_THRESHOLD
+        ? Orientation.LANDSCAPE
+        : Orientation.PORTRAIT;
     const currentOrientation = await this.context.getOrientation();
 
     if (currentOrientation !== orientation) {
       await this.context.setOrientation(orientation);
       // wait for chrome to reflow
       await new Promise((resolve) => setTimeout(resolve, 500));
+      orientation = (await this.context.getOrientation()) as Orientation;
     }
 
     await this.context.switchContext(AppiumContext.CHROMIUM);
     const currentHref = await this.context.execute(() => window.location.href);
     if (forceNavigate || !parsers[domain].isUrlEqual(currentHref, href)) {
       await this.context.navigateTo(href);
+
+      // scroll some in order to hide the chrome app bar, scroll position will be set by browserInject
+      // regardless.
+      /**
+      if (Math.random() > RAND_SCROLL_THRESHOLD) {
+        console.log("scrolling viewport to hide app bar");
+        const viewportRect = await this.getViewportRect();
+        const midpointX = viewportRect.width / 2;
+        const midpointY = viewportRect.height / 2;
+        await this.context
+          .findElement("id", "android:id/content")
+          .then((id) => this.context.$(id))
+          .then((el) =>
+            el.touchAction([
+              { action: "press", x: midpointX, y: midpointY },
+              {
+                action: "moveTo",
+                x: midpointX,
+                y: Math.max(midpointY - 50, 0),
+              },
+              { action: "release" },
+              { action: "press", x: midpointX, y: midpointY },
+              {
+                action: "moveTo",
+                x: midpointX,
+                y: Math.max(midpointY - 50, 0),
+              },
+              { action: "release" },
+              { action: "press", x: midpointX, y: midpointY },
+              {
+                action: "moveTo",
+                x: midpointX,
+                y: Math.max(midpointY - 50, 0),
+              },
+              { action: "release" },
+            ])
+          );
+      }
+      **/
 
       await this.context.switchContext(AppiumContext.NATIVE_APP);
       await this.context
@@ -127,6 +172,7 @@ export class AppiumDriver implements Driver {
         .catch(() => {
           /** noop **/
         });
+
       await this.context.switchContext(AppiumContext.CHROMIUM);
     }
 
@@ -208,6 +254,25 @@ export class AppiumDriver implements Driver {
     });
     await new Promise((resolve) => setTimeout(resolve, 500));
 
+    console.debug(
+      "[debug] ",
+      JSON.stringify({
+        annotations,
+        size,
+        orientation,
+        viewportRect,
+        xRelativeMax,
+        xRelativeMin,
+        yRelativeMin,
+        yRelativeMax,
+        chromeToolbarHeight,
+        statusBarHeight,
+        devicePixelRatio,
+        tapX,
+        tapY,
+      })
+    );
+
     /** after clicking, make sure the selection still exists. */
     await this.context.switchContext(AppiumContext.CHROMIUM);
     const selectionExists = await this.context.execute(function() {
@@ -215,23 +280,6 @@ export class AppiumDriver implements Driver {
     });
     if (!selectionExists) {
       console.error("[error] Selection cleared, exiting early.");
-      console.debug(
-        "[debug] ",
-        JSON.stringify({
-          annotations,
-          size,
-          orientation,
-          viewportRect,
-          xRelativeMax,
-          xRelativeMin,
-          yRelativeMin,
-          yRelativeMax,
-          chromeToolbarHeight,
-          statusBarHeight,
-          tapX,
-          tapY,
-        })
-      );
       return [];
     }
     await this.context.switchContext(AppiumContext.NATIVE_APP);

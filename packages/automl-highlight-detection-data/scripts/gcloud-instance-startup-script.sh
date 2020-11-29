@@ -45,8 +45,8 @@ sudo curl -L "https://github.com/docker/compose/releases/download/1.27.4/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 
 # pull repo
-git clone --single-branch --branch debug-gcp-process https://github.com/javamonn/literal.git 
+git clone --single-branch --branch automl-data-tuning https://github.com/javamonn/literal.git 
 
 # start the containers
 # LD_LIBRARY_PATH issue: https://github.com/google-github-actions/setup-gcloud/issues/128
-cd ./literal/packages/ebs-automl-highlight-detection-data && LD_LIBRARY_PATH=/usr/local/lib ./scripts/docker-start-production.sh
+cd ./literal/packages/automl-highlight-detection-data && LD_LIBRARY_PATH=/usr/local/lib ./scripts/docker-start-production.sh

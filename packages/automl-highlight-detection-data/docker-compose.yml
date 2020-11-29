@@ -4,9 +4,9 @@ services:
   android:
     image: us.gcr.io/literal-269716/automl-highlight-detection-data-android:latest
     privileged: true
+    restart: always
     logging:
       driver: gcplogs
-    restart: always
     cpus: 7.5
     ports:
       - 5037:5037
@@ -15,10 +15,10 @@ services:
     image: us.gcr.io/literal-269716/automl-highlight-detection-data-node:latest
     depends_on:
       - android
-    logging:
-      driver: gcplogs
     cpus: .5
     restart: always
+    logging:
+      driver: gcplogs
     environment:
       ANDROID_EMULATOR_HOSTNAME: android
       ANDROID_EMULATOR_PORT: 5037
