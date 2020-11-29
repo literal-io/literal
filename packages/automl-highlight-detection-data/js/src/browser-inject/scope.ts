@@ -192,11 +192,12 @@ export const scope: InjectScope = {
     document.scrollingElement.scrollTo({
       left:
         window.scrollX +
-        range.getBoundingClientRect().left +
+        range.getBoundingClientRect().left -
         maxXOffset * Math.random(),
       top:
         window.scrollY +
-        range.getBoundingClientRect().top +
+        range.getBoundingClientRect().top -
+        offsetHeight -
         maxYOffset * Math.random(),
       behavior: "auto",
     });
@@ -230,14 +231,19 @@ export const scope: InjectScope = {
     endRange.setEnd(range.endContainer, range.endOffset);
     const endBB = endRange.getBoundingClientRect();
 
+    const maxmin = (a: number, b: number, c: number) =>
+      Math.min(Math.max(a, b), c);
+    const minmax = (a: number, b: number, c: number) =>
+      Math.max(Math.min(a, b), c);
+
     const annotations = [
       {
         label: "highlight",
         boundingBox: {
-          xRelativeMin: Math.max(bb.left / vWidth, 0),
-          yRelativeMin: Math.max(bb.top / vHeight, 0),
-          xRelativeMax: Math.min(bb.right / vWidth, 1),
-          yRelativeMax: Math.min(bb.bottom / vHeight, 1),
+          xRelativeMin: maxmin(bb.left / vWidth, 0, 1),
+          yRelativeMin: maxmin(bb.top / vHeight, 0, 1),
+          xRelativeMax: minmax(bb.right / vWidth, 1, 0),
+          yRelativeMax: minmax(bb.bottom / vHeight, 1, 0),
         },
       },
       startBB.left > bb.left &&
@@ -245,10 +251,10 @@ export const scope: InjectScope = {
         ? {
             label: "highlight_edge",
             boundingBox: {
-              xRelativeMin: Math.max(bb.left / vWidth, 0),
-              yRelativeMin: Math.max(0, startBB.top / vHeight),
-              xRelativeMax: Math.min(startBB.left / vWidth, 1),
-              yRelativeMax: Math.min(startBB.bottom / vHeight, 1),
+              xRelativeMin: maxmin(bb.left / vWidth, 0, 1),
+              yRelativeMin: maxmin(startBB.top / vHeight, 0, 1),
+              xRelativeMax: minmax(startBB.left / vWidth, 1, 0),
+              yRelativeMax: minmax(startBB.bottom / vHeight, 1, 0),
             },
           }
         : null,
@@ -256,10 +262,10 @@ export const scope: InjectScope = {
         ? {
             label: "highlight_edge",
             boundingBox: {
-              xRelativeMin: Math.max(endBB.right / vWidth, 0),
-              yRelativeMin: Math.max(endBB.top / vHeight, 0),
-              xRelativeMax: Math.min(bb.right / vWidth, 1),
-              yRelativeMax: Math.min(endBB.bottom / vHeight, 1),
+              xRelativeMin: maxmin(endBB.right / vWidth, 0, 1),
+              yRelativeMin: maxmin(endBB.top / vHeight, 0, 1),
+              xRelativeMax: minmax(bb.right / vWidth, 1, 0),
+              yRelativeMax: minmax(endBB.bottom / vHeight, 1, 0),
             },
           }
         : null,
@@ -269,6 +275,10 @@ export const scope: InjectScope = {
         h.boundingBox.xRelativeMin !== h.boundingBox.xRelativeMax &&
         h.boundingBox.yRelativeMin !== h.boundingBox.yRelativeMax
     );
+
+    if (!annotations.some(({ label }) => label === "highlight")) {
+      return [];
+    }
 
     return annotations as SelectionAnnotation[];
   },

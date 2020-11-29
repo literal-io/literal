@@ -104,7 +104,7 @@ export class AppiumDriver implements Driver {
       throw new Error("Driver uninitialized");
     }
 
-    const orientation =
+    let orientation =
       Math.random() > RAND_PORTRAIT_ORIENTATION_THRESHOLD
         ? Orientation.LANDSCAPE
         : Orientation.PORTRAIT;
@@ -114,6 +114,7 @@ export class AppiumDriver implements Driver {
       await this.context.setOrientation(orientation);
       // wait for chrome to reflow
       await new Promise((resolve) => setTimeout(resolve, 500));
+      orientation = (await this.context.getOrientation()) as Orientation;
     }
 
     await this.context.switchContext(AppiumContext.CHROMIUM);
@@ -253,6 +254,25 @@ export class AppiumDriver implements Driver {
     });
     await new Promise((resolve) => setTimeout(resolve, 500));
 
+    console.debug(
+      "[debug] ",
+      JSON.stringify({
+        annotations,
+        size,
+        orientation,
+        viewportRect,
+        xRelativeMax,
+        xRelativeMin,
+        yRelativeMin,
+        yRelativeMax,
+        chromeToolbarHeight,
+        statusBarHeight,
+        devicePixelRatio,
+        tapX,
+        tapY,
+      })
+    );
+
     /** after clicking, make sure the selection still exists. */
     await this.context.switchContext(AppiumContext.CHROMIUM);
     const selectionExists = await this.context.execute(function() {
@@ -260,24 +280,6 @@ export class AppiumDriver implements Driver {
     });
     if (!selectionExists) {
       console.error("[error] Selection cleared, exiting early.");
-      console.debug(
-        "[debug] ",
-        JSON.stringify({
-          annotations,
-          size,
-          orientation,
-          viewportRect,
-          xRelativeMax,
-          xRelativeMin,
-          yRelativeMin,
-          yRelativeMax,
-          chromeToolbarHeight,
-          statusBarHeight,
-          devicePixelRatio,
-          tapX,
-          tapY,
-        })
-      );
       return [];
     }
     await this.context.switchContext(AppiumContext.NATIVE_APP);

@@ -1626,6 +1626,13 @@ export const parsers: { [domain: string]: ParserInterface } = {
       return path1 && path2 && path1 === path2;
     },
     getBoundaryAncestorSelector: () => "p",
+    getScrollOffsetHeight: () => {
+      const elem = document.querySelector(".Mobile-bar");
+      if (elem) {
+        return elem.clientHeight;
+      }
+      return 0;
+    },
     parse: (scope: InjectScope): Text[] => {
       // preamble
       const wmHeader = document.getElementById("wm-ipp-base");
