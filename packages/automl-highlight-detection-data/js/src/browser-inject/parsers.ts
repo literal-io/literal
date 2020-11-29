@@ -613,7 +613,14 @@ export const parsers: { [domain: string]: ParserInterface } = {
         document.head.appendChild(viewport);
       }
 
-      return scope.getTextNodes(document.querySelector(".post__content"));
+      const textNodes = Array.from(
+        document.querySelectorAll(".post__content > p")
+      )
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
+
+      return textNodes;
     },
   },
   [DOMAIN.GWERN_BLOG]: {
@@ -742,6 +749,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
           el.remove();
         });
 
+      document.querySelectorAll("aside").forEach((el) => {
+        el.remove();
+      });
+
       const textNodes = Array.from(
         document.querySelectorAll(".article__body > p")
       )
@@ -806,7 +817,12 @@ export const parsers: { [domain: string]: ParserInterface } = {
         document.head.appendChild(viewport);
       }
 
-      return scope.getTextNodes(document.querySelector(".post"));
+      const textNodes = Array.from(document.querySelectorAll(".post > p"))
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
+
+      return textNodes;
     },
   },
   [DOMAIN.FIRST_ROUND_BLOG]: {
@@ -833,6 +849,13 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const path2 = getPath(url2);
 
       return path1 && path2 && path1 === path2;
+    },
+    getScrollOffsetHeight: () => {
+      const header = document.querySelector("._SiteNav__");
+      if (header) {
+        return header.clientHeight;
+      }
+      return 0;
     },
     getBoundaryAncestorSelector: () => "p",
     parse: (scope: InjectScope): Text[] => {
@@ -945,6 +968,13 @@ export const parsers: { [domain: string]: ParserInterface } = {
       return path1 && path2 && path1 === path2;
     },
     getBoundaryAncestorSelector: () => "p",
+    getScrollOffsetHeight: () => {
+      const header = document.querySelector(".header-nav");
+      if (header) {
+        return header.clientHeight;
+      }
+      return 0;
+    },
     parse: (scope: InjectScope): Text[] => {
       // preamble
       const wmHeader = document.getElementById("wm-ipp-base");
@@ -1140,7 +1170,14 @@ export const parsers: { [domain: string]: ParserInterface } = {
         banner.remove();
       }
 
-      return scope.getTextNodes(document.querySelector(".post-content"));
+      const textNodes = Array.from(
+        document.querySelectorAll(".post-content > p")
+      )
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
+
+      return textNodes;
     },
   },
   [DOMAIN.NPR_TEXT]: {
