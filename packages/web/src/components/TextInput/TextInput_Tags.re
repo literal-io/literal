@@ -50,7 +50,7 @@ let make =
         ~root=
           Cn.fromList([
             "border-t",
-            "border-solid",
+            "border-dotted",
             "py-2",
             "transition-colors",
             "duration-300",
