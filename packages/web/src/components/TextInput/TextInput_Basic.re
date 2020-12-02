@@ -16,7 +16,6 @@ let make =
          .
          "disableUnderline": bool,
          "onKeyDown": ReactEvent.Keyboard.t => unit,
-         "inputRef": option(ReactDOMRe.domRef),
        }=Js.Obj.empty(),
       ref_,
     ) => {

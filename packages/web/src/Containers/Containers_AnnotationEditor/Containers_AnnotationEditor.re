@@ -80,6 +80,9 @@ let handleSave =
 let make = (~annotationFragment as annotation, ~currentUser) => {
   let (patchAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(PatchAnnotationMutation.definition);
+  let scrollContainerRef = React.useRef(Js.Nullable.null);
+  let textInputRef = React.useRef(Js.Nullable.null);
+  let previousAnnotation = React.useRef(annotation);
 
   let handleTagsChange = tagsValue => {
     let tagsWithIds =
@@ -230,7 +233,50 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       )
     });
 
+  let _ =
+    React.useEffect1(
+      () => {
+        let currentTags = tagsValueSelector(~annotation, ~currentUser);
+        let previousTags =
+          tagsValueSelector(
+            ~annotation=previousAnnotation.current,
+            ~currentUser,
+          );
+
+        // scroll the newly added tag into view
+        let _ =
+          switch (
+            Js.Nullable.toOption(scrollContainerRef.current),
+            Js.Nullable.toOption(textInputRef.current),
+          ) {
+          | (Some(scrollContainerElem), Some(textInputElem))
+              when
+                Js.Array2.length(currentTags)
+                > Js.Array2.length(previousTags) =>
+            let rect =
+              Webapi.Dom.Element.getBoundingClientRect(textInputElem);
+            let targetTop =
+              Webapi.Dom.DomRect.top(rect)
+              +. Webapi.Dom.DomRect.height(rect)
+              +. Webapi.Dom.(Window.scrollY(window));
+
+            let _ =
+              Webapi.Dom.Element.scrollToWithOptions(
+                {"top": targetTop, "left": 0., "behavior": "smooth"},
+                scrollContainerElem,
+              );
+            ();
+          | _ => ()
+          };
+
+        previousAnnotation.current = annotation;
+        None;
+      },
+      [|annotation|],
+    );
+
   <div
+    ref={scrollContainerRef->ReactDOMRe.Ref.domRef}
     className={Cn.fromList([
       "w-full",
       "h-full",
@@ -245,6 +291,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
         onTagsChange=handleTagsChange
         textValue={textValueSelector(~annotation)}
         tagsValue={tagsValueSelector(~annotation, ~currentUser)}
+        textInputRef
       />
     </div>
   </div>;

@@ -47,7 +47,7 @@ public class WebView extends android.webkit.WebView {
 
     @SuppressLint("SetJavaScriptEnabled")
     public void initialize(Activity activity) {
-        WebView.setWebContentsDebuggingEnabled(/**BuildConfig.DEBUG**/ true);
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         this.addJavascriptInterface(new JavascriptInterface(), "literalWebview");
         WebSettings webSettings = this.getSettings();
         webSettings.setJavaScriptEnabled(true);
