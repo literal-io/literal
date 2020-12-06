@@ -1,0 +1,4 @@
+.scrollContainer::after {
+  content: "";
+  padding-right: 2rem;
+}
