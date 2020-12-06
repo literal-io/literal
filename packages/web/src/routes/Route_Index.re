@@ -77,12 +77,16 @@ module WhyLiteral = {
       "Interacting with text elevates the reading experience beyond one of passive consumption and into one that requires analysis and critical thought. Annotations are of equal value to the text itself.",
     ),
     (
-      "Contextualize and associate.",
-      "Ideas do not exist in isolation. Ideas are threads that span otherwise disparate contexts. Annotations organized strictly by their original source is an artificial limitation. Create bridges, not silos.",
+      "Create bridges, not silos.",
+      "Ideas do not exist in isolation. Ideas are threads that span otherwise disparate contexts. Annotations organized strictly by their original source is an artificial limitation.",
     ),
     (
-      "Galleries for thought.",
-      "The act of annotation is only the beginning. Ideas should be revisited and reexamined, tended as epistemological gardens.",
+      "Understand the source.",
+      "Annotations removed from their original context are like a verse without a song, or a headline without an article. Given a highlight, you should frequently reexamine it within its original context.",
+    ),
+    (
+      "Open by default.",
+      "Information flows like ripples in a pond, and cascades to create and amplify network effects. Data - annotations and sources, creators and consumers - should be free to move across the boundaries of systems.",
     ),
   |];
   [@react.component]
@@ -96,7 +100,7 @@ module WhyLiteral = {
           "leading-none",
           "mb-16",
         ])}>
-        {React.string("Why Literal")}
+        {React.string("Precepts")}
       </h2>
       {items
        ->Belt.Array.map(((header, body)) =>
@@ -128,24 +132,20 @@ module WhyLiteral = {
 module HowItWorks = {
   let items = [|
     (
-      "Highlight Text",
+      "Highlight Text.",
       "Literal supports annotations made within web browsers, PDF readers, and more.",
     ),
     (
-      "Highlight Text",
-      "Literal supports annotations made within web browsers, PDF readers, and more.",
+      "Share the Highlight.",
+      "To import the highlight into Literal, use the selection toolbar to share the highlighted text directly, or share a screenshot of the highlight.",
     ),
     (
-      "Highlight Text",
-      "Literal supports annotations made within web browsers, PDF readers, and more.",
+      "Annotate the Highlight.",
+      "Add context and thoughts by adding tags and notes.",
     ),
     (
-      "Highlight Text",
-      "Literal supports annotations made within web browsers, PDF readers, and more.",
-    ),
-    (
-      "Highlight Text",
-      "Literal supports annotations made within web browsers, PDF readers, and more.",
+      "Explore.",
+      "Browse annotations grouped by tags and reflect as ideas evolve in response to new annotations and new relationships between them.",
     ),
   |];
 
@@ -199,7 +199,11 @@ module HowItWorks = {
                  "mr-4",
                ])}>
                <h3
-                 className={Cn.fromList(["font-serif", "text-lightPrimary"])}>
+                 className={Cn.fromList([
+                   "font-serif",
+                   "text-lightPrimary",
+                   "mb-4",
+                 ])}>
                  {React.string(string_of_int(idx + 1) ++ ". " ++ title)}
                </h3>
                <p
@@ -207,6 +211,104 @@ module HowItWorks = {
                  {React.string(body)}
                </p>
              </div>
+           )
+         ->React.array}
+      </ul>
+    </>;
+};
+
+module Features = {
+  type item = {
+    title: string,
+    available: bool,
+  };
+  let items = [|
+    {title: "Android mobile app", available: true},
+    {title: "Parse highlight from screenshot", available: true},
+    {title: "Annotation tagging", available: true},
+    {title: "First-class W3C Web Annotation support", available: true},
+    {title: "Browse by tag", available: true},
+    {title: "iOS mobile app", available: false},
+    {title: "Annotation source viewer", available: false},
+    {title: "Graph viewer", available: false},
+    {title: "Browser extension", available: false},
+    {title: "Annotation sharing and discovery", available: false},
+  |];
+
+  let renderFeature = (~text, ~available, ~className=?, ()) =>
+    <div
+      className={Cn.fromList([
+        "flex",
+        "flex-row",
+        "items-center",
+        Cn.take(className),
+      ])}>
+      <div
+        className={Cn.fromList([
+          "mr-4",
+          "w-4",
+          "h-4",
+          available
+            ? Cn.fromList(["bg-lightPrimary"])
+            : Cn.fromList(["border-lightDisabled", "border", "border-dotted"]),
+        ])}
+      />
+      <p
+        className={Cn.fromList([
+          available
+            ? Cn.fromList(["text-lightPrimary"])
+            : Cn.fromList(["text-lightDisabled"]),
+        ])}>
+        {React.string(text)}
+      </p>
+    </div>;
+
+  [@react.component]
+  let make = () =>
+    <>
+      <div
+        className={Cn.fromList([
+          "flex",
+          "flex-row",
+          "justify-between",
+          "items-center",
+          "mb-16",
+        ])}>
+        <h2
+          className={Cn.fromList([
+            "text-lightPrimary",
+            "font-serif",
+            "text-2xl",
+            "leading-none",
+          ])}>
+          {React.string("Features")}
+        </h2>
+        <div className={Cn.fromList(["flex", "flex-col"])}>
+          {renderFeature(
+             ~text="Available Now",
+             ~available=true,
+             ~className="mb-2",
+             (),
+           )}
+          {renderFeature(~text="Coming Soon", ~available=false, ())}
+        </div>
+      </div>
+      <p className={Cn.fromList(["text-lightDisabled", "mb-16"])}>
+        {React.string(
+           "We're just getting started, and there is so much work to do. Get started now, and keep in mind that we're always improving.",
+         )}
+      </p>
+      <ul className={Cn.fromList(["mb-16"])}>
+        {items
+         ->Belt.Array.map(({title, available}) =>
+             <li>
+               {renderFeature(
+                  ~text=title,
+                  ~available,
+                  ~className=Cn.fromList(["mb-4"]),
+                  (),
+                )}
+             </li>
            )
          ->React.array}
       </ul>
@@ -228,7 +330,7 @@ module Footer = {
     },
     {
       title: "Contact",
-      description: "Reach out to tell us what you think, ask a question, or just say hi.",
+      description: "Reach out to tell us what you think, ask a question, or just say hello.",
       href: "mailto:daniel@literal.io",
     },
     {
@@ -241,7 +343,7 @@ module Footer = {
   [@react.component]
   let make = () =>
     items
-    ->Belt.Array.map(({title, description, href}) =>
+    ->Belt.Array.mapWithIndex((idx, {title, description, href}) =>
         <a
           className={Cn.fromList([
             "block",
@@ -249,7 +351,8 @@ module Footer = {
             "border-dotted",
             "border-lightDisabled",
             "p-4",
-            "mb-6",
+            Cn.on("mt-16", idx === 0),
+            Cn.on("mb-6", idx !== Belt.Array.length(items) - 1),
           ])}
           href>
           <div
@@ -296,13 +399,13 @@ module Footer = {
 [@react.component]
 let default = () => {
   <div
+    style={style(~backgroundColor="rgb(229, 229, 229)", ())}
     className={cn([
       "w-full",
       "h-full",
       "overflow-y-scroll",
       "flex",
       "flex-col",
-      "bg-white",
     ])}>
     <div className={cn(["p-8", "bg-black", "max-w-lg", "m-auto", "w-full"])}>
       <Header />
@@ -329,7 +432,16 @@ let default = () => {
           "border-t",
           "border-dotted",
           "border-lightDisabled",
-          "mb-6",
+          "mb-16",
+        ])}
+      />
+      <Features />
+      <hr
+        className={Cn.fromList([
+          "border-t",
+          "border-dotted",
+          "border-lightDisabled",
+          "mb-16",
         ])}
       />
       <Footer />
