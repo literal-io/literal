@@ -27,7 +27,7 @@ module Header = {
       <p
         className={Cn.fromList(["font-sans", "text-lightSecondary", "mb-8"])}>
         {React.string(
-           "The act of annotation is only the beginning. With Literal, your reading highlights can be revisted and reexaminded, tended as an epistemological garden.",
+           "The act of annotation is only the beginning. With Literal, your reading highlights can be revisited and reexamined, tended as an epistemological garden.",
          )}
       </p>
       <a
@@ -136,8 +136,8 @@ module HowItWorks = {
       "Literal supports annotations made within web browsers, PDF readers, and more.",
     ),
     (
-      "Share the Highlight.",
-      "To import the highlight into Literal, use the selection toolbar to share the highlighted text directly, or share a screenshot of the highlight.",
+      "Import the Highlight.",
+      "Share the highlight with Literal to import it. Use the selection toolbar to share the highlighted text directly, or share a screenshot of the highlight.",
     ),
     (
       "Annotate the Highlight.",
