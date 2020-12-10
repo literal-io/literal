@@ -87,7 +87,10 @@ let make =
       ?autoFocus
       ?onFocus
       ?onBlur
-      onChange={ev => ev->ReactEvent.Form.target->(el => el##value)->onChange}
+      onChange={ev => {
+        let _ = ev->ReactEvent.Form.target->(el => el##value)->onChange;
+        ();
+      }}
       value={MaterialUi.TextField.Value.string(value)}
       fullWidth=true
       multiline=true

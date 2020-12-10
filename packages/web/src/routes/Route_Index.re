@@ -25,9 +25,9 @@ module Header = {
         {React.string("Literal is a textual annotation management system.")}
       </h1>
       <p
-        className={Cn.fromList(["font-sans", "text-lightSecondary", "mb-8"])}>
+        className={Cn.fromList(["font-sans", "text-lg", "text-lightSecondary", "mb-8"])}>
         {React.string(
-           "The act of annotation is only the beginning. With Literal, your reading highlights can be revisited and reexamined, tended as an epistemological garden.",
+           "The act of annotation is only the beginning. Leverage your highlights to enhance your reading experience.",
          )}
       </p>
       <a
@@ -224,10 +224,10 @@ module Features = {
   };
   let items = [|
     {title: "Android mobile app", available: true},
-    {title: "Parse highlight from screenshot", available: true},
+    {title: "Create highlight from screenshot", available: true},
+    {title: "Create highlight from text", available: true},
     {title: "Annotation tagging", available: true},
     {title: "First-class W3C Web Annotation support", available: true},
-    {title: "Browse by tag", available: true},
     {title: "iOS mobile app", available: false},
     {title: "Annotation source viewer", available: false},
     {title: "Graph viewer", available: false},
@@ -293,7 +293,7 @@ module Features = {
           {renderFeature(~text="Coming Soon", ~available=false, ())}
         </div>
       </div>
-      <p className={Cn.fromList(["text-lightDisabled", "mb-16"])}>
+      <p className={Cn.fromList(["text-lightSecondary", "mb-16"])}>
         {React.string(
            "We're just getting started, and there is so much work to do. Get started now, and keep in mind that we're always improving.",
          )}

@@ -84,7 +84,31 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
   let textInputRef = React.useRef(Js.Nullable.null);
   let previousAnnotation = React.useRef(annotation);
 
+  let (textValue, setTextValue) =
+    React.useState(() => textValueSelector(~annotation));
+  let _ =
+    React.useEffect1(
+      () => {
+        let _ = setTextValue(_ => textValueSelector(~annotation));
+        None;
+      },
+      [|annotation|],
+    );
+
+  let (tagsValue, setTagsValue) =
+    React.useState(() => tagsValueSelector(~currentUser, ~annotation));
+  let _ =
+    React.useEffect2(
+      () => {
+        let _ =
+          setTagsValue(_ => tagsValueSelector(~currentUser, ~annotation));
+        None;
+      },
+      (annotation, currentUser),
+    );
+
   let handleTagsChange = tagsValue => {
+    let _ = setTagsValue(_ => tagsValue);
     let tagsWithIds =
       tagsValue
       ->Belt.Array.map((tag: Containers_AnnotationEditor_Types.tag) => {
@@ -153,6 +177,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
   };
 
   let handleTextChange = textValue => {
+    let _ = setTextValue(_ => textValue);
     let updateTargetInput = {
       let idx =
         annotation##target
@@ -289,8 +314,8 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       <TextInput.Annotation
         onTextChange=handleTextChange
         onTagsChange=handleTagsChange
-        textValue={textValueSelector(~annotation)}
-        tagsValue={tagsValueSelector(~annotation, ~currentUser)}
+        textValue
+        tagsValue
         textInputRef
       />
     </div>
