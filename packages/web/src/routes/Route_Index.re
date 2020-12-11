@@ -77,7 +77,7 @@ module WhyLiteral = {
       "Interacting with text elevates the reading experience beyond one of passive consumption and into one that requires analysis and critical thought. Annotations are of equal value to the text itself.",
     ),
     (
-      "Create bridges, not silos.",
+      "Build bridges, not silos.",
       "Ideas do not exist in isolation. Ideas are threads that span otherwise disparate contexts. Annotations organized strictly by their original source is an artificial limitation.",
     ),
     (
