@@ -11,7 +11,7 @@ let onboardingNotes = [|
     None,
   ),
   (
-    "Annotations are organized primarily based on tags and bi-directional links between tags in order to retain context and build connections.\n\nTo add a tag to an annotation, write text into the input at the bottom of the screen and tap your device's \"enter\" key. Tags appear in a list at the bottom of an annotation.\n\nTap on a tag assocated with this annotation to explore.\n\n If you have any questions, feel free to reach out to hello@literal.io. Once you've created some annotations, feel free to delete these introductory example annotations.",
+    "Annotations are organized primarily based on tags and bi-directional links between tags in order to retain context and build connections.\n\nTo add a tag to an annotation, write text into the input at the bottom of the screen and tap your device's \"enter\" key. Tags appear in a list at the bottom of an annotation.\n\nTap on a tag assocated with this annotation and swipe left to explore.\n\n If you have any questions, feel free to reach out to hello@literal.io. Once you've created some annotations, feel free to delete these introductory example annotations.",
     Some([|"knowledge"|]),
   ),
   (
