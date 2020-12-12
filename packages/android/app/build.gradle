@@ -45,6 +45,8 @@ dependencies {
 
     implementation "commons-io:commons-io:2.6"
 
+    implementation 'com.google.android.gms:play-services-auth:19.0.0'
+
     //
     // AWS
     //
@@ -58,4 +60,5 @@ dependencies {
     // Auth
     implementation 'com.amazonaws:aws-android-sdk-mobile-client:2.19.3'
     implementation 'com.amazonaws:aws-android-sdk-cognitoauth:2.19.3'
+    implementation('com.amazonaws:aws-android-sdk-auth-google:2.19.3@aar') { transitive = true }
 }

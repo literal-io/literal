@@ -75,6 +75,6 @@
     "hostedUIProviderMeta": "[{\"ProviderName\":\"Google\",\"authorize_scopes\":\"openid email profile\",\"AttributeMapping\":{\"email\":\"email\",\"username\":\"sub\"}}]",
     "thirdPartyAuth": true,
     "authProviders": [],
-    "oAuthMetadata": "{\"AllowedOAuthFlows\":[\"code\"],\"AllowedOAuthScopes\":[\"phone\",\"email\",\"openid\",\"profile\",\"aws.cognito.signin.user.admin\"],\"CallbackURLs\":[\"https://literal.io/authenticate/\",\"http://localhost:3000/authenticate/\",\"literal://callback/\",\"https://staging.literal.io/authenticate/\"],\"LogoutURLs\":[\"https://literal.io/authenticate/\",\"http://localhost:3000/authenticate/\",\"literal://signout/\",\"https://staging.literal.io/authenticate/\"]}",
-    "serviceName": "Cognito"
+    "serviceName": "Cognito",
+    "oAuthMetadata": "{\"AllowedOAuthFlows\":[\"code\"],\"AllowedOAuthScopes\":[\"phone\",\"email\",\"openid\",\"profile\",\"aws.cognito.signin.user.admin\"],\"CallbackURLs\":[\"https://literal.io/authenticate/\",\"http://localhost:3000/authenticate/\",\"literal://callback/\",\"https://staging.literal.io/authenticate/\"],\"LogoutURLs\":[\"https://literal.io/authenticate/\",\"http://localhost:3000/authenticate/\",\"literal://signout/\",\"https://staging.literal.io/authenticate/\"]}"
 }

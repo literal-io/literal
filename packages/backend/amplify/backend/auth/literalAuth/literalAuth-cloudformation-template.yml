@@ -177,10 +177,6 @@ Parameters:
   authProviders:
     Type: CommaDelimitedList
       
-  oAuthMetadata:
-    Type: String
-  
-            
   serviceName:
     Type: String
   
@@ -188,6 +184,11 @@ Parameters:
   hostedUIProviderCreds:
     Type: String
   
+            
+  oAuthMetadata:
+    Type: String
+  
+            
             
 Conditions:
   ShouldNotCreateEnvResources: !Equals [ !Ref env, NONE ]
@@ -845,6 +846,8 @@ Outputs :
   AppClientID:
     Value: !Ref 'UserPoolClient'
     Description: The user pool app client id
+  AppClientSecret:
+    Value: !GetAtt UserPoolClientInputs.appSecret
   
    
    

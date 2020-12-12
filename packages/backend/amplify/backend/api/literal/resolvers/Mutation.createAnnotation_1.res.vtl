@@ -12,12 +12,17 @@
     #if( $annotationCollectionPathParts.size() < 1 )
       $util.error("AnnotationCollection ID is not an IRI", "ValidationError")
     #end
-
     #set( $endIdx = $annotationCollectionPathParts.size() - 1 )
     #set( $tagId = $annotationCollectionPathParts.get($endIdx) )
 
+    ## Use the last part of the Annotation ID IRI as the annotation ID.
+    #set( $annotationPathParts = $annotationCollectionId.split("/") )
+    #if( $annotationPathParts.size() < 1 )
+      $util.error("Annotation ID is not an IRI", "ValidationError")
+    #end
+    #set( $endIdx = $annotationPathParts.size() - 1 )
+    #set( $annotationId = $annotationPathParts.get($endIdx) )
 
-    #set( $annotationId = $ctx.stash.input.id )
     #set( $annotationPageId = "${ctx.stash.constants.ORIGIN}/creators/${ctx.stash.identity}/annotation-pages/${tagId}" )
     #set( $annotationPageItemId = "${ctx.stash.constants.ORIGIN}/creators/${ctx.stash.identity}/annotation-collections/${tagId}/items/${annotationId}" )
 
