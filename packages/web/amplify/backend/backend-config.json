@@ -3,14 +3,7 @@
     "literalAuth": {
       "service": "Cognito",
       "providerPlugin": "awscloudformation",
-      "dependsOn": [
-        {
-          "category": "function",
-          "resourceName": "PostAuthentication",
-          "triggerProvider": "Cognito",
-          "attributes": ["Arn", "Name"]
-        }
-      ]
+      "dependsOn": []
     }
   },
   "api": {
@@ -44,17 +37,24 @@
         {
           "category": "auth",
           "resourceName": "literalAuth",
-          "attributes": ["UserPoolId"]
+          "attributes": [
+            "UserPoolId"
+          ]
         },
         {
           "category": "api",
           "resourceName": "literal",
-          "attributes": ["GraphQLAPIIdOutput", "GraphQLAPIEndpointOutput"]
+          "attributes": [
+            "GraphQLAPIIdOutput",
+            "GraphQLAPIEndpointOutput"
+          ]
         },
         {
           "category": "storage",
           "resourceName": "literalStorage",
-          "attributes": ["BucketName"]
+          "attributes": [
+            "BucketName"
+          ]
         }
       ]
     },
@@ -62,12 +62,6 @@
       "service": "Lambda",
       "providerPlugin": "awscloudformation",
       "build": true
-    },
-    "PostAuthentication": {
-      "service": "Lambda",
-      "providerPlugin": "awscloudformation",
-      "build": true,
-      "dependsOn": []
     }
   },
   "storage": {
