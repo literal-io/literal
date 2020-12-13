@@ -2,7 +2,7 @@
   "providers": [
     "awscloudformation"
   ],
-  "projectName": "literal",
+  "projectName": "literal - staging",
   "version": "3.0",
   "frontend": "javascript",
   "javascript": {
@@ -10,7 +10,7 @@
     "config": {
       "SourceDir": "src",
       "DistributionDir": "out",
-      "BuildCommand": "npm run-script build:production",
+      "BuildCommand": "npm run-script build",
       "StartCommand": "npm run-script start"
     }
   }

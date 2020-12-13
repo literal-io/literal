@@ -32,11 +32,23 @@ module WebEvent = {
     accessToken: string,
   };
 
-  [@decco]
-  type authGetUserInfoResult = {
-    id: string,
-    username: string,
-    attributes: Js.Json.t,
+  module AuthGetUserInfoResult = {
+    [@decco]
+    type attributes = {
+      email: string,
+      emailVerified: bool,
+      identities: string,
+      sub: string,
+    };
+
+    [@decco]
+    type t = {
+      id: string,
+      username: string,
+      attributes,
+    };
+
+    let decode = t_decode;
   };
 
   /**

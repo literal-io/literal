@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npm run bsb:clean && npm run bsb:build && concurrently -k -n \"bsb,next\" \"npm run bsb:start\" \"npm run next:dev\"",
+    "build": "npm run build:production",
     "build:production": "export NODE_ENV=production && npm run bsb:clean && npm run bsb:build && next build && next export",
     "next:dev": "next",
     "next:start": "NODE_ENV=production next start",
