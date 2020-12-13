@@ -62,12 +62,6 @@
       "service": "Lambda",
       "providerPlugin": "awscloudformation",
       "build": true
-    },
-    "PostAuthentication": {
-      "service": "Lambda",
-      "providerPlugin": "awscloudformation",
-      "build": true,
-      "dependsOn": []
     }
   },
   "storage": {

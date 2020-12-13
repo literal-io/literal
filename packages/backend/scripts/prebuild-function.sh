@@ -7,7 +7,6 @@ FUNCTION_DIR=`realpath "$(dirname $OWN_PATH)/../amplify/backend/function/"`
 
 GRAPHQL_RESOLVER_SRC_DIR="$FUNCTION_DIR/GraphQLResolver"
 CLOUDFRONT_ORIGIN_REQUEST_SRC_DIR="$FUNCTION_DIR/CloudfrontOriginRequest"
-POST_AUTHENTICATION_SRC_DIR="$FUNCTION_DIR/PostAuthentication"
 
 # Install build depedencies for each of the functions.
 (cd $GRAPHQL_RESOLVER_SRC_DIR && npm install)
@@ -16,9 +15,5 @@ POST_AUTHENTICATION_SRC_DIR="$FUNCTION_DIR/PostAuthentication"
 
 # Sync against the currently deployed GraphQL schema.
 (cd $GRAPHQL_RESOLVER_SRC_DIR && \
-  npm run graphql:sync-schema && \
-  npm link @literal-io/bs-aws-amplify)
-
-(cd $POST_AUTHENTICATION_SRC_DIR && \
   npm run graphql:sync-schema && \
   npm link @literal-io/bs-aws-amplify)
