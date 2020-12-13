@@ -9,18 +9,6 @@ Parameters:
     Type: String
   
   
-  
-  
-  functionPostAuthenticationArn: 
-    Type: String
-    Default: functionPostAuthenticationArn
-  
-  functionPostAuthenticationName: 
-    Type: String
-    Default: functionPostAuthenticationName
-  
-  
-  
 
     
   identityPoolName:
@@ -243,19 +231,6 @@ Resources:
         
       
       
-      LambdaConfig:
-        
-        
-        
-        
-          PostAuthentication: !Ref functionPostAuthenticationArn
-        
-        
-        
-        
-        
-        
-      
       
       AutoVerifiedAttributes: !Ref autoVerifiedAttributes
       
@@ -283,15 +258,6 @@ Resources:
     
     
   
-  
-  UserPoolPostAuthenticationLambdaInvokePermission: 
-    Type: "AWS::Lambda::Permission"
-    DependsOn: UserPool
-    Properties: 
-      Action: "lambda:invokeFunction"
-      Principal: "cognito-idp.amazonaws.com"
-      FunctionName: !Ref functionPostAuthenticationName
-      SourceArn: !GetAtt UserPool.Arn
     
     
   

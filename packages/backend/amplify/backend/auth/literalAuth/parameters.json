@@ -38,7 +38,7 @@
     ],
     "userPoolGroups": false,
     "adminQueries": false,
-    "triggers": "{\n  \"PostAuthentication\": [\n    \"custom\"\n  ]\n}",
+    "triggers": "{}",
     "hostedUI": true,
     "userPoolGroupList": [],
     "authRoleArn": {
@@ -57,17 +57,7 @@
         "Ref": "AWS::StackId"
     },
     "permissions": [],
-    "dependsOn": [
-        {
-            "category": "function",
-            "resourceName": "PostAuthentication",
-            "triggerProvider": "Cognito",
-            "attributes": [
-                "Arn",
-                "Name"
-            ]
-        }
-    ],
+    "dependsOn": [],
     "hostedUIDomainName": "literal",
     "authProvidersUserPool": [
         "Google"
