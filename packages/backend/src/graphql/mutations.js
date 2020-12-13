@@ -240,6 +240,18 @@ export const createAnnotationFromExternalTarget = /* GraphQL */ `
         }
       }
       created
+      generator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        username
+        created
+        modified
+      }
       generated
       modified
       audience {
@@ -253,19 +265,6 @@ export const createAnnotationFromExternalTarget = /* GraphQL */ `
         type
         value
       }
-      creatorUsername
-      generator {
-        id
-        type
-        name
-        nickname
-        email_sha1
-        email
-        homepage
-        username
-        created
-        modified
-      }
       creator {
         id
         type
@@ -278,6 +277,7 @@ export const createAnnotationFromExternalTarget = /* GraphQL */ `
         created
         modified
       }
+      creatorUsername
     }
   }
 `;

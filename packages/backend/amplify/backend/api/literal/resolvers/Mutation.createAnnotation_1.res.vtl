@@ -16,7 +16,7 @@
     #set( $tagId = $annotationCollectionPathParts.get($endIdx) )
 
     ## Use the last part of the Annotation ID IRI as the annotation ID.
-    #set( $annotationPathParts = $annotationCollectionId.split("/") )
+    #set( $annotationPathParts = $ctx.stash.input.id.split("/") )
     #if( $annotationPathParts.size() < 1 )
       $util.error("Annotation ID is not an IRI", "ValidationError")
     #end
@@ -29,7 +29,7 @@
     #set( $createAnnotationPageItem = {
       "id": $annotationPageItemId,
       "annotationPageId": $annotationPageId,
-      "annotationId": $annotationId,
+      "annotationId": $ctx.stash.input.id,
       "creatorUsername": $ctx.stash.creatorUsername,
       "created": $util.time.nowISO8601(),
       "modified": $util.time.nowISO8601(),

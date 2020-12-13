@@ -22,6 +22,22 @@ export const annotationCollectionLabelAutocomplete = /* GraphQL */ `
     }
   }
 `;
+export const getAgent = /* GraphQL */ `
+  query GetAgent($username: String!) {
+    getAgent(username: $username) {
+      id
+      type
+      name
+      nickname
+      email_sha1
+      email
+      homepage
+      username
+      created
+      modified
+    }
+  }
+`;
 export const listAgents = /* GraphQL */ `
   query ListAgents(
     $username: String
@@ -50,22 +66,6 @@ export const listAgents = /* GraphQL */ `
         modified
       }
       nextToken
-    }
-  }
-`;
-export const getAgent = /* GraphQL */ `
-  query GetAgent($username: String!) {
-    getAgent(username: $username) {
-      id
-      type
-      name
-      nickname
-      email_sha1
-      email
-      homepage
-      username
-      created
-      modified
     }
   }
 `;
@@ -165,6 +165,18 @@ export const getAnnotation = /* GraphQL */ `
         }
       }
       created
+      generator {
+        id
+        type
+        name
+        nickname
+        email_sha1
+        email
+        homepage
+        username
+        created
+        modified
+      }
       generated
       modified
       audience {
@@ -178,19 +190,6 @@ export const getAnnotation = /* GraphQL */ `
         type
         value
       }
-      creatorUsername
-      generator {
-        id
-        type
-        name
-        nickname
-        email_sha1
-        email
-        homepage
-        username
-        created
-        modified
-      }
       creator {
         id
         type
@@ -203,6 +202,7 @@ export const getAnnotation = /* GraphQL */ `
         created
         modified
       }
+      creatorUsername
     }
   }
 `;
@@ -261,9 +261,6 @@ export const getAnnotationCollection = /* GraphQL */ `
         creatorUsername
       }
       lastAnnotationPageId
-      creatorUsername
-      created
-      modified
       creator {
         id
         type
@@ -276,6 +273,9 @@ export const getAnnotationCollection = /* GraphQL */ `
         created
         modified
       }
+      creatorUsername
+      created
+      modified
       first {
         context
         id
@@ -332,7 +332,6 @@ export const getAnnotationPageItem = /* GraphQL */ `
       modified
       annotationId
       annotationPageId
-      creatorUsername
       creator {
         id
         type
@@ -345,6 +344,7 @@ export const getAnnotationPageItem = /* GraphQL */ `
         created
         modified
       }
+      creatorUsername
       annotation {
         context
         type
@@ -446,7 +446,6 @@ export const getAnnotationPage = /* GraphQL */ `
       partOfAnnotationCollectionId
       nextAnnotationPageId
       prevAnnotationPageId
-      creatorUsername
       creator {
         id
         type
@@ -459,6 +458,7 @@ export const getAnnotationPage = /* GraphQL */ `
         created
         modified
       }
+      creatorUsername
       partOf {
         context
         id
