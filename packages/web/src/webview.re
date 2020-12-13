@@ -36,7 +36,7 @@ module WebEvent = {
     [@decco]
     type attributes = {
       email: string,
-      emailVerified: bool,
+      [@decco.key "email_verified"] emailVerified: string,
       identities: string,
       sub: string,
     };

@@ -23,7 +23,7 @@ let currentUserInfoWebview = () =>
                  username: userInfo.username,
                  attributes: {
                    email: userInfo.attributes.email,
-                   emailVerified: userInfo.attributes.emailVerified,
+                   emailVerified: userInfo.attributes.emailVerified === "true",
                    identities: userInfo.attributes.identities,
                    sub: userInfo.attributes.sub,
                  },
