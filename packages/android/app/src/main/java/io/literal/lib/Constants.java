@@ -1,7 +1,5 @@
 package io.literal.lib;
 
-import io.literal.BuildConfig;
-
 public class Constants {
     public static final String LOG_TAG = "Literal";
 

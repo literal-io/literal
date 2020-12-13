@@ -1,4 +1,3 @@
-open Styles;
 let styles = [%raw "require('./TextInput_Annotation.module.css')"];
 
 [@react.component]
@@ -12,10 +11,16 @@ let make =
       ~autoFocus=?,
       ~placeholder=?,
       ~tagsInputRef=?,
+      ~textInputRef=?,
     ) => {
-  let textInputRef = React.useRef(Js.Nullable.null);
-
   /** Reuse the ref prop if one was passed in, otherwise use our own **/
+  let textInputRef = {
+    let ownRef = React.useRef(Js.Nullable.null);
+    switch (textInputRef) {
+    | Some(textInputRef) => textInputRef
+    | None => ownRef
+    };
+  };
   let tagsInputRef = {
     let ownRef = React.useRef(Js.Nullable.null);
     switch (tagsInputRef) {
@@ -50,16 +55,13 @@ let make =
 
   <>
     <TextInput_Basic
+      ref=textInputRef
       onChange=onTextChange
       value=textValue
       ?placeholder
       ?autoFocus
       ?disabled
-      inputProps={
-        "onKeyDown": handleTextKeyDown,
-        "inputRef": textInputRef->ReactDOMRe.Ref.domRef->Js.Option.some,
-        "disableUnderline": false,
-      }
+      inputProps={"onKeyDown": handleTextKeyDown, "disableUnderline": false}
     />
     <TagsList value=tagsValue onChange=onTagsChange />
   </>;

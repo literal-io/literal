@@ -441,11 +441,10 @@ type Agent
   )
   @auth(
     rules: [
-      { allow: owner, ownerField: "username", operations: [read, update] }
       {
-        allow: private
-        provider: iam
-        operations: [create, read, update, delete]
+        allow: owner
+        ownerField: "username"
+        operations: [create, read, update]
       }
     ]
   )

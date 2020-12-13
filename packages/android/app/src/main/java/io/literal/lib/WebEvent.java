@@ -166,9 +166,7 @@ public class WebEvent {
                     AWSMobileClient awsMobileClient = AWSMobileClient.getInstance();
                     JSONObject result = new JSONObject();
                     result.put("username", awsMobileClient.getUsername());
-
-                    // FIXME: getUserAttributes is slow - separate network call?
-                    result.put("attributes", new JSONObject(/*awsMobileClient.getUserAttributes()*/));
+                    result.put("attributes", new JSONObject(awsMobileClient.getUserAttributes()));
                     result.put("id", awsMobileClient.getIdentityId());
 
                     Log.i(Constants.LOG_TAG, "GetUserInfo: " + result.toString());

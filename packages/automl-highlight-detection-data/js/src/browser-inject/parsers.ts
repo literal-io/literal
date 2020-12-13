@@ -51,6 +51,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -80,7 +84,7 @@ export const parsers: { [domain: string]: ParserInterface } = {
       ($("*") as any).off();
 
       // remove non-text elements
-      document.querySelectorAll("table, h2, img, sup, ol").forEach((elem) => {
+      document.querySelectorAll("table, h2, img, sup, ol, .thumb").forEach((elem) => {
         elem.remove();
       });
 
@@ -100,7 +104,7 @@ export const parsers: { [domain: string]: ParserInterface } = {
 
       return textNodes;
     },
-    getBoundaryAncestorSelector: () => "section",
+    getBoundaryAncestorSelector: () => "p",
   },
   [DOMAIN.RIBBONFARM]: {
     getUrls: () => [
@@ -130,6 +134,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
         wmHeader.remove();
+      }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
       }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
@@ -189,6 +197,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
         wmHeader.remove();
+      }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
       }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
@@ -251,6 +263,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -274,7 +290,14 @@ export const parsers: { [domain: string]: ParserInterface } = {
         actionBar.remove();
       }
 
-      return scope.getTextNodes(document.querySelector(".entry-content"));
+      const textNodes = Array.from(
+        document.querySelectorAll(".entry-content > p")
+      )
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
+
+      return textNodes;
     },
   },
   [DOMAIN.ACM_BLOG]: {
@@ -309,6 +332,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
         wmHeader.remove();
+      }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
       }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
@@ -370,6 +397,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -420,6 +451,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
         wmHeader.remove();
+      }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
       }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
@@ -473,6 +508,13 @@ export const parsers: { [domain: string]: ParserInterface } = {
 
       return path1 && path2 && path1 === path2;
     },
+    getScrollOffsetHeight: () => {
+      const header = document.querySelector(".main-menu-content");
+      if (header) {
+        return header.clientHeight;
+      }
+      return 0;
+    },
     getBoundaryAncestorSelector: () => "p",
     parse: (scope: InjectScope): Text[] => {
       // preamble
@@ -480,6 +522,11 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
+
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -498,7 +545,12 @@ export const parsers: { [domain: string]: ParserInterface } = {
         document.head.appendChild(viewport);
       }
 
-      return scope.getTextNodes(document.querySelector("article"));
+      const textNodes = Array.from(document.querySelectorAll(".body > p"))
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
+
+      return textNodes;
     },
   },
   [DOMAIN.PETER_TURCHIN_BLOG]: {
@@ -534,6 +586,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
         wmHeader.remove();
+      }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
       }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
@@ -594,6 +650,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
         wmHeader.remove();
+      }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
       }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
@@ -658,6 +718,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -679,7 +743,12 @@ export const parsers: { [domain: string]: ParserInterface } = {
         document.head.appendChild(viewport);
       }
 
-      return scope.getTextNodes(document.querySelector("#markdownBody"));
+      const textNodes = Array.from(document.querySelectorAll("section > p"))
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
+
+      return textNodes;
     },
   },
   [DOMAIN.NATURE]: {
@@ -724,6 +793,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -744,7 +817,7 @@ export const parsers: { [domain: string]: ParserInterface } = {
 
       // remove cookie consent header, subscription prompt
       document
-        .querySelectorAll(".optanon-alert-box-wrapper,.c-site-messages")
+        .querySelectorAll(".optanon-alert-box-wrapper,.c-site-messages,.c-cookie-banner")
         .forEach((el) => {
           el.remove();
         });
@@ -798,6 +871,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
         wmHeader.remove();
+      }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
       }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
@@ -864,6 +941,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -915,6 +996,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
         wmHeader.remove();
+      }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
       }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
@@ -981,6 +1066,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -1003,7 +1092,18 @@ export const parsers: { [domain: string]: ParserInterface } = {
         elem.remove();
       });
 
-      return scope.getTextNodes(document.querySelector(".article-body"));
+      document.querySelectorAll(".article-tools_mobile").forEach((elem) => {
+        elem.remove();
+      });
+
+      const textNodes = Array.from(
+        document.querySelectorAll(".article-body > p")
+      )
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
+
+      return textNodes;
     },
   },
   [DOMAIN.COCKROACH_DB_BLOG]: {
@@ -1035,6 +1135,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
         wmHeader.remove();
+      }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
       }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
@@ -1094,6 +1198,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -1148,6 +1256,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -1165,19 +1277,14 @@ export const parsers: { [domain: string]: ParserInterface } = {
         viewport.setAttribute("content", viewportContent);
         document.head.appendChild(viewport);
       }
+
+      document.querySelectorAll("table").forEach((elem) => elem.remove());
       const banner = document.querySelector("#cookieChoiceInfo");
       if (banner) {
         banner.remove();
       }
 
-      const textNodes = Array.from(
-        document.querySelectorAll(".post-content > p")
-      )
-        .map(scope.getTextNodes)
-        //@ts-ignore: this should work fine
-        .flat();
-
-      return textNodes;
+      return scope.getTextNodes(document.querySelector(".post-content"));
     },
   },
   [DOMAIN.NPR_TEXT]: {
@@ -1215,6 +1322,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -1237,9 +1348,14 @@ export const parsers: { [domain: string]: ParserInterface } = {
         banner.remove();
       }
 
-      return scope.getTextNodes(
-        document.querySelector(".paragraphs-container")
-      );
+      const textNodes = Array.from(
+        document.querySelectorAll(".paragraphs-container > p")
+      )
+        .map(scope.getTextNodes)
+        //@ts-ignore: this should work fine
+        .flat();
+
+      return textNodes;
     },
   },
   [DOMAIN.BOOK_FORUM]: {
@@ -1280,6 +1396,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
         wmHeader.remove();
+      }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
       }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
@@ -1358,6 +1478,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -1415,6 +1539,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
         wmHeader.remove();
+      }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
       }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
@@ -1484,6 +1612,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -1550,6 +1682,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -1608,6 +1744,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
         wmHeader.remove();
+      }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
       }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
@@ -1675,6 +1815,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
         wmHeader.remove();
+      }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
       }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
@@ -1749,6 +1893,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -1815,6 +1963,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       if (wmHeader) {
         wmHeader.remove();
       }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
+      }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");
       });
@@ -1872,6 +2024,10 @@ export const parsers: { [domain: string]: ParserInterface } = {
       const wmHeader = document.getElementById("wm-ipp-base");
       if (wmHeader) {
         wmHeader.remove();
+      }
+      const donatoHeader = document.getElementById("donato");
+      if (donatoHeader) {
+        donatoHeader.remove();
       }
       document.querySelectorAll("input, textarea").forEach((elem) => {
         elem.setAttribute("disabled", "disabled");

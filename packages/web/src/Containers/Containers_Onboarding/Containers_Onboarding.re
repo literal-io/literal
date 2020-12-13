@@ -11,7 +11,7 @@ let onboardingNotes = [|
     None,
   ),
   (
-    "Annotations are organized primarily based on tags and bi-directional links between tags in order to retain context and build connections.\n\nTo add a tag to an annotation, write text into the input at the bottom of the screen and tap your device's \"enter\" key. Tags appear in a list at the bottom of an annotation.\n\nTap on a tag assocated with this annotation to explore.\n\n If you have any questions, feel free to reach out to hello@literal.io. Once you've created some annotations, feel free to delete these introductory example annotations.",
+    "Annotations are organized primarily based on tags and bi-directional links between tags in order to retain context and build connections.\n\nTo add a tag to an annotation, write text into the input at the bottom of the screen and tap your device's \"enter\" key. Tags appear in a list at the bottom of an annotation.\n\nTap on a tag assocated with this annotation and swipe left to explore.\n\n If you have any questions, feel free to reach out to hello@literal.io. Once you've created some annotations, feel free to delete these introductory example annotations.",
     Some([|"knowledge"|]),
   ),
   (
@@ -151,19 +151,45 @@ let make = (~currentUser, ~onAnnotationIdChange) => {
                );
           });
 
+      let createAgentInput = {
+        let username = AwsAmplify.Auth.CurrentUserInfo.(currentUser->username);
+        let email =
+          AwsAmplify.Auth.CurrentUserInfo.(currentUser->attributes->email);
+
+        Lib_GraphQL.makeHash(~digest="SHA-1", email)
+        |> Js.Promise.then_(hashedEmail =>
+             Js.Promise.resolve({
+               "id": Constants.apiOrigin ++ "/agents/" ++ username,
+               "email": Some([|Some(email)|]),
+               "email_sha1": Some([|Some(hashedEmail)|]),
+               "type": `PERSON,
+               "username": username,
+               "homepage": None,
+               "name": None,
+               "nickname": None,
+             })
+           );
+      };
+
       let _ =
-        Js.Promise.all(createAnnotationInputs)
-        |> Js.Promise.then_(inputs => {
+        Js.Promise.all2((
+          createAgentInput,
+          Js.Promise.all(createAnnotationInputs),
+        ))
+        |> Js.Promise.then_(((createAgentInput, createAnnotationInputs)) => {
              let variables =
                OnboardingMutation.makeVariables(
-                 ~createAnnotationInput1=inputs[0],
-                 ~createAnnotationInput2=inputs[1],
-                 ~createAnnotationInput3=inputs[2],
+                 ~createAgentInput,
+                 ~createAnnotationInput1=createAnnotationInputs[0],
+                 ~createAnnotationInput2=createAnnotationInputs[1],
+                 ~createAnnotationInput3=createAnnotationInputs[2],
+                 ~createAnnotationInput4=createAnnotationInputs[3],
+                 ~createAnnotationInput5=createAnnotationInputs[4],
+                 ~createAnnotationInput6=createAnnotationInputs[5],
                  (),
                );
              let result = onboardingMutation(~variables, ());
-             let _ =
-               updateCache(~currentUser, ~createAnnotationInputs=inputs);
+             let _ = updateCache(~currentUser, ~createAnnotationInputs);
              result;
            })
         |> Js.Promise.then_(((mutationResult, _)) => {

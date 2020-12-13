@@ -63,10 +63,19 @@ module Auth = {
 
   module CurrentUserInfo = {
     [@bs.deriving accessors]
+    type attributes = {
+      email: string,
+      [@bs.as "email_verified"]
+      emailVerified: bool,
+      identities: string,
+      sub: string,
+    };
+
+    [@bs.deriving accessors]
     type t = {
       id: option(string),
       username: string,
-      attributes: Js.Json.t,
+      attributes,
     };
   };
 

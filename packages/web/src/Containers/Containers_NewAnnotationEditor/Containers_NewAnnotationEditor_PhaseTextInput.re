@@ -2,6 +2,8 @@ open Containers_NewAnnotationEditor_GraphQL;
 
 [@react.component]
 let make = (~currentUser) => {
+  let scrollContainerRef = React.useRef(Js.Nullable.null);
+  let textInputRef = React.useRef(Js.Nullable.null);
   let (textValue, setTextValue) = React.useState(() => "");
   let (tagsValue, setTagsValue) =
     React.useState(() =>
@@ -23,6 +25,7 @@ let make = (~currentUser) => {
         },
       |]
     );
+  let previousTagsValue = React.useRef(tagsValue);
   let (pendingTagValue, setPendingTagValue) = React.useState(_ => "");
 
   let (createAnnotationMutation, _s, _f) =
@@ -185,7 +188,43 @@ let make = (~currentUser) => {
     ();
   };
 
+  let _ =
+    React.useEffect1(
+      () => {
+        // scroll the newly added tag into view
+        let _ =
+          switch (
+            Js.Nullable.toOption(scrollContainerRef.current),
+            Js.Nullable.toOption(textInputRef.current),
+          ) {
+          | (Some(scrollContainerElem), Some(textInputElem))
+              when
+                Js.Array2.length(tagsValue)
+                > Js.Array2.length(previousTagsValue.current) =>
+            let rect =
+              Webapi.Dom.Element.getBoundingClientRect(textInputElem);
+            let targetTop =
+              Webapi.Dom.DomRect.top(rect)
+              +. Webapi.Dom.DomRect.height(rect)
+              +. Webapi.Dom.(Window.scrollY(window));
+
+            let _ =
+              Webapi.Dom.Element.scrollToWithOptions(
+                {"top": targetTop, "left": 0., "behavior": "smooth"},
+                scrollContainerElem,
+              );
+            ();
+          | _ => ()
+          };
+
+        previousTagsValue.current = tagsValue;
+        None;
+      },
+      [|tagsValue|],
+    );
+
   <div
+    ref={scrollContainerRef->ReactDOMRe.Ref.domRef}
     className={Cn.fromList([
       "w-full",
       "h-full",
@@ -202,6 +241,7 @@ let make = (~currentUser) => {
         tagsValue
         placeholder="Lorem Ipsum..."
         autoFocus=true
+        textInputRef
       />
     </div>
     <div

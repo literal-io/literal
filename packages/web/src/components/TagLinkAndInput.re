@@ -197,6 +197,7 @@ let make = (~href, ~text, ~disabled=?, ~onChange) => {
           ])
         : Cn.fromList(["inline-flex", "flex-col", "border-lightDisabled"]),
       "border-b",
+      "border-dotted",
       "transition-all",
       "duration-300",
     ])}>

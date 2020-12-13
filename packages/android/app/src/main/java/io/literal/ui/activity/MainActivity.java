@@ -157,7 +157,17 @@ public class MainActivity extends AppCompatActivity {
         Log.d(Constants.LOG_TAG, "onActivityResult");
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == AuthClient.CUSTOM_TABS_ACTIVITY_CODE) {
-            AWSMobileClient.getInstance().handleAuthResponse(data);
+            Log.d(Constants.LOG_TAG, "handleAuthResponse");
+            AWSMobileClientFactory.initializeClient(this, new Callback<UserStateDetails>() {
+                @Override
+                public void onResult(UserStateDetails result) {
+                    AWSMobileClient.getInstance().handleAuthResponse(data);
+                }
+                @Override
+                public void onError(Exception e) {
+                    Log.e(Constants.LOG_TAG, "Unable to initializeClient: ", e);
+                }
+            });
         }
     }
 }

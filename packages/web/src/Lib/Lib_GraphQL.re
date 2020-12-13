@@ -4,8 +4,10 @@ external castToArrayLike:
 
 [@bs.send] external padStart: (string, int, string) => string = "padStart";
 
-let makeHash = text => {
-  Externals_Crypto.(digest("SHA-256", encode(makeTextEncoder(), text)))
+let makeHash = (~digest="SHA-256", text) => {
+  text
+  |> Externals_Crypto.encode(Externals_Crypto.makeTextEncoder())
+  |> Externals_Crypto.digest(digest)
   |> Js.Promise.then_(buffer =>
        buffer
        ->Js.TypedArray2.Uint8Array.fromBuffer

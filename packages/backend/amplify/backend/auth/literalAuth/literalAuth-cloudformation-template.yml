@@ -9,18 +9,6 @@ Parameters:
     Type: String
   
   
-  
-  
-  functionPostAuthenticationArn: 
-    Type: String
-    Default: functionPostAuthenticationArn
-  
-  functionPostAuthenticationName: 
-    Type: String
-    Default: functionPostAuthenticationName
-  
-  
-  
 
     
   identityPoolName:
@@ -177,11 +165,11 @@ Parameters:
   authProviders:
     Type: CommaDelimitedList
       
-  oAuthMetadata:
+  serviceName:
     Type: String
   
             
-  serviceName:
+  oAuthMetadata:
     Type: String
   
             
@@ -242,19 +230,6 @@ Resources:
         
       
       
-      LambdaConfig:
-        
-        
-        
-        
-          PostAuthentication: !Ref functionPostAuthenticationArn
-        
-        
-        
-        
-        
-        
-      
       
       AutoVerifiedAttributes: !Ref autoVerifiedAttributes
       
@@ -282,15 +257,6 @@ Resources:
     
     
   
-  
-  UserPoolPostAuthenticationLambdaInvokePermission: 
-    Type: "AWS::Lambda::Permission"
-    DependsOn: UserPool
-    Properties: 
-      Action: "lambda:invokeFunction"
-      Principal: "cognito-idp.amazonaws.com"
-      FunctionName: !Ref functionPostAuthenticationName
-      SourceArn: !GetAtt UserPool.Arn
     
     
   
@@ -845,6 +811,8 @@ Outputs :
   AppClientID:
     Value: !Ref 'UserPoolClient'
     Description: The user pool app client id
+  AppClientSecret:
+    Value: !GetAtt UserPoolClientInputs.appSecret
   
    
    

@@ -8,7 +8,7 @@ let make = (~children=React.null, ~className=?, ~style=?) =>
       "flex",
       "flex-row",
       "h-12",
-      Cn.unpack(className),
+      Cn.take(className),
     ])}>
     children
   </div>;

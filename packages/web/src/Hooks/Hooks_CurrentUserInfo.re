@@ -15,13 +15,18 @@ let currentUserInfoWebview = () =>
   |> Js.Promise.then_(result => {
        result
        ->Belt.Option.flatMap(data => {
-           switch (Webview.WebEvent.authGetUserInfoResult_decode(data)) {
+           switch (Webview.WebEvent.AuthGetUserInfoResult.decode(data)) {
            | Belt.Result.Ok(userInfo) =>
              Some(
                AwsAmplify.Auth.CurrentUserInfo.{
                  id: Some(userInfo.id),
                  username: userInfo.username,
-                 attributes: userInfo.attributes,
+                 attributes: {
+                   email: userInfo.attributes.email,
+                   emailVerified: userInfo.attributes.emailVerified === "true",
+                   identities: userInfo.attributes.identities,
+                   sub: userInfo.attributes.sub,
+                 },
                },
              )
            | Belt.Result.Error(_) => None

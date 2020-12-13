@@ -17,8 +17,7 @@
       },
       "function": {
         "GraphQLResolver": {},
-        "CloudfrontOriginRequest": {},
-        "PostAuthentication": {}
+        "CloudfrontOriginRequest": {}
       }
     }
   },
@@ -40,9 +39,7 @@
       },
       "function": {
         "GraphQLResolver": {},
-        "CloudfrontOriginRequest": {},
-        "PostAuthentication": {},
-        "literalAuthPostAuthentication": {}
+        "CloudfrontOriginRequest": {}
       }
     }
   }
