@@ -17,6 +17,7 @@ let request = (~query, ~operationName, ~variables) => {
   req.method_ = "POST";
   let _ = Js.Dict.set(req.headers, "host", host);
   let _ = Js.Dict.set(req.headers, "Content-Type", "application/json");
+  let _ = Js.Dict.set(req.headers, "origin", apiOrigin);
   req.body =
     body_encode({query, operationName, variables})->Js.Json.stringify;
 
