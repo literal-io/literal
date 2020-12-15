@@ -1,0 +1,27 @@
+.md {
+  @apply text-lightPrimary;
+}
+
+.md h1 {
+  @apply mb-8 font-serif text-xl;
+}
+
+.md h2 {
+  @apply mt-6 mb-6 font-serif text-lg;
+}
+
+.md h3 {
+  @apply mt-4 mb-4 font-serif text-base;
+}
+
+.md p {
+  @apply mb-2 font-sans text-sm text-lightSecondary;
+}
+
+.md li {
+  @apply mb-2 font-sans text-sm text-lightSecondary;
+}
+
+.md a {
+  @apply underline;
+}
