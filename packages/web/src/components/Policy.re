@@ -7,9 +7,7 @@ let make = (~html) =>
     className={Cn.fromList([
       "w-full",
       "h-full",
-      "overflow-y-scroll",
-      "flex",
-      "flex-col",
+      "overflow-y-auto",
     ])}>
     <div
       className={cn([
@@ -18,6 +16,7 @@ let make = (~html) =>
         "max-w-lg",
         "m-auto",
         "w-full",
+        "min-h-full"
       ])}>
       <div className={Cn.fromList(["mb-16", "flex", "flex-row"])}>
         <Next.Link _as={Routes.Index.path()} href=Routes.Index.staticPath>

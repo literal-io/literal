@@ -18,7 +18,7 @@ module Header = {
           "text-lightPrimary",
           "font-serif",
           "text-2xl",
-          "leading-none",
+          "leading-tight",
           "mb-8",
           "mt-20",
         ])}>
@@ -338,6 +338,11 @@ module Footer = {
       description: "View the source code.",
       href: "https://github.com/javamonn/literal",
     },
+    {
+      title: "Privacy Policy",
+      description: "What data we collect and why.",
+      href: "/policies/privacy",
+    }
   |];
 
   [@react.component]

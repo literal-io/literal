@@ -25,3 +25,7 @@
 .md a {
   @apply underline;
 }
+
+.md ul {
+  @apply list-inside list-square;
+}

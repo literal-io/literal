@@ -83,14 +83,6 @@ We give you the option to delete data. To request data deletion, contact us at [
 
 Our products and other web properties are operated in the United States. If you are located in the European Union or elsewhere outside of the United States, **please be aware that any information you provide to us will be transferred to and stored in the United States**. By using our Site, participating in any of our services and/or providing us with your information, you consent to this transfer.
 
-## When transferring personal data from the EU
-
-The GDPR requires that any data transferred out of the EU must be treated with the same level of protection that the EU privacy laws grant. The privacy laws of the United States generally do not meet that requirement. That is why since GDPR went into effect, Javamonn, LLC has offered a data processing addendum.
-
-We have incorporated a Data Processing Addendum to our [Terms of Service](https://literal.io/policies/terms-of-service) that is in effect when the GDPR applies to your use of Literal Services to process Customer Data as defined in the DPA. You can find the DPA linked within clause 7 of the Uptime, Security and Privacy section. The DPA includes the European Commission’s Standard Contractual Clauses (both controller-processor and controller-controller) to extend GDPR privacy principles, rights, and obligations everywhere personal data is processed.
-
-There are also a few ad-hoc cases where EU personal data may be transferred to the US related to Javamonn, LLC operations. For instance, if someone in the US comments on our company blog or a customer participates in one of our infrequent surveys. Such transfers are only occasional and transferred under the [Article 49(1)(b) derogation](https://gdpr-info.eu/art-49-gdpr/) under GDPR.
-
 ## Changes & questions
 
 We may update this policy as needed to comply with relevant regulations and reflect any new practices. You can view a history of the changes to our policies [on GitHub](https://github.com/literal-io/literal/tree/master/packages/web). Whenever we make a significant change to our policies, we will also notify you via email.
