@@ -1,4 +1,4 @@
-FROM gcr.io/automl-vision-ondevice/gcloud-container-1.12.0
+FROM gcr.io/cloud-devrel-public-resources/gcloud-container-1.14.0:latest
 
 ADD ./model /tmp/mounted_model/0001
 EXPOSE 8501

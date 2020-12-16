@@ -1,4 +1,5 @@
 const R = require("ramda");
+const RemarkHTML = require("remark-html");
 const amplifyConfig = require("./amplify/.config/local-env-info.json");
 
 module.exports = {
@@ -17,17 +18,35 @@ module.exports = {
       ),
       R.assocPath(
         ["module", "rules"],
-        R.append(
-          {
-            test: /\.svg$/,
-            loader: "file-loader",
-            options: {
-              outputPath: "static",
-              esModule: false,
-              name: dev ? "[name].[ext]" : "[contenthash].[ext]",
-              publicPath: "/_next/static",
+        R.concat(
+          [
+            {
+              test: /\.svg$/,
+              loader: "file-loader",
+              options: {
+                outputPath: "static",
+                esModule: false,
+                name: dev ? "[name].[ext]" : "[contenthash].[ext]",
+                publicPath: "/_next/static",
+              },
             },
-          },
+            {
+              test: /\.md$/,
+              use: [
+                {
+                  loader: "html-loader",
+                },
+                {
+                  loader: "remark-loader",
+                  options: {
+                    remarkOptions: {
+                      plugins: [RemarkHTML],
+                    },
+                  },
+                },
+              ],
+            },
+          ],
           R.pathOr([], ["module", "rules"], config)
         )
       ),

@@ -4,6 +4,22 @@ type router = {
   asPath: string,
 };
 
+type path('a) = {
+  params: 'a
+};
+type staticPaths('a) = {
+  paths: array(path('a)),
+  fallback: bool
+};
+
+type getStaticPropsContext('a) = {
+  params: 'a
+}
+
+type getStaticPropsResult('a) = {
+  props: 'a
+};
+
 module Router = {
   [@bs.module "next/router"] external useRouter: unit => router = "useRouter";
 

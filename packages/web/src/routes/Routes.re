@@ -48,3 +48,8 @@ module CreatorsIdAnnotationCollectionsId = {
 module Authenticate = {
   let path = () => "/authenticate";
 };
+
+module Index = {
+  let path = () => "/";
+  let staticPath = "/";
+}
