@@ -1,6 +1,0 @@
-lib
-src/**/*.bs.js
-.bsb.lock
-.merlin
-.graphql_ppx_cache
-gcloud-service-account.json

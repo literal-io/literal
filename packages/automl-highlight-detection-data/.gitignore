@@ -1,9 +1,0 @@
-dist
-output/screenshot/manifest.csv
-output/screenshot/*.png
-gcloud-service-account.json
-
-# Elastic Beanstalk Files
-.elasticbeanstalk/*
-!.elasticbeanstalk/*.cfg.yml
-!.elasticbeanstalk/*.global.yml
