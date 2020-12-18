@@ -1,4 +1,4 @@
-let _ = Sentry.(init(config(~dsn=Constants.Env.sentryDsn)));
+let _ = Sentry.(init(config(~dsn=Constants.Env.sentryDsn, ~normalizeDepth=10)));
 
 module RawErrorBoundary = {
   [@bs.module "./raw-error-boundary.js"] [@react.component]

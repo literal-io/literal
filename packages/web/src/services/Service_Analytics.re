@@ -16,13 +16,24 @@ type page = {
 };
 
 [@decco.encode]
-type click = {label: option(string), action: string};
+type click = {
+  label: option(string),
+  action: string,
+};
+
+[@decco.encode]
+type error = {
+  sentryEventId: string,
+  [@decco.key "type"]
+  type_: string,
+};
 
 [@bs.deriving accessors]
 type event =
   | GraphQLOperation(graphqlOperation)
   | Page(page)
-  | Click(click);
+  | Click(click)
+  | Error(error);
 
 let track = event => {
   let (name, properties) =
@@ -33,6 +44,7 @@ let track = event => {
       )
     | Page(p) => ("PAGE", page_encode(p))
     | Click(p) => ("CLICK", click_encode(p))
+    | Error(p) => ("ERROR", error_encode(p))
     };
 
   Constants.isBrowser

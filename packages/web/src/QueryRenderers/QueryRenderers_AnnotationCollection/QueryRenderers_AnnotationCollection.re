@@ -22,7 +22,6 @@ module Data = {
         ~onFetchMore,
         ~currentUser,
       ) => {
-    Js.log2("currentUser", currentUser);
     let (activeIdx, setActiveIdx) =
       React.useState(() =>
         initialAnnotationId
