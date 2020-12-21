@@ -7,9 +7,6 @@ exception PromiseError(Js.Promise.error);
 exception AuthenticationRequired;
 
 let report = exn => {
-  Js.Console.trace();
-  Js.Console.log(exn);
-
   let (error, errorContext) =
     switch (exn) {
     | InvalidState(message) => (
@@ -50,7 +47,7 @@ let report = exn => {
 
   let _ =
     switch (error, errorContext) {
-    //| _ when Constants.Env.nodeEnv != "production" => ()
+    | _ when Constants.Env.nodeEnv != "production" => Js.log(error)
     | (Some(error), Some(errorContext)) =>
       Sentry.captureExceptionWithContext(error, errorContext)
     | (Some(error), None) => Sentry.captureException(error)
@@ -58,7 +55,7 @@ let report = exn => {
     };
   let _ =
     switch (error) {
-    //| _ when Constants.Env.nodeEnv != "production" => ()
+    | _ when Constants.Env.nodeEnv != "production" => ()
     | Some(_) =>
       Service_Analytics.(
         {sentryEventId: Sentry.lastEventId(), type_: "ErrorService"}
