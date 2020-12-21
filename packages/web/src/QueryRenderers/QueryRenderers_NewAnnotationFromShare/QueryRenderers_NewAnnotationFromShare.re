@@ -241,10 +241,6 @@ module FromFileUrl = {
                  setPhase(currentPhase =>
                    switch (result) {
                    | ApolloHooks.Mutation.Errors(errors) =>
-                     errors->Belt.Array.forEach(error => {
-                       Error.(report(GraphQLError(error)))
-                     });
-
                      handleError();
                      currentPhase;
                    | NoData =>
@@ -256,7 +252,7 @@ module FromFileUrl = {
                Js.Promise.resolve();
              })
           |> Js.Promise.catch(exn => {
-               let _ = Error.report(exn);
+               let _ = Error.(report(PromiseError(exn)));
                let _ = handleError();
                Js.Promise.resolve();
              });

@@ -194,10 +194,7 @@ let make = (~currentUser, ~onAnnotationIdChange) => {
            })
         |> Js.Promise.then_(((mutationResult, _)) => {
              switch (mutationResult) {
-             | ApolloHooks.Mutation.Errors(errors) =>
-               errors->Belt.Array.forEach(error => {
-                 Error.(report(GraphQLError(error)))
-               })
+             | ApolloHooks.Mutation.Errors(errors) => ()
              | NoData => Error.(report(ApolloEmptyData))
              | Data(_) => ()
              };

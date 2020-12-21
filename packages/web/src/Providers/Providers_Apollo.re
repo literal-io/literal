@@ -207,6 +207,7 @@ let analyticsLink =
 
     let _ =
       switch (error, errorContext) {
+      | _ when Constants.Env.nodeEnv != "production" => ()
       | (Some(error), Some(errorContext)) =>
         Sentry.captureExceptionWithContext(error, errorContext)
       | (Some(error), None) => Sentry.captureException(error)
@@ -214,6 +215,7 @@ let analyticsLink =
       };
     let _ =
       switch (error) {
+      | _ when Constants.Env.nodeEnv != "production" => ()
       | Some(_) =>
         Service_Analytics.(
           {

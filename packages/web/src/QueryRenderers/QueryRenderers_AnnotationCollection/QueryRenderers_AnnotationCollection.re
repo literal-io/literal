@@ -22,6 +22,8 @@ module Data = {
         ~onFetchMore,
         ~currentUser,
       ) => {
+    let _ = Error.(report(ApolloEmptyData));
+
     let (activeIdx, setActiveIdx) =
       React.useState(() =>
         initialAnnotationId
