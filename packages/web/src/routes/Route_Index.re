@@ -2,6 +2,7 @@ open Styles;
 
 let styles = [%raw "require('./Route_Index.module.css')"];
 
+let googlePlayStoreUrl = "https://play.google.com/store/apps/details?id=io.literal";
 let waitlistFormUrl = "https://docs.google.com/forms/d/1S6xFRp80nYYvPcz9oQYmiyOqLyXKHPZ0D2LofOxgWeo/edit";
 
 module Header = {
@@ -25,7 +26,12 @@ module Header = {
         {React.string("Literal is a textual annotation management system.")}
       </h1>
       <p
-        className={Cn.fromList(["font-sans", "text-lg", "text-lightSecondary", "mb-8"])}>
+        className={Cn.fromList([
+          "font-sans",
+          "text-lg",
+          "text-lightSecondary",
+          "mb-8",
+        ])}>
         {React.string(
            "The act of annotation is only the beginning. Leverage your highlights to enhance your reading experience.",
          )}
@@ -38,7 +44,7 @@ module Header = {
             );
           ();
         }}
-        href=waitlistFormUrl
+        href=googlePlayStoreUrl
         className={cn([
           "text-lightPrimary",
           "text-lg",
@@ -326,7 +332,7 @@ module Footer = {
     {
       title: "Install",
       description: "Get the mobile application.",
-      href: waitlistFormUrl,
+      href: googlePlayStoreUrl,
     },
     {
       title: "Contact",
@@ -342,7 +348,7 @@ module Footer = {
       title: "Privacy Policy",
       description: "What data we collect and why.",
       href: "/policies/privacy",
-    }
+    },
   |];
 
   [@react.component]
