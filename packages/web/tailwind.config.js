@@ -44,6 +44,7 @@ module.exports = {
         lightPrimary: "rgba(255, 255, 255, .92)",
         lightSecondary: "rgba(255, 255, 255, .72)",
         lightDisabled: "rgba(255, 255, 255, .50)",
+        backgroundGray: "rgb(229, 229, 229)",
       },
       borderColor: {
         lightPrimary: "rgba(255, 255, 255, .92)",

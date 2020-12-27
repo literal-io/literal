@@ -1,8 +1,3 @@
-let privacy: string = [%raw "require('../static/markdown/privacy-policy.md')"];
-let subprocessors: string = [%raw
-  "require('../static/markdown/subprocessors.md')"
-];
-
 [@react.component]
 let default = (~html) => <Policy html />;
 
@@ -12,7 +7,13 @@ type param = {id: string};
 let getStaticProps =
     (ctx: Next.getStaticPropsContext(param))
     : Next.getStaticPropsResult({. "html": string}) => {
-  Js.log2("ctx", ctx);
+  let privacy: string = [%raw
+    "require('../static/markdown/privacy-policy.md')"
+  ];
+  let subprocessors: string = [%raw
+    "require('../static/markdown/subprocessors.md')"
+  ];
+
   {
     props: {
       "html":

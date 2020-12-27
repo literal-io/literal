@@ -45,6 +45,11 @@ module CreatorsIdAnnotationCollectionsId = {
   };
 };
 
+module WritingId = {
+  let path = (~id) => "/writing/" ++ id;
+  let staticPath = "/writing/[id]";
+};
+
 module Authenticate = {
   let path = () => "/authenticate";
 };
@@ -52,4 +57,4 @@ module Authenticate = {
 module Index = {
   let path = () => "/";
   let staticPath = "/";
-}
+};

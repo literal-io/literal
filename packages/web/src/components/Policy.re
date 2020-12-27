@@ -3,11 +3,11 @@ open Styles;
 [@react.component]
 let make = (~html) =>
   <div
-    style={style(~backgroundColor="rgb(229,229,229)", ())}
     className={Cn.fromList([
       "w-full",
       "h-full",
       "overflow-y-auto",
+      "bg-backgroundGray"
     ])}>
     <div
       className={cn([
