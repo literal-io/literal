@@ -39,6 +39,11 @@ input:focus {
   outline: none;
 }
 
+::selection {
+  background-color: #FFF;
+  color: rgba(0, 0, 0, .92);
+}
+
 /* utility classes */
 
 .box-decoration-break-clone {
