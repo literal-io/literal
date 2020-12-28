@@ -14,8 +14,13 @@
   @apply mb-2 font-sans text-base;
   color: rgba(255, 255, 255, 0.8);
 }
-.md > ol li,
-.md > ul li {
+
+.md > details {
+  @apply mt-12;
+}
+
+.md ol li,
+.md ul li {
   @apply mb-2 font-sans text-base;
   color: rgba(255, 255, 255, 0.8);
 }
@@ -28,4 +33,8 @@
 
 .md > blockquote {
   @apply pl-4 mt-8 mb-8 font-serif text-lg border-l-2 text-lightPrimary;
+}
+
+.md > iframe {
+  @apply w-full mt-8 mb-8;
 }

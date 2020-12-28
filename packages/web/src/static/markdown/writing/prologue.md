@@ -6,11 +6,13 @@ The vision for the product is as follows:
 
 > For readers who interact with digital text, Literal is an annotation management system that enhances your reading experience. Unlike traditional digital highlight and note-taking applications, Literal enables the capturing of annotations wherever you read, retains the original context of the annotation, and enables building connections between disparate ideas and sources.
 
-In the spirit of textual annotation, I'd like to essentially annotate this statement in sections in order to expand on several points encapsulated within it to establish the set of beliefs that I'm working from, and encompass what Literal is (and in some cases, what it _will be)_ and what it is not.
+Today, capturing a new annotation using Literal looks like this:
+
+<iframe height="315" src="https://www.youtube.com/embed/9NurlekUeZ8" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+In the spirit of textual annotation, I'd like to essentially annotate the vision statement above piece by piece in order to communicate the set of beliefs and perspective that I'm working from while building it, and in the process establish what Literal is, what it _will be,_ and what it is not.
 
 ## Diagrams
-
-From the top.
 
 > For readers who interact with digital text, ...
 
@@ -20,7 +22,7 @@ It may seem counter-intuitive to spend time in what is effectively a product ann
 
 > Literal is an annotation management system...
 
-Let's unpack the buzzword [1] and talk about specific functionality for a second. An "annotation management system" is a means for the capturing of annotations of digital text, where "annotation" is a highlight with optional text associated with it, as well as a method of storage, organization, search, and enabling the general utilization of those annotations.
+An "annotation management system" is a means for the capturing of annotations of digital text, where "annotation" is a highlight with optional text associated with it, as well as a method of storage, organization, search, and enabling the utilization of those annotations.
 
 Today, Literal fulfills mostly just the "capture" aspect of this, but has some simple organization functionality, and of course is capable of storage.
 
@@ -28,9 +30,9 @@ Today, Literal fulfills mostly just the "capture" aspect of this, but has some s
 
 Moving on from specific functionality and onto the bigger picture of what that functionality enables, the intention of Literal is to improve both the process and outcome of reading. This happens in a number of ways:
 
-1. Interacting with text via annotation elevates the reading experience beyond one of passive consumption and into one that requires analysis and critical thought. Inserting oneself into the text and creating a feedback loop of new information and existing experience via annotation consolidates and increases retention of that new information
-2. Annotation is a means of distillation of an idea or concept. An annotation is a building block that can transported, rearranged, reconstructed, where as the source text is often a much larger and immutable construct. Abstraction through annotation enables the movement of ideas across disparate source contexts, allowing for ideas of wider complexity and deeper meaning to be developed.
-3. Annotations serve as guideposts for the future traversal of the current experience of the source, either by your own self, or by someone else. This preservation of the current perspective allows for one to approach the source in an augmented fashion — a dialectical interaction between self, source, and third perspective. [2]
+- Interacting with text via annotation elevates the reading experience beyond one of passive consumption and into one that requires analysis and critical thought. Inserting oneself into the text and creating a feedback loop of new information and existing experience via annotation consolidates and increases retention of that new information. <a href="#note-1">[1]</a>
+- Annotation is a means of distillation of an idea or concept. An annotation is a building block that can transported, rearranged, reconstructed, where as the source text is often a much larger and immutable construct. Abstraction through annotation enables the movement of ideas across disparate source contexts, allowing for ideas of wider complexity and deeper meaning to be developed.
+- Annotations serve as guideposts for the future traversal of the current experience of the source, either by your own self, or by someone else. This preservation of the current perspective allows for one to approach the source in an augmented fashion — a dialectical interaction between self, source, and third perspective. <a href="#note-2">[2]</a>
 
 > Unlike traditional digital highlight and note-taking applications, ....
 
@@ -44,7 +46,7 @@ Additionally, In an attempt to elucidate something by outlining its negative spa
 
 I think the vast majority of information consumption happens on mobile devices, reading included. Deep-reading often times takes place on the web (e.g. articles and blogs) but also within external applications like PDF readers and Kindle devices.
 
-Literal is currently mobile-only, and will remain mobile-first. Literal will have a desktop web interface, but the user experience will be primarily geared to support organization and management tasks.
+Literal is currently mobile-only, and will remain mobile-first in the future. Literal will have a desktop web interface, but the user experience on desktop will be optimized for organization and management tasks.
 
 Literal supports the parsing of highlights from screenshots and will extract the highlighted text. This enables the import of annotations created in most applications - web browsers, PDF readers, Kindle, and more. In the near term, I intend to add support for platform specific integrations like browser extensions.
 
@@ -66,12 +68,20 @@ Ideally this has given the reader an understanding of what Literal is today, and
 
 Install the Android application from the Play Store [here](https://play.google.com/store/apps/details?id=io.literal).
 
-Reach out to daniel@literal.io with thoughts, feedback, or just to say hello.
+Reach out to <a href="mailto:daniel@literal.io">daniel@literal.io</a> with thoughts, feedback, or just to say hello.
 
-<details>
+<details open>
   <summary>Notes</summary>
   <ol>
-    <li><p>I think this is mostly a buzzword I just invented. Most of the references to the phrase I can find are in reference to data labeling within relational database management systems</p></li>
-    <li><p><a href="https://www.gwern.net/About">Gwern</a> phrases this idea similarly: <i>Rather, I am attempting to explain things to my future self, who is intelligent and interested, but has forgotten. What I am doing is explaining why I decided what I did to myself and noting down everything I found interesting about it for future reference. I hope my other readers, whomever they may be, might find the topic as interesting as I found it, and the essay useful or at least entertaining–but the intended audience is my future self.<i></p></li>
+    <li id="note-1">
+      <p>
+        <strong>[1]</strong> <a href="https://www.gwern.net/About">Gwern</a> phrases this idea well: <i>Rather, I am attempting to explain things to my future self, who is intelligent and interested, but has forgotten. What I am doing is explaining why I decided what I did to myself and noting down everything I found interesting about it for future reference. I hope my other readers, whomever they may be, might find the topic as interesting as I found it, and the essay useful or at least entertaining–but the intended audience is my future self.</i>
+      </p>
+    </li>
+    <li id="note-2">
+      <p>
+        <strong>[2]</strong> Research supporting this is abundant, e.g. <a href="https://www.sciencedirect.com/science/article/abs/pii/S0747563210001524">[1]</a> and <a href="https://repository.arizona.edu/handle/10150/185254">[2]</a>, among others.
+      </p>
+    </li>
   </ol>
 </details>
