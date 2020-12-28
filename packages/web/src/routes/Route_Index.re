@@ -335,6 +335,11 @@ module Footer = {
       href: googlePlayStoreUrl,
     },
     {
+      title: "Writing",
+      description: "View the blog.",
+      href: "/writing",
+    },
+    {
       title: "Contact",
       description: "Reach out to tell us what you think, ask a question, or just say hello.",
       href: "mailto:daniel@literal.io",

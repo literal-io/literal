@@ -1,31 +1,40 @@
 .md {
   @apply text-lightPrimary;
 }
-
-.md h1 {
+.md > h1 {
   @apply mb-8 font-serif text-xl;
 }
-
-.md h2 {
-  @apply mt-6 mb-6 font-serif text-lg;
+.md > h2 {
+  @apply pb-2 mt-10 mb-6 font-serif text-lg border-b border-dotted border-lightDisabled;
+}
+.md > h3 {
+  @apply mt-6 mb-4 font-serif text-base;
+}
+.md > p {
+  @apply mb-2 font-sans text-base;
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.md h3 {
-  @apply mt-4 mb-4 font-serif text-base;
+.md > details {
+  @apply mt-12;
 }
 
-.md p {
-  @apply mb-2 font-sans text-sm text-lightSecondary;
+.md ol li,
+.md ul li {
+  @apply mb-2 font-sans text-base;
+  color: rgba(255, 255, 255, 0.8);
 }
-
-.md li {
-  @apply mb-2 font-sans text-sm text-lightSecondary;
-}
-
 .md a {
   @apply underline;
 }
-
-.md ul {
+.md > ul {
   @apply list-inside list-square;
+}
+
+.md > blockquote {
+  @apply pl-4 mt-8 mb-8 font-serif text-lg border-l-2 text-lightPrimary;
+}
+
+.md > iframe {
+  @apply w-full mt-8 mb-8;
 }
