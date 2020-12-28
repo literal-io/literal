@@ -14,22 +14,5 @@ module.exports = {
         },
       },
     ],
-    process.env.NODE_ENV === "production"
-      ? [
-          "@fullhuman/postcss-purgecss",
-          {
-            content: ["./src/**/*.js"],
-            whitelist: [
-              "awsappsync",
-              "awsappsync--rehydrating",
-              "app",
-              "__next",
-              "mt-1/2",
-              "ml-1/2",
-              "button"
-            ],
-          },
-        ]
-      : null,
   ].filter(Boolean),
 };
