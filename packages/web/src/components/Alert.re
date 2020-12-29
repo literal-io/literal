@@ -81,7 +81,7 @@ let make = (~urlSearchParams, ~visibleDelay=250, ~clearDelay=5000, ~onClear=?) =
         "px-6",
         "py-6",
       ])}>
-      <span className={cn(["sans-serif", "text-lightPrimary", "text-base"])}>
+      <span className={cn(["sans-serif", "text-lightPrimary", "text-xs"])}>
         {React.string(alert)}
       </span>
       <div
