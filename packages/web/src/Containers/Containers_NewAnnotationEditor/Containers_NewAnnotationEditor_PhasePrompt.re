@@ -118,7 +118,7 @@ let make = (~onCreateFromText, ~onCreateFromFile) => {
         "items-center",
         "p-6",
       ])}>
-      <p className={Cn.fromList(["text-lightSecondary", "mr-6"])}>
+      <p className={Cn.fromList(["text-lightSecondary", "mr-6", "text-xs"])}>
         {React.string(
            "Use the sharesheet to import highlighted text and screenshots directly from the apps you use to read.",
          )}

@@ -1,7 +1,25 @@
 apply plugin: 'com.android.application'
 apply plugin: 'com.amazonaws.appsync'
 
+def signingPropertiesFile = rootProject.file('./signing.properties')
+def signingProperties = new Properties()
+signingProperties.load(new FileInputStream(signingPropertiesFile))
+
 android {
+    signingConfigs {
+        beta {
+            storeFile file(signingProperties['BETA_STORE_FILE'])
+            storePassword signingProperties['BETA_STORE_PASSWORD']
+            keyAlias signingProperties['BETA_KEY_ALIAS']
+            keyPassword signingProperties['BETA_KEY_PASSWORD']
+        }
+        release {
+            storeFile file(signingProperties['RELEASE_STORE_FILE'])
+            storePassword signingProperties['RELEASE_STORE_PASSWORD']
+            keyAlias signingProperties['RELEASE_STORE_ALIAS']
+            keyPassword signingProperties['RELEASE_KEY_PASSWORD']
+        }
+    }
     compileSdkVersion 29
     buildToolsVersion "29.0.3"
 
@@ -14,8 +32,8 @@ android {
         applicationId "io.literal"
         minSdkVersion 24
         targetSdkVersion 29
-        versionCode 6
-        versionName "1.5"
+        versionCode 7
+        versionName "1.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -23,7 +41,20 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+            debuggable false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        beta {
+            initWith release
+            applicationIdSuffix ".beta"
+            versionNameSuffix "-beta"
+            signingConfig signingConfigs.beta
+        }
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+            debuggable true
         }
     }
 

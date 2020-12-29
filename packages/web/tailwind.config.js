@@ -6,7 +6,7 @@ module.exports = {
   theme: {
     fontFamily: {
       sans: [
-        "Titillium Web",
+        "Roboto Mono",
         "system-ui",
         "-apple-system",
         "BlinkMacSystemFont",
