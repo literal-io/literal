@@ -77,7 +77,7 @@ module TextField = {
           "font-sans",
           "text-lightPrimary",
           "font-medium",
-          "text-lg",
+          "text-base",
           "bg-black",
           "outline-none",
           "resize-none",
@@ -97,6 +97,7 @@ module Link = {
   [@react.component]
   let make = (~href, ~text, ~disabled=?, ~onLongPress) => {
     let timeoutId = React.useRef(None);
+    let router = Next.Router.useRouter();
 
     let _ =
       React.useEffect0(() => {
@@ -128,13 +129,35 @@ module Link = {
     };
 
     let handleClick = _ => {
-      let _ =
-        href->Belt.Option.forEach(href =>
-          Next.Router.pushWithAs(
-            Routes.CreatorsIdAnnotationCollectionsId.staticPath,
-            href,
+      let annotationCollectionIdComponent =
+        router.Next.query
+        ->Js.Json.decodeObject
+        ->Belt.Option.flatMap(o =>
+            Js.Dict.get(o, "annotationCollectionIdComponent")
           )
-        );
+        ->Belt.Option.flatMap(Js.Json.decodeString);
+
+      let shouldNavigate =
+        !
+          Belt.Option.eq(
+            href->Belt.Option.map(
+              Lib_GraphQL.AnnotationCollection.idComponent,
+            ),
+            annotationCollectionIdComponent,
+            (a, b) =>
+            a === b
+          );
+
+      let _ =
+        if (shouldNavigate) {
+          href->Belt.Option.forEach(href =>
+            Next.Router.pushWithAs(
+              Routes.CreatorsIdAnnotationCollectionsId.staticPath,
+              href,
+            )
+          );
+        };
+
       let _ =
         Service_Analytics.(
           track(Click({action: "tag", label: Some(text)}))
@@ -150,7 +173,7 @@ module Link = {
         "font-sans",
         "text-lightSecondary",
         "font-medium",
-        "text-lg",
+        "text-base",
         "normal-case",
         "justify-start",
       ])}>

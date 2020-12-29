@@ -1,6 +1,6 @@
 import "../app.css";
-import "typeface-titillium-web";
-import "typeface-domine";
+import "@fontsource/roboto-mono/latin.css"
+import "@fontsource/domine/latin.css"
 
 import Head from "next/head";
 import Router from "next/router";

@@ -51,6 +51,11 @@ android {
             versionNameSuffix "-beta"
             signingConfig signingConfigs.beta
         }
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+            debuggable true
+        }
     }
 
 }

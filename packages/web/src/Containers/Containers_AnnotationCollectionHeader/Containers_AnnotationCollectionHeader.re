@@ -134,7 +134,7 @@ let make =
           "font-sans",
           "font-bold",
           "leading-none",
-          "text-xl",
+          "text-lg",
         ])}>
         {annotationCollection
          ->Belt.Option.map(ac => React.string(ac##label))

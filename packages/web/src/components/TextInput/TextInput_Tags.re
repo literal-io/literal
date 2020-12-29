@@ -86,7 +86,7 @@ let make =
                   "font-sans",
                   "text-lightPrimary",
                   "font-medium",
-                  "text-lg",
+                  "text-base",
                 ])
               ),
             ~underline=Cn.(fromList([styles##underline])),

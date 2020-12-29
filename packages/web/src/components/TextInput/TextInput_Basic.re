@@ -106,7 +106,7 @@ let make =
                   fromList([
                     "text-lightPrimary",
                     "font-serif",
-                    "text-lg",
+                    "text-base",
                     "leading-relaxed",
                     "box-decoration-break-clone",
                     "px-1",

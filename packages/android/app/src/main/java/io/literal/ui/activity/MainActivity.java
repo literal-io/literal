@@ -20,6 +20,7 @@ import com.amazonaws.mobile.client.UserStateListener;
 import com.amazonaws.mobileconnectors.cognitoauth.AuthClient;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import io.literal.R;
@@ -63,12 +64,18 @@ public class MainActivity extends AppCompatActivity {
                 fileActivityResultCallback.setFilePathCallback(new ValueCallback<Uri[]>() {
                     @Override
                     public void onReceiveValue(Uri[] value) {
-                        Uri[] absoluteUrls = new Uri[value.length];
+                        ArrayList<Uri> absoluteUrls = new ArrayList<>();
                         for (int idx = 0; idx < value.length; idx++) {
-                            File file = ContentResolverLib.toFile(MainActivity.this, value[idx], UUID.randomUUID().toString());
-                            absoluteUrls[idx] = Uri.fromFile(file);
+                            if (value[idx] != null) {
+                                File file = ContentResolverLib.toFile(MainActivity.this, value[idx], UUID.randomUUID().toString());
+                                absoluteUrls.add(Uri.fromFile(file));
+                            }
                         }
-                        filePathCallback.onReceiveValue(absoluteUrls);
+                        if (absoluteUrls.size() > 0) {
+                            filePathCallback.onReceiveValue(absoluteUrls.toArray(new Uri[0]));
+                        } else {
+                            filePathCallback.onReceiveValue(null);
+                        }
                     }
                 });
                 getFileContent.launch("image/*");
