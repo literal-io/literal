@@ -2,9 +2,9 @@
   <mj-body background-color="#000">
 
     <!-- Header -->
-    <mj-section padding-top="32px" padding-bottom="32px" padding-left="16px" padding-right="16px">
+    <mj-section padding-top="36px" padding-bottom="36px" padding-left="16px" padding-right="16px">
       <mj-column>
-        <mj-image padding="0px" align="left" width="36px" height="36px" src="https://literal.io/favicon.png" href="https://literal.io" alt="Literal" title="Literal" />
+        <mj-image padding="0px" align="left" width="32px" height="32px" src="http://localhost:8000/logo-128.png" href="https://literal.io" alt="Literal" title="Literal" />
       </mj-column>
     </mj-section>
 
@@ -12,7 +12,7 @@
     <mj-section padding-bottom="24px" padding-left="16px" padding-right="16px">
       <mj-column border-bottom="dotted 1px rgba(255, 255, 255, 0.50)">
         <mj-text color="rgba(255, 255, 255, 0.92)" font-family="Domine, Georgia, serif" font-size="18px" padding="0px">
-          <h1 style="font-size: 18px">Literal is now available on Android.</h1>
+          <h1 style="font-size: 18px; font-weight:normal; line-height: 1.5">Literal is now available on Android.</h1>
         </mj-text>
       </mj-column>
     </mj-section>
@@ -20,16 +20,22 @@
     <!-- Body -->
     <mj-section padding-bottom="200px" padding-left="16px" padding-right="16px">
       <mj-column>
-        <mj-text color="rgba(255, 255, 255, 0.80)" font-family="Roboto Mono, Courier, monospace" font-size="16px" padding="0px">
-          <p style="margin: 0">Literal is a textual annotation management system. The act of annotation is only the beginning. Leverage your highlights to enhance your reading experience.</p>
+        <mj-text color="rgba(255, 255, 255, 0.80)" font-family="Roboto Mono, Courier, monospace" font-size="14px" padding="0px">
+          <p style="margin: 0; line-height: 1.5;">
+            Install Literal today from the <a style="color: rgba(255, 255, 255, 0.80)" href="https://play.google.com/store/apps/details?id=io.literal">Google Play Store</a>.
+          </p>
         </mj-text>
-        <mj-spacer height="16px" />
-        <mj-text color="rgba(255, 255, 255, 0.80)" font-family="Roboto Mono, Courier, monospace" font-size="16px" padding="0px">
-          <p style="margin: 0">You're receiving this notification because you signed up for the Literal waitlist.</p>
+        <mj-spacer height="24px" />
+        <mj-text color="rgba(255, 255, 255, 0.80)" font-family="Roboto Mono, Courier, monospace" font-size="14px" padding="0px">
+          <p style="margin: 0; line-height: 1.5;">Literal is a textual annotation management system. Read the <a style="color: rgba(255, 255, 255, 0.80)" href="https://literal.io/writing/prologue">release announcement</a> or view the <a style="color: rgba(255, 255, 255, 0.80)" href="https://literal.io">website</a> to get a better idea of what Literal is today and what I intend for it to become.</p>
         </mj-text>
-        <mj-spacer height="16px" />
-        <mj-text color="rgba(255, 255, 255, 0.80)" font-family="Roboto Mono, Courier, monospace" font-size="16px" padding="0px">
-          <p style="margin: 0">Take a look at the <a style="color: rgba(255, 255, 255, 0.80)" href="https://literal.io/writing/prologue">release announcement</a> to get a better idea of what Literal is today and what I intend for it to become.</p>
+        <mj-spacer height="24px" />
+        <mj-text color="rgba(255, 255, 255, 0.80)" font-family="Roboto Mono, Courier, monospace" font-size="14px" padding="0px">
+          <p style="margin: 0; line-height: 1.5;">You're receiving this notification because you signed up for the Literal waitlist. If you do not own an Android device, an iOS application will be released in early 2021.</p>
+        </mj-text>
+        <mj-spacer height="24px" />
+        <mj-text color="rgba(255, 255, 255, 0.80)" font-family="Roboto Mono, Courier, monospace" font-size="14px" padding="0px">
+          <p style="margin: 0; line-height: 1.5;">Feel free to reply to this email with any thoughts, questions, or feedback that you have.</p>
         </mj-text>
       </mj-column>
     </mj-section>

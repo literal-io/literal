@@ -8,7 +8,7 @@ const MJML_OPTIONS = {
   fonts: {
     "Roboto Mono":
       "https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap",
-    Domaine: "https://fonts.googleapis.com/css2?family=Domine&display=swap",
+    Domine: "https://fonts.googleapis.com/css2?family=Domine&display=swap",
   },
 };
 
