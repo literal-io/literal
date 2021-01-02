@@ -1,5 +1,8 @@
 open Containers_AnnotationEditor_GraphQL;
 
+let modifiedSelector = (~annotation) =>
+  annotation##modified->Belt.Option.flatMap(Js.Json.decodeString);
+
 let textValueSelector = (~annotation) =>
   annotation##target
   ->Belt.Array.getBy(target =>
@@ -76,6 +79,28 @@ let handleSave =
     500,
   );
 
+module ModifiedValue = {
+  type t('a) = {
+    modified: option(string),
+    value: 'a,
+  };
+  let mostRecent = (a, b) =>
+    switch (a.modified, b.modified) {
+    | (Some(aModified), Some(bModified)) =>
+      Js.Date.(aModified->fromString->valueOf)
+      > Js.Date.(bModified->fromString->valueOf)
+        ? a : b
+    | (Some(_), None) => a
+    | (None, Some(_)) => b
+    | (None, None) => a
+    };
+
+  let make = value => {
+    value,
+    modified: Js.Date.(make()->toISOString)->Js.Option.some,
+  };
+};
+
 [@react.component]
 let make = (~annotationFragment as annotation, ~currentUser) => {
   let (patchAnnotationMutation, _s, _f) =
@@ -84,31 +109,60 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
   let textInputRef = React.useRef(Js.Nullable.null);
   let previousAnnotation = React.useRef(annotation);
 
-  let (textValue, setTextValue) =
-    React.useState(() => textValueSelector(~annotation));
+  let (ModifiedValue.{value: textValue}, setTextValue) =
+    React.useState(() =>
+      ModifiedValue.{
+        value: textValueSelector(~annotation),
+        modified: modifiedSelector(~annotation),
+      }
+    );
+
   let _ =
     React.useEffect1(
       () => {
-        let _ = setTextValue(_ => textValueSelector(~annotation));
+        let _ =
+          setTextValue(currentModified => {
+            let newModified =
+              ModifiedValue.{
+                value: textValueSelector(~annotation),
+                modified: modifiedSelector(~annotation),
+              };
+
+            ModifiedValue.mostRecent(newModified, currentModified);
+          });
         None;
       },
       [|annotation|],
     );
 
-  let (tagsValue, setTagsValue) =
-    React.useState(() => tagsValueSelector(~currentUser, ~annotation));
+  let (ModifiedValue.{value: tagsValue}, setTagsValue) =
+    React.useState(() =>
+      ModifiedValue.{
+        value: tagsValueSelector(~currentUser, ~annotation),
+        modified: modifiedSelector(~annotation),
+      }
+    );
+
   let _ =
     React.useEffect2(
       () => {
         let _ =
-          setTagsValue(_ => tagsValueSelector(~currentUser, ~annotation));
+          setTagsValue(currentModified => {
+            let newModified =
+              ModifiedValue.{
+                value: tagsValueSelector(~currentUser, ~annotation),
+                modified: modifiedSelector(~annotation),
+              };
+
+            ModifiedValue.mostRecent(newModified, currentModified);
+          });
         None;
       },
       (annotation, currentUser),
     );
 
   let handleTagsChange = tagsValue => {
-    let _ = setTagsValue(_ => tagsValue);
+    let _ = setTagsValue(_ => ModifiedValue.make(tagsValue));
     let tagsWithIds =
       tagsValue
       ->Belt.Array.map((tag: Containers_AnnotationEditor_Types.tag) => {
@@ -159,7 +213,25 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
              "creatorUsername":
                AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
              "operations": [|
-               {"set": Some({"body": Some(updateBody), "target": None})},
+               {
+                 "set":
+                   Some({
+                     "body": Some(updateBody),
+                     "target": None,
+                     "modified": None,
+                   }),
+               },
+               {
+                 "set":
+                   Some({
+                     "body": None,
+                     "target": None,
+                     "modified":
+                       Js.Date.(make()->toISOString)
+                       ->Js.Json.string
+                       ->Js.Option.some,
+                   }),
+               },
              |],
            };
            let variables = PatchAnnotationMutation.makeVariables(~input, ());
@@ -177,7 +249,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
   };
 
   let handleTextChange = textValue => {
-    let _ = setTextValue(_ => textValue);
+    let _ = setTextValue(_ => ModifiedValue.make(textValue));
     let updateTargetInput = {
       let idx =
         annotation##target
@@ -238,12 +310,29 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
             AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
           "operations": [|
             {
-              "set": Some({"body": None, "target": Some(updateTargetInput)}),
+              "set":
+                Some({
+                  "body": None,
+                  "target": Some(updateTargetInput),
+                  "modified": None,
+                }),
+            },
+            {
+              "set":
+                Some({
+                  "body": None,
+                  "target": None,
+                  "modified":
+                    Js.Date.(make()->toISOString)
+                    ->Js.Json.string
+                    ->Js.Option.some,
+                }),
             },
           |],
         },
         (),
       );
+
     let _ = handleSave(. variables, patchAnnotationMutation);
     ();
   };
