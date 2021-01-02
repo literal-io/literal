@@ -16,6 +16,7 @@ module GetAnnotationFragment = [%graphql
   {|
     fragment editorNewFromShareAnnotationFragment on Annotation {
       id
+      modified
       target {
         ... on TextualTarget {
           value

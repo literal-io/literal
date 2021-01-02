@@ -98,6 +98,18 @@ module Data = {
                            ),
                          ),
                        "target": None,
+                       "modified": None,
+                     }),
+                 },
+                 {
+                   "set":
+                     Some({
+                       "body": None,
+                       "target": None,
+                       "modified":
+                         Js.Date.(make()->toISOString)
+                         ->Js.Json.string
+                         ->Js.Option.some,
                      }),
                  },
                |],

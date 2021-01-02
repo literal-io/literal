@@ -4,7 +4,6 @@ set -e
 OWN_PATH=`realpath $0`
 ROOT_DIR=`realpath "$(dirname $OWN_PATH)/../"`
 AWS_PROFILE=amplify-literal
-API_ID=rkihsloeqbdabdpebem3fqqjuy
 
 aws appsync get-introspection-schema \
   --format JSON \

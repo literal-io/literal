@@ -32,6 +32,7 @@ module GetAnnotationCollection = {
     .
     "__typename": string,
     "created": Js.Null.t(Js.Json.t),
+    "modified": Js.Null.t(Js.Json.t),
     "id": string,
     "body":
       Js.Null.t(
@@ -165,6 +166,7 @@ module GetAnnotationCollection = {
   let parsedAnnotationToCache = (annotation): cacheAnnotation => {
     "__typename": "Annotation",
     "created": annotation##created->Js.Null.fromOption,
+    "modified": annotation##modified->Js.Null.fromOption,
     "id": annotation##id,
     "body":
       annotation##body

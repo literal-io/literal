@@ -194,9 +194,20 @@ let updateCache =
         QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.parsedTextualBodyToCache,
       );
 
+  let updatedCacheAnnotationModified =
+    patchAnnotationMutationInput##operations
+    ->Belt.Array.keepMap(op => op##set->Belt.Option.flatMap(s => s##modified))
+    ->Belt.Array.get(0)
+    ->Belt.Option.getWithDefault(
+        Js.Date.(make()->toISOString)->Js.Json.string,
+      );
+
   let updatedCacheAnnotation =
     Ramda.mergeDeepLeft(
-      {"body": Some(updatedCacheAnnotationBody)},
+      {
+        "body": Some(updatedCacheAnnotationBody),
+        "modified": Some(updatedCacheAnnotationModified),
+      },
       cacheAnnotation,
     );
 

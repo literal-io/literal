@@ -190,11 +190,31 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
                AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
              "operations": [|
                {
-                 "set": Some({"body": Some(updateBodyInput), "target": None}),
+                 "set":
+                   Some({
+                     "body": Some(updateBodyInput),
+                     "target": None,
+                     "modified": None,
+                   }),
                },
                {
                  "set":
-                   Some({"body": None, "target": Some(updateTargetInput)}),
+                   Some({
+                     "body": None,
+                     "target": Some(updateTargetInput),
+                     "modified": None,
+                   }),
+               },
+               {
+                 "set":
+                   Some({
+                     "body": None,
+                     "target": None,
+                     "modified":
+                       Js.Date.(make()->toISOString)
+                       ->Js.Json.string
+                       ->Js.Option.some,
+                   }),
                },
              |],
            };

@@ -14,8 +14,8 @@
     "bsb:build": "bsb -make-world",
     "bsb:start": "bsb -make-world -w",
     "bsb:clean": "bsb -clean-world && ./scripts/bsb-post-clean.sh",
-    "amplify:graphql-sync-schema": "./scripts/graphql-sync-schema.sh && ./scripts/generate-fragment-types.js && npm run bsb:clean",
-    "amplify:production:pull": "amplify env pull --restore && amplify env checkout production && amplify api gql-compile"
+    "amplify:graphql-sync-schema:production": "API_ID=rkihsloeqbdabdpebem3fqqjuy ./scripts/graphql-sync-schema.sh && ./scripts/generate-fragment-types.js && npm run bsb:clean",
+    "amplify:graphql-sync-schema:staging": "API_ID=to6hgjbvbjb7roq46jyzhxr2my ./scripts/graphql-sync-schema.sh && ./scripts/generate-fragment-types.js && npm run bsb:clean"
   },
   "author": "",
   "license": "ISC",
