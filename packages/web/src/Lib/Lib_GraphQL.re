@@ -99,6 +99,7 @@ module Annotation = {
           ...input,
           __typename: "Annotation",
           created: (new Date()).toISOString(),
+          modified: (new Date()).toISOString(),
           body:
             input.body
               ? input.body.map(body => {

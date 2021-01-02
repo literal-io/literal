@@ -10,7 +10,7 @@ type action =
 let make = (~currentUser, ~initialPhaseState=`PhasePrompt) => {
   let (phaseState, dispatchPhaseAction) =
     React.useReducer(
-      (state, action) => {
+      (_, action) => {
         switch (action) {
         | SetPhase(nextPhase) => nextPhase
         }
