@@ -3,6 +3,7 @@ module GetAnnotationFragment = [%graphql
     fragment NewTagInputAnnotation on Annotation {
       id
       created
+      modified
       body {
         ... on TextualBody {
           id

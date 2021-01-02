@@ -128,7 +128,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
                 modified: modifiedSelector(~annotation),
               };
 
-            ModifiedValue.mostRecent(newModified, currentModified);
+            ModifiedValue.mostRecent(currentModified, newModified);
           });
         None;
       },
@@ -154,7 +154,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
                 modified: modifiedSelector(~annotation),
               };
 
-            ModifiedValue.mostRecent(newModified, currentModified);
+            ModifiedValue.mostRecent(currentModified, newModified);
           });
         None;
       },
@@ -162,6 +162,8 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
     );
 
   let handleTagsChange = tagsValue => {
+    let modifiedTs =
+      Js.Date.(make()->toISOString)->Js.Json.string->Js.Option.some;
     let _ = setTagsValue(_ => ModifiedValue.make(tagsValue));
     let tagsWithIds =
       tagsValue
@@ -226,10 +228,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
                    Some({
                      "body": None,
                      "target": None,
-                     "modified":
-                       Js.Date.(make()->toISOString)
-                       ->Js.Json.string
-                       ->Js.Option.some,
+                     "modified": modifiedTs,
                    }),
                },
              |],
@@ -249,6 +248,8 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
   };
 
   let handleTextChange = textValue => {
+    let modifiedTs =
+      Js.Date.(make()->toISOString)->Js.Json.string->Js.Option.some;
     let _ = setTextValue(_ => ModifiedValue.make(textValue));
     let updateTargetInput = {
       let idx =
@@ -319,14 +320,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
             },
             {
               "set":
-                Some({
-                  "body": None,
-                  "target": None,
-                  "modified":
-                    Js.Date.(make()->toISOString)
-                    ->Js.Json.string
-                    ->Js.Option.some,
-                }),
+                Some({"body": None, "target": None, "modified": modifiedTs}),
             },
           |],
         },

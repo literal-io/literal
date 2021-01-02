@@ -158,8 +158,6 @@ let updateCache =
       ~tags: array(Containers_AnnotationEditor_Types.tag),
       ~currentUser,
       ~patchAnnotationMutationInput,
-      ~modified=?,
-      (),
     ) => {
   let cacheAnnotation =
     QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.parsedAnnotationToCache(
