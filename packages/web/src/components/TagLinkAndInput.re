@@ -5,45 +5,37 @@ module TextField = {
 
     let (value, setValue) = React.useState(() => text);
 
-    let handleChange = ev => {
-      let data =
-        ev
-        ->ReactEvent.Form.nativeEvent
-        ->(ev => ev##data)
-        ->Js.Nullable.toOption;
-      let inputType = ev->ReactEvent.Form.nativeEvent->(ev => ev##inputType);
-      let os = Constants.bowser()->Bowser.getOS->Bowser.getOSName;
+    let handleChange = ev =>
+      switch (ReactEvent.Form.nativeEvent(ev)##inputType) {
+      /*** handled in handleKeyUp **/
+      | "insertLineBreak" => ()
+      | _ =>
+        let newValue = ev->ReactEvent.Form.target->(el => el##value);
 
-      let newValue =
-        switch (inputType, data, os) {
-        | ("insertText", Some(insertedText), _) =>
-          Some(value ++ insertedText)
-        | ("insertCompositionText", Some(insertedText), Some(`Android)) =>
-          Some(insertedText)
-        | ("deleteContentBackward", _, _) when Js.String.length(value) > 0 =>
-          let newValue =
-            Js.String2.slice(
-              value,
-              ~from=0,
-              ~to_=Js.String2.length(value) - 1,
-            );
-          let _ =
-            if (Js.String.length(newValue) === 0) {
-              ev->ReactEvent.Form.stopPropagation;
-            };
-          Some(newValue);
-        | _ => None
-        };
+        /** handled in handleKeyUp: subsequent delete when tag input is empty **/
+        let emptyAndNoChange =
+          Js.String2.length(newValue) === 0 && Js.String2.length(value) === 0;
 
-      let _ =
-        switch (newValue) {
-        | Some(newValue) =>
+        /**
+         * Android does not produce usable keyCodes, so we have to manually diff input values
+         * to determine when a newline is inserted.
+         *
+         * https://bugs.chromium.org/p/chromium/issues/detail?id=118639
+         */
+        let androidAndEndsWithNewLine =
+          switch (Constants.bowser()->Bowser.getOS->Bowser.getOSName) {
+          | Some(`Android) when Js.String2.endsWith(newValue, "\n") => true
+          | _ => false
+          };
+
+        if (!emptyAndNoChange && !androidAndEndsWithNewLine) {
           keyEventHandled.current = true;
           setValue(_ => newValue);
-        | None => ()
+        } else if (androidAndEndsWithNewLine) {
+          onChange(Some(value));
+          onBlur();
         };
-      ();
-    };
+      };
 
     let handleKeyDown = ev => {
       keyEventHandled.current = ReactEvent.Keyboard.isDefaultPrevented(ev);
@@ -51,12 +43,16 @@ module TextField = {
 
     let handleKeyUp = ev =>
       if (!keyEventHandled.current) {
+        /** on Android, keyCode seems to only be correct for backspace. **/
         let keyCode = ReactEvent.Keyboard.keyCode(ev);
-        if (keyCode === 13 /*** enter **/ && Js.String2.length(value) > 0) {
+        let newValue = ev->ReactEvent.Keyboard.target->(el => el##value);
+
+        if (keyCode === 13  /*** enter **/
+            && Js.String2.length(newValue) > 0) {
           onChange(Some(value));
           onBlur();
         } else if (keyCode === 8  /*** backspace **/
-                   && Js.String2.length(value) === 0) {
+                   && Js.String2.length(newValue) === 0) {
           onChange(None);
           onBlur();
         };
