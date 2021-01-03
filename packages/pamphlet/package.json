@@ -1,0 +1,20 @@
+{
+  "name": "@literal-io/pamphlet",
+  "version": "1.0.0",
+  "description": "Email templates",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node index.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mjml": "^4.8.0",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.1.3"
+  },
+  "devDependencies": {
+    "@types/mjml": "^4.7.0"
+  }
+}

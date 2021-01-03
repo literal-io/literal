@@ -1,0 +1,73 @@
+<mjml>
+  <mj-body background-color="#000">
+
+    <!-- Header -->
+    <mj-section padding-top="36px" padding-bottom="36px" padding-left="16px" padding-right="16px">
+      <mj-column>
+        <mj-image padding="0px" align="left" width="32px" height="32px" src="https://literal.io/logo-128.png" href="https://literal.io" alt="Literal" title="Literal" />
+      </mj-column>
+    </mj-section>
+
+    <!-- Subject -->
+    <mj-section padding-bottom="24px" padding-left="16px" padding-right="16px">
+      <mj-column border-bottom="dotted 1px rgba(255, 255, 255, 0.50)">
+        <mj-text color="rgba(255, 255, 255, 0.92)" font-family="Domine, Georgia, serif" font-size="18px" padding="0px">
+          <h1 style="font-size: 18px; font-weight:normal; line-height: 1.5">Literal is now available on Android.</h1>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Body -->
+    <mj-section padding-bottom="200px" padding-left="16px" padding-right="16px">
+      <mj-column>
+        <mj-text color="rgba(255, 255, 255, 0.80)" font-family="Roboto Mono, Courier, monospace" font-size="14px" padding="0px">
+          <p style="margin: 0; line-height: 1.5;">
+            Install Literal today from the <a style="color: rgba(255, 255, 255, 0.80)" href="https://play.google.com/store/apps/details?id=io.literal">Google Play Store</a>.
+          </p>
+        </mj-text>
+        <mj-spacer height="24px" />
+        <mj-text color="rgba(255, 255, 255, 0.80)" font-family="Roboto Mono, Courier, monospace" font-size="14px" padding="0px">
+          <p style="margin: 0; line-height: 1.5;">Literal is a textual annotation management system. Read the <a style="color: rgba(255, 255, 255, 0.80)" href="https://literal.io/writing/prologue">release announcement</a> or view the <a style="color: rgba(255, 255, 255, 0.80)" href="https://literal.io">website</a> to get a better idea of what Literal is today and what I intend for it to become.</p>
+        </mj-text>
+        <mj-spacer height="24px" />
+        <mj-text color="rgba(255, 255, 255, 0.80)" font-family="Roboto Mono, Courier, monospace" font-size="14px" padding="0px">
+          <p style="margin: 0; line-height: 1.5;">You're receiving this notification because you signed up for the Literal waitlist. If you do not own an Android device, an iOS application will be released in early 2021.</p>
+        </mj-text>
+        <mj-spacer height="24px" />
+        <mj-text color="rgba(255, 255, 255, 0.80)" font-family="Roboto Mono, Courier, monospace" font-size="14px" padding="0px">
+          <p style="margin: 0; line-height: 1.5;">Feel free to reply to this email with any thoughts, questions, or feedback that you have.</p>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding-left="16px" padding-right="16px" padding-bottom="0px">
+      <mj-column border-top="dotted 1px rgba(255, 255, 255, 0.50)" padding-top="16px">
+        <mj-text color="rgba(255, 255, 255, 0.92)" font-family="Domine, Georgia, serif" font-size="12px" padding="0px">
+          <p style="margin: 0">Literal</p>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section padding-left="16px" padding-right="16px" padding-top="0" padding-bottom="16px">
+      <mj-column width="75%" padding-top="8px"> 
+        <mj-text color="rgba(255, 255, 255, 0.50)" font-family="Roboto Mono, Courier, monospace" font-size="12px" padding="0px">
+          <p style="margin: 0">{{Sender_Address}}</p>
+        </mj-text>
+        <mj-text color="rgba(255, 255, 255, 0.50)" font-family="Roboto Mono, Courier, monospace" font-size="12px" padding="0px">
+          <p style="margin: 0">{{Sender_City}}, {{Sender_State}} {{Sender_Zip}}</p>
+        </mj-text>
+      </mj-column>
+
+      <mj-column width="25%" padding-top="8px">
+        <mj-text color="rgba(255, 255, 255, 0.50)" font-family="Roboto Mono, Courier, monospace" font-size="12px" align="right" padding="0px"> 
+          <a style="color: rgba(255, 255, 255, 0.50)" href="{{unsubscribe_preferences}}" target="_blank">Email Preferences</a>
+        </mj-text>
+        <mj-spacer height="8px" />
+        <mj-text color="rgba(255, 255, 255, 0.50)" font-family="Roboto Mono, Courier, monospace" font-size="12px" align="right" padding="0px"> 
+          <a style="color: rgba(255, 255, 255, 0.50)" href="{{unsubscribe}}" target="_blank">Unsubscribe</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
