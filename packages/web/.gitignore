@@ -3,10 +3,7 @@ src/**/*.js
 .merlin
 .bsb.lock
 
-amplify/backend/function
-amplify/backend/storage
-amplify/backend/auth
-amplify/backend/api
+amplify/backend
 
 .graphql_ppx_cache
 
