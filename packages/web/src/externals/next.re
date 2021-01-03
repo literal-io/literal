@@ -4,20 +4,19 @@ type router = {
   asPath: string,
 };
 
-type path('a) = {
-  params: 'a
-};
+type path('a) = {params: 'a};
 type staticPaths('a) = {
   paths: array(path('a)),
-  fallback: bool
+  fallback: bool,
 };
 
-type getStaticPropsContext('a) = {
-  params: 'a
-}
+type getStaticPropsContext('a) = {params: 'a};
 
-type getStaticPropsResult('a) = {
-  props: 'a
+type getStaticPropsResult('a) = {props: 'a};
+
+module Head = {
+  [@bs.module "next/head"] [@react.component]
+  external make: (~children: React.element) => React.element = "default";
 };
 
 module Router = {
@@ -42,7 +41,6 @@ module Router = {
   external push: string => unit = "push";
   [@bs.module "next/router"] [@bs.scope "default"]
   external pushWithAs: (string, string) => unit = "push";
-
 };
 
 module Link = {
