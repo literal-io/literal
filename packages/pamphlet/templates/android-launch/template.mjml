@@ -4,7 +4,7 @@
     <!-- Header -->
     <mj-section padding-top="36px" padding-bottom="36px" padding-left="16px" padding-right="16px">
       <mj-column>
-        <mj-image padding="0px" align="left" width="32px" height="32px" src="http://localhost:8000/logo-128.png" href="https://literal.io" alt="Literal" title="Literal" />
+        <mj-image padding="0px" align="left" width="32px" height="32px" src="https://literal.io/logo-128.png" href="https://literal.io" alt="Literal" title="Literal" />
       </mj-column>
     </mj-section>
 
