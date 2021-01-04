@@ -108,31 +108,8 @@ let make = (~onCreateFromText, ~onCreateFromFile) => {
         />
       </div>
     </div>
-    <div
-      className={Cn.fromList([
-        "border-t",
-        "border-dotted",
-        "border-lightDisabled",
-        "flex",
-        "flex-row",
-        "items-center",
-        "p-6",
-      ])}>
-      <p className={Cn.fromList(["text-lightSecondary", "mr-6", "text-xs"])}>
-        {React.string(
-           "Use the sharesheet to import highlighted text and screenshots directly from the apps you use to read.",
-         )}
-      </p>
-      <Svg
-        icon=Svg.helpOutline
-        placeholderViewBox="0 0 24 24"
-        className={Cn.fromList([
-          "pointer-events-none",
-          "w-6",
-          "w-6",
-          "opacity-75",
-        ])}
-      />
-    </div>
+    <BottomAlert
+      text="Use the sharesheet to import highlighted text and screenshots directly from the apps you use to read."
+    />
   </div>;
 };

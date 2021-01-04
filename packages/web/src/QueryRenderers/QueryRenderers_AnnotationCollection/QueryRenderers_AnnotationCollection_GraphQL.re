@@ -2,6 +2,11 @@ module GetAnnotationCollection = {
   module Query = [%graphql
     {|
       query getAnnotationCollection($creatorUsername: String!, $id: String!, $nextToken: String) {
+
+        getAgent(username: $creatorUsername) {
+          id
+        }
+
         getAnnotationCollection(creatorUsername: $creatorUsername, id: $id) {
           ...Containers_AnnotationCollectionHeader_GraphQL.GetAnnotationCollectionFragment.AnnotationCollectionHeader_AnnotationCollection @bsField(name: "annotationCollectionHeader")
           __typename
@@ -65,6 +70,32 @@ module GetAnnotationCollection = {
         "textDirection": Js.Null.t(string),
       }),
   };
+
+  type cacheGetAnnotationCollection = {
+    .
+    "__typename": string,
+    "label": string,
+    "first":
+      Js.Null.t({
+        .
+        "__typename": string,
+        "items":
+          Js.Null.t({
+            .
+            "__typename": string,
+            "nextToken": Js.Null.t(string),
+            "items":
+              Js.Null.t(
+                array({
+                  .
+                  "__typename": string,
+                  "annotation": cacheAnnotation,
+                }),
+              ),
+          }),
+      }),
+  };
+
   /**
    * Apollo cache representation of the above query. Note that this will
    * need to be manually updated as the query changes.
@@ -72,31 +103,13 @@ module GetAnnotationCollection = {
   type cache = {
     .
     "__typename": string,
-    "getAnnotationCollection":
+    "getAgent":
       Js.Null.t({
         .
         "__typename": string,
-        "label": string,
-        "first":
-          Js.Null.t({
-            .
-            "__typename": string,
-            "items":
-              Js.Null.t({
-                .
-                "__typename": string,
-                "nextToken": Js.Null.t(string),
-                "items":
-                  Js.Null.t(
-                    array({
-                      .
-                      "__typename": string,
-                      "annotation": cacheAnnotation,
-                    }),
-                  ),
-              }),
-          }),
+        "id": string,
       }),
+    "getAnnotationCollection": Js.Null.t(cacheGetAnnotationCollection),
   };
 
   let parsedTextualBodyToCache = d => {
@@ -294,9 +307,32 @@ module GetAnnotationCollection = {
       : cache => {
     let newItemsQuery = {
       "getAnnotationCollection":
-        Some({"first": Some({"items": Some({"items": Some(newItems)})})}),
+        Some({
+          "__typename": "AnnotationCollection",
+          "first":
+            Some({
+              "__typename": "AnnotationPage",
+              "items":
+                Some({
+                  "__typename": "ModelAnnotationPageItemConnection",
+                  "items": Some(newItems),
+                }),
+            }),
+        }),
     };
     Ramda.mergeDeepLeft(newItemsQuery, cacheQuery);
+  };
+
+  let setGetAnnotationCollection =
+      (
+        cacheQuery: cache,
+        getAnnotationCollection: cacheGetAnnotationCollection,
+      ) => {
+    let newQuery = {
+      "getAnnotationCollection": Some(getAnnotationCollection),
+    };
+
+    Ramda.mergeDeepLeft(newQuery, cacheQuery);
   };
 
   // setter to update next token

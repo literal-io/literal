@@ -189,8 +189,8 @@ let make = (~currentUser, ~onAnnotationIdChange) => {
                  (),
                );
              let result = onboardingMutation(~variables, ());
-             let _ = updateCache(~currentUser, ~createAnnotationInputs);
-             result;
+             let _ = updateCache(~currentUser, ~createAnnotationInputs, ~createAgentInput);
+             result; 
            })
         |> Js.Promise.then_(((mutationResult, _)) => {
              switch (mutationResult) {
