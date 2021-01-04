@@ -37,8 +37,9 @@ let updateCache = (~currentUser, ~input) => {
           ->Containers_NewAnnotationEditor_GraphQL.CreateAnnotationMutation.json_of_CreateAnnotationInput
           ->Lib_GraphQL.Annotation.annotationFromCreateAnnotationInput;
 
-        let _ =
-          data->Belt.Option.forEach(data => {
+        let newData =
+          switch (data) {
+          | Some(data) when data##getAnnotationCollection != Js.null =>
             let items =
               data##getAnnotationCollection
               ->Js.Null.toOption
@@ -58,19 +59,50 @@ let updateCache = (~currentUser, ~input) => {
                   items,
                 ),
               );
-            let newData =
+            Some(
               QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setAnnotationPageItems(
                 data,
                 newItems,
-              );
-            let _ =
-              QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
-                ~query=cacheQuery,
-                ~client=Providers_Apollo.client,
-                ~data=newData,
-                (),
-              );
-            ();
+              ),
+            );
+          | Some(data) when data##getAnnotationCollection == Js.null =>
+            let newData = {
+              "__typename": "AnnotationCollection",
+              "label": tag##value,
+              "first":
+                Js.Null.return({
+                  "__typename": "AnnotationPage",
+                  "items":
+                    Js.Null.return({
+                      "__typename": "ModelAnnotationPageItemConnection",
+                      "nextToken": Js.Null.empty,
+                      "items":
+                        Js.Null.return([|
+                          {
+                            "__typename": "AnnotationPageItem",
+                            "annotation": newAnnotation,
+                          },
+                        |]),
+                    }),
+                }),
+            };
+            Some(
+              QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setGetAnnotationCollection(
+                data,
+                newData,
+              ),
+            );
+          | _ => None
+          };
+
+        let _ =
+          newData->Belt.Option.forEach(newData => {
+            QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
+              ~query=cacheQuery,
+              ~client=Providers_Apollo.client,
+              ~data=newData,
+              (),
+            )
           });
         ();
       });

@@ -61,6 +61,7 @@ let handleUpdateCache = (~input, ~annotation) => {
 [@react.component]
 let make =
     (
+      ~hideDelete=false,
       ~annotationFragment as annotation=?,
       ~annotationCollectionFragment as annotationCollection=?,
       ~currentUser=?,
@@ -110,6 +111,39 @@ let make =
       />
     </MaterialUi.IconButton>;
 
+  let deleteButton =
+    <MaterialUi.IconButton
+      size=`Small
+      edge=MaterialUi.IconButton.Edge._end
+      onClick={_ =>
+        switch (annotation, currentUser) {
+        | (Some(annotation), Some(currentUser)) =>
+          let _ =
+            Service_Analytics.(
+              track(Click({action: "delete", label: None}))
+            );
+          handleDelete(~annotation, ~currentUser);
+        | _ => ()
+        }
+      }
+      _TouchRippleProps={
+        "classes": {
+          "child": cn(["bg-white"]),
+          "rippleVisible": cn(["opacity-50"]),
+        },
+      }
+      classes={MaterialUi.IconButton.Classes.make(
+        ~root=cn(["p-0", "ml-1"]),
+        (),
+      )}>
+      <Svg
+        placeholderViewBox="0 0 24 24"
+        className={cn(["pointer-events-none", "opacity-50"])}
+        style={ReactDOMRe.Style.make(~width="1.75rem", ~height="1.75rem", ())}
+        icon=Svg.delete
+      />
+    </MaterialUi.IconButton>;
+
   <Header
     className={cn([
       "absolute",
@@ -141,41 +175,7 @@ let make =
          ->Belt.Option.getWithDefault(React.null)}
       </h1>
       <div className={cn(["flex", "flex-row"])}>
-        <MaterialUi.IconButton
-          size=`Small
-          edge=MaterialUi.IconButton.Edge._end
-          onClick={_ =>
-            switch (annotation, currentUser) {
-            | (Some(annotation), Some(currentUser)) =>
-              let _ =
-                Service_Analytics.(
-                  track(Click({action: "delete", label: None}))
-                );
-              handleDelete(~annotation, ~currentUser);
-            | _ => ()
-            }
-          }
-          _TouchRippleProps={
-            "classes": {
-              "child": cn(["bg-white"]),
-              "rippleVisible": cn(["opacity-50"]),
-            },
-          }
-          classes={MaterialUi.IconButton.Classes.make(
-            ~root=cn(["p-0", "ml-1"]),
-            (),
-          )}>
-          <Svg
-            placeholderViewBox="0 0 24 24"
-            className={cn(["pointer-events-none", "opacity-50"])}
-            style={ReactDOMRe.Style.make(
-              ~width="1.75rem",
-              ~height="1.75rem",
-              (),
-            )}
-            icon=Svg.delete
-          />
-        </MaterialUi.IconButton>
+        {hideDelete ? React.null : deleteButton}
         {switch (currentUser) {
          | Some(currentUser) =>
            <Next.Link

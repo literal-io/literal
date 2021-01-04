@@ -1,6 +1,6 @@
 open Containers_Onboarding_GraphQL;
 
-let updateCache = (~currentUser, ~createAnnotationInputs) => {
+let updateCache = (~currentUser, ~createAnnotationInputs, ~createAgentInput) => {
   let tagAnnotationTuples =
     createAnnotationInputs
     ->Belt.Array.reverse
@@ -94,6 +94,11 @@ let updateCache = (~currentUser, ~createAnnotationInputs) => {
           );
         | _ => {
             "__typename": "Query",
+            "getAgent":
+              Js.Null.return({
+                "__typename": "Agent",
+                "id": createAgentInput##id,
+              }),
             "getAnnotationCollection":
               Js.Null.return({
                 "__typename": "AnnotationCollection",
