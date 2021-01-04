@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.widget.RelativeLayout;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -74,7 +75,7 @@ import type.TextualTargetInput;
 
 public class ShareTargetHandler extends AppCompatActivity {
 
-    private WebView webView;
+    // private WebView webView;
     private ViewGroup splash;
     private ViewGroup layout;
     private ActivityResultLauncher<String> getFileContent;
@@ -85,8 +86,8 @@ public class ShareTargetHandler extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_share_target_handler);
 
-        webView = findViewById(R.id.webview);
-        webView.setVisibility(View.INVISIBLE);
+        //webView = findViewById(R.id.webview);
+        //webView.setVisibility(View.INVISIBLE);
         splash = findViewById(R.id.splash);
         layout = (ViewGroup) splash.getParent();
 
@@ -113,9 +114,42 @@ public class ShareTargetHandler extends AppCompatActivity {
                 handleSignedOut();
             }
         });
+    }
+
+    private void initializeWebView() {
+        WebView webView = new WebView(this);
+
+        RelativeLayout layout = (RelativeLayout) findViewById(R.id.share_target_handler_layout);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        webView.setLayoutParams(layoutParams);
+        webView.setVisibility(View.INVISIBLE);
+
+        webView.initialize(ShareTargetHandler.this);
+        webView.requestFocus();
+        webView.onWebEvent(new WebEvent.Callback(this, webView) {
+            @Override
+            public void onWebEvent(WebEvent event) {
+                super.onWebEvent(event);
+                switch (event.getType()) {
+                    case WebEvent.TYPE_ACTIVITY_FINISH:
+                        finish();
+                }
+            }
+        });
+        webView.onPageFinished(new WebView.PageFinishedCallback() {
+            @Override
+            public void onPageFinished(android.webkit.WebView view, String Url) {
+                view.setVisibility(View.VISIBLE);
+                layout.removeView(splash);
+            }
+        });
 
         getFileContent = registerForActivityResult(new ActivityResultContracts.GetContent(), fileActivityResultCallback);
-        this.webView.setWebChromeClient(new WebChromeClient() {
+        webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(android.webkit.WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
                 fileActivityResultCallback.setFilePathCallback(new ValueCallback<Uri[]>() {
@@ -136,8 +170,8 @@ public class ShareTargetHandler extends AppCompatActivity {
     }
 
     private void handleSignedIn(Bundle savedInstanceState) {
-        webView.initialize(ShareTargetHandler.this);
-        webView.requestFocus();
+
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel chan = new NotificationChannel(
                     Constants.NOTIFICATION_CHANNEL_ANNOTATION_CREATED_ID,
@@ -156,28 +190,11 @@ public class ShareTargetHandler extends AppCompatActivity {
             String action = intent.getAction();
             String type = intent.getType();
 
-            // Start initializing the WebView while we're processing the share data.
-            webView.onWebEvent(new WebEvent.Callback(this, webView) {
-                @Override
-                public void onWebEvent(WebEvent event) {
-                    super.onWebEvent(event);
-                    switch (event.getType()) {
-                        case WebEvent.TYPE_ACTIVITY_FINISH:
-                            finish();
-                    }
-                }
-            });
-            webView.onPageFinished(new WebView.PageFinishedCallback() {
-                @Override
-                public void onPageFinished(android.webkit.WebView view, String Url) {
-                    view.setVisibility(View.VISIBLE);
-                    layout.removeView(splash);
-                }
-            });
-
+            // FIXME: try to parse text to URL
             if (Intent.ACTION_SEND.equals(action) && type != null && type.startsWith("image/")) {
                 handleSendImage(intent);
             } else if (Intent.ACTION_SEND.equals(action) && type != null && type.equals("text/plain")) {
+                this.initializeWebView();
                 handleSendText(intent);
             } else {
                 handleSendNotSupported();

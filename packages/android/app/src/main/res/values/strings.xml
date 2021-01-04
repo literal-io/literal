@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Literal</string>
+
+    <string name="annotate">Annotate</string>
 </resources>
