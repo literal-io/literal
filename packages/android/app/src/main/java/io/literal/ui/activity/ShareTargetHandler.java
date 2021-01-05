@@ -9,10 +9,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebViewClient;
 import android.widget.RelativeLayout;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -57,6 +59,7 @@ import io.literal.lib.Crypto;
 import io.literal.lib.FileActivityResultCallback;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
+import io.literal.ui.view.SourceWebView;
 import io.literal.ui.view.WebView;
 import type.AnnotationBodyInput;
 import type.AnnotationTargetInput;
@@ -75,21 +78,18 @@ import type.TextualTargetInput;
 
 public class ShareTargetHandler extends AppCompatActivity {
 
-    // private WebView webView;
+    private android.webkit.WebView webView;
     private ViewGroup splash;
-    private ViewGroup layout;
     private ActivityResultLauncher<String> getFileContent;
-    private FileActivityResultCallback fileActivityResultCallback = new FileActivityResultCallback();
+    private final FileActivityResultCallback fileActivityResultCallback = new FileActivityResultCallback();
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_share_target_handler);
 
-        //webView = findViewById(R.id.webview);
-        //webView.setVisibility(View.INVISIBLE);
         splash = findViewById(R.id.splash);
-        layout = (ViewGroup) splash.getParent();
+        getFileContent = registerForActivityResult(new ActivityResultContracts.GetContent(), fileActivityResultCallback);
 
         AWSMobileClientFactory.initializeClient(this, new Callback<UserStateDetails>() {
             @Override
@@ -116,7 +116,7 @@ public class ShareTargetHandler extends AppCompatActivity {
         });
     }
 
-    private void initializeWebView() {
+    private android.webkit.WebView initializeWebView() {
         WebView webView = new WebView(this);
 
         RelativeLayout layout = (RelativeLayout) findViewById(R.id.share_target_handler_layout);
@@ -127,6 +127,7 @@ public class ShareTargetHandler extends AppCompatActivity {
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         webView.setLayoutParams(layoutParams);
         webView.setVisibility(View.INVISIBLE);
+        layout.addView(webView);
 
         webView.initialize(ShareTargetHandler.this);
         webView.requestFocus();
@@ -148,7 +149,6 @@ public class ShareTargetHandler extends AppCompatActivity {
             }
         });
 
-        getFileContent = registerForActivityResult(new ActivityResultContracts.GetContent(), fileActivityResultCallback);
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(android.webkit.WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
@@ -167,11 +167,36 @@ public class ShareTargetHandler extends AppCompatActivity {
                 return true;
             }
         });
+
+        return webView;
+    }
+
+    private android.webkit.WebView initializeSourceWebView() {
+        SourceWebView webView = new SourceWebView(this);
+
+        RelativeLayout layout = (RelativeLayout) findViewById(R.id.share_target_handler_layout);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        webView.setLayoutParams(layoutParams);
+        webView.setVisibility(View.INVISIBLE);
+        layout.addView(webView);
+
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(android.webkit.WebView view, String url) {
+                view.setVisibility(View.VISIBLE);
+                layout.removeView(splash);
+                super.onPageFinished(view, url);
+            }
+        });
+
+        return webView;
     }
 
     private void handleSignedIn(Bundle savedInstanceState) {
-
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel chan = new NotificationChannel(
                     Constants.NOTIFICATION_CHANNEL_ANNOTATION_CREATED_ID,
@@ -190,12 +215,18 @@ public class ShareTargetHandler extends AppCompatActivity {
             String action = intent.getAction();
             String type = intent.getType();
 
-            // FIXME: try to parse text to URL
             if (Intent.ACTION_SEND.equals(action) && type != null && type.startsWith("image/")) {
+                this.webView = this.initializeWebView();
                 handleSendImage(intent);
             } else if (Intent.ACTION_SEND.equals(action) && type != null && type.equals("text/plain")) {
-                this.initializeWebView();
-                handleSendText(intent);
+                String text = intent.getStringExtra(Intent.EXTRA_TEXT);
+                if (Patterns.WEB_URL.matcher(text).matches()) {
+                    this.webView = this.initializeSourceWebView();
+                    handleAnnotateSource(intent);
+                } else {
+                    this.webView = this.initializeWebView();
+                    handleSendText(intent);
+                }
             } else {
                 handleSendNotSupported();
             }
@@ -209,8 +240,14 @@ public class ShareTargetHandler extends AppCompatActivity {
         this.finish();
     }
 
-    private void handleSendText(Intent intent) {
+    private void handleAnnotateSource(Intent intent) {
+        String sourceUrl = intent.getStringExtra(Intent.EXTRA_TEXT);
+        Log.d(Constants.LOG_TAG, "handleAnnotateSource");
+        Log.d(Constants.LOG_TAG, sourceUrl);
+        webView.loadUrl(sourceUrl);
+    }
 
+    private void handleSendText(Intent intent) {
         String text = intent.getStringExtra(Intent.EXTRA_TEXT);
 
         String creatorUsername = AWSMobileClient.getInstance().getUsername();
@@ -297,7 +334,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                                 return;
                             }
 
-                            webView.onWebEvent(new WebEvent.Callback(ShareTargetHandler.this, webView) {
+                            ((WebView) webView).onWebEvent(new WebEvent.Callback(ShareTargetHandler.this, (WebView) webView) {
                                 @Override
                                 public void onWebEvent(WebEvent event) {
                                     super.onWebEvent(event);
@@ -400,7 +437,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                                     Log.i("Literal", "highlightResult is null");
                                     return;
                                 }
-                                webView.onWebEvent(new WebEvent.Callback(ShareTargetHandler.this, webView) {
+                                ((WebView) webView).onWebEvent(new WebEvent.Callback(ShareTargetHandler.this, (WebView) webView) {
                                     @Override
                                     public void onWebEvent(WebEvent event) {
                                         super.onWebEvent(event);

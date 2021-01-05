@@ -2,11 +2,14 @@ package io.literal.ui.view;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Rect;
 import android.util.Log;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewParent;
 import android.webkit.WebSettings;
 
 import io.literal.R;
@@ -27,10 +30,24 @@ public class SourceWebView extends WebView {
 
     @Override
     public ActionMode startActionMode(ActionMode.Callback callback) {
-        return super.startActionMode(actionModeCallback);
+        ActionMode.Callback2 cb = new AnnotateActionModeCallback((ActionMode.Callback2) callback);
+        return super.startActionMode(cb);
     }
 
-    private ActionMode.Callback actionModeCallback = new ActionMode.Callback() {
+    @Override
+    public ActionMode startActionMode(ActionMode.Callback callback, int type) {
+        ActionMode.Callback2 cb = new AnnotateActionModeCallback((ActionMode.Callback2) callback);
+        return super.startActionMode(cb, type);
+    }
+
+    private static class AnnotateActionModeCallback extends ActionMode.Callback2 {
+
+        ActionMode.Callback2 originalCallback;
+
+        public AnnotateActionModeCallback(ActionMode.Callback2 originalCallback) {
+            this.originalCallback = originalCallback;
+        }
+
         @Override
         public boolean onCreateActionMode(ActionMode mode, Menu menu) {
             MenuInflater inflater = mode.getMenuInflater();
@@ -57,6 +74,11 @@ public class SourceWebView extends WebView {
 
         @Override
         public void onDestroyActionMode(ActionMode mode) {
+        }
+
+        @Override
+        public void onGetContentRect(ActionMode mode, View view, Rect outRect) {
+            originalCallback.onGetContentRect(mode, view, outRect);
         }
     };
 }
