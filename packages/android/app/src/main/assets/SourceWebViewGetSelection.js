@@ -3,7 +3,7 @@
   const getXPath = (function() {
     const Elements = { DOMPath: {} };
     Elements.DOMPath.xPath = function(node, optimized) {
-      if (node.nodeType() === Node.DOCUMENT_NODE) return "/";
+      if (node.nodeType === Node.DOCUMENT_NODE) return "/";
 
       const steps = [];
       let contextNode = node;
@@ -24,17 +24,17 @@
       const ownIndex = Elements.DOMPath._xPathIndex(node);
       if (ownIndex === -1) return null; // Error.
 
-      switch (node.nodeType()) {
+      switch (node.nodeType) {
         case Node.ELEMENT_NODE:
           if (optimized && node.getAttribute("id"))
             return new Elements.DOMPath.Step(
               '//*[@id="' + node.getAttribute("id") + '"]',
               true
             );
-          ownValue = node.localName();
+          ownValue = node.localName;
           break;
         case Node.ATTRIBUTE_NODE:
-          ownValue = "@" + node.nodeName();
+          ownValue = "@" + node.nodeName;
           break;
         case Node.TEXT_NODE:
         case Node.CDATA_SECTION_NODE:
@@ -58,7 +58,7 @@
 
       return new Elements.DOMPath.Step(
         ownValue,
-        node.nodeType() === Node.DOCUMENT_NODE
+        node.nodeType === Node.DOCUMENT_NODE
       );
     };
 
@@ -68,26 +68,26 @@
         if (left === right) return true;
 
         if (
-          left.nodeType() === Node.ELEMENT_NODE &&
-          right.nodeType() === Node.ELEMENT_NODE
+          left.nodeType === Node.ELEMENT_NODE &&
+          right.nodeType === Node.ELEMENT_NODE
         )
-          return left.localName() === right.localName();
+          return left.localName === right.localName;
 
-        if (left.nodeType() === right.nodeType()) return true;
+        if (left.nodeType === right.nodeType) return true;
 
         // XPath treats CDATA as text nodes.
         const leftType =
-          left.nodeType() === Node.CDATA_SECTION_NODE
+          left.nodeType === Node.CDATA_SECTION_NODE
             ? Node.TEXT_NODE
-            : left.nodeType();
+            : left.nodeType;
         const rightType =
-          right.nodeType() === Node.CDATA_SECTION_NODE
+          right.nodeType === Node.CDATA_SECTION_NODE
             ? Node.TEXT_NODE
-            : right.nodeType();
+            : right.nodeType;
         return leftType === rightType;
       }
 
-      const siblings = node.parentNode ? node.parentNode.children() : null;
+      const siblings = node.parentNode ? node.parentNode.children : null;
       if (!siblings) return 0; // Root node - no siblings.
       let hasSameNamedElements;
       for (let i = 0; i < siblings.length; ++i) {
@@ -118,7 +118,7 @@
       }
     };
 
-    return Elements.DOMPath.XPath;
+    return Elements.DOMPath.xPath;
   })();
 
   const range = window.getSelection().getRangeAt(0);

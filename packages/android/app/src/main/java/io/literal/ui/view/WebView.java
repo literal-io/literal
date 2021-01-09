@@ -46,14 +46,13 @@ public class WebView extends android.webkit.WebView {
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    public void initialize(Activity activity) {
+    public void initialize() {
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         this.addJavascriptInterface(new JavascriptInterface(), "literalWebview");
         WebSettings webSettings = this.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
 
-        this.onWebEvent(new WebEvent.Callback(activity, this));
         this.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(android.webkit.WebView webview, String url) {
@@ -108,7 +107,7 @@ public class WebView extends android.webkit.WebView {
                         Log.i("Literal", "Received WebEvent " + json.toString());
                         WebEvent webEvent = new WebEvent(json);
                         if (webEventCallback != null) {
-                            webEventCallback.onWebEvent(webEvent);
+                            webEventCallback.onWebEvent(WebView.this, webEvent);
                         }
                     } catch (JSONException ex) {
                         Log.e("Literal", "Error in onMessage", ex);

@@ -3,6 +3,7 @@ package io.literal.ui.view;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Rect;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.ActionMode;
 import android.view.Menu;
@@ -11,13 +12,27 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewParent;
 import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+
+import org.apache.commons.io.IOUtils;
 
 import io.literal.R;
+import io.literal.lib.Callback;
+import io.literal.lib.Callback2;
 
 public class SourceWebView extends WebView {
 
+    private Callback2<View, String> onPageFinished;
+    private Callback<View> onAnnotationCreated;
+
     public SourceWebView(Context context) {
         super(context);
+        this.initialize();
+    }
+
+    public SourceWebView(Context context, AttributeSet attrs) {
+        super(context, attrs);
         this.initialize();
     }
 
@@ -26,6 +41,14 @@ public class SourceWebView extends WebView {
         WebSettings webSettings = this.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
+        this.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                if (SourceWebView.this.onPageFinished != null) {
+                    onPageFinished.invoke(null, view, url);
+                }
+            }
+        });
     }
 
     @Override
@@ -40,7 +63,15 @@ public class SourceWebView extends WebView {
         return super.startActionMode(cb, type);
     }
 
-    private static class AnnotateActionModeCallback extends ActionMode.Callback2 {
+    public void setOnPageFinished(Callback2<View, String> onPageFinished) {
+        this.onPageFinished = onPageFinished;
+    }
+
+    public void setOnAnnotationCreated(Callback<View> onAnnotationCreated) {
+        this.onAnnotationCreated = onAnnotationCreated;
+    }
+
+    private class AnnotateActionModeCallback extends ActionMode.Callback2 {
 
         ActionMode.Callback2 originalCallback;
 
@@ -64,7 +95,9 @@ public class SourceWebView extends WebView {
         public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.menu_item_annotate:
-                    Log.d("SourceWebView", "menu_item_annotate clicked");
+                    if (onAnnotationCreated != null) {
+                        onAnnotationCreated.invoke(null, SourceWebView.this);
+                    }
                     mode.finish();
                     return true;
                 default:
