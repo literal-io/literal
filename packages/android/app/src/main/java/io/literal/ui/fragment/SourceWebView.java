@@ -67,7 +67,7 @@ public class SourceWebView extends Fragment {
             webView.evaluateJavascript(script, new ValueCallback<String>() {
                 @Override
                 public void onReceiveValue(String value) {
-                    sourceWebViewViewModel.createAnnotationFromSelection(value);
+                    sourceWebViewViewModel.createSelector(value);
                 }
             });
         });

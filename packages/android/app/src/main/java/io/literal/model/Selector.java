@@ -1,6 +1,11 @@
 package io.literal.model;
 
-public class Selector {
+import android.util.JsonReader;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+public abstract class Selector {
     public enum Type {
         RANGE_SELECTOR,
         XPATH_SELECTOR,
@@ -16,4 +21,6 @@ public class Selector {
     public Type getType() {
         return type;
     }
+
+    public abstract JSONObject toJson() throws JSONException;
 }

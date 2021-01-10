@@ -12,40 +12,41 @@ import java.util.ArrayList;
 
 import io.literal.lib.JsonReaderParser;
 
-public class RangeSelector<TRange extends Selector, TRefinedBy> extends Selector {
+public class XPathSelector<TRefinedBy> extends Selector {
 
-    private final TRange startSelector;
-    private final TRange endSelector;
+    private final String value;
     private final TRefinedBy[] refinedBy;
 
-    public RangeSelector(@NotNull TRange startSelector, @NotNull TRange endSelector, TRefinedBy[] refinedBy) {
-        super(Selector.Type.RANGE_SELECTOR);
-        this.startSelector = startSelector;
-        this.endSelector = endSelector;
-        this.refinedBy = refinedBy;
-    }
-
-    public RangeSelector(@NotNull TRange startSelector, @NotNull TRange endSelector) {
-        super(Type.RANGE_SELECTOR);
-        this.startSelector = startSelector;
-        this.endSelector = endSelector;
+    public XPathSelector(@NotNull String value) {
+        super(Type.XPATH_SELECTOR);
+        this.value = value;
         this.refinedBy = null;
     }
 
-    public static <TRange extends Selector, TRefinedBy> RangeSelector<TRange, TRefinedBy> fromJson(JsonReader reader, JsonReaderParser<TRange> parseRangeSelector, JsonReaderParser<TRefinedBy> parseRefinedBySelector) throws IOException {
-        TRange startSelector = null;
-        TRange endSelector = null;
+    public XPathSelector(@NotNull String value, TRefinedBy[] refinedBy) {
+        super(Type.XPATH_SELECTOR);
+        this.value = value;
+        this.refinedBy = refinedBy;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public TRefinedBy[] getRefinedBy() {
+        return refinedBy;
+    }
+
+    public static <TRefinedBy> XPathSelector<TRefinedBy> fromJson (JsonReader reader, JsonReaderParser<TRefinedBy> parseRefinedBySelector) throws IOException {
+        String value = null;
         ArrayList<TRefinedBy> refinedBy = null;
 
         reader.beginObject();
         while (reader.hasNext()) {
             String key = reader.nextName();
             switch (key) {
-                case "startSelector":
-                    startSelector = parseRangeSelector.invoke(reader);
-                    break;
-                case "endSelector":
-                    endSelector = parseRangeSelector.invoke(reader);
+                case "value":
+                    value = reader.nextString();
                     break;
                 case "refinedBy":
                     reader.beginArray();
@@ -66,33 +67,20 @@ public class RangeSelector<TRange extends Selector, TRefinedBy> extends Selector
         }
         reader.endObject();
 
-        if (startSelector != null && endSelector != null && refinedBy != null) {
-            return new RangeSelector<>(startSelector, endSelector, (TRefinedBy[]) refinedBy.toArray());
-        } else if (startSelector != null && endSelector != null) {
-            return new RangeSelector<>(startSelector, endSelector);
+        if (value != null && refinedBy != null) {
+            return new XPathSelector(value, (TRefinedBy[]) refinedBy.toArray());
+        } else if (value != null) {
+            return new XPathSelector(value);
         }
-
         return null;
     }
 
-    public TRange getStartSelector() {
-        return startSelector;
-    }
-
-    public TRange getEndSelector() {
-        return endSelector;
-    }
-
-    public TRefinedBy[] getRefinedBy() {
-        return refinedBy;
-    }
-
+    @Override
     public JSONObject toJson() throws JSONException {
         JSONObject result = new JSONObject();
 
-        result.put("type", this.getType().toString());
-        result.put("startSelector", this.getStartSelector().toJson());
-        result.put("endSelector", this.getEndSelector().toJson());
+        result.put("type", getType());
+        result.put("value", getValue());
 
         if (getRefinedBy() != null) {
             TRefinedBy[] refinedBy = getRefinedBy();
@@ -105,6 +93,7 @@ public class RangeSelector<TRange extends Selector, TRefinedBy> extends Selector
                 }
             }
             result.put("refinedBy", new JSONArray(refinedByOutput));
+
         }
 
         return result;
