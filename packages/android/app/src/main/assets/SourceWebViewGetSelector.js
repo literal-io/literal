@@ -87,7 +87,7 @@
         return leftType === rightType;
       }
 
-      const siblings = node.parentNode ? node.parentNode.children : null;
+      const siblings = node.parentNode ? node.parentNode.childNodes : null;
       if (!siblings) return 0; // Root node - no siblings.
       let hasSameNamedElements;
       for (let i = 0; i < siblings.length; ++i) {
@@ -129,14 +129,16 @@
   }) => ({
     type: "XPATH_SELECTOR",
     value: getXPath(container),
-    refinedBy: {
-      type: "TEXT_POSITION_SELECTOR",
-      start: startPosition,
-      end: endPosition,
-    },
+    refinedBy: [
+      {
+        type: "TEXT_POSITION_SELECTOR",
+        start: startPosition,
+        end: endPosition,
+      },
+    ],
   });
 
-  return {
+  const output = {
     type: "RANGE_SELECTOR",
     startSelector: selectorFromRangeBoundary({
       container: range.startContainer,
@@ -149,5 +151,8 @@
       endPosition: range.endOffset,
     }),
   };
-})();
 
+  window.getSelection().removeAllRanges() 
+
+  return output;
+})();

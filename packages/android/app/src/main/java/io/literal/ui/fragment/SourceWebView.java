@@ -13,8 +13,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ValueCallback;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
+import java.util.function.Consumer;
+
 import io.literal.R;
 import io.literal.lib.Callback2;
+import io.literal.model.RangeSelector;
+import io.literal.model.TextPositionSelector;
+import io.literal.model.XPathSelector;
 import io.literal.viewmodel.SourceWebViewViewModel;
 
 public class SourceWebView extends Fragment {
@@ -63,12 +71,35 @@ public class SourceWebView extends Fragment {
             }
         });
         webView.setOnAnnotationCreated((e, _view) -> {
-            String script = sourceWebViewViewModel.getInjectedGetSelectionScript(getActivity().getAssets()).getValue();
+            String script = sourceWebViewViewModel.getGetSelectorScript(getActivity().getAssets());
             webView.evaluateJavascript(script, new ValueCallback<String>() {
                 @Override
                 public void onReceiveValue(String value) {
                     sourceWebViewViewModel.createSelector(value);
                 }
+            });
+        });
+
+        sourceWebViewViewModel.getSelectors().observe(getActivity(), (selectors) -> {
+            if (this.webView == null) {
+                Log.d("SourceWebView", "Expected webView, but found none.");
+                return;
+            }
+
+            JSONArray output = new JSONArray();
+            selectors.forEach(selector -> {
+                try {
+                    output.put(selector.toJson());
+                } catch (JSONException e) {
+                    Log.d("SourceWebView", "Unable to convert selector to JSON.", e);
+                }
+            });
+
+            String script = sourceWebViewViewModel.getHighlightSelectorScript(
+                    getActivity().getAssets(), output
+            );
+            this.webView.evaluateJavascript(script, (result) -> {
+                /** noop **/
             });
         });
 
