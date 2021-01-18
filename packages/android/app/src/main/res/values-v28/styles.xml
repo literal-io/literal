@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="SourceWebViewTitleTextAppearance" parent="@style/Base.TextAppearance.AppCompat.Title">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textFontWeight">300</item>
+        <item name="android:textColor">@color/colorTextLightPrimary</item>
+    </style>
+</resources>

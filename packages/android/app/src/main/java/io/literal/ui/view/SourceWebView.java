@@ -2,29 +2,30 @@ package io.literal.ui.view;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewParent;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import org.apache.commons.io.IOUtils;
-
 import io.literal.R;
 import io.literal.lib.Callback;
 import io.literal.lib.Callback2;
+import io.literal.lib.Callback3;
 
-public class SourceWebView extends WebView {
+public class SourceWebView extends WebView  {
 
+    private Callback3<View, String, Bitmap> onPageStarted;
     private Callback2<View, String> onPageFinished;
     private Callback<View> onAnnotationCreated;
+    private Callback2<View, Bitmap> onReceivedIcon;
 
     public SourceWebView(Context context) {
         super(context);
@@ -43,10 +44,28 @@ public class SourceWebView extends WebView {
         webSettings.setDomStorageEnabled(true);
         this.setWebViewClient(new WebViewClient() {
             @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+                if (SourceWebView.this.onPageStarted != null) {
+                    onPageStarted.invoke(null, view, url, favicon);
+                }
+            }
+
+            @Override
             public void onPageFinished(WebView view, String url) {
                 if (SourceWebView.this.onPageFinished != null) {
                     onPageFinished.invoke(null, view, url);
                 }
+            }
+        });
+
+        this.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onReceivedIcon(WebView view, Bitmap icon) {
+                if (SourceWebView.this.onReceivedIcon != null) {
+                    onReceivedIcon.invoke(null, view, icon);
+                }
+                super.onReceivedIcon(view, icon);
             }
         });
     }
@@ -69,6 +88,14 @@ public class SourceWebView extends WebView {
 
     public void setOnAnnotationCreated(Callback<View> onAnnotationCreated) {
         this.onAnnotationCreated = onAnnotationCreated;
+    }
+
+    public void setOnPageStarted(Callback3<View, String, Bitmap> onPageStarted) {
+        this.onPageStarted = onPageStarted;
+    }
+
+    public void setOnReceivedIcon(Callback2<View, Bitmap> onReceivedIcon) {
+        this.onReceivedIcon = onReceivedIcon;
     }
 
     private class AnnotateActionModeCallback extends ActionMode.Callback2 {

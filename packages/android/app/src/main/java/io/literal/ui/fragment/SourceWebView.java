@@ -1,9 +1,13 @@
 package io.literal.ui.fragment;
 
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -12,17 +16,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ValueCallback;
+import android.webkit.WebIconDatabase;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 
-import java.util.function.Consumer;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import io.literal.R;
-import io.literal.lib.Callback2;
-import io.literal.model.RangeSelector;
-import io.literal.model.TextPositionSelector;
-import io.literal.model.XPathSelector;
 import io.literal.viewmodel.SourceWebViewViewModel;
 
 public class SourceWebView extends Fragment {
@@ -31,6 +33,7 @@ public class SourceWebView extends Fragment {
 
     private String paramInitialUrl;
     private io.literal.ui.view.SourceWebView webView;
+    private Toolbar toolbar;
     private SourceWebViewViewModel sourceWebViewViewModel;
 
     public SourceWebView() {
@@ -64,13 +67,47 @@ public class SourceWebView extends Fragment {
 
         sourceWebViewViewModel = new ViewModelProvider(requireActivity()).get(SourceWebViewViewModel.class);
 
+        toolbar = view.findViewById(R.id.toolbar);
+        ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
+
         webView = view.findViewById(R.id.source_web_view);
+        webView.setOnReceivedIcon((e, webView, icon) -> {
+            if (e != null) {
+                Log.d("SourceWebView", "setOnReceivedIcon callback error:", e);
+            }
+
+            SourceWebViewViewModel.DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
+            sourceWebViewViewModel.setDomainMetadata(domainMetadata != null ? domainMetadata.getUrl() : null, icon);
+        });
+        webView.setOnPageStarted((e, webView, url, bitmap) -> {
+            if (e != null) {
+                Log.d("SourceWebView", "setOnPageStarted callback error:", e);
+                return;
+            }
+
+            SourceWebViewViewModel.DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
+            try {
+                sourceWebViewViewModel.setDomainMetadata(new URL(url), domainMetadata != null ? domainMetadata.getFavicon() : null);
+            } catch (MalformedURLException ex) {
+                Log.d("SourceWebView", "Unable to execute setDomainMetadata:", ex);
+            }
+        });
         webView.setOnPageFinished((e, webView, url) -> {
+            if (e != null) {
+                Log.d("SourceWebView", "setOnPageFinished callback error:", e);
+                return;
+            }
+
             if (!sourceWebViewViewModel.getHasFinishedInitializing().getValue()) {
                 sourceWebViewViewModel.setHasFinishedInitializing(true);
             }
         });
         webView.setOnAnnotationCreated((e, _view) -> {
+            if (e != null) {
+                Log.d("SourceWebView", "setOnAnnotationCreated callback error:", e);
+                return;
+            }
+
             String script = sourceWebViewViewModel.getGetSelectorScript(getActivity().getAssets());
             webView.evaluateJavascript(script, new ValueCallback<String>() {
                 @Override
@@ -101,6 +138,18 @@ public class SourceWebView extends Fragment {
             this.webView.evaluateJavascript(script, (result) -> {
                 /** noop **/
             });
+        });
+
+        sourceWebViewViewModel.getDomainMetadata().observe(getActivity(), (domainMetadata) -> {
+            if (domainMetadata != null) {
+                Log.i("SourceWebView", "setTitle: " + domainMetadata.getUrl().getHost());
+                toolbar.setTitle(domainMetadata.getUrl().getHost());
+                Bitmap favicon = domainMetadata.getFavicon();
+                int faviconSize = getResources().getDimensionPixelSize(R.dimen.source_web_view_favicon_size);
+                if (favicon != null) {
+                    toolbar.setLogo(new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(favicon, faviconSize, faviconSize, true)));
+                }
+            }
         });
 
         if (savedInstanceState != null) {

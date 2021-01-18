@@ -1,6 +1,7 @@
 package io.literal.viewmodel;
 
 import android.content.res.AssetManager;
+import android.graphics.Bitmap;
 import android.util.JsonReader;
 import android.util.Log;
 
@@ -13,6 +14,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
@@ -25,6 +27,7 @@ public class SourceWebViewViewModel extends ViewModel {
     private final MutableLiveData<String> getSelectorScript = new MutableLiveData<>(null);
     private final MutableLiveData<String> highlightSelectorScript = new MutableLiveData<>(null);
     private final MutableLiveData<ArrayList<RangeSelector<XPathSelector<TextPositionSelector<Void>>, Void>>> selectors = new MutableLiveData<>(new ArrayList<>());
+    private final MutableLiveData<DomainMetadata> domainMetadata = new MutableLiveData<>(null);
 
     private static final String GET_SELECTOR_SCRIPT_NAME = "SourceWebViewGetSelector.js";
     private static final String HIGHLIGHT_SELECTOR_SCRIPT_NAME = "SourceWebViewHighlightSelectors.js";
@@ -35,6 +38,10 @@ public class SourceWebViewViewModel extends ViewModel {
 
     public void setHasFinishedInitializing(Boolean hasFinishedInitializing) {
         this.hasFinishedInitializing.setValue(hasFinishedInitializing);
+    }
+
+    public void setDomainMetadata(URL url, Bitmap favicon) {
+        this.domainMetadata.setValue(new DomainMetadata(url, favicon));
     }
 
     public String getGetSelectorScript(AssetManager assetManager) {
@@ -71,6 +78,10 @@ public class SourceWebViewViewModel extends ViewModel {
         return selectors;
     }
 
+    public MutableLiveData<DomainMetadata> getDomainMetadata() {
+        return domainMetadata;
+    }
+
     public void createSelector(String json) {
         JsonReader reader = new JsonReader(new StringReader(json));
         try {
@@ -91,6 +102,24 @@ public class SourceWebViewViewModel extends ViewModel {
             } catch (IOException e) {
                 Log.d("SourceWebViewViewModel", "createSelector", e);
             }
+        }
+    }
+
+    public class DomainMetadata {
+        private final URL url;
+        private final Bitmap favicon;
+
+        public DomainMetadata(URL url, Bitmap favicon) {
+            this.url = url;
+            this.favicon = favicon;
+        }
+
+        public Bitmap getFavicon() {
+            return favicon;
+        }
+
+        public URL getUrl() {
+            return url;
         }
     }
 }
