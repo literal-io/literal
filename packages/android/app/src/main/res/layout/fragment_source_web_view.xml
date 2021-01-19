@@ -1,12 +1,11 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:literal="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/source_web_view_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     tools:context=".ui.fragment.SourceWebView">
-
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar_layout"
         android:layout_width="match_parent"
@@ -15,21 +14,21 @@
             android:id="@+id/toolbar_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            literal:layout_scrollFlags="scroll|enterAlways"
-            literal:titleEnabled="false">
+            app:layout_scrollFlags="scroll|enterAlways"
+            app:titleEnabled="false">
             <androidx.appcompat.widget.Toolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:elevation="4dp"
-                literal:titleTextAppearance="@style/SourceWebViewTitleTextAppearance" />
+                app:titleTextAppearance="@style/SourceWebViewTitleTextAppearance"
+                app:titleMarginStart="12dp"
+                app:menu="@menu/source_webview_toolbar" />
         </com.google.android.material.appbar.CollapsingToolbarLayout>
     </com.google.android.material.appbar.AppBarLayout>
-
-
-            <io.literal.ui.view.SourceWebView
-                android:id="@+id/source_web_view"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                literal:layout_behavior="@string/appbar_scrolling_view_behavior" />
+    <io.literal.ui.view.SourceWebView
+        android:id="@+id/source_web_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

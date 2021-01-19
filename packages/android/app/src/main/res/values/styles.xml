@@ -13,6 +13,7 @@
     <style name="SourceWebViewTitleTextAppearance" parent="@style/Base.TextAppearance.AppCompat.Title">
         <item name="android:textSize">12sp</item>
         <item name="android:textColor">@color/colorTextLightPrimary</item>
+        <item name="android:fontFamily">@font/roboto_mono_italic</item>
     </style>
 
 </resources>
