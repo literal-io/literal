@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context=".ui.fragment.SourceWebView">
+    tools:context=".ui.fragment.SourceWebView"
+    android:clipChildren="false">
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar_layout"
         android:layout_width="match_parent"
@@ -20,10 +21,10 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:elevation="4dp"
+                android:outlineProvider="bounds"
+                app:elevation="6dp"
                 app:titleTextAppearance="@style/SourceWebViewTitleTextAppearance"
-                app:titleMarginStart="12dp"
-                app:menu="@menu/source_webview_toolbar" />
+                app:titleMarginStart="32dp"/>
         </com.google.android.material.appbar.CollapsingToolbarLayout>
     </com.google.android.material.appbar.AppBarLayout>
     <io.literal.ui.view.SourceWebView

@@ -1,6 +1,9 @@
 package io.literal.ui.fragment;
 
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 
@@ -13,6 +16,9 @@ import androidx.lifecycle.ViewModelProvider;
 
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ValueCallback;
@@ -58,7 +64,9 @@ public class SourceWebView extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_source_web_view, container, false);
+        View v = inflater.inflate(R.layout.fragment_source_web_view, container, false);
+        setHasOptionsMenu(true);
+        return v;
     }
 
     @Override
@@ -142,12 +150,19 @@ public class SourceWebView extends Fragment {
 
         sourceWebViewViewModel.getDomainMetadata().observe(getActivity(), (domainMetadata) -> {
             if (domainMetadata != null) {
-                Log.i("SourceWebView", "setTitle: " + domainMetadata.getUrl().getHost());
                 toolbar.setTitle(domainMetadata.getUrl().getHost());
                 Bitmap favicon = domainMetadata.getFavicon();
-                int faviconSize = getResources().getDimensionPixelSize(R.dimen.source_web_view_favicon_size);
                 if (favicon != null) {
-                    toolbar.setLogo(new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(favicon, faviconSize, faviconSize, true)));
+                    // scale favicon and draw on white background
+                    int faviconSize = getResources().getDimensionPixelSize(R.dimen.source_web_view_favicon_size);
+                    int padding = getResources().getDimensionPixelSize(R.dimen.source_web_view_favicon_padding);
+                    Bitmap scaledBitmap = Bitmap.createScaledBitmap(favicon, faviconSize, faviconSize, true);
+                    Bitmap outputBitmap = Bitmap.createBitmap(scaledBitmap.getWidth() + padding, scaledBitmap.getHeight() + padding, scaledBitmap.getConfig());
+                    Canvas canvas = new Canvas(outputBitmap);
+                    canvas.drawColor(Color.WHITE);
+                    canvas.drawBitmap(scaledBitmap, (float) padding / 2, (float) padding / 2, null);
+
+                    toolbar.setLogo(new BitmapDrawable(getResources(), outputBitmap));
                 }
             }
         });
@@ -164,6 +179,23 @@ public class SourceWebView extends Fragment {
         super.onSaveInstanceState(outState);
         if (this.webView != null) {
             webView.saveState(outState);
+        }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.source_webview_toolbar, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.done:
+                // TODO: handle item selected
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 }
