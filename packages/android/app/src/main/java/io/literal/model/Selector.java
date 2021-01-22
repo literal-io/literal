@@ -5,7 +5,7 @@ import android.util.JsonReader;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public abstract class Selector {
+public class Selector {
     public enum Type {
         RANGE_SELECTOR,
         XPATH_SELECTOR,
@@ -22,5 +22,21 @@ public abstract class Selector {
         return type;
     }
 
-    public abstract JSONObject toJson() throws JSONException;
+    public JSONObject toJson() throws JSONException {
+        throw new JSONException("toJson not implemented.");
+    };
+
+    public static Selector fromJson(JSONObject json) throws JSONException {
+        String type = json.getString("type");
+        if (type.equals(Type.RANGE_SELECTOR.name())) {
+            return RangeSelector.fromJson(json);
+        } else if (type.equals(Type.XPATH_SELECTOR.name())) {
+            return XPathSelector.fromJson(json);
+        } else if (type.equals(Type.TEXT_POSITION_SELECTOR.name())) {
+            return TextPositionSelector.fromJson(json);
+        } else {
+            throw new JSONException("fromJson not implemented.");
+        }
+    }
+
 }

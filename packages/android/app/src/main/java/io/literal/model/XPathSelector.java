@@ -10,12 +10,13 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.JsonReaderParser;
 
-public class XPathSelector<TRefinedBy> extends Selector {
+public class XPathSelector extends Selector {
 
     private final String value;
-    private final TRefinedBy[] refinedBy;
+    private final Selector[] refinedBy;
 
     public XPathSelector(@NotNull String value) {
         super(Type.XPATH_SELECTOR);
@@ -23,7 +24,7 @@ public class XPathSelector<TRefinedBy> extends Selector {
         this.refinedBy = null;
     }
 
-    public XPathSelector(@NotNull String value, TRefinedBy[] refinedBy) {
+    public XPathSelector(@NotNull String value, Selector[] refinedBy) {
         super(Type.XPATH_SELECTOR);
         this.value = value;
         this.refinedBy = refinedBy;
@@ -33,46 +34,17 @@ public class XPathSelector<TRefinedBy> extends Selector {
         return value;
     }
 
-    public TRefinedBy[] getRefinedBy() {
+    public Selector[] getRefinedBy() {
         return refinedBy;
     }
 
-    public static <TRefinedBy> XPathSelector<TRefinedBy> fromJson (JsonReader reader, JsonReaderParser<TRefinedBy> parseRefinedBySelector) throws IOException {
-        String value = null;
-        ArrayList<TRefinedBy> refinedBy = null;
+    public static XPathSelector fromJson(JSONObject json) throws JSONException {
+        return new XPathSelector(
+                json.getString("value"),
+                json.has("refinedBy")
+                    ? JsonArrayUtil.parseJsonObjectArray(json.getJSONArray("refinedBy"), new Selector[0], Selector::fromJson) : null
 
-        reader.beginObject();
-        while (reader.hasNext()) {
-            String key = reader.nextName();
-            switch (key) {
-                case "value":
-                    value = reader.nextString();
-                    break;
-                case "refinedBy":
-                    reader.beginArray();
-                    while (reader.hasNext()) {
-                        TRefinedBy item = parseRefinedBySelector != null ? parseRefinedBySelector.invoke(reader) : null;
-                        if (item != null) {
-                            if (refinedBy == null) {
-                                refinedBy = new ArrayList<>();
-                            }
-                            refinedBy.add(item);
-                        }
-                    }
-                    reader.endArray();
-                    break;
-                default:
-                    reader.skipValue();
-            }
-        }
-        reader.endObject();
-
-        if (value != null && refinedBy != null) {
-            return new XPathSelector(value, (TRefinedBy[]) refinedBy.toArray());
-        } else if (value != null) {
-            return new XPathSelector(value);
-        }
-        return null;
+        );
     }
 
     @Override
@@ -81,20 +53,7 @@ public class XPathSelector<TRefinedBy> extends Selector {
 
         result.put("type", getType());
         result.put("value", getValue());
-
-        if (getRefinedBy() != null) {
-            TRefinedBy[] refinedBy = getRefinedBy();
-            JSONObject[] refinedByOutput = new JSONObject[refinedBy.length];
-            for (int i = 0; i < getRefinedBy().length; i++) {
-                if (refinedBy[i] instanceof Selector) {
-                    refinedByOutput[i] = ((Selector) refinedBy[i]).toJson();
-                } else {
-                    throw new JSONException("Expected refinedBy to be instanceof Selector");
-                }
-            }
-            result.put("refinedBy", new JSONArray(refinedByOutput));
-
-        }
+        result.put("refinedBy", this.refinedBy != null ? JsonArrayUtil.stringifyObjectArray(this.refinedBy, Selector::toJson) : null);
 
         return result;
     }

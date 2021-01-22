@@ -1,4 +1,4 @@
-(function getSelector() {
+(function getAnnotation() {
   // https://github.com/chromium/chromium/blob/77578ccb4082ae20a9326d9e673225f1189ebb63/third_party/blink/renderer/devtools/front_end/elements/DOMPath.js#L242
   const getXPath = (function() {
     const Elements = { DOMPath: {} };
@@ -138,21 +138,49 @@
     ],
   });
 
+  const language = window.navigator.language.toUpperCase();
+  const textDirection = getComputedStyle(
+    window.document.body
+  ).direction.toUpperCase();
   const output = {
-    type: "RANGE_SELECTOR",
-    startSelector: selectorFromRangeBoundary({
-      container: range.startContainer,
-      startPosition: range.startOffset,
-      endPosition: range.startContainer.textContent.length,
-    }),
-    endSelector: selectorFromRangeBoundary({
-      container: range.endContainer,
-      startPosition: 0,
-      endPosition: range.endOffset,
-    }),
+    context: ["http://www.w3.org/ns/anno.jsonld"],
+    motivation: ["HIGHLIGHTING"],
+    type: "ANNOTATION",
+    target: [
+      {
+        value: window.getSelection().toString(),
+        format: TEXT_PLAIN,
+        language,
+        processingLanguage,
+        textDirection,
+      },
+      {
+        source: {
+          id: window.location.href,
+          format: TEXT_HTML,
+          language,
+          processingLanguage: language,
+          textDirection,
+          type: "TEXT",
+        },
+        selector: {
+          type: "RANGE_SELECTOR",
+          startSelector: selectorFromRangeBoundary({
+            container: range.startContainer,
+            startPosition: range.startOffset,
+            endPosition: range.startContainer.textContent.length,
+          }),
+          endSelector: selectorFromRangeBoundary({
+            container: range.endContainer,
+            startPosition: 0,
+            endPosition: range.endOffset,
+          }),
+        },
+      },
+    ],
   };
 
-  window.getSelection().removeAllRanges() 
+  window.getSelection().removeAllRanges();
 
   return output;
 })();

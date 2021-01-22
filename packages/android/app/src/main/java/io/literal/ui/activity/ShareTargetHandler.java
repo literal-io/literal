@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 
 import io.literal.R;
 import io.literal.lib.Constants;
+import io.literal.lib.WebRoutes;
 import io.literal.repository.ShareTargetHandlerRepository;
 import io.literal.ui.fragment.AppWebView;
 import io.literal.ui.fragment.SourceWebView;
@@ -113,15 +114,42 @@ public class ShareTargetHandler extends AppCompatActivity {
         });
     }
 
-    private void handleCreateFromSource(Intent intent) {
-        String uri = intent.getStringExtra(Intent.EXTRA_TEXT);
+    private void installSourceWebView(String sourceWebViewUri, String appWebViewUri) {
         subscribeSourceWebViewViewModel();
-        sourceWebViewFragment = SourceWebView.newInstance(uri);
+
+        sourceWebViewFragment = SourceWebView.newInstance(sourceWebViewUri);
+        appWebViewFragment = AppWebView.newInstance(appWebViewUri);
         getSupportFragmentManager()
                 .beginTransaction()
                 .setReorderingAllowed(true)
                 .add(R.id.fragment_container, sourceWebViewFragment)
+                .add(R.id.bottom_sheet_fragment_container, appWebViewFragment)
                 .commit();
+    }
+
+    private void installAppWebView(String appWebViewUri) {
+        ViewGroup layout = findViewById(R.id.layout);
+        View bottomSheetContainer = findViewById(R.id.bottom_sheet_fragment_container);
+        if (layout != null && bottomSheetContainer != null) {
+            layout.removeView(bottomSheetContainer);
+        }
+
+        subscribeAppWebViewViewModel();
+        appWebViewFragment = AppWebView.newInstance(appWebViewUri);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .setReorderingAllowed(true)
+                .add(R.id.fragment_container, appWebViewFragment)
+                .commit();
+    }
+
+    private void handleCreateFromSource(Intent intent) {
+        authenticationViewModel.awaitInitialization();
+        String sourceWebViewUri = intent.getStringExtra(Intent.EXTRA_TEXT);
+        String appWebViewUri = WebRoutes.creatorsIdAnnotationsNew(
+                authenticationViewModel.getUsername().getValue()
+        );
+        installSourceWebView(sourceWebViewUri, appWebViewUri);
     }
 
     private void handleCreateFromText(Intent intent) {
@@ -130,13 +158,7 @@ public class ShareTargetHandler extends AppCompatActivity {
         ShareTargetHandlerRepository.createAnnotationFromText(text, this, authenticationViewModel, new ShareTargetHandlerRepository.CreateListener<CreateAnnotationMutation.Data>() {
             @Override
             public void onAnnotationUri(String uri) {
-                subscribeAppWebViewViewModel();
-                appWebViewFragment = AppWebView.newInstance(uri);
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .setReorderingAllowed(true)
-                        .add(R.id.fragment_container, appWebViewFragment)
-                        .commit();
+                installAppWebView(uri);
             }
             @Override
             public void onAnnotationCreated(CreateAnnotationMutation.Data data) {
@@ -172,13 +194,7 @@ public class ShareTargetHandler extends AppCompatActivity {
         ShareTargetHandlerRepository.createAnnotationFromImage(imageUri, this, authenticationViewModel, new ShareTargetHandlerRepository.CreateListener<CreateAnnotationFromExternalTargetMutation.Data>() {
             @Override
             public void onAnnotationUri(String uri) {
-                subscribeAppWebViewViewModel();
-                appWebViewFragment = AppWebView.newInstance(uri);
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .setReorderingAllowed(true)
-                        .add(R.id.fragment_container, appWebViewFragment)
-                        .commit();
+                installAppWebView(uri);
             }
             @Override
             public void onAnnotationCreated(CreateAnnotationFromExternalTargetMutation.Data data) {
