@@ -17,6 +17,10 @@ public class TextualBody extends Body {
     private final String[] rights;
     private final String value;
 
+    public String getValue() {
+        return value;
+    }
+
     public TextualBody(String id, Format format, Language language, Language processingLanguage, TextDirection textDirection, String[] accessibility, String[] rights, @NotNull String value) {
         super(Type.TEXTUAL_BODY);
         this.id = id;

@@ -1,6 +1,6 @@
 (function highlightSelectors() {
   const HIGHLIGHT_CLASS_NAME = "literal-highlight";
-  const SELECTORS = JSON.parse('${PARAM_SELECTORS}');
+  const ANNOTATIONS = JSON.parse('${PARAM_ANNOTATIONS}');
 
   // adapted from https://gist.github.com/Gozala/80cf4d2c9f000548b7a11b110b1d7711
   const Highlighter = (function() {
@@ -169,7 +169,18 @@
     parentNode.normalize();
   });
 
-  SELECTORS.forEach(({ startSelector, endSelector }) => {
+  ANNOTATIONS.reduce((rangeSelectors, annotation) => {
+    if (annotation.target) {
+      return annotation.target
+        .filter(({ type }) => type === "SPECIFIC_RESOURCE")
+        .map(({ selector }) =>
+          selector.filter(({ type }) => type === "RANGE_SELECTOR")
+        )
+        .flat()
+        .concat(rangeSelectors);
+    }
+    return rangeSelectors;
+  }, []).forEach(({ startSelector, endSelector }) => {
     const startNode = document.evaluate(
       startSelector.value,
       document,

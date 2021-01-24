@@ -11,10 +11,22 @@ public class Annotation {
     private final Target[] target;
     private final String id;
 
-    public Annotation(Body[] body, @NotNull Target[] target, @NotNull String id) {
+    public Annotation(Body[] body, @NotNull Target[] target, String id) {
         this.body = body;
         this.target = target;
         this.id = id;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public Target[] getTarget() {
+        return target;
+    }
+
+    public Body[] getBody() {
+        return body;
     }
 
     public static Annotation fromJson(JSONObject json) throws JSONException {
@@ -23,7 +35,7 @@ public class Annotation {
                         ? JsonArrayUtil.parseJsonObjectArray(json.getJSONArray("body"), new Body[0], Body::fromJson)
                         : null,
                 JsonArrayUtil.parseJsonObjectArray(json.getJSONArray("target"), new Target[0], Target::fromJson),
-                json.getString("id")
+                json.optString("id")
         );
     }
 

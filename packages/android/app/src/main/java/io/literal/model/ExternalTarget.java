@@ -35,8 +35,8 @@ public class ExternalTarget extends Target {
         output.put("language", this.language.name());
         output.put("procesisngLanguage", this.processingLanguage.name());
         output.put("textDirection", this.textDirection.name());
-        output.put("accessibility", new JSONArray(this.accessibility));
-        output.put("rights", new JSONArray(this.rights));
+        output.put("accessibility", this.accessibility != null ? new JSONArray(this.accessibility) : null);
+        output.put("rights", this.rights != null ? new JSONArray(this.rights) : null);
 
         return output;
     }

@@ -2,7 +2,6 @@ package io.literal.viewmodel;
 
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
-import android.util.JsonReader;
 import android.util.Log;
 
 import androidx.lifecycle.MutableLiveData;
@@ -13,24 +12,26 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 
-import io.literal.model.RangeSelector;
-import io.literal.model.TextPositionSelector;
-import io.literal.model.XPathSelector;
+import io.literal.lib.Crypto;
+import io.literal.lib.WebRoutes;
+import io.literal.model.Annotation;
+import io.literal.model.TextualTarget;
+import io.literal.model.Target;
 
 public class SourceWebViewViewModel extends ViewModel {
     private final MutableLiveData<Boolean> hasFinishedInitializing = new MutableLiveData<>(false);
     private final MutableLiveData<String> getSelectorScript = new MutableLiveData<>(null);
-    private final MutableLiveData<String> highlightSelectorScript = new MutableLiveData<>(null);
-    private final MutableLiveData<ArrayList<RangeSelector<XPathSelector<TextPositionSelector<Void>>, Void>>> selectors = new MutableLiveData<>(new ArrayList<>());
+    private final MutableLiveData<String> highlightAnnotationTargetScript = new MutableLiveData<>(null);
+    private final MutableLiveData<ArrayList<Annotation>> annotations = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<DomainMetadata> domainMetadata = new MutableLiveData<>(null);
 
-    private static final String GET_SELECTOR_SCRIPT_NAME = "SourceWebViewGetSelector.js";
-    private static final String HIGHLIGHT_SELECTOR_SCRIPT_NAME = "SourceWebViewHighlightSelectors.js";
+    private static final String GET_ANNOTATION_SCRIPT_NAME = "SourceWebViewGetAnnotation.js";
+    private static final String HIGHLIGHT_ANNOTATION_TARGET_SCRIPT_NAME = "SourceWebViewHighlightAnnotationTarget.js";
 
     public MutableLiveData<Boolean> getHasFinishedInitializing() {
         return hasFinishedInitializing;
@@ -44,11 +45,11 @@ public class SourceWebViewViewModel extends ViewModel {
         this.domainMetadata.setValue(new DomainMetadata(url, favicon));
     }
 
-    public String getGetSelectorScript(AssetManager assetManager) {
+    public String getGetAnnotationScript(AssetManager assetManager) {
         if (getSelectorScript.getValue() == null) {
             try {
                 getSelectorScript.setValue(
-                        IOUtils.toString(assetManager.open(GET_SELECTOR_SCRIPT_NAME), StandardCharsets.UTF_8)
+                        IOUtils.toString(assetManager.open(GET_ANNOTATION_SCRIPT_NAME), StandardCharsets.UTF_8)
                 );
             } catch (IOException e) {
                 Log.d("SourceWebViewViewModel", "getGetSelectorScript", e);
@@ -57,51 +58,62 @@ public class SourceWebViewViewModel extends ViewModel {
         return getSelectorScript.getValue();
     }
 
-    public String getHighlightSelectorScript(AssetManager assetManager, JSONArray paramSelectors) {
-        if (highlightSelectorScript.getValue() == null) {
+    public String getHighlightAnnotationTargetScript(AssetManager assetManager, JSONArray paramAnnotations) {
+        if (highlightAnnotationTargetScript.getValue() == null) {
             try {
-                highlightSelectorScript.setValue(
-                        IOUtils.toString(assetManager.open(HIGHLIGHT_SELECTOR_SCRIPT_NAME), StandardCharsets.UTF_8)
+                highlightAnnotationTargetScript.setValue(
+                        IOUtils.toString(assetManager.open(HIGHLIGHT_ANNOTATION_TARGET_SCRIPT_NAME), StandardCharsets.UTF_8)
                 );
             } catch (IOException e) {
-                Log.d("SourceWebViewViewModel", "getHighlightSelectorScript", e);
+                Log.d("SourceWebViewViewModel", "getHighlightAnnotationTargetScript", e);
             }
         }
 
-        String script = highlightSelectorScript.getValue().replaceAll("\\$\\{PARAM_SELECTORS\\}", paramSelectors.toString());
+        String script = highlightAnnotationTargetScript.getValue().replaceAll("\\$\\{PARAM_ANNOTATIONS\\}", paramAnnotations.toString());
 
         Log.d("SourceWebViewViewModel", "script: " + script);
         return script;
     }
 
-    public MutableLiveData<ArrayList<RangeSelector<XPathSelector<TextPositionSelector<Void>>, Void>>> getSelectors() {
-        return selectors;
+    public MutableLiveData<ArrayList<Annotation>> getAnnotations() {
+        return annotations;
     }
 
     public MutableLiveData<DomainMetadata> getDomainMetadata() {
         return domainMetadata;
     }
 
-    public void createSelector(String json) {
-        JsonReader reader = new JsonReader(new StringReader(json));
+    public Annotation createAnnotation(String json, String creatorUsername) {
         try {
-            RangeSelector<XPathSelector<TextPositionSelector<Void>>, Void> selector = RangeSelector.fromJson(reader, (rangeSelectorReader) -> {
-                return XPathSelector.fromJson(rangeSelectorReader, (refinedByReader) -> {
-                    return TextPositionSelector.fromJson(refinedByReader, null);
-                });
-            }, null);
-
-            ArrayList<RangeSelector<XPathSelector<TextPositionSelector<Void>>, Void>> newSelectors = (ArrayList<RangeSelector<XPathSelector<TextPositionSelector<Void>>, Void>>) selectors.getValue().clone();
-            newSelectors.add(selector);
-            selectors.setValue(newSelectors);
-        } catch (Exception e) {
-            Log.d("SourceWebViewViewModel", "createSelector", e);
-        } finally {
-            try {
-                reader.close();
-            } catch (IOException e) {
-                Log.d("SourceWebViewViewModel", "createSelector", e);
+            ArrayList<Annotation> newAnnotations = (ArrayList<Annotation>) annotations.getValue().clone();
+            Annotation annotation = Annotation.fromJson(new JSONObject(json));
+            if (annotation.getId() == null) {
+                TextualTarget textualTarget = (TextualTarget)
+                        Arrays.stream(annotation.getTarget()).filter(target -> target.getType() == Target.Type.TEXTUAL_TARGET)
+                        .findFirst()
+                        .get();
+                String valueHash = Crypto.sha256Hex(textualTarget.getValue());
+                String annotationId = WebRoutes.creatorsIdAnnotationId(
+                        WebRoutes.getAPIHost(),
+                        creatorUsername,
+                        valueHash
+                );
+                Annotation annotationWithId = new Annotation(
+                        annotation.getBody(),
+                        annotation.getTarget(),
+                        annotationId
+                );
+                newAnnotations.add(annotationWithId);
+                annotations.setValue(newAnnotations);
+                return annotationWithId;
+            } else {
+                newAnnotations.add(annotation);
+                annotations.setValue(newAnnotations);
+                return annotation;
             }
+        } catch (Exception e) {
+            Log.d("SourceWebViewViewModel", "createAnnotation", e);
+            return null;
         }
     }
 

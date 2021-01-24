@@ -3,17 +3,8 @@ package io.literal.ui.fragment;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
-
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -22,7 +13,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ValueCallback;
-import android.webkit.WebIconDatabase;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -31,6 +28,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import io.literal.R;
+import io.literal.lib.JsonArrayUtil;
+import io.literal.model.Annotation;
+import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
 
 public class SourceWebView extends Fragment {
@@ -41,6 +41,7 @@ public class SourceWebView extends Fragment {
     private io.literal.ui.view.SourceWebView webView;
     private Toolbar toolbar;
     private SourceWebViewViewModel sourceWebViewViewModel;
+    private AuthenticationViewModel authenticationViewModel;
 
     public SourceWebView() {
     }
@@ -74,6 +75,7 @@ public class SourceWebView extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         sourceWebViewViewModel = new ViewModelProvider(requireActivity()).get(SourceWebViewViewModel.class);
+        authenticationViewModel = new ViewModelProvider(requireActivity()).get(AuthenticationViewModel.class);
 
         toolbar = view.findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
@@ -116,36 +118,33 @@ public class SourceWebView extends Fragment {
                 return;
             }
 
-            String script = sourceWebViewViewModel.getGetSelectorScript(getActivity().getAssets());
+            String script = sourceWebViewViewModel.getGetAnnotationScript(getActivity().getAssets());
             webView.evaluateJavascript(script, new ValueCallback<String>() {
                 @Override
                 public void onReceiveValue(String value) {
-                    sourceWebViewViewModel.createSelector(value);
+                    Annotation annotation = sourceWebViewViewModel.createAnnotation(value, authenticationViewModel.getUsername().getValue());
+                    // open bottom sheet pointing to annotation
                 }
             });
         });
 
-        sourceWebViewViewModel.getSelectors().observe(getActivity(), (selectors) -> {
+        sourceWebViewViewModel.getAnnotations().observe(getActivity(), (annotations) -> {
             if (this.webView == null) {
                 Log.d("SourceWebView", "Expected webView, but found none.");
                 return;
             }
 
-            JSONArray output = new JSONArray();
-            selectors.forEach(selector -> {
-                try {
-                    output.put(selector.toJson());
-                } catch (JSONException e) {
-                    Log.d("SourceWebView", "Unable to convert selector to JSON.", e);
-                }
-            });
-
-            String script = sourceWebViewViewModel.getHighlightSelectorScript(
-                    getActivity().getAssets(), output
-            );
-            this.webView.evaluateJavascript(script, (result) -> {
-                /** noop **/
-            });
+            try {
+                JSONArray output = JsonArrayUtil.stringifyObjectArray(annotations.toArray(new Annotation[0]), Annotation::toJson);
+                String script = sourceWebViewViewModel.getHighlightAnnotationTargetScript(
+                        getActivity().getAssets(), output
+                );
+                this.webView.evaluateJavascript(script, (result) -> {
+                    /** noop **/
+                });
+            } catch (JSONException ex) {
+                Log.d("SourceWebView", "observe annotations", ex);
+            }
         });
 
         sourceWebViewViewModel.getDomainMetadata().observe(getActivity(), (domainMetadata) -> {

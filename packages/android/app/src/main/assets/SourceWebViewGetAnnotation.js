@@ -138,7 +138,9 @@
     ],
   });
 
-  const language = window.navigator.language.toUpperCase();
+  // FIXME: We need to expand the GraphQL enum to support more languages.
+  // const language = window.navigator.language.toUpperCase();
+  const language = "EN_US";
   const textDirection = getComputedStyle(
     window.document.body
   ).direction.toUpperCase();
@@ -149,33 +151,35 @@
     target: [
       {
         value: window.getSelection().toString(),
-        format: TEXT_PLAIN,
+        format: "TEXT_PLAIN",
         language,
-        processingLanguage,
+        processingLanguage: language,
         textDirection,
       },
       {
         source: {
           id: window.location.href,
-          format: TEXT_HTML,
+          format: "TEXT_HTML",
           language,
           processingLanguage: language,
           textDirection,
           type: "TEXT",
         },
-        selector: {
-          type: "RANGE_SELECTOR",
-          startSelector: selectorFromRangeBoundary({
-            container: range.startContainer,
-            startPosition: range.startOffset,
-            endPosition: range.startContainer.textContent.length,
-          }),
-          endSelector: selectorFromRangeBoundary({
-            container: range.endContainer,
-            startPosition: 0,
-            endPosition: range.endOffset,
-          }),
-        },
+        selector: [
+          {
+            type: "RANGE_SELECTOR",
+            startSelector: selectorFromRangeBoundary({
+              container: range.startContainer,
+              startPosition: range.startOffset,
+              endPosition: range.startContainer.textContent.length,
+            }),
+            endSelector: selectorFromRangeBoundary({
+              container: range.endContainer,
+              startPosition: 0,
+              endPosition: range.endOffset,
+            }),
+          },
+        ],
       },
     ],
   };

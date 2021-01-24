@@ -3,7 +3,7 @@ package io.literal.model;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-class Target {
+public class Target {
     public enum Type {
         TEXTUAL_TARGET,
         EXTERNAL_TARGET,
