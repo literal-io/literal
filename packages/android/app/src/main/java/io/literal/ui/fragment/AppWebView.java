@@ -1,6 +1,7 @@
 package io.literal.ui.fragment;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -19,6 +20,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebViewClient;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.HostedUIOptions;
@@ -89,11 +91,19 @@ public class AppWebView extends Fragment {
         webView = view.findViewById(R.id.app_web_view);
 
         webView.initialize();
-        webView.onPageFinished(new WebView.PageFinishedCallback() {
+        webView.setExternalWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(android.webkit.WebView view, String url) {
                 if (!appWebViewViewModel.getHasFinishedInitializing().getValue()) {
                     appWebViewViewModel.setHasFinishedInitializing(true);
+                }
+            }
+
+            @Override
+            public void onPageStarted(android.webkit.WebView view, String url, Bitmap favicon) {
+                String viewModelUrl = appWebViewViewModel.getUrl().getValue();
+                if (viewModelUrl == null || !viewModelUrl.equals(url)) {
+                    appWebViewViewModel.setUrl(url);
                 }
             }
         });
@@ -116,11 +126,17 @@ public class AppWebView extends Fragment {
             }
         });
         webView.onWebEvent(webEventCallback);
+        appWebViewViewModel.getUrl().observe(requireActivity(), (url) -> {
+            String currentUrl = webView.getUrl();
+            if (currentUrl == null || (url != null && !webView.getUrl().equals(url))) {
+                webView.loadUrl(url);
+            }
+        });
 
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState);
         } else {
-            webView.loadUrl(paramInitialUrl);
+            appWebViewViewModel.setUrl(paramInitialUrl);
         }
     }
 
@@ -136,8 +152,6 @@ public class AppWebView extends Fragment {
 
         private void handleSignIn(WebView view) {
             authenticationViewModel.signInGoogle(getActivity(), (e, userStateDetails) -> {
-
-                Log.d("AppWebView", "handleSignIn callback");
                 if (e != null) {
                     Log.d("AppWebView", "handleSignIn", e);
                     return;

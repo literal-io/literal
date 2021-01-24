@@ -3,6 +3,7 @@ package io.literal.ui.view;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -34,7 +35,7 @@ import io.literal.lib.WebRoutes;
 public class WebView extends android.webkit.WebView {
 
     private WebEvent.Callback webEventCallback;
-    private PageFinishedCallback pageFinishedCallback;
+    private WebViewClient externalWebViewClient;
     private ArrayDeque<String> baseHistory;
 
     public WebView(Context context) {
@@ -52,16 +53,7 @@ public class WebView extends android.webkit.WebView {
         WebSettings webSettings = this.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
-
-        this.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(android.webkit.WebView webview, String url) {
-                initializeWebMessageChannel();
-                if (WebView.this.pageFinishedCallback != null) {
-                    pageFinishedCallback.onPageFinished(webview, url);
-                }
-            }
-        });
+        this.setWebViewClient(this.webViewClient);
     }
 
     public void postWebEvent(WebEvent webEvent) {
@@ -81,13 +73,8 @@ public class WebView extends android.webkit.WebView {
         this.webEventCallback = cb;
     }
 
-    public void onPageFinished(PageFinishedCallback cb) {
-        this.pageFinishedCallback = cb;
-    }
-
-    public void loadUrlWithHistory(String url, String[] history) {
-        this.baseHistory = new ArrayDeque<>(Arrays.asList(history));
-        this.loadUrl(url);
+    public void setExternalWebViewClient(WebViewClient externalWebViewClient) {
+        this.externalWebViewClient = externalWebViewClient;
     }
 
     private void initializeWebMessageChannel() {
@@ -168,4 +155,21 @@ public class WebView extends android.webkit.WebView {
             return true;
         }
     }
+
+    private final WebViewClient webViewClient = new WebViewClient() {
+        @Override
+        public void onPageFinished(android.webkit.WebView webview, String url) {
+            initializeWebMessageChannel();
+            if (WebView.this.externalWebViewClient != null) {
+                WebView.this.externalWebViewClient.onPageFinished(webview, url);
+            }
+        }
+
+        @Override
+        public void onPageStarted(android.webkit.WebView webview, String url, Bitmap favicon) {
+            if (WebView.this.externalWebViewClient != null) {
+                WebView.this.externalWebViewClient.onPageStarted(webview, url, favicon);
+            }
+        }
+    };
 }

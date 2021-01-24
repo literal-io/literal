@@ -21,6 +21,8 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 
@@ -28,8 +30,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import io.literal.R;
+import io.literal.lib.AnnotationLib;
 import io.literal.lib.JsonArrayUtil;
+import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
+import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
 
@@ -42,6 +47,7 @@ public class SourceWebView extends Fragment {
     private Toolbar toolbar;
     private SourceWebViewViewModel sourceWebViewViewModel;
     private AuthenticationViewModel authenticationViewModel;
+    private AppWebViewViewModel appWebViewViewModel;
 
     public SourceWebView() {
     }
@@ -76,6 +82,7 @@ public class SourceWebView extends Fragment {
 
         sourceWebViewViewModel = new ViewModelProvider(requireActivity()).get(SourceWebViewViewModel.class);
         authenticationViewModel = new ViewModelProvider(requireActivity()).get(AuthenticationViewModel.class);
+        appWebViewViewModel = new ViewModelProvider(requireActivity()).get(AppWebViewViewModel.class);
 
         toolbar = view.findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
@@ -122,8 +129,14 @@ public class SourceWebView extends Fragment {
             webView.evaluateJavascript(script, new ValueCallback<String>() {
                 @Override
                 public void onReceiveValue(String value) {
-                    Annotation annotation = sourceWebViewViewModel.createAnnotation(value, authenticationViewModel.getUsername().getValue());
-                    // open bottom sheet pointing to annotation
+                    String creatorUsername = authenticationViewModel.getUsername().getValue();
+                    Annotation annotation = sourceWebViewViewModel.createAnnotation(value, creatorUsername);
+                    String uri = WebRoutes.creatorsIdAnnotationsNewAnnotationId(
+                            creatorUsername,
+                            AnnotationLib.idComponentFromId(annotation.getId())
+                    );
+                    appWebViewViewModel.setUrl(uri);
+                    appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
                 }
             });
         });

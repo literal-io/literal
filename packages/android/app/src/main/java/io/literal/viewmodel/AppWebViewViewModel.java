@@ -10,8 +10,10 @@ import io.literal.ui.activity.ShareTargetHandler;
 import io.literal.ui.view.WebView;
 
 public class AppWebViewViewModel extends ViewModel {
-    private MutableLiveData<Boolean> hasFinishedInitializing = new MutableLiveData<>(false);
-    private MutableLiveData<OnFinishCallback> onFinishedCallback = new MutableLiveData<>(null);
+    private final MutableLiveData<Boolean> hasFinishedInitializing = new MutableLiveData<>(false);
+    private final MutableLiveData<OnFinishCallback> onFinishedCallback = new MutableLiveData<>(null);
+    private final MutableLiveData<Integer> bottomSheetState = new MutableLiveData<>(null);
+    private final MutableLiveData<String> url = new MutableLiveData<>(null);
 
     public void setHasFinishedInitializing(Boolean hasFinishedInitializing) {
         this.hasFinishedInitializing.setValue(hasFinishedInitializing);
@@ -22,6 +24,22 @@ public class AppWebViewViewModel extends ViewModel {
     }
 
     public MutableLiveData<Boolean> getHasFinishedInitializing() { return hasFinishedInitializing; }
+
+    public MutableLiveData<String> getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url.setValue(url);
+    }
+
+    public MutableLiveData<Integer> getBottomSheetState() {
+        return bottomSheetState;
+    }
+
+    public void setBottomSheetState(Integer state) {
+        this.bottomSheetState.setValue(state);
+    }
 
     public interface OnFinishCallback {
         public void onFinish();

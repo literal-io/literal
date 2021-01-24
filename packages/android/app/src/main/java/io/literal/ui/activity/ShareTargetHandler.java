@@ -14,11 +14,13 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentContainerView;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.amplify.generated.graphql.CreateAnnotationFromExternalTargetMutation;
 import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
 import com.apollographql.apollo.api.Error;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -40,6 +42,8 @@ public class ShareTargetHandler extends AppCompatActivity {
     private AuthenticationViewModel authenticationViewModel;
     private AppWebView appWebViewFragment;
     private SourceWebView sourceWebViewFragment;
+
+    private FragmentContainerView bottomSheetFragmentContainer;
 
     private static final String APP_WEB_VIEW_FRAGMENT_NAME = "APP_WEB_VIEW_FRAGMENT";
     private static final String SOURCE_WEB_VIEW_FRAGMENT_NAME = "SOURCE_WEB_VIEW_FRAGMENT";
@@ -98,24 +102,23 @@ public class ShareTargetHandler extends AppCompatActivity {
         }
     }
 
-    private void subscribeAppWebViewViewModel() {
-        appWebViewViewModel = new ViewModelProvider(this).get(AppWebViewViewModel.class);
-        appWebViewViewModel.getHasFinishedInitializing().observe(this, hasFinishedInitializing -> {
-            ViewGroup splash = findViewById(R.id.share_target_handler_splash);
-            splash.setVisibility(hasFinishedInitializing ? View.INVISIBLE : View.VISIBLE);
-        });
-    }
 
-    private void subscribeSourceWebViewViewModel() {
+    private void installSourceWebView(String sourceWebViewUri, String appWebViewUri) {
         sourceWebViewViewModel = new ViewModelProvider(this).get(SourceWebViewViewModel.class);
         sourceWebViewViewModel.getHasFinishedInitializing().observe(this, hasFinishedInitializing -> {
             ViewGroup splash = findViewById(R.id.share_target_handler_splash);
             splash.setVisibility(hasFinishedInitializing ? View.INVISIBLE : View.VISIBLE);
         });
-    }
+        bottomSheetFragmentContainer = findViewById(R.id.bottom_sheet_fragment_container);
 
-    private void installSourceWebView(String sourceWebViewUri, String appWebViewUri) {
-        subscribeSourceWebViewViewModel();
+        // initialize view model for managing app web view bottom sheet
+        appWebViewViewModel = new ViewModelProvider(this).get(AppWebViewViewModel.class);
+        appWebViewViewModel.getBottomSheetState().observe(this, bottomSheetState -> {
+            BottomSheetBehavior<FragmentContainerView> behavior = BottomSheetBehavior.from(bottomSheetFragmentContainer);
+            behavior.setState(bottomSheetState);
+        });
+        BottomSheetBehavior<FragmentContainerView> behavior = BottomSheetBehavior.from(bottomSheetFragmentContainer);
+        appWebViewViewModel.setBottomSheetState(behavior.getState());
 
         sourceWebViewFragment = SourceWebView.newInstance(sourceWebViewUri);
         appWebViewFragment = AppWebView.newInstance(appWebViewUri);
@@ -128,13 +131,18 @@ public class ShareTargetHandler extends AppCompatActivity {
     }
 
     private void installAppWebView(String appWebViewUri) {
+        // Remove unused bottom sheet fragment container
         ViewGroup layout = findViewById(R.id.layout);
         View bottomSheetContainer = findViewById(R.id.bottom_sheet_fragment_container);
         if (layout != null && bottomSheetContainer != null) {
             layout.removeView(bottomSheetContainer);
         }
 
-        subscribeAppWebViewViewModel();
+        appWebViewViewModel = new ViewModelProvider(this).get(AppWebViewViewModel.class);
+        appWebViewViewModel.getHasFinishedInitializing().observe(this, hasFinishedInitializing -> {
+            ViewGroup splash = findViewById(R.id.share_target_handler_splash);
+            splash.setVisibility(hasFinishedInitializing ? View.INVISIBLE : View.VISIBLE);
+        });
         appWebViewFragment = AppWebView.newInstance(appWebViewUri);
         getSupportFragmentManager()
                 .beginTransaction()
