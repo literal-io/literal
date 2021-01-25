@@ -133,6 +133,16 @@ public class AppWebView extends Fragment {
             }
         });
 
+        appWebViewViewModel.getWebEvents().observe(requireActivity(), (webEvents) -> {
+            if (webEvents == null) { return; }
+
+            webEvents.iterator().forEachRemaining((webEvent) -> {
+                webView.postWebEvent(webEvent);
+            });
+
+            appWebViewViewModel.clearWebEvents();
+        });
+
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState);
         } else {
@@ -210,6 +220,7 @@ public class AppWebView extends Fragment {
         }
 
         public void onWebEvent(WebView view, WebEvent event) {
+            appWebViewViewModel.dispatchReceivedWebEvent(event);
             switch (event.getType()) {
                 case WebEvent.TYPE_AUTH_SIGN_IN:
                     this.handleSignIn(view);

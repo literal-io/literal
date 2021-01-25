@@ -250,7 +250,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
          })
       |> Js.Promise.then_(_ => {
            let _ =
-             Webview.(postMessage(WebEvent.make(~type_="ACTIVITY_FINISH")));
+             Webview.(postMessage(WebEvent.make(~type_="ACTIVITY_FINISH", ())));
            Js.Promise.resolve();
          });
     ();

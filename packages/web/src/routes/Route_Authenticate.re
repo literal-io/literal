@@ -31,7 +31,7 @@ let default = () => {
   let handleAuthenticateGoogle = () => {
     setIsAuthenticating(_ => true);
     let didPostMessage =
-      Webview.(postMessage(WebEvent.make(~type_="AUTH_SIGN_IN")));
+      Webview.(postMessage(WebEvent.make(~type_="AUTH_SIGN_IN", ())));
 
     let _ =
       if (!didPostMessage) {

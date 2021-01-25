@@ -19,6 +19,9 @@ public class WebEvent {
     public static final String TYPE_AUTH_GET_USER_INFO = "AUTH_GET_USER_INFO";
     public static final String TYPE_AUTH_GET_USER_INFO_RESULT = "AUTH_GET_USER_INFO_RESULT";
 
+    public static final String TYPE_NEW_ANNOTATION = "NEW_ANNOTATION";
+    public static final String TYPE_NEW_ANNOTATION_RESULT = "NEW_ANNOTATION_RESULT";
+
     private String type;
     private String pid;
     private JSONObject data = new JSONObject();

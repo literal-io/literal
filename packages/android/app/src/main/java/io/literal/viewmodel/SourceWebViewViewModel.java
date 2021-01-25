@@ -69,10 +69,7 @@ public class SourceWebViewViewModel extends ViewModel {
             }
         }
 
-        String script = highlightAnnotationTargetScript.getValue().replaceAll("\\$\\{PARAM_ANNOTATIONS\\}", paramAnnotations.toString());
-
-        Log.d("SourceWebViewViewModel", "script: " + script);
-        return script;
+        return highlightAnnotationTargetScript.getValue().replaceAll("\\$\\{PARAM_ANNOTATIONS\\}", paramAnnotations.toString());
     }
 
     public MutableLiveData<ArrayList<Annotation>> getAnnotations() {

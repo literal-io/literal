@@ -36,7 +36,8 @@ module WebEvent = {
     [@decco]
     type attributes = {
       email: string,
-      [@decco.key "email_verified"] emailVerified: string,
+      [@decco.key "email_verified"]
+      emailVerified: string,
       identities: string,
       sub: string,
     };
@@ -63,7 +64,7 @@ module WebEvent = {
     data: option(Js.Json.t),
   };
 
-  let make = (~type_) => {type_, pid: Uuid.makeV4(), data: None};
+  let make = (~type_, ~data=?, ()) => {type_, pid: Uuid.makeV4(), data};
 
   let encode = t_encode;
   let decode = t_decode;

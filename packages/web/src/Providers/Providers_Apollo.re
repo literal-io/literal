@@ -17,7 +17,7 @@ let authenticatedClientAuthOptions = {
         | None =>
           Timer.thunkP(~label="AUTH_GET_TOKENS", () =>
             Webview.(
-              postMessageForResult(WebEvent.make(~type_="AUTH_GET_TOKENS"))
+              postMessageForResult(WebEvent.make(~type_="AUTH_GET_TOKENS", ()))
             )
           )
           |> Js.Promise.then_(result => {

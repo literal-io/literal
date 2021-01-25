@@ -49,6 +49,12 @@ public class WebRoutes {
         return getWebHost() + "/creators/" + creatorUsername + "/annotations/new?id=" + annotationIdComponent;
     }
 
+    public static String creatorsIdAnnotationsNewFromMessageEvent(
+            String creatorUsername
+    ) {
+        return creatorsIdAnnotationsNew(creatorUsername) + "?fromMessageEvent=true";
+    }
+
     public static String creatorsIdAnnotationId(
             String creatorUsername,
             String annotationIdComponent

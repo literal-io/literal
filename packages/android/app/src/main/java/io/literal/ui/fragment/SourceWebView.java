@@ -28,10 +28,12 @@ import org.json.JSONException;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.UUID;
 
 import io.literal.R;
 import io.literal.lib.AnnotationLib;
 import io.literal.lib.JsonArrayUtil;
+import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
 import io.literal.viewmodel.AppWebViewViewModel;
@@ -131,12 +133,16 @@ public class SourceWebView extends Fragment {
                 public void onReceiveValue(String value) {
                     String creatorUsername = authenticationViewModel.getUsername().getValue();
                     Annotation annotation = sourceWebViewViewModel.createAnnotation(value, creatorUsername);
-                    String uri = WebRoutes.creatorsIdAnnotationsNewAnnotationId(
-                            creatorUsername,
-                            AnnotationLib.idComponentFromId(annotation.getId())
-                    );
-                    appWebViewViewModel.setUrl(uri);
-                    appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
+                    try {
+                        appWebViewViewModel.dispatchWebEvent(new WebEvent(
+                                WebEvent.TYPE_NEW_ANNOTATION,
+                                UUID.randomUUID().toString(),
+                                annotation.toJson()
+                        ));
+                        appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
+                    } catch (JSONException e) {
+                        Log.d("SourceWebView", "Unable to stringify annotation", e);
+                    }
                 }
             });
         });
@@ -177,6 +183,23 @@ public class SourceWebView extends Fragment {
                     toolbar.setLogo(new BitmapDrawable(getResources(), outputBitmap));
                 }
             }
+        });
+
+        appWebViewViewModel.getReceivedWebEvents().observe(requireActivity(), (webEvents) -> {
+            if (webEvents == null) { return; }
+
+            webEvents.iterator().forEachRemaining((webEvent) -> {
+                switch (webEvent.getType()) {
+                    case WebEvent.TYPE_ACTIVITY_FINISH:
+                        appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+                        return;
+                    case WebEvent.TYPE_NEW_ANNOTATION_RESULT:
+                        // todo: update annotation in view model
+                        return;
+                }
+            });
+
+            appWebViewViewModel.clearReceivedWebEvents();
         });
 
         if (savedInstanceState != null) {

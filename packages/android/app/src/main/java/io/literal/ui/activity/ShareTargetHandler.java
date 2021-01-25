@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 
 import io.literal.R;
 import io.literal.lib.Constants;
+import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.repository.ShareTargetHandlerRepository;
 import io.literal.ui.fragment.AppWebView;
@@ -37,16 +38,14 @@ import io.literal.viewmodel.SourceWebViewViewModel;
 
 public class ShareTargetHandler extends AppCompatActivity {
 
+    private static final String APP_WEB_VIEW_FRAGMENT_NAME = "APP_WEB_VIEW_FRAGMENT";
+    private static final String SOURCE_WEB_VIEW_FRAGMENT_NAME = "SOURCE_WEB_VIEW_FRAGMENT";
     private AppWebViewViewModel appWebViewViewModel;
     private SourceWebViewViewModel sourceWebViewViewModel;
     private AuthenticationViewModel authenticationViewModel;
     private AppWebView appWebViewFragment;
     private SourceWebView sourceWebViewFragment;
-
     private FragmentContainerView bottomSheetFragmentContainer;
-
-    private static final String APP_WEB_VIEW_FRAGMENT_NAME = "APP_WEB_VIEW_FRAGMENT";
-    private static final String SOURCE_WEB_VIEW_FRAGMENT_NAME = "SOURCE_WEB_VIEW_FRAGMENT";
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -154,7 +153,7 @@ public class ShareTargetHandler extends AppCompatActivity {
     private void handleCreateFromSource(Intent intent) {
         authenticationViewModel.awaitInitialization();
         String sourceWebViewUri = intent.getStringExtra(Intent.EXTRA_TEXT);
-        String appWebViewUri = WebRoutes.creatorsIdAnnotationsNew(
+        String appWebViewUri = WebRoutes.creatorsIdAnnotationsNewFromMessageEvent(
                 authenticationViewModel.getUsername().getValue()
         );
         installSourceWebView(sourceWebViewUri, appWebViewUri);
@@ -168,6 +167,7 @@ public class ShareTargetHandler extends AppCompatActivity {
             public void onAnnotationUri(String uri) {
                 installAppWebView(uri);
             }
+
             @Override
             public void onAnnotationCreated(CreateAnnotationMutation.Data data) {
                 if (data == null) {
@@ -176,19 +176,32 @@ public class ShareTargetHandler extends AppCompatActivity {
                     return;
                 }
 
-                runOnUiThread(() -> appWebViewViewModel.setOnFinishCallback(() -> {
-                    CreateAnnotationMutation.CreateAnnotation annotation = data.createAnnotation();
-                    if (annotation != null) {
-                        ShareTargetHandlerRepository.displayAnnotationCreatedNotification(annotation.annotation().id(), ShareTargetHandler.this);
-                    }
-                    finish();
-                }));
+                runOnUiThread(() -> {
+                    appWebViewViewModel.getReceivedWebEvents().observe(ShareTargetHandler.this, (webEvents) -> {
+                        if (webEvents == null) {
+                            return;
+                        }
 
+                        webEvents.iterator().forEachRemaining(webEvent -> {
+                            if (webEvent.getType().equals(WebEvent.TYPE_ACTIVITY_FINISH)) {
+                                CreateAnnotationMutation.CreateAnnotation annotation = data.createAnnotation();
+                                if (annotation != null) {
+                                    ShareTargetHandlerRepository.displayAnnotationCreatedNotification(annotation.annotation().id(), ShareTargetHandler.this);
+                                }
+                                finish();
+                            }
+                        });
+
+                        appWebViewViewModel.clearReceivedWebEvents();
+                    });
+                });
             }
+
             @Override
             public void onError(Exception e) {
                 Log.d("ShareTargetHandlerGraphQLService", "onError", e);
             }
+
             @Override
             public void onGraphQLError(List<Error> errors) {
                 errors.forEach(error -> Log.d("ShareTargetHandlerGraphQLService", "onGraphQLError - " + error.message()));
@@ -204,6 +217,7 @@ public class ShareTargetHandler extends AppCompatActivity {
             public void onAnnotationUri(String uri) {
                 installAppWebView(uri);
             }
+
             @Override
             public void onAnnotationCreated(CreateAnnotationFromExternalTargetMutation.Data data) {
                 if (data == null) {
@@ -212,18 +226,32 @@ public class ShareTargetHandler extends AppCompatActivity {
                     return;
                 }
 
-                appWebViewViewModel.setOnFinishCallback(() -> {
-                    CreateAnnotationFromExternalTargetMutation.CreateAnnotationFromExternalTarget annotation = data.createAnnotationFromExternalTarget();
-                    if (annotation != null) {
-                        ShareTargetHandlerRepository.displayAnnotationCreatedNotification(annotation.id(), ShareTargetHandler.this);
-                    }
-                    finish();
+                runOnUiThread(() -> {
+                    appWebViewViewModel.getReceivedWebEvents().observe(ShareTargetHandler.this, (webEvents) -> {
+                        if (webEvents == null) {
+                            return;
+                        }
+
+                        webEvents.iterator().forEachRemaining(webEvent -> {
+                            if (webEvent.getType().equals(WebEvent.TYPE_ACTIVITY_FINISH)) {
+                                CreateAnnotationFromExternalTargetMutation.CreateAnnotationFromExternalTarget annotation = data.createAnnotationFromExternalTarget();
+                                if (annotation != null) {
+                                    ShareTargetHandlerRepository.displayAnnotationCreatedNotification(annotation.id(), ShareTargetHandler.this);
+                                }
+                                finish();
+                            }
+                        });
+
+                        appWebViewViewModel.clearReceivedWebEvents();
+                    });
                 });
             }
+
             @Override
             public void onError(Exception e) {
                 Log.d("ShareTargetHandlerGraphQLService", "onError", e);
             }
+
             @Override
             public void onGraphQLError(List<Error> errors) {
                 errors.forEach(new Consumer<Error>() {
