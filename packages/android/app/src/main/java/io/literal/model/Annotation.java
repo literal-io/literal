@@ -35,7 +35,7 @@ public class Annotation {
                         ? JsonArrayUtil.parseJsonObjectArray(json.getJSONArray("body"), new Body[0], Body::fromJson)
                         : null,
                 JsonArrayUtil.parseJsonObjectArray(json.getJSONArray("target"), new Target[0], Target::fromJson),
-                json.optString("id")
+                json.optString("id", null)
         );
     }
 

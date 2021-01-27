@@ -6,18 +6,22 @@
     android:id="@+id/layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.activity.ShareTargetHandler">
+    tools:context=".ui.activity.ShareTargetHandler"
+    android:clipChildren="false">
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment_container"
         android:layout_height="match_parent"
         android:layout_width="match_parent" />
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/bottom_sheet_fragment_container"
-        android:layout_height="match_parent"
         android:layout_width="match_parent"
+        android:layout_height="match_parent"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
         app:behavior_hideable="true"
-        app:behavior_peekHeight="0dp" />
+        app:behavior_peekHeight="0dp"
+        app:behavior_draggable="true"
+        android:elevation="6dp"
+        android:background="@color/colorPrimary"/>
     <RelativeLayout
         android:id="@+id/share_target_handler_splash"
         android:layout_width="match_parent"

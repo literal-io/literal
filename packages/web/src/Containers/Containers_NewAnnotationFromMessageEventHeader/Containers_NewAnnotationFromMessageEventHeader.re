@@ -1,6 +1,6 @@
 [@react.component]
 let make = (~onDismiss) => {
-  <Header className={Cn.fromList(["py-2", "mx-6", "flex", "flex-row"])}>
+  <Header className={Cn.fromList(["py-2", "mx-6", "flex", "flex-row", "items-center"])}>
     <MaterialUi.IconButton
       size=`Small
       edge=MaterialUi.IconButton.Edge.start
@@ -25,10 +25,9 @@ let make = (~onDismiss) => {
       className={Cn.fromList([
         "text-lightPrimary",
         "font-sans",
-        "font-bold",
         "italic",
         "leading-none",
-        "text-lg",
+        "text-base",
         "ml-6",
       ])}>
       {React.string("Edit Annotation")}

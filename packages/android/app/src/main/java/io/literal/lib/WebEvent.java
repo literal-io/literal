@@ -3,7 +3,7 @@ package io.literal.lib;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import io.literal.ui.view.WebView;
+import io.literal.ui.view.AppWebView;
 
 public class WebEvent {
 
@@ -52,8 +52,11 @@ public class WebEvent {
     public String getType() {
         return type;
     }
+    public JSONObject getData() {
+        return data;
+    }
 
     public interface Callback {
-        public void onWebEvent(WebView view, WebEvent event);
+        public void onWebEvent(AppWebView view, WebEvent event);
     }
 }

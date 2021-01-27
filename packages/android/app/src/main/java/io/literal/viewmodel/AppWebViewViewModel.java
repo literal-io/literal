@@ -3,14 +3,9 @@ package io.literal.viewmodel;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
-
 import java.util.ArrayDeque;
-import java.util.Deque;
 
 import io.literal.lib.WebEvent;
-import io.literal.ui.activity.ShareTargetHandler;
-import io.literal.ui.view.WebView;
 
 public class AppWebViewViewModel extends ViewModel {
     private final MutableLiveData<Boolean> hasFinishedInitializing = new MutableLiveData<>(false);

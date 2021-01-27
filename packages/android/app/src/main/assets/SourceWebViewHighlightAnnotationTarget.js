@@ -1,10 +1,43 @@
-(function highlightSelectors() {
+(function highlightAnnotationTarget() {
   const HIGHLIGHT_CLASS_NAME = "literal-highlight";
   const ANNOTATIONS = JSON.parse('${PARAM_ANNOTATIONS}');
 
+  const Messenger = (function() {
+    const handleMessage = (ev) => {
+      // TODO: implement
+    };
+
+    const initialize = () => {
+      if (globalThis.literalMessagePort) {
+        console.log("[Literal] Already initialized, noop.");
+        return;
+      }
+
+      window.addEventListener("message", (ev) => {
+        if (ev.ports && ev.ports.length > 0) {
+          globalThis.literalMessagePort = ev.ports[0];
+        }
+        handleMessage(ev);
+      });
+    };
+
+    const postMessage = (ev) => {
+      if (!globalThis.literalMessagePort) {
+        console.error("[Literal] Unable to dispatch: has not initialized");
+        return;
+      }
+      globalThis.literalMessagePort.postMessage(JSON.stringify(ev));
+    };
+
+    return {
+      initialize,
+      postMessage,
+    };
+  })();
+
   // adapted from https://gist.github.com/Gozala/80cf4d2c9f000548b7a11b110b1d7711
   const Highlighter = (function() {
-    const markText = (text) => {
+    const markText = (text, dataset) => {
       const span = document.createElement("span");
       span.role = "mark";
       span.style.backgroundColor = "rgb(0, 0, 0)";
@@ -12,11 +45,14 @@
       span.style.display = "inline";
       span.classList.add(HIGHLIGHT_CLASS_NAME);
       text.parentNode.replaceChild(span, text);
+      Object.keys(dataset).forEach((key) => {
+        span.setAttribute(`data-${key}`, dataset[key]);
+      });
       span.appendChild(text);
       return span;
     };
 
-    const markImage = (image) => {
+    const markImage = (image, dataset) => {
       const selected = image.cloneNode();
       selected.role = "mark";
       selected.style.objectPosition = `${image.width}px`;
@@ -24,6 +60,9 @@
       selected.style.backgroundColor = "rgba(255, 255, 0, 0.3)";
       selected.style.backgroundBlendMode = "overlay";
       selected.classList.add(HIGHLIGHT_CLASS_NAME);
+      Object.keys(dataset).forEach((key) => {
+        selected.setAttribute(`data-${key}`, dataset[key]);
+      });
       // Keep original node so we can remove highlighting by
       // swapping back images.
       image.appendChild(selected);
@@ -33,12 +72,12 @@
       return selected;
     };
 
-    const markNode = (node) => {
+    const markNode = (node, dataset) => {
       const { Image, Text } = node.ownerDocument.defaultView;
       if (node instanceof Image) {
-        return markImage(node);
+        return markImage(node, dataset);
       } else if (node instanceof Text) {
-        return markText(node);
+        return markText(node, dataset);
       } else {
         return node;
       }
@@ -106,7 +145,7 @@
     const isHighlightableImage = (node) =>
       node instanceof node.ownerDocument.defaultView.Image;
 
-    const highlightRange = (range) => {
+    const highlightRange = (range, markDataset) => {
       const { startContainer, endContainer, startOffset, endOffset } = range;
       const start = resolveContainer(startContainer, startOffset);
       const end = resolveContainer(endContainer, endOffset);
@@ -126,7 +165,7 @@
             startOffset,
             endOffset
           );
-          markText(text);
+          markText(text, markDataset);
           range.setStart(text, 0);
           range.setEnd(next, 0);
         } else {
@@ -136,13 +175,15 @@
           );
           const highlightableNodes = filter(isHighlightableNode, contentNodes);
 
-          [...highlightableNodes].forEach(markNode);
+          [...highlightableNodes].forEach((node) =>
+            markNode(node, markDataset)
+          );
 
           if (startNode instanceof Text) {
             const text =
               startOffset > 0 ? startNode.splitText(startOffset) : startNode;
 
-            markText(text);
+            markText(text, markDataset);
             range.setStart(text, 0);
           }
 
@@ -152,7 +193,7 @@
                 ? [endNode.splitText(endOffset).previousSibling, 0]
                 : [endNode, endOffset];
 
-            markText(text);
+            markText(text, markDataset);
             range.setEnd(text, text.length);
           }
         }
@@ -161,6 +202,8 @@
 
     return { highlightRange };
   })();
+
+  Messenger.initialize();
 
   // remove any existing selectors
   document.querySelectorAll(`.${HIGHLIGHT_CLASS_NAME}`).forEach((elem) => {
@@ -177,10 +220,11 @@
           selector.filter(({ type }) => type === "RANGE_SELECTOR")
         )
         .flat()
+        .map((selector) => ({ ...selector, annotationId: annotation.id }))
         .concat(rangeSelectors);
     }
     return rangeSelectors;
-  }, []).forEach(({ startSelector, endSelector }) => {
+  }, []).forEach(({ startSelector, endSelector, annotationId }) => {
     const startNode = document.evaluate(
       startSelector.value,
       document,
@@ -201,9 +245,22 @@
     range.setEnd(endNode, endSelector.refinedBy[0].end);
 
     try {
-      Highlighter.highlightRange(range);
+      Highlighter.highlightRange(range, { "annotation-id": annotationId });
+
+      // FIXME: include ID as data prop, pass in message
+      document.querySelectorAll(`.${HIGHLIGHT_CLASS_NAME}`).forEach((el) => {
+        el.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          Messenger.postMessage({
+            type: "ANNOTATION_CLICKED",
+            data: {
+              annotationId: ev.target.getAttribute("data-annotation-id"),
+            },
+          });
+        });
+      });
     } catch (e) {
-      /** noop **/
+      console.error("[Literal]", e);
     }
   });
 })();

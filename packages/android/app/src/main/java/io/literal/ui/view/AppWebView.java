@@ -1,7 +1,6 @@
 package io.literal.ui.view;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -24,7 +23,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.UUID;
 
 import io.literal.BuildConfig;
@@ -32,23 +30,25 @@ import io.literal.lib.Constants;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 
-public class WebView extends android.webkit.WebView {
+public class AppWebView extends NestedScrollingChildWebView {
 
     private WebEvent.Callback webEventCallback;
     private WebViewClient externalWebViewClient;
     private ArrayDeque<String> baseHistory;
 
-    public WebView(Context context) {
+    public AppWebView(Context context) {
         super(context);
+        setNestedScrollingEnabled(true);
     }
 
-    public WebView(Context context, AttributeSet attrs) {
+    public AppWebView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        setNestedScrollingEnabled(true);
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     public void initialize() {
-        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
+        AppWebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         this.addJavascriptInterface(new JavascriptInterface(), "literalWebview");
         WebSettings webSettings = this.getSettings();
         webSettings.setJavaScriptEnabled(true);
@@ -94,7 +94,7 @@ public class WebView extends android.webkit.WebView {
                         Log.i("Literal", "Received WebEvent " + json.toString());
                         WebEvent webEvent = new WebEvent(json);
                         if (webEventCallback != null) {
-                            webEventCallback.onWebEvent(WebView.this, webEvent);
+                            webEventCallback.onWebEvent(AppWebView.this, webEvent);
                         }
                     } catch (JSONException ex) {
                         Log.e("Literal", "Error in onMessage", ex);
@@ -145,10 +145,6 @@ public class WebView extends android.webkit.WebView {
         return super.onKeyDown(keyCode, event);
     }
 
-    public interface PageFinishedCallback {
-        public void onPageFinished(android.webkit.WebView view, String Url);
-    }
-
     private class JavascriptInterface {
         @android.webkit.JavascriptInterface
         public boolean isWebview() {
@@ -160,15 +156,15 @@ public class WebView extends android.webkit.WebView {
         @Override
         public void onPageFinished(android.webkit.WebView webview, String url) {
             initializeWebMessageChannel();
-            if (WebView.this.externalWebViewClient != null) {
-                WebView.this.externalWebViewClient.onPageFinished(webview, url);
+            if (AppWebView.this.externalWebViewClient != null) {
+                AppWebView.this.externalWebViewClient.onPageFinished(webview, url);
             }
         }
 
         @Override
         public void onPageStarted(android.webkit.WebView webview, String url, Bitmap favicon) {
-            if (WebView.this.externalWebViewClient != null) {
-                WebView.this.externalWebViewClient.onPageStarted(webview, url, favicon);
+            if (AppWebView.this.externalWebViewClient != null) {
+                AppWebView.this.externalWebViewClient.onPageStarted(webview, url, favicon);
             }
         }
     };

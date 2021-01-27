@@ -3,9 +3,11 @@ package io.literal.ui.activity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
@@ -108,15 +110,38 @@ public class ShareTargetHandler extends AppCompatActivity {
             ViewGroup splash = findViewById(R.id.share_target_handler_splash);
             splash.setVisibility(hasFinishedInitializing ? View.INVISIBLE : View.VISIBLE);
         });
+
         bottomSheetFragmentContainer = findViewById(R.id.bottom_sheet_fragment_container);
+        ViewGroup.LayoutParams bottomSheetLayout = bottomSheetFragmentContainer.getLayoutParams();
+        Configuration configuration = getResources().getConfiguration();
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+        double bottomSheetHeight = configuration.screenHeightDp * 0.8 * displayMetrics.density;
+        bottomSheetLayout.height = (int) bottomSheetHeight;
+        bottomSheetFragmentContainer.setLayoutParams(bottomSheetLayout);
 
         // initialize view model for managing app web view bottom sheet
         appWebViewViewModel = new ViewModelProvider(this).get(AppWebViewViewModel.class);
         appWebViewViewModel.getBottomSheetState().observe(this, bottomSheetState -> {
             BottomSheetBehavior<FragmentContainerView> behavior = BottomSheetBehavior.from(bottomSheetFragmentContainer);
-            behavior.setState(bottomSheetState);
+            if (bottomSheetState != behavior.getState()) {
+                behavior.setState(bottomSheetState);
+            }
         });
+
         BottomSheetBehavior<FragmentContainerView> behavior = BottomSheetBehavior.from(bottomSheetFragmentContainer);
+        behavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+                if (newState != appWebViewViewModel.getBottomSheetState().getValue()) {
+                    appWebViewViewModel.setBottomSheetState(newState);
+                }
+            }
+
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+
+            }
+        });
         appWebViewViewModel.setBottomSheetState(behavior.getState());
 
         sourceWebViewFragment = SourceWebView.newInstance(sourceWebViewUri);

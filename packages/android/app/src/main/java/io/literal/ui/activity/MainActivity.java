@@ -6,35 +6,21 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.ValueCallback;
-import android.webkit.WebChromeClient;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.UserStateDetails;
-import com.amazonaws.mobile.client.UserStateListener;
 import com.amazonaws.mobileconnectors.cognitoauth.AuthClient;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.UUID;
 
 import io.literal.R;
 import io.literal.factory.AWSMobileClientFactory;
 import io.literal.lib.Constants;
-import io.literal.lib.ContentResolverLib;
-import io.literal.lib.FileActivityResultCallback;
 import io.literal.lib.WebRoutes;
-import io.literal.repository.AuthenticationRepository;
 import io.literal.ui.fragment.AppWebView;
-import io.literal.ui.view.WebView;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 

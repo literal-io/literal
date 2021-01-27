@@ -1,9 +1,7 @@
 package io.literal.ui.fragment;
 
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -11,7 +9,6 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
 import android.util.Log;
@@ -22,26 +19,17 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebViewClient;
 
-import com.amazonaws.mobile.client.AWSMobileClient;
-import com.amazonaws.mobile.client.HostedUIOptions;
-import com.amazonaws.mobile.client.SignInUIOptions;
-import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.mobile.client.results.Tokens;
 
 import org.json.JSONObject;
 
 import java.io.File;
-import java.util.Map;
 import java.util.UUID;
 
 import io.literal.R;
-import io.literal.lib.Constants;
 import io.literal.lib.ContentResolverLib;
 import io.literal.lib.FileActivityResultCallback;
 import io.literal.lib.WebEvent;
-import io.literal.repository.AuthenticationRepository;
-import io.literal.ui.activity.ShareTargetHandler;
-import io.literal.ui.view.WebView;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 
@@ -53,7 +41,7 @@ public class AppWebView extends Fragment {
     private ActivityResultLauncher<String> getFileContent;
     private AppWebViewViewModel appWebViewViewModel;
     private AuthenticationViewModel authenticationViewModel;
-    private WebView webView;
+    private io.literal.ui.view.AppWebView appWebView;
 
     public AppWebView() {
     }
@@ -88,10 +76,10 @@ public class AppWebView extends Fragment {
         appWebViewViewModel = new ViewModelProvider(requireActivity()).get(AppWebViewViewModel.class);
         authenticationViewModel = new ViewModelProvider(requireActivity()).get(AuthenticationViewModel.class);
 
-        webView = view.findViewById(R.id.app_web_view);
+        appWebView = view.findViewById(R.id.app_web_view);
 
-        webView.initialize();
-        webView.setExternalWebViewClient(new WebViewClient() {
+        appWebView.initialize();
+        appWebView.setExternalWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(android.webkit.WebView view, String url) {
                 if (!appWebViewViewModel.getHasFinishedInitializing().getValue()) {
@@ -107,7 +95,7 @@ public class AppWebView extends Fragment {
                 }
             }
         });
-        webView.setWebChromeClient(new WebChromeClient() {
+        appWebView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(android.webkit.WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
                 fileActivityResultCallback.setFilePathCallback(new ValueCallback<Uri[]>() {
@@ -125,11 +113,11 @@ public class AppWebView extends Fragment {
                 return true;
             }
         });
-        webView.onWebEvent(webEventCallback);
+        appWebView.onWebEvent(webEventCallback);
         appWebViewViewModel.getUrl().observe(requireActivity(), (url) -> {
-            String currentUrl = webView.getUrl();
-            if (currentUrl == null || (url != null && !webView.getUrl().equals(url))) {
-                webView.loadUrl(url);
+            String currentUrl = appWebView.getUrl();
+            if (currentUrl == null || (url != null && !appWebView.getUrl().equals(url))) {
+                appWebView.loadUrl(url);
             }
         });
 
@@ -137,14 +125,14 @@ public class AppWebView extends Fragment {
             if (webEvents == null) { return; }
 
             webEvents.iterator().forEachRemaining((webEvent) -> {
-                webView.postWebEvent(webEvent);
+                appWebView.postWebEvent(webEvent);
             });
 
             appWebViewViewModel.clearWebEvents();
         });
 
         if (savedInstanceState != null) {
-            webView.restoreState(savedInstanceState);
+            appWebView.restoreState(savedInstanceState);
         } else {
             appWebViewViewModel.setUrl(paramInitialUrl);
         }
@@ -153,14 +141,14 @@ public class AppWebView extends Fragment {
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        if (this.webView != null) {
-            webView.saveState(outState);
+        if (this.appWebView != null) {
+            appWebView.saveState(outState);
         }
     }
 
     private final WebEvent.Callback webEventCallback = new WebEvent.Callback() {
 
-        private void handleSignIn(WebView view) {
+        private void handleSignIn(io.literal.ui.view.AppWebView view) {
             authenticationViewModel.signInGoogle(getActivity(), (e, userStateDetails) -> {
                 if (e != null) {
                     Log.d("AppWebView", "handleSignIn", e);
@@ -186,7 +174,7 @@ public class AppWebView extends Fragment {
             });
         }
 
-        private void handleGetTokens(WebView view) {
+        private void handleGetTokens(io.literal.ui.view.AppWebView view) {
             Tokens tokens = authenticationViewModel.getTokens().getValue();
 
             JSONObject result = new JSONObject();
@@ -203,7 +191,7 @@ public class AppWebView extends Fragment {
             }
         }
 
-        private void handleGetUserInfo(WebView view) {
+        private void handleGetUserInfo(io.literal.ui.view.AppWebView view) {
 
             try {
                 JSONObject result = new JSONObject();
@@ -211,7 +199,7 @@ public class AppWebView extends Fragment {
                 result.put("attributes", new JSONObject(authenticationViewModel.getUserAttributes().getValue()));
                 result.put("id", authenticationViewModel.getIdentityId().getValue());
 
-                webView.postWebEvent(
+                appWebView.postWebEvent(
                         new WebEvent(WebEvent.TYPE_AUTH_GET_USER_INFO_RESULT, UUID.randomUUID().toString(), result)
                 );
             } catch (Exception e) {
@@ -219,7 +207,7 @@ public class AppWebView extends Fragment {
             }
         }
 
-        public void onWebEvent(WebView view, WebEvent event) {
+        public void onWebEvent(io.literal.ui.view.AppWebView view, WebEvent event) {
             appWebViewViewModel.dispatchReceivedWebEvent(event);
             switch (event.getType()) {
                 case WebEvent.TYPE_AUTH_SIGN_IN:

@@ -114,6 +114,26 @@ public class SourceWebViewViewModel extends ViewModel {
         }
     }
 
+    public boolean updateAnnotation(Annotation annotation) {
+        if (annotation.getId() != null) {
+            ArrayList<Annotation> newAnnotations = (ArrayList<Annotation>) annotations.getValue().clone();
+            int idx = -1;
+            for (int i = 0; i < newAnnotations.size(); i++) {
+                if (newAnnotations.get(i).getId() == annotation.getId()) {
+                    idx = i;
+                    break;
+                }
+            }
+
+            if (idx != -1) {
+                newAnnotations.set(idx, annotation);
+                annotations.setValue(newAnnotations);
+                return true;
+            }
+        }
+        return false;
+    }
+
     public class DomainMetadata {
         private final URL url;
         private final Bitmap favicon;

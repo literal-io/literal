@@ -13,14 +13,18 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ValueCallback;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import org.json.JSONArray;
@@ -28,6 +32,7 @@ import org.json.JSONException;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import io.literal.R;
@@ -47,6 +52,7 @@ public class SourceWebView extends Fragment {
     private String paramInitialUrl;
     private io.literal.ui.view.SourceWebView webView;
     private Toolbar toolbar;
+    private AppBarLayout appBarLayout;
     private SourceWebViewViewModel sourceWebViewViewModel;
     private AuthenticationViewModel authenticationViewModel;
     private AppWebViewViewModel appWebViewViewModel;
@@ -89,6 +95,8 @@ public class SourceWebView extends Fragment {
         toolbar = view.findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
 
+        appBarLayout = view.findViewById(R.id.app_bar_layout);
+
         webView = view.findViewById(R.id.source_web_view);
         webView.setOnReceivedIcon((e, webView, icon) -> {
             if (e != null) {
@@ -98,29 +106,40 @@ public class SourceWebView extends Fragment {
             SourceWebViewViewModel.DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
             sourceWebViewViewModel.setDomainMetadata(domainMetadata != null ? domainMetadata.getUrl() : null, icon);
         });
-        webView.setOnPageStarted((e, webView, url, bitmap) -> {
-            if (e != null) {
-                Log.d("SourceWebView", "setOnPageStarted callback error:", e);
-                return;
-            }
-
-            SourceWebViewViewModel.DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
+        webView.setOnGetWebMessageChannelInitializerScript((_e, _data) -> {
             try {
-                sourceWebViewViewModel.setDomainMetadata(new URL(url), domainMetadata != null ? domainMetadata.getFavicon() : null);
-            } catch (MalformedURLException ex) {
-                Log.d("SourceWebView", "Unable to execute setDomainMetadata:", ex);
+                ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
+                JSONArray output = JsonArrayUtil.stringifyObjectArray(annotations.toArray(new Annotation[0]), Annotation::toJson);
+                String script = sourceWebViewViewModel.getHighlightAnnotationTargetScript(
+                        getActivity().getAssets(), output
+                );
+                Log.i("SourceWebView", script);
+                return script;
+            } catch (JSONException e) {
+                Log.d("SourceWebView", "setOnGetWebMessageChannelInitializerScript callback", e);
             }
+            return null;
         });
-        webView.setOnPageFinished((e, webView, url) -> {
-            if (e != null) {
-                Log.d("SourceWebView", "setOnPageFinished callback error:", e);
-                return;
+
+        webView.setExternalWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                SourceWebViewViewModel.DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
+                try {
+                    sourceWebViewViewModel.setDomainMetadata(new URL(url), domainMetadata != null ? domainMetadata.getFavicon() : null);
+                } catch (MalformedURLException ex) {
+                    Log.d("SourceWebView", "Unable to execute setDomainMetadata:", ex);
+                }
             }
 
-            if (!sourceWebViewViewModel.getHasFinishedInitializing().getValue()) {
-                sourceWebViewViewModel.setHasFinishedInitializing(true);
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                if (!sourceWebViewViewModel.getHasFinishedInitializing().getValue()) {
+                    sourceWebViewViewModel.setHasFinishedInitializing(true);
+                }
             }
         });
+
         webView.setOnAnnotationCreated((e, _view) -> {
             if (e != null) {
                 Log.d("SourceWebView", "setOnAnnotationCreated callback error:", e);
@@ -128,21 +147,18 @@ public class SourceWebView extends Fragment {
             }
 
             String script = sourceWebViewViewModel.getGetAnnotationScript(getActivity().getAssets());
-            webView.evaluateJavascript(script, new ValueCallback<String>() {
-                @Override
-                public void onReceiveValue(String value) {
-                    String creatorUsername = authenticationViewModel.getUsername().getValue();
-                    Annotation annotation = sourceWebViewViewModel.createAnnotation(value, creatorUsername);
-                    try {
-                        appWebViewViewModel.dispatchWebEvent(new WebEvent(
-                                WebEvent.TYPE_NEW_ANNOTATION,
-                                UUID.randomUUID().toString(),
-                                annotation.toJson()
-                        ));
-                        appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
-                    } catch (JSONException e) {
-                        Log.d("SourceWebView", "Unable to stringify annotation", e);
-                    }
+            webView.evaluateJavascript(script, value -> {
+                String creatorUsername = authenticationViewModel.getUsername().getValue();
+                Annotation annotation = sourceWebViewViewModel.createAnnotation(value, creatorUsername);
+                try {
+                    appWebViewViewModel.dispatchWebEvent(new WebEvent(
+                            WebEvent.TYPE_NEW_ANNOTATION,
+                            UUID.randomUUID().toString(),
+                            annotation.toJson()
+                    ));
+                    appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
+                } catch (JSONException e1) {
+                    Log.d("SourceWebView", "Unable to stringify annotation", e1);
                 }
             });
         });
@@ -194,12 +210,31 @@ public class SourceWebView extends Fragment {
                         appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
                         return;
                     case WebEvent.TYPE_NEW_ANNOTATION_RESULT:
-                        // todo: update annotation in view model
+                        try {
+                            Annotation newAnnotation = Annotation.fromJson(webEvent.getData());
+                            boolean updated = sourceWebViewViewModel.updateAnnotation(newAnnotation);
+                            if (!updated) {
+                                Log.d("SourceWebView", "Unable to update annotation: " + webEvent.getData());
+                            }
+                        } catch (JSONException e) {
+                            Log.d("SourceWebView", "Unable to handle NEW_ANNOTATION_RESULT", e);
+                        }
                         return;
                 }
             });
 
             appWebViewViewModel.clearReceivedWebEvents();
+        });
+
+        appWebViewViewModel.getBottomSheetState().observe(requireActivity(), (bottomSheetState) -> {
+            switch (bottomSheetState) {
+                case BottomSheetBehavior.STATE_COLLAPSED:
+                    appBarLayout.setExpanded(true);
+                    break;
+                case BottomSheetBehavior.STATE_EXPANDED:
+                    appBarLayout.setExpanded(false);
+                    break;
+            }
         });
 
         if (savedInstanceState != null) {

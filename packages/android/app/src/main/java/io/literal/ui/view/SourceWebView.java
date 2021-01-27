@@ -4,7 +4,11 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -16,69 +20,61 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.view.MotionEventCompat;
 import androidx.core.view.NestedScrollingChild;
 import androidx.core.view.NestedScrollingChildHelper;
 import androidx.core.view.ViewCompat;
+import androidx.webkit.WebMessageCompat;
+import androidx.webkit.WebMessagePortCompat;
+import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewFeature;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.w3c.dom.Attr;
 
 import java.text.AttributedCharacterIterator;
 
+import javax.xml.transform.Source;
+
+import io.literal.BuildConfig;
 import io.literal.R;
 import io.literal.lib.Callback;
 import io.literal.lib.Callback2;
 import io.literal.lib.Callback3;
+import io.literal.lib.ResultCallback;
+import io.literal.lib.WebEvent;
+import io.literal.lib.WebRoutes;
 
-public class SourceWebView extends WebView implements NestedScrollingChild {
+public class SourceWebView extends NestedScrollingChildWebView {
 
-    private Callback3<View, String, Bitmap> onPageStarted;
-    private Callback2<View, String> onPageFinished;
     private Callback<View> onAnnotationCreated;
     private Callback2<View, Bitmap> onReceivedIcon;
+    private ResultCallback<String, Void> onGetWebMessageChannelInitializerScript;
 
-    // NestedScrollingChild
-    private int mLastY;
-    private final int[] mScrollOffset = new int[2];
-    private final int[] mScrollConsumed = new int[2];
-    private int mNestedOffsetY;
-    private NestedScrollingChildHelper mChildHelper;
+    private Callback2<SourceWebView, WebEvent> webEventCallback;
+    private WebViewClient externalWebViewClient;
 
     public SourceWebView(Context context) {
         this(context, null);
-
     }
 
     public SourceWebView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        mChildHelper = new NestedScrollingChildHelper(this);
-        setNestedScrollingEnabled(true);
         this.initialize();
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     private void initialize() {
+        SourceWebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         WebSettings webSettings = this.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
         webSettings.setBuiltInZoomControls(true);
         webSettings.setDisplayZoomControls(false);
-        this.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                super.onPageStarted(view, url, favicon);
-                if (SourceWebView.this.onPageStarted != null) {
-                    onPageStarted.invoke(null, view, url, favicon);
-                }
-            }
-
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                if (SourceWebView.this.onPageFinished != null) {
-                    onPageFinished.invoke(null, view, url);
-                }
-            }
-        });
+        this.setWebViewClient(this.webViewClient);
 
         this.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -89,6 +85,47 @@ public class SourceWebView extends WebView implements NestedScrollingChild {
                 super.onReceivedIcon(view, icon);
             }
         });
+    }
+
+    private void initializeWebMessageChannel() {
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.CREATE_WEB_MESSAGE_CHANNEL) &&
+                WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK) &&
+                WebViewFeature.isFeatureSupported(WebViewFeature.POST_WEB_MESSAGE)) {
+
+            // Ensure web context is setup to begin the message channel handshake.
+            if (this.onGetWebMessageChannelInitializerScript != null) {
+                String script = this.onGetWebMessageChannelInitializerScript.invoke(null, null);
+                this.evaluateJavascript(script, (value -> { /** noop **/ }));
+            }
+
+            final WebMessagePortCompat[] channel = WebViewCompat.createWebMessageChannel(this);
+            final Handler handler = new Handler(Looper.getMainLooper());
+            channel[0].setWebMessageCallback(handler, new WebMessagePortCompat.WebMessageCallbackCompat() {
+                @SuppressLint("RequiresFeature")
+                @Override
+                public void onMessage(@NonNull WebMessagePortCompat port, @Nullable WebMessageCompat message) {
+                    super.onMessage(port, message);
+                    String data = message.getData();
+                    try {
+                        JSONObject json = new JSONObject(data);
+                        Log.i("Literal", "Received WebEvent " + json.toString());
+                        WebEvent webEvent = new WebEvent(json);
+                        if (webEventCallback != null) {
+                            webEventCallback.invoke(null, SourceWebView.this, webEvent);
+                        }
+                    } catch (JSONException ex) {
+                        Log.e("Literal", "Error in onMessage", ex);
+                    }
+                }
+            });
+
+            // Initial handshake - deliver WebMessageChannel port to JS.
+            WebViewCompat.postWebMessage(
+                    this,
+                    new WebMessageCompat("", new WebMessagePortCompat[]{channel[1]}),
+                    Uri.parse("*")
+            );
+        }
     }
 
     @Override
@@ -103,20 +140,20 @@ public class SourceWebView extends WebView implements NestedScrollingChild {
         return super.startActionMode(cb, type);
     }
 
-    public void setOnPageFinished(Callback2<View, String> onPageFinished) {
-        this.onPageFinished = onPageFinished;
-    }
-
     public void setOnAnnotationCreated(Callback<View> onAnnotationCreated) {
         this.onAnnotationCreated = onAnnotationCreated;
     }
 
-    public void setOnPageStarted(Callback3<View, String, Bitmap> onPageStarted) {
-        this.onPageStarted = onPageStarted;
-    }
-
     public void setOnReceivedIcon(Callback2<View, Bitmap> onReceivedIcon) {
         this.onReceivedIcon = onReceivedIcon;
+    }
+
+    public void setExternalWebViewClient(WebViewClient externalWebViewClient) {
+        this.externalWebViewClient = externalWebViewClient;
+    }
+
+    public void setOnGetWebMessageChannelInitializerScript(ResultCallback<String, Void> onGetWebMessageChannelInitializerScript) {
+        this.onGetWebMessageChannelInitializerScript = onGetWebMessageChannelInitializerScript;
     }
 
     private class AnnotateActionModeCallback extends ActionMode.Callback2 {
@@ -163,95 +200,20 @@ public class SourceWebView extends WebView implements NestedScrollingChild {
         }
     };
 
-    @Override
-    public boolean onTouchEvent(MotionEvent ev) {
-        boolean returnValue = false;
-
-        MotionEvent event = MotionEvent.obtain(ev);
-        final int action = MotionEventCompat.getActionMasked(event);
-        if (action == MotionEvent.ACTION_DOWN) {
-            mNestedOffsetY = 0;
+    private final WebViewClient webViewClient = new WebViewClient() {
+        @Override
+        public void onPageFinished(android.webkit.WebView webview, String url) {
+            initializeWebMessageChannel();
+            if (SourceWebView.this.externalWebViewClient != null) {
+                SourceWebView.this.externalWebViewClient.onPageFinished(webview, url);
+            }
         }
-        int eventY = (int) event.getY();
-        event.offsetLocation(0, mNestedOffsetY);
-        switch (action) {
-            case MotionEvent.ACTION_MOVE:
-                int deltaY = mLastY - eventY;
-                // NestedPreScroll
-                if (dispatchNestedPreScroll(0, deltaY, mScrollConsumed, mScrollOffset)) {
-                    deltaY -= mScrollConsumed[1];
-                    mLastY = eventY - mScrollOffset[1];
-                    event.offsetLocation(0, -mScrollOffset[1]);
-                    mNestedOffsetY += mScrollOffset[1];
-                }
-                returnValue = super.onTouchEvent(event);
 
-                // NestedScroll
-                if (dispatchNestedScroll(0, mScrollOffset[1], 0, deltaY, mScrollOffset)) {
-                    event.offsetLocation(0, mScrollOffset[1]);
-                    mNestedOffsetY += mScrollOffset[1];
-                    mLastY -= mScrollOffset[1];
-                }
-                break;
-            case MotionEvent.ACTION_DOWN:
-                returnValue = super.onTouchEvent(event);
-                mLastY = eventY;
-                // start NestedScroll
-                startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL);
-                break;
-            default:
-                returnValue = super.onTouchEvent(event);
-                // end NestedScroll
-                stopNestedScroll();
-                break;
+        @Override
+        public void onPageStarted(android.webkit.WebView webview, String url, Bitmap favicon) {
+            if (SourceWebView.this.externalWebViewClient != null) {
+                SourceWebView.this.externalWebViewClient.onPageStarted(webview, url, favicon);
+            }
         }
-        return returnValue;
-    }
-
-    // Nested Scroll implements
-    @Override
-    public void setNestedScrollingEnabled(boolean enabled) {
-        mChildHelper.setNestedScrollingEnabled(enabled);
-    }
-
-    @Override
-    public boolean isNestedScrollingEnabled() {
-        return mChildHelper.isNestedScrollingEnabled();
-    }
-
-    @Override
-    public boolean startNestedScroll(int axes) {
-        return mChildHelper.startNestedScroll(axes);
-    }
-
-    @Override
-    public void stopNestedScroll() {
-        mChildHelper.stopNestedScroll();
-    }
-
-    @Override
-    public boolean hasNestedScrollingParent() {
-        return mChildHelper.hasNestedScrollingParent();
-    }
-
-    @Override
-    public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed,
-                                        int[] offsetInWindow) {
-        return mChildHelper.dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, offsetInWindow);
-    }
-
-    @Override
-    public boolean dispatchNestedPreScroll(int dx, int dy, int[] consumed, int[] offsetInWindow) {
-        return mChildHelper.dispatchNestedPreScroll(dx, dy, consumed, offsetInWindow);
-    }
-
-    @Override
-    public boolean dispatchNestedFling(float velocityX, float velocityY, boolean consumed) {
-        return mChildHelper.dispatchNestedFling(velocityX, velocityY, consumed);
-    }
-
-    @Override
-    public boolean dispatchNestedPreFling(float velocityX, float velocityY) {
-        return mChildHelper.dispatchNestedPreFling(velocityX, velocityY);
-    }
+    };
 }
