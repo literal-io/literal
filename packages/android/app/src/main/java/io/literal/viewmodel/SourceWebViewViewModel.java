@@ -29,6 +29,7 @@ public class SourceWebViewViewModel extends ViewModel {
     private final MutableLiveData<String> highlightAnnotationTargetScript = new MutableLiveData<>(null);
     private final MutableLiveData<ArrayList<Annotation>> annotations = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<DomainMetadata> domainMetadata = new MutableLiveData<>(null);
+    private final MutableLiveData<Annotation> focusedAnnotation = new MutableLiveData<>(null);
 
     private static final String GET_ANNOTATION_SCRIPT_NAME = "SourceWebViewGetAnnotation.js";
     private static final String HIGHLIGHT_ANNOTATION_TARGET_SCRIPT_NAME = "SourceWebViewHighlightAnnotationTarget.js";
@@ -78,6 +79,11 @@ public class SourceWebViewViewModel extends ViewModel {
 
     public MutableLiveData<DomainMetadata> getDomainMetadata() {
         return domainMetadata;
+    }
+
+    public MutableLiveData<Annotation> getFocusedAnnotation() { return focusedAnnotation; };
+    public void setFocusedAnnotation(Annotation annotation) {
+        focusedAnnotation.setValue(annotation);
     }
 
     public Annotation createAnnotation(String json, String creatorUsername) {

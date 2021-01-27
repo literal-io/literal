@@ -12,13 +12,11 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.ValueCallback;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
@@ -33,13 +31,12 @@ import org.json.JSONException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.UUID;
 
 import io.literal.R;
-import io.literal.lib.AnnotationLib;
 import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
-import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
@@ -53,6 +50,7 @@ public class SourceWebView extends Fragment {
     private io.literal.ui.view.SourceWebView webView;
     private Toolbar toolbar;
     private AppBarLayout appBarLayout;
+
     private SourceWebViewViewModel sourceWebViewViewModel;
     private AuthenticationViewModel authenticationViewModel;
     private AppWebViewViewModel appWebViewViewModel;
@@ -200,14 +198,28 @@ public class SourceWebView extends Fragment {
                 }
             }
         });
+        webView.setWebEventCallback((e, webView, event) -> {
+            switch (event.getType()) {
+                case WebEvent.TYPE_FOCUS_ANNOTATION:
+                    String annotationId = event.getData().optString("annotationId");
+                    if (!annotationId.isEmpty()) {
+                        handleAnnotationFocus(annotationId);
+                    }
+                    break;
+            }
+        });
 
         appWebViewViewModel.getReceivedWebEvents().observe(requireActivity(), (webEvents) -> {
-            if (webEvents == null) { return; }
+            if (webEvents == null) {
+                return;
+            }
 
             webEvents.iterator().forEachRemaining((webEvent) -> {
                 switch (webEvent.getType()) {
                     case WebEvent.TYPE_ACTIVITY_FINISH:
-                        appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+                        appWebViewViewModel.setBottomSheetState(
+                                sourceWebViewViewModel.getFocusedAnnotation().getValue() != null ? BottomSheetBehavior.STATE_COLLAPSED : BottomSheetBehavior.STATE_HIDDEN
+                        );
                         return;
                     case WebEvent.TYPE_NEW_ANNOTATION_RESULT:
                         try {
@@ -241,6 +253,32 @@ public class SourceWebView extends Fragment {
             webView.restoreState(savedInstanceState);
         } else {
             webView.loadUrl(paramInitialUrl);
+        }
+    }
+
+    private void handleAnnotationFocus(String annotationId) {
+        Optional<Annotation> annotation = sourceWebViewViewModel
+                .getAnnotations()
+                .getValue()
+                .stream()
+                .filter((a) -> a.getId() != null && a.getId().equals(annotationId))
+                .findFirst();
+
+        if (!annotation.isPresent()) {
+            Log.d("SourceWebView", "handleAnnotationClicked unable to find annotationId");
+        }
+        Annotation unwrappedAnnotation = annotation.get();
+
+        sourceWebViewViewModel.setFocusedAnnotation(unwrappedAnnotation);
+        try {
+            appWebViewViewModel.dispatchWebEvent(new WebEvent(
+                    WebEvent.TYPE_FOCUS_ANNOTATION,
+                    UUID.randomUUID().toString(),
+                    unwrappedAnnotation.toJson()
+            ));
+            appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+        } catch (JSONException e) {
+            Log.d("SourceWebView", "handleAnnotationClicked unable to serialize annotation", e);
         }
     }
 

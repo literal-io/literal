@@ -142,7 +142,7 @@ public class ShareTargetHandler extends AppCompatActivity {
 
             }
         });
-        appWebViewViewModel.setBottomSheetState(behavior.getState());
+        appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
 
         sourceWebViewFragment = SourceWebView.newInstance(sourceWebViewUri);
         appWebViewFragment = AppWebView.newInstance(appWebViewUri);

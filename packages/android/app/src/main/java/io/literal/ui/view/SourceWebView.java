@@ -108,7 +108,6 @@ public class SourceWebView extends NestedScrollingChildWebView {
                     String data = message.getData();
                     try {
                         JSONObject json = new JSONObject(data);
-                        Log.i("Literal", "Received WebEvent " + json.toString());
                         WebEvent webEvent = new WebEvent(json);
                         if (webEventCallback != null) {
                             webEventCallback.invoke(null, SourceWebView.this, webEvent);
@@ -154,6 +153,10 @@ public class SourceWebView extends NestedScrollingChildWebView {
 
     public void setOnGetWebMessageChannelInitializerScript(ResultCallback<String, Void> onGetWebMessageChannelInitializerScript) {
         this.onGetWebMessageChannelInitializerScript = onGetWebMessageChannelInitializerScript;
+    }
+
+    public void setWebEventCallback(Callback2<SourceWebView, WebEvent> webEventCallback) {
+        this.webEventCallback = webEventCallback;
     }
 
     private class AnnotateActionModeCallback extends ActionMode.Callback2 {

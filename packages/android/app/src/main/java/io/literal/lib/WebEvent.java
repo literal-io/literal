@@ -7,6 +7,7 @@ import io.literal.ui.view.AppWebView;
 
 public class WebEvent {
 
+    // App WebView
     public static final String TYPE_ACTIVITY_FINISH = "ACTIVITY_FINISH";
     public static final String TYPE_ROUTER_REPLACE = "ROUTER_REPLACE";
 
@@ -19,8 +20,10 @@ public class WebEvent {
     public static final String TYPE_AUTH_GET_USER_INFO = "AUTH_GET_USER_INFO";
     public static final String TYPE_AUTH_GET_USER_INFO_RESULT = "AUTH_GET_USER_INFO_RESULT";
 
+    // Source WebView
     public static final String TYPE_NEW_ANNOTATION = "NEW_ANNOTATION";
     public static final String TYPE_NEW_ANNOTATION_RESULT = "NEW_ANNOTATION_RESULT";
+    public static final String TYPE_FOCUS_ANNOTATION = "FOCUS_ANNOTATION";
 
     private String type;
     private String pid;
@@ -29,6 +32,7 @@ public class WebEvent {
     public WebEvent(JSONObject data) {
         this.type = data.optString("type");
         this.pid = data.optString("pid");
+        this.data = data.optJSONObject("data");
     }
 
     public WebEvent(String type, String pid, JSONObject data) {

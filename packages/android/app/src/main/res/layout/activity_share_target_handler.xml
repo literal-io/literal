@@ -18,7 +18,7 @@
         android:layout_height="match_parent"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
         app:behavior_hideable="true"
-        app:behavior_peekHeight="0dp"
+        app:behavior_peekHeight="96dp"
         app:behavior_draggable="true"
         android:elevation="6dp"
         android:background="@color/colorPrimary"/>

@@ -247,12 +247,11 @@
     try {
       Highlighter.highlightRange(range, { "annotation-id": annotationId });
 
-      // FIXME: include ID as data prop, pass in message
       document.querySelectorAll(`.${HIGHLIGHT_CLASS_NAME}`).forEach((el) => {
         el.addEventListener("click", (ev) => {
           ev.preventDefault();
           Messenger.postMessage({
-            type: "ANNOTATION_CLICKED",
+            type: "FOCUS_ANNOTATION",
             data: {
               annotationId: ev.target.getAttribute("data-annotation-id"),
             },
