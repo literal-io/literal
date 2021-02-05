@@ -1,5 +1,7 @@
 package io.literal.ui.activity;
 
+import android.animation.Animator;
+import android.animation.ObjectAnimator;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Intent;
@@ -7,11 +9,15 @@ import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.transition.ChangeBounds;
+import android.transition.TransitionManager;
+import android.transition.TransitionSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
@@ -53,7 +59,6 @@ public class ShareTargetHandler extends AppCompatActivity {
     private AppWebView appWebViewFragment;
     private SourceWebView sourceWebViewFragment;
     private FragmentContainerView bottomSheetFragmentContainer;
-    private FrameLayout bottomSheetBehaviorContainer;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -117,66 +122,137 @@ public class ShareTargetHandler extends AppCompatActivity {
             splash.setVisibility(hasFinishedInitializing ? View.INVISIBLE : View.VISIBLE);
         });
 
-        bottomSheetBehaviorContainer = findViewById(R.id.bottom_sheet_behavior_container);
         bottomSheetFragmentContainer = findViewById(R.id.bottom_sheet_fragment_container);
-
-        // set expanded height
-        ViewGroup.LayoutParams bottomSheetLayout = bottomSheetBehaviorContainer.getLayoutParams();
-        Configuration configuration = getResources().getConfiguration();
-        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-        double bottomSheetHeight = configuration.screenHeightDp * 0.8 * displayMetrics.density;
-        bottomSheetLayout.height = (int) bottomSheetHeight;
-        bottomSheetBehaviorContainer.setLayoutParams(bottomSheetLayout);
 
         // initialize view model for managing app web view bottom sheet
         appWebViewViewModel = new ViewModelProvider(this).get(AppWebViewViewModel.class);
         appWebViewViewModel.getBottomSheetState().observe(this, bottomSheetState -> {
-            BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(bottomSheetBehaviorContainer);
-            if (bottomSheetState != behavior.getState()) {
-                behavior.setState(bottomSheetState);
-            }
-        });
+            Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+            DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+            Configuration configuration = getResources().getConfiguration();
 
-        BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(bottomSheetBehaviorContainer);
-        behavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
-            @Override
-            public void onStateChanged(@NonNull View bottomSheet, int newState) {
-                if (newState != appWebViewViewModel.getBottomSheetState().getValue()) {
-                    try {
-                        WebEvent webEvent = null;
-                        Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+            if (bottomSheetState == BottomSheetBehavior.STATE_EXPANDED) {
+                double targetBottomSheetHeightPx = configuration.screenHeightDp * 0.8 * displayMetrics.density;
+                double targetTranslationY = 0;
+                double initialTranslationY = targetBottomSheetHeightPx - Math.abs(bottomSheetFragmentContainer.getTranslationY());
 
-                        if (focusedAnnotation != null && newState == BottomSheetBehavior.STATE_EXPANDED) {
-                            webEvent = new WebEvent(
-                                    WebEvent.TYPE_VIEW_STATE_EDIT_ANNOTATION_TAGS,
-                                    UUID.randomUUID().toString(),
-                                    focusedAnnotation.toJson()
-                            );
-                        } else if (focusedAnnotation != null && newState == BottomSheetBehavior.STATE_COLLAPSED) {
+                ViewGroup.LayoutParams bottomSheetLayout = bottomSheetFragmentContainer.getLayoutParams();
+                bottomSheetLayout.height = (int) targetBottomSheetHeightPx;
+                bottomSheetFragmentContainer.setLayoutParams(bottomSheetLayout);
+                bottomSheetFragmentContainer.setTranslationY((float) initialTranslationY);
 
-                            webEvent = new WebEvent(
-                                    WebEvent.TYPE_VIEW_STATE_COLLAPSED_ANNOTATION_TAGS,
-                                    UUID.randomUUID().toString(),
-                                    focusedAnnotation.toJson()
-                            );
-                        }
-
-                        if (webEvent != null) {
-                            appWebViewViewModel.dispatchWebEvent(webEvent);
-                        }
-                    } catch (JSONException e) {
-                        Log.d("ShareTargetHandler", "Unable to dispatch webEvent", e);
-                    }
-                    appWebViewViewModel.setBottomSheetState(newState);
+                try {
+                    WebEvent webEvent = new WebEvent(
+                            WebEvent.TYPE_VIEW_STATE_EDIT_ANNOTATION_TAGS,
+                            UUID.randomUUID().toString(),
+                            focusedAnnotation.toJson()
+                    );
+                    appWebViewViewModel.dispatchWebEvent(webEvent);
+                } catch (JSONException ex) {
+                    Log.d("ShareTargetHandler", "Unable to serialize annotation", ex);
                 }
-                bottomSheet.requestLayout();
-            }
 
-            @Override
-            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+                ObjectAnimator animator = ObjectAnimator.ofFloat(bottomSheetFragmentContainer, "translationY", (float) initialTranslationY, (float) targetTranslationY);
+                animator.setDuration(300);
+                animator.start();
+            } else if (bottomSheetState == BottomSheetBehavior.STATE_COLLAPSED) {
+                double targetBottomSheetHeightPx =  96 * displayMetrics.density;
+                double targetTranslationY;
+                double initialTranslationY;
+                Animator.AnimatorListener animatorListener = null;
 
+                if (bottomSheetFragmentContainer.getHeight() == 0) {
+                    // animating from hidden state
+                    initialTranslationY = targetBottomSheetHeightPx;
+                    targetTranslationY = 0;
+
+                    ViewGroup.LayoutParams bottomSheetLayout = bottomSheetFragmentContainer.getLayoutParams();
+                    bottomSheetLayout.height = (int) targetBottomSheetHeightPx;
+                    bottomSheetFragmentContainer.setLayoutParams(bottomSheetLayout);
+                    bottomSheetFragmentContainer.setTranslationY((float) initialTranslationY);
+                } else {
+                    // animating from expanded state
+                    targetTranslationY = bottomSheetFragmentContainer.getHeight() - targetBottomSheetHeightPx;
+                    initialTranslationY = bottomSheetFragmentContainer.getTranslationY();
+                    animatorListener = new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            ViewGroup.LayoutParams bottomSheetLayout = bottomSheetFragmentContainer.getLayoutParams();
+                            bottomSheetLayout.height = (int) targetBottomSheetHeightPx;
+                            bottomSheetFragmentContainer.setLayoutParams(bottomSheetLayout);
+                            bottomSheetFragmentContainer.setTranslationY(0);
+                        }
+
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+                            // noop
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+                            // noop
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+                            // noop
+                        }
+                    };
+                }
+
+                try {
+                    WebEvent webEvent = new WebEvent(
+                            WebEvent.TYPE_VIEW_STATE_COLLAPSED_ANNOTATION_TAGS,
+                            UUID.randomUUID().toString(),
+                            focusedAnnotation.toJson()
+                    );
+                    appWebViewViewModel.dispatchWebEvent(webEvent);
+                } catch (JSONException ex) {
+                    Log.d("ShareTargetHandler", "Unable to serialize annotation", ex);
+                }
+
+                ObjectAnimator animator = ObjectAnimator.ofFloat(bottomSheetFragmentContainer, "translationY", (float) initialTranslationY, (float) targetTranslationY);
+                if (animatorListener != null) {
+                    animator.addListener(animatorListener);
+                }
+                animator.setDuration(300);
+                animator.start();
+
+            } else if (bottomSheetState == BottomSheetBehavior.STATE_HIDDEN) {
+                double targetBottomSheetHeightPx =  0;
+                double targetTranslationY = bottomSheetFragmentContainer.getHeight();
+                double initialTranslationY = bottomSheetFragmentContainer.getTranslationY();
+
+                ObjectAnimator animator = ObjectAnimator.ofFloat(bottomSheetFragmentContainer, "translationY", (float) initialTranslationY, (float) targetTranslationY);
+                animator.addListener(new Animator.AnimatorListener() {
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        ViewGroup.LayoutParams bottomSheetLayout = bottomSheetFragmentContainer.getLayoutParams();
+                        bottomSheetLayout.height = (int) targetBottomSheetHeightPx;
+                        bottomSheetFragmentContainer.setLayoutParams(bottomSheetLayout);
+                        bottomSheetFragmentContainer.setTranslationY(0);
+                    }
+
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+                        // Noop
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+                        // Noop
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+                        // Noop
+                    }
+                });
+                animator.start();
             }
         });
+
         appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
 
         sourceWebViewFragment = SourceWebView.newInstance(sourceWebViewUri);

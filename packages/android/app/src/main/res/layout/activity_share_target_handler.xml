@@ -5,7 +5,6 @@
     android:fitsSystemWindows="true">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
         android:id="@+id/layout"
         android:layout_width="match_parent"
@@ -17,35 +16,24 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <FrameLayout
-            style="@style/Widget.Design.BottomSheet.Modal"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/colorPrimary"
-            android:elevation="6dp"
-            app:behavior_draggable="true"
-            app:behavior_hideable="true"
-            app:behavior_peekHeight="96dp"
-            app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
-            android:id="@+id/bottom_sheet_behavior_container">
-            <androidx.fragment.app.FragmentContainerView
-                android:id="@+id/bottom_sheet_fragment_container"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
-        </FrameLayout>
-
-
-        <RelativeLayout
-            android:id="@+id/share_target_handler_splash"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/colorPrimaryDark">
-
-            <ImageView
-                android:layout_width="142dp"
-                android:layout_height="142dp"
-                android:layout_centerInParent="true"
-                android:src="@drawable/ic_logo" />
-        </RelativeLayout>
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/bottom_sheet_fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_alignParentBottom="true" />
+
+    <RelativeLayout
+        android:id="@+id/share_target_handler_splash"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorPrimaryDark">
+
+        <ImageView
+            android:layout_width="142dp"
+            android:layout_height="142dp"
+            android:layout_centerInParent="true"
+            android:src="@drawable/ic_logo" />
+    </RelativeLayout>
 </RelativeLayout>
