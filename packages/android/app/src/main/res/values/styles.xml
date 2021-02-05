@@ -1,7 +1,7 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat">
+    <style name="AppTheme" parent="Theme.MaterialComponents">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
@@ -15,6 +15,11 @@
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/colorTextLightPrimary</item>
         <item name="android:fontFamily">@font/roboto_mono_italic</item>
+    </style>
+
+    <style name="BottomSheetWithKeyboard" parent="@style/Widget.MaterialComponents.BottomSheet">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
     </style>
 
 </resources>

@@ -93,4 +93,8 @@ public class WebRoutes {
     ) {
         return creatorsIdAnnotationCollectionIdAnnotationId(getWebHost(), creatorUsername, annotationCollectionIdComponent, annotationIdComponent) + "?annotationId=" + annotationIdComponent;
     }
+
+    public static String creatorsIdWebview(String creatorUsername) {
+        return getWebHost() + "/creators/" + creatorUsername + "/webview";
+    }
 }

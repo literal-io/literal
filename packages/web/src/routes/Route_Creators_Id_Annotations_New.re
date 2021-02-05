@@ -1,7 +1,6 @@
 type searchVariant =
   | SearchVariantAnnotationId(string)
-  | SearchVariantFileUrl(string)
-  | SearchVariantFromMessageEvent;
+  | SearchVariantFileUrl(string);
 
 [@react.component]
 let default = (~rehydrated) => {
@@ -44,11 +43,9 @@ let default = (~rehydrated) => {
     switch (
       searchParams |> Webapi.Url.URLSearchParams.get("id"),
       searchParams |> Webapi.Url.URLSearchParams.get("fileUrl"),
-      searchParams |> Webapi.Url.URLSearchParams.get("fromMessageEvent"),
     ) {
-    | (Some(id), _, _) => Some(SearchVariantAnnotationId(id))
-    | (_, Some(fileUrl), _) => Some(SearchVariantFileUrl(fileUrl))
-    | (_, _, Some(_)) => Some(SearchVariantFromMessageEvent)
+    | (Some(id), _) => Some(SearchVariantAnnotationId(id))
+    | (_, Some(fileUrl)) => Some(SearchVariantFileUrl(fileUrl))
     | _ => None
     };
   <>
@@ -82,11 +79,6 @@ let default = (~rehydrated) => {
          authentication
          rehydrated
        />
-     | (_, Ok(_), Some(SearchVariantFromMessageEvent)) =>
-       <QueryRenderers_NewAnnotationFromMessageEvent
-          authentication
-          rehydrated
-        />
      | (Loading, _, _) => <Loading />
      | _ when !rehydrated => <Loading />
      | (Authenticated(currentUser), _, _) =>

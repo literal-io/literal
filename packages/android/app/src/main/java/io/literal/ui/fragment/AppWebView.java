@@ -35,6 +35,7 @@ import io.literal.viewmodel.AuthenticationViewModel;
 
 public class AppWebView extends Fragment {
     private static final String PARAM_INITIAL_URL = "PARAM_INITIAL_URL";
+
     private final FileActivityResultCallback fileActivityResultCallback = new FileActivityResultCallback();
 
     private String paramInitialUrl;

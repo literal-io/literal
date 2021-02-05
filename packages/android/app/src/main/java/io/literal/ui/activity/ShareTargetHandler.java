@@ -12,6 +12,7 @@ import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,13 +25,17 @@ import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
 import com.apollographql.apollo.api.Error;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
+import org.json.JSONException;
+
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 import io.literal.R;
 import io.literal.lib.Constants;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
+import io.literal.model.Annotation;
 import io.literal.repository.ShareTargetHandlerRepository;
 import io.literal.ui.fragment.AppWebView;
 import io.literal.ui.fragment.SourceWebView;
@@ -48,6 +53,7 @@ public class ShareTargetHandler extends AppCompatActivity {
     private AppWebView appWebViewFragment;
     private SourceWebView sourceWebViewFragment;
     private FragmentContainerView bottomSheetFragmentContainer;
+    private FrameLayout bottomSheetBehaviorContainer;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -111,30 +117,59 @@ public class ShareTargetHandler extends AppCompatActivity {
             splash.setVisibility(hasFinishedInitializing ? View.INVISIBLE : View.VISIBLE);
         });
 
+        bottomSheetBehaviorContainer = findViewById(R.id.bottom_sheet_behavior_container);
         bottomSheetFragmentContainer = findViewById(R.id.bottom_sheet_fragment_container);
-        ViewGroup.LayoutParams bottomSheetLayout = bottomSheetFragmentContainer.getLayoutParams();
+
+        // set expanded height
+        ViewGroup.LayoutParams bottomSheetLayout = bottomSheetBehaviorContainer.getLayoutParams();
         Configuration configuration = getResources().getConfiguration();
         DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
         double bottomSheetHeight = configuration.screenHeightDp * 0.8 * displayMetrics.density;
         bottomSheetLayout.height = (int) bottomSheetHeight;
-        bottomSheetFragmentContainer.setLayoutParams(bottomSheetLayout);
+        bottomSheetBehaviorContainer.setLayoutParams(bottomSheetLayout);
 
         // initialize view model for managing app web view bottom sheet
         appWebViewViewModel = new ViewModelProvider(this).get(AppWebViewViewModel.class);
         appWebViewViewModel.getBottomSheetState().observe(this, bottomSheetState -> {
-            BottomSheetBehavior<FragmentContainerView> behavior = BottomSheetBehavior.from(bottomSheetFragmentContainer);
+            BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(bottomSheetBehaviorContainer);
             if (bottomSheetState != behavior.getState()) {
                 behavior.setState(bottomSheetState);
             }
         });
 
-        BottomSheetBehavior<FragmentContainerView> behavior = BottomSheetBehavior.from(bottomSheetFragmentContainer);
+        BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(bottomSheetBehaviorContainer);
         behavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
                 if (newState != appWebViewViewModel.getBottomSheetState().getValue()) {
+                    try {
+                        WebEvent webEvent = null;
+                        Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+
+                        if (focusedAnnotation != null && newState == BottomSheetBehavior.STATE_EXPANDED) {
+                            webEvent = new WebEvent(
+                                    WebEvent.TYPE_VIEW_STATE_EDIT_ANNOTATION_TAGS,
+                                    UUID.randomUUID().toString(),
+                                    focusedAnnotation.toJson()
+                            );
+                        } else if (focusedAnnotation != null && newState == BottomSheetBehavior.STATE_COLLAPSED) {
+
+                            webEvent = new WebEvent(
+                                    WebEvent.TYPE_VIEW_STATE_COLLAPSED_ANNOTATION_TAGS,
+                                    UUID.randomUUID().toString(),
+                                    focusedAnnotation.toJson()
+                            );
+                        }
+
+                        if (webEvent != null) {
+                            appWebViewViewModel.dispatchWebEvent(webEvent);
+                        }
+                    } catch (JSONException e) {
+                        Log.d("ShareTargetHandler", "Unable to dispatch webEvent", e);
+                    }
                     appWebViewViewModel.setBottomSheetState(newState);
                 }
+                bottomSheet.requestLayout();
             }
 
             @Override
@@ -178,7 +213,7 @@ public class ShareTargetHandler extends AppCompatActivity {
     private void handleCreateFromSource(Intent intent) {
         authenticationViewModel.awaitInitialization();
         String sourceWebViewUri = intent.getStringExtra(Intent.EXTRA_TEXT);
-        String appWebViewUri = WebRoutes.creatorsIdAnnotationsNewFromMessageEvent(
+        String appWebViewUri = WebRoutes.creatorsIdWebview(
                 authenticationViewModel.getUsername().getValue()
         );
         installSourceWebView(sourceWebViewUri, appWebViewUri);

@@ -43,7 +43,7 @@ public class TextualTarget extends Target {
         output.put("textDirection", this.textDirection.name());
         output.put("accessibility", this.accessibility != null ? new JSONArray(this.accessibility) : null);
         output.put("rights", this.rights != null ? new JSONArray(this.rights) : null);
-        output.put("value", this.value);
+        output.put("value", this.value.replaceAll("\"", "\\\""));
 
         return output;
     }

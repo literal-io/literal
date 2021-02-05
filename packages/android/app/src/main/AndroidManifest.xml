@@ -30,7 +30,8 @@
         </activity>
         <activity
             android:name=".ui.activity.ShareTargetHandler"
-            android:configChanges="orientation|screenSize">
+            android:configChanges="orientation|screenSize"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter
                 android:label="Annotate">
                 <action android:name="android.intent.action.SEND" />

@@ -111,7 +111,6 @@ public class SourceWebView extends Fragment {
                 String script = sourceWebViewViewModel.getHighlightAnnotationTargetScript(
                         getActivity().getAssets(), output
                 );
-                Log.i("SourceWebView", script);
                 return script;
             } catch (JSONException e) {
                 Log.d("SourceWebView", "setOnGetWebMessageChannelInitializerScript callback", e);
@@ -148,16 +147,8 @@ public class SourceWebView extends Fragment {
             webView.evaluateJavascript(script, value -> {
                 String creatorUsername = authenticationViewModel.getUsername().getValue();
                 Annotation annotation = sourceWebViewViewModel.createAnnotation(value, creatorUsername);
-                try {
-                    appWebViewViewModel.dispatchWebEvent(new WebEvent(
-                            WebEvent.TYPE_NEW_ANNOTATION,
-                            UUID.randomUUID().toString(),
-                            annotation.toJson()
-                    ));
-                    appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
-                } catch (JSONException e1) {
-                    Log.d("SourceWebView", "Unable to stringify annotation", e1);
-                }
+                sourceWebViewViewModel.setFocusedAnnotation(annotation);
+                appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
             });
         });
 
@@ -172,6 +163,7 @@ public class SourceWebView extends Fragment {
                 String script = sourceWebViewViewModel.getHighlightAnnotationTargetScript(
                         getActivity().getAssets(), output
                 );
+                Log.i("SourceWebView", script);
                 this.webView.evaluateJavascript(script, (result) -> {
                     /** noop **/
                 });
@@ -221,7 +213,7 @@ public class SourceWebView extends Fragment {
                                 sourceWebViewViewModel.getFocusedAnnotation().getValue() != null ? BottomSheetBehavior.STATE_COLLAPSED : BottomSheetBehavior.STATE_HIDDEN
                         );
                         return;
-                    case WebEvent.TYPE_NEW_ANNOTATION_RESULT:
+                    case WebEvent.TYPE_EDIT_ANNOTATION_TAGS_RESULT:
                         try {
                             Annotation newAnnotation = Annotation.fromJson(webEvent.getData());
                             boolean updated = sourceWebViewViewModel.updateAnnotation(newAnnotation);
@@ -229,7 +221,7 @@ public class SourceWebView extends Fragment {
                                 Log.d("SourceWebView", "Unable to update annotation: " + webEvent.getData());
                             }
                         } catch (JSONException e) {
-                            Log.d("SourceWebView", "Unable to handle NEW_ANNOTATION_RESULT", e);
+                            Log.d("SourceWebView", "Unable to handle EDIT_ANNOTATION_TAGS_RESULT", e);
                         }
                         return;
                 }
@@ -270,16 +262,7 @@ public class SourceWebView extends Fragment {
         Annotation unwrappedAnnotation = annotation.get();
 
         sourceWebViewViewModel.setFocusedAnnotation(unwrappedAnnotation);
-        try {
-            appWebViewViewModel.dispatchWebEvent(new WebEvent(
-                    WebEvent.TYPE_FOCUS_ANNOTATION,
-                    UUID.randomUUID().toString(),
-                    unwrappedAnnotation.toJson()
-            ));
-            appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
-        } catch (JSONException e) {
-            Log.d("SourceWebView", "handleAnnotationClicked unable to serialize annotation", e);
-        }
+        appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
     }
 
     @Override

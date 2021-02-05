@@ -1,10 +1,9 @@
-module AnnotationModel = QueryRenderers_NewAnnotationFromMessageEvent_AnnotationModel;
-
-let textValueSelector = (~annotation: AnnotationModel.t) =>
+let textValueSelector = (~annotation: Lib_WebView_Model.Annotation.t) =>
   annotation.target
   ->Belt.Array.keepMap(target =>
       switch (target) {
-      | AnnotationModel.Target.TextualTarget(target) => Some(target)
+      | Lib_WebView_Model.Annotation.Target.TextualTarget(target) =>
+        Some(target)
       | _ => None
       }
     )
@@ -12,12 +11,13 @@ let textValueSelector = (~annotation: AnnotationModel.t) =>
   ->Belt.Option.map(target => target.value)
   ->Belt.Option.getWithDefault("");
 
-let tagsValueSelector = (~annotation: AnnotationModel.t, ~currentUser) =>
+let tagsValueSelector =
+    (~annotation: Lib_WebView_Model.Annotation.t, ~currentUser) =>
   annotation.body
   ->Belt.Option.map(bodies =>
       bodies->Belt.Array.keepMap(body =>
         switch (body) {
-        | AnnotationModel.Body.TextualBody(body) =>
+        | Lib_WebView_Model.Annotation.Body.TextualBody(body) =>
           let href =
             body.id
             ->Belt.Option.map(id =>
@@ -46,14 +46,19 @@ let tagsValueSelector = (~annotation: AnnotationModel.t, ~currentUser) =>
   ->Belt.Option.getWithDefault([||]);
 
 [@react.component]
-let make = (~annotation: AnnotationModel.t, ~currentUser, ~onAnnotationChange) => {
+let make =
+    (
+      ~annotation: Lib_WebView_Model.Annotation.t,
+      ~currentUser,
+      ~onAnnotationChange,
+    ) => {
   let scrollContainerRef = React.useRef(Js.Nullable.null);
   let (pendingTagValue, setPendingTagValue) = React.useState(_ => "");
 
   let handleTagsChange = value => {
     let textualBodies =
       value->Belt.Array.map((tag: Containers_AnnotationEditor_Types.tag) =>
-        AnnotationModel.Body.TextualBody({
+        Lib_WebView_Model.Annotation.Body.TextualBody({
           id: tag.id,
           value: tag.text,
           purpose: Some([|"TAGGING"|]),
@@ -70,7 +75,8 @@ let make = (~annotation: AnnotationModel.t, ~currentUser, ~onAnnotationChange) =
       ->Belt.Option.getWithDefault([||])
       ->Belt.Array.keep(body =>
           switch (body) {
-          | AnnotationModel.Body.NotImplemented_Passthrough(_) => true
+          | Lib_WebView_Model.Annotation.Body.NotImplemented_Passthrough(_) =>
+            true
           | _ => false
           }
         )
@@ -123,7 +129,7 @@ let make = (~annotation: AnnotationModel.t, ~currentUser, ~onAnnotationChange) =
       <TextInput.Annotation
         onTextChange={_ => ()}
         onTagsChange=handleTagsChange
-        textValue={textValue}
+        textValue
         tagsValue
         placeholder="Lorem Ipsum"
         disabled=true
