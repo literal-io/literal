@@ -42,7 +42,7 @@ public class TextualBody extends Body {
         output.put("textDirection", this.textDirection.name());
         output.put("accessibility", new JSONArray(this.accessibility));
         output.put("rights", new JSONArray(this.rights));
-        output.put("value", this.value.replaceAll("\"", "\\\""));
+        output.put("value", this.value);
 
         return output;
     }

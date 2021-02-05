@@ -20,19 +20,18 @@ import java.util.Arrays;
 import io.literal.lib.Crypto;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
-import io.literal.model.TextualTarget;
 import io.literal.model.Target;
+import io.literal.model.TextualTarget;
 
 public class SourceWebViewViewModel extends ViewModel {
+    private static final String GET_ANNOTATION_SCRIPT_NAME = "SourceWebViewGetAnnotation.js";
+    private static final String HIGHLIGHT_ANNOTATION_TARGET_SCRIPT_NAME = "SourceWebViewHighlightAnnotationTarget.js";
     private final MutableLiveData<Boolean> hasFinishedInitializing = new MutableLiveData<>(false);
     private final MutableLiveData<String> getSelectorScript = new MutableLiveData<>(null);
     private final MutableLiveData<String> highlightAnnotationTargetScript = new MutableLiveData<>(null);
     private final MutableLiveData<ArrayList<Annotation>> annotations = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<DomainMetadata> domainMetadata = new MutableLiveData<>(null);
     private final MutableLiveData<Annotation> focusedAnnotation = new MutableLiveData<>(null);
-
-    private static final String GET_ANNOTATION_SCRIPT_NAME = "SourceWebViewGetAnnotation.js";
-    private static final String HIGHLIGHT_ANNOTATION_TARGET_SCRIPT_NAME = "SourceWebViewHighlightAnnotationTarget.js";
 
     public MutableLiveData<Boolean> getHasFinishedInitializing() {
         return hasFinishedInitializing;
@@ -70,7 +69,8 @@ public class SourceWebViewViewModel extends ViewModel {
             }
         }
 
-        return highlightAnnotationTargetScript.getValue().replaceAll("\\$\\{PARAM_ANNOTATIONS\\}", paramAnnotations.toString());
+        String stringifiedParamAnnotations = JSONObject.quote(paramAnnotations.toString());
+        return highlightAnnotationTargetScript.getValue().replaceAll("\\$\\{PARAM_ANNOTATIONS\\}", stringifiedParamAnnotations.substring(1, stringifiedParamAnnotations.length() - 1));
     }
 
     public MutableLiveData<ArrayList<Annotation>> getAnnotations() {
@@ -81,7 +81,12 @@ public class SourceWebViewViewModel extends ViewModel {
         return domainMetadata;
     }
 
-    public MutableLiveData<Annotation> getFocusedAnnotation() { return focusedAnnotation; };
+    public MutableLiveData<Annotation> getFocusedAnnotation() {
+        return focusedAnnotation;
+    }
+
+    ;
+
     public void setFocusedAnnotation(Annotation annotation) {
         focusedAnnotation.setValue(annotation);
     }
@@ -93,8 +98,8 @@ public class SourceWebViewViewModel extends ViewModel {
             if (annotation.getId() == null) {
                 TextualTarget textualTarget = (TextualTarget)
                         Arrays.stream(annotation.getTarget()).filter(target -> target.getType() == Target.Type.TEXTUAL_TARGET)
-                        .findFirst()
-                        .get();
+                                .findFirst()
+                                .get();
                 String valueHash = Crypto.sha256Hex(textualTarget.getValue());
                 String annotationId = WebRoutes.creatorsIdAnnotationId(
                         WebRoutes.getAPIHost(),

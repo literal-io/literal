@@ -1,6 +1,6 @@
 (function highlightAnnotationTarget() {
   const HIGHLIGHT_CLASS_NAME = "literal-highlight";
-  const ANNOTATIONS = JSON.parse('${PARAM_ANNOTATIONS}');
+  const ANNOTATIONS = ${PARAM_ANNOTATIONS};
 
   const Messenger = (function() {
     const handleMessage = (ev) => {
