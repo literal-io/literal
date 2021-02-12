@@ -6,6 +6,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import io.literal.lib.JsonArrayUtil;
+import type.AnnotationTargetInput;
+import type.TextualTargetInput;
 
 public class TextualTarget extends Target {
 
@@ -30,10 +32,24 @@ public class TextualTarget extends Target {
         this.value = value;
     }
 
+    public static TextualTarget fromJson(JSONObject json) throws JSONException {
+        return new TextualTarget(
+                json.optString("id"),
+                json.has("format") ? Format.valueOf(json.getString("format")) : null,
+                json.has("language") ? Language.valueOf(json.getString("language")) : null,
+                json.has("processingLanguage") ? Language.valueOf(json.getString("processingLanguage")) : null,
+                json.has("textDirection") ? TextDirection.valueOf(json.getString("textDirection")) : null,
+                json.has("accessibility") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("accessibility")) : null,
+                json.has("rights") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("rights")) : null,
+                json.getString("value")
+        );
+    }
+
     public String getValue() {
         return value;
     }
 
+    @Override
     public JSONObject toJson() throws JSONException {
         JSONObject output = new JSONObject();
         output.put("id", this.id);
@@ -48,16 +64,20 @@ public class TextualTarget extends Target {
         return output;
     }
 
-    public static TextualTarget fromJson(JSONObject json) throws JSONException {
-        return new TextualTarget(
-                json.optString("id"),
-                json.has("format") ? Format.valueOf(json.getString("format")) : null,
-                json.has("language") ? Language.valueOf(json.getString("language")) : null,
-                json.has("processingLanguage") ? Language.valueOf(json.getString("processingLanguage")) : null,
-                json.has("textDirection") ? TextDirection.valueOf(json.getString("textDirection")) : null,
-                json.has("accessibility") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("accessibility")) : null,
-                json.has("rights") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("rights")) : null,
-                json.getString("value")
-        );
+    @Override
+    public AnnotationTargetInput toAnnotationTargetInput() {
+        return AnnotationTargetInput
+                .builder()
+                .textualTarget(
+                        TextualTargetInput
+                                .builder()
+                                .format(this.format.toGraphQL())
+                                .language(this.language.toGraphQL())
+                                .processingLanguage(this.language.toGraphQL())
+                                .textDirection(this.textDirection.toGraphQL())
+                                .value(this.value)
+                                .build()
+                )
+                .build();
     }
 }

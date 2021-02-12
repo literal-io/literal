@@ -27,6 +27,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -150,6 +151,8 @@ public class SourceWebView extends Fragment {
                 sourceWebViewViewModel.setFocusedAnnotation(annotation);
                 appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
             });
+
+
         });
 
         sourceWebViewViewModel.getAnnotations().observe(getActivity(), (annotations) -> {
@@ -163,12 +166,38 @@ public class SourceWebView extends Fragment {
                 String script = sourceWebViewViewModel.getHighlightAnnotationTargetScript(
                         getActivity().getAssets(), output
                 );
-                Log.i("SourceWebView", script);
                 this.webView.evaluateJavascript(script, (result) -> {
                     /** noop **/
                 });
+
+                Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+                if (focusedAnnotation != null) {
+                    JSONObject focusAnnotationData = new JSONObject();
+                    focusAnnotationData.put("annotationId", focusedAnnotation.getId());
+                    sourceWebViewViewModel.dispatchWebEvent(new WebEvent(
+                            WebEvent.TYPE_FOCUS_ANNOTATION,
+                            UUID.randomUUID().toString(),
+                            focusAnnotationData
+                    ));
+                }
             } catch (JSONException ex) {
                 Log.d("SourceWebView", "observe annotations", ex);
+            }
+        });
+
+        sourceWebViewViewModel.getFocusedAnnotation().observe(getActivity(), (focusedAnnotation) -> {
+            if (focusedAnnotation != null) {
+                try {
+                    JSONObject focusAnnotationData = new JSONObject();
+                    focusAnnotationData.put("annotationId", focusedAnnotation.getId());
+                    sourceWebViewViewModel.dispatchWebEvent(new WebEvent(
+                            WebEvent.TYPE_FOCUS_ANNOTATION,
+                            UUID.randomUUID().toString(),
+                            focusAnnotationData
+                    ));
+                } catch (JSONException e) {
+                    Log.d("SourceWebView", "Unable to dispatch WebEvent", e);
+                }
             }
         });
 
@@ -196,6 +225,11 @@ public class SourceWebView extends Fragment {
                     String annotationId = event.getData().optString("annotationId");
                     if (!annotationId.isEmpty()) {
                         handleAnnotationFocus(annotationId);
+                    }
+                    break;
+                case WebEvent.TYPE_BLUR_ANNOTATION:
+                    if (sourceWebViewViewModel.getFocusedAnnotation().getValue() != null) {
+                        handleAnnotationBlur();
                     }
                     break;
             }
@@ -241,6 +275,16 @@ public class SourceWebView extends Fragment {
             }
         });
 
+        sourceWebViewViewModel.getWebEvents().observe(requireActivity(), (webEvents) -> {
+            if (webEvents == null) { return; }
+
+            webEvents.iterator().forEachRemaining((webEvent) -> {
+                webView.postWebEvent(webEvent);
+            });
+
+            sourceWebViewViewModel.clearWebEvents();
+        });
+
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState);
         } else {
@@ -263,6 +307,11 @@ public class SourceWebView extends Fragment {
 
         sourceWebViewViewModel.setFocusedAnnotation(unwrappedAnnotation);
         appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+    }
+
+    private void handleAnnotationBlur() {
+        appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
+        sourceWebViewViewModel.setFocusedAnnotation(null);
     }
 
     @Override

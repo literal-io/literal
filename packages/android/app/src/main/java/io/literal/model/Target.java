@@ -1,7 +1,12 @@
 package io.literal.model;
 
+import android.util.Log;
+
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import kotlin.annotation.AnnotationTarget;
+import type.AnnotationTargetInput;
 
 public class Target {
     public enum Type {
@@ -22,6 +27,11 @@ public class Target {
 
     public JSONObject toJson() throws JSONException {
        throw new JSONException("Serialization not implemented.");
+    }
+
+    public AnnotationTargetInput toAnnotationTargetInput() {
+        Log.d("Target", "Attempted to call toAnnotationTargetInput, but not implemented.");
+        return null;
     }
 
     public static Target fromJson(JSONObject json) throws JSONException {

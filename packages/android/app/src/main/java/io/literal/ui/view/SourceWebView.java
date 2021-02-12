@@ -87,6 +87,19 @@ public class SourceWebView extends NestedScrollingChildWebView {
         });
     }
 
+    public void postWebEvent(WebEvent webEvent) {
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.POST_WEB_MESSAGE)) {
+            WebViewCompat.postWebMessage(
+                    this,
+                    new WebMessageCompat(webEvent
+                            .toJSON()
+                            .toString()
+                    ),
+                    Uri.parse("*")
+            );
+        }
+    }
+
     private void initializeWebMessageChannel() {
         if (WebViewFeature.isFeatureSupported(WebViewFeature.CREATE_WEB_MESSAGE_CHANNEL) &&
                 WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK) &&

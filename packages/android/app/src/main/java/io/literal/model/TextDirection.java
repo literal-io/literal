@@ -3,5 +3,9 @@ package io.literal.model;
 public enum TextDirection {
     LTR,
     RTL,
-    AUTO
+    AUTO;
+
+    public type.TextDirection toGraphQL() {
+        return type.TextDirection.valueOf(this.name());
+    }
 }

@@ -14,10 +14,12 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import io.literal.lib.Crypto;
+import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
 import io.literal.model.Target;
@@ -32,6 +34,7 @@ public class SourceWebViewViewModel extends ViewModel {
     private final MutableLiveData<ArrayList<Annotation>> annotations = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<DomainMetadata> domainMetadata = new MutableLiveData<>(null);
     private final MutableLiveData<Annotation> focusedAnnotation = new MutableLiveData<>(null);
+    private final MutableLiveData<ArrayDeque<WebEvent>> webEvents = new MutableLiveData<>(null);
 
     public MutableLiveData<Boolean> getHasFinishedInitializing() {
         return hasFinishedInitializing;
@@ -85,7 +88,6 @@ public class SourceWebViewViewModel extends ViewModel {
         return focusedAnnotation;
     }
 
-    ;
 
     public void setFocusedAnnotation(Annotation annotation) {
         focusedAnnotation.setValue(annotation);
@@ -144,6 +146,23 @@ public class SourceWebViewViewModel extends ViewModel {
         }
         return false;
     }
+
+    public void dispatchWebEvent(WebEvent webEvent) {
+        ArrayDeque<WebEvent> newWebEvents;
+        if (webEvents.getValue() == null) {
+            newWebEvents = new ArrayDeque<>();
+        } else {
+            newWebEvents = webEvents.getValue().clone();
+        }
+        newWebEvents.add(webEvent);
+        webEvents.setValue(newWebEvents);
+    }
+
+    public void clearWebEvents() {
+        webEvents.setValue(null);
+    }
+
+    public MutableLiveData<ArrayDeque<WebEvent>> getWebEvents() { return webEvents; }
 
     public class DomainMetadata {
         private final URL url;

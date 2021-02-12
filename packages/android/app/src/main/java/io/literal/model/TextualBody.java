@@ -5,7 +5,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Collections;
+
+import io.literal.lib.AnnotationCollectionLib;
+import io.literal.lib.Constants;
 import io.literal.lib.JsonArrayUtil;
+import type.AnnotationBodyInput;
+import type.Motivation;
+import type.TextualBodyInput;
+import type.TextualBodyType;
 
 public class TextualBody extends Body {
     private final String id;
@@ -45,6 +53,23 @@ public class TextualBody extends Body {
         output.put("value", this.value);
 
         return output;
+    }
+
+    public AnnotationBodyInput toAnnotationBodyInput() {
+        return AnnotationBodyInput.builder()
+                .textualBody(
+                        TextualBodyInput
+                                .builder()
+                                .id(this.id)
+                                .value(this.value)
+                                .format(this.format.toGraphQL())
+                                .textDirection(this.textDirection.toGraphQL())
+                                .language(this.language.toGraphQL())
+                                .purpose(Collections.singletonList(Motivation.TAGGING))
+                                .type(TextualBodyType.TEXTUAL_BODY)
+                                .build()
+                )
+                .build();
     }
 
     public static TextualBody fromJson(JSONObject json) throws JSONException {

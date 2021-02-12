@@ -1,7 +1,11 @@
 package io.literal.model;
 
+import android.util.Log;
+
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import type.AnnotationBodyInput;
 
 public class Body {
     public enum Type {
@@ -21,6 +25,11 @@ public class Body {
     public JSONObject toJson() throws JSONException {
         throw new JSONException("toJson not implemented.");
     };
+
+    public AnnotationBodyInput toAnnotationBodyInput() {
+        Log.d("Body", "Attempted to call toAnnotationBodyInput, but not implemented.");
+        return null;
+    }
 
     public static Body fromJson(JSONObject json) throws JSONException {
         String type = json.getString("type");

@@ -4,7 +4,15 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Collections;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import io.literal.lib.AnnotationLib;
 import io.literal.lib.JsonArrayUtil;
+import type.AnnotationType;
+import type.CreateAnnotationInput;
+import type.Motivation;
 
 public class Annotation {
     private final Body[] body;
@@ -45,5 +53,25 @@ public class Annotation {
         output.put("body", this.body != null ? JsonArrayUtil.stringifyObjectArray(this.body, Body::toJson) : null);
         output.put("target", JsonArrayUtil.stringifyObjectArray(this.target, Target::toJson));
         return output;
+    }
+
+    public CreateAnnotationInput toCreateAnnotationInput() {
+        CreateAnnotationInput.Builder builder = CreateAnnotationInput.builder()
+                .context(Collections.singletonList("http://www.w3.org/ns/anno.jsonld"))
+                .type(Collections.singletonList(AnnotationType.ANNOTATION))
+                .motivation(Collections.singletonList(Motivation.HIGHLIGHTING))
+                .id(this.id)
+                .creatorUsername(AnnotationLib.creatorUsernameFromId(this.id))
+                .target(
+                        Stream.of(this.target).map(Target::toAnnotationTargetInput).collect(Collectors.toList())
+                );
+
+        if (this.body != null) {
+            builder.body(
+                    Stream.of(this.body).map(Body::toAnnotationBodyInput).collect(Collectors.toList())
+            );
+        }
+
+        return builder.build();
     }
 }

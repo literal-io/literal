@@ -1,9 +1,13 @@
 package io.literal.model;
 
 import android.util.JsonReader;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import type.AnnotationTargetInput;
+import type.SelectorInput;
 
 public class Selector {
     public enum Type {
@@ -25,6 +29,11 @@ public class Selector {
     public JSONObject toJson() throws JSONException {
         throw new JSONException("toJson not implemented.");
     };
+
+    public SelectorInput toSelectorInput() {
+        Log.d("Selector", "Attempted to call toSelectorInput, but not implemented.");
+        return null;
+    }
 
     public static Selector fromJson(JSONObject json) throws JSONException {
         String type = json.getString("type");
