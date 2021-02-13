@@ -50,7 +50,7 @@ import io.literal.lib.WebRoutes;
 
 public class SourceWebView extends NestedScrollingChildWebView {
 
-    private Callback<View> onAnnotationCreated;
+    private Callback<Exception, View> onAnnotationCreated;
     private Callback2<View, Bitmap> onReceivedIcon;
     private ResultCallback<String, Void> onGetWebMessageChannelInitializerScript;
 
@@ -152,7 +152,7 @@ public class SourceWebView extends NestedScrollingChildWebView {
         return super.startActionMode(cb, type);
     }
 
-    public void setOnAnnotationCreated(Callback<View> onAnnotationCreated) {
+    public void setOnAnnotationCreated(Callback<Exception, View> onAnnotationCreated) {
         this.onAnnotationCreated = onAnnotationCreated;
     }
 

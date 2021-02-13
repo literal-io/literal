@@ -1,17 +1,16 @@
 package io.literal.model;
 
-import android.util.JsonReader;
-
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.util.ArrayList;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.literal.lib.JsonArrayUtil;
-import io.literal.lib.JsonReaderParser;
+import type.SelectorInput;
+import type.XPathSelectorInput;
+import type.XPathSelectorType;
 
 public class XPathSelector extends Selector {
 
@@ -56,5 +55,22 @@ public class XPathSelector extends Selector {
         result.put("refinedBy", this.refinedBy != null ? JsonArrayUtil.stringifyObjectArray(this.refinedBy, Selector::toJson) : null);
 
         return result;
+    }
+
+    @Override
+    public SelectorInput toSelectorInput() {
+        return SelectorInput.builder()
+                .xPathSelector(
+                        XPathSelectorInput.builder()
+                                .type(XPathSelectorType.XPATH_SELECTOR)
+                                .value(this.value)
+                                .refinedBy(
+                                        this.refinedBy != null
+                                                ? Stream.of(this.refinedBy).map(Selector::toSelectorInput).collect(Collectors.toList())
+                                                : null
+                                )
+                                .build()
+                )
+                .build();
     }
 }

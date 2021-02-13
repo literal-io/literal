@@ -25,6 +25,16 @@ public class Annotation {
         this.id = id;
     }
 
+    public static Annotation fromJson(JSONObject json) throws JSONException {
+        return new Annotation(
+                json.has("body")
+                        ? JsonArrayUtil.parseJsonObjectArray(json.getJSONArray("body"), new Body[0], Body::fromJson)
+                        : null,
+                JsonArrayUtil.parseJsonObjectArray(json.getJSONArray("target"), new Target[0], Target::fromJson),
+                json.optString("id", null)
+        );
+    }
+
     public String getId() {
         return id;
     }
@@ -37,16 +47,6 @@ public class Annotation {
         return body;
     }
 
-    public static Annotation fromJson(JSONObject json) throws JSONException {
-        return new Annotation(
-                json.has("body")
-                        ? JsonArrayUtil.parseJsonObjectArray(json.getJSONArray("body"), new Body[0], Body::fromJson)
-                        : null,
-                JsonArrayUtil.parseJsonObjectArray(json.getJSONArray("target"), new Target[0], Target::fromJson),
-                json.optString("id", null)
-        );
-    }
-
     public JSONObject toJson() throws JSONException {
         JSONObject output = new JSONObject();
         output.put("id", this.id);
@@ -56,7 +56,7 @@ public class Annotation {
     }
 
     public CreateAnnotationInput toCreateAnnotationInput() {
-        CreateAnnotationInput.Builder builder = CreateAnnotationInput.builder()
+        return CreateAnnotationInput.builder()
                 .context(Collections.singletonList("http://www.w3.org/ns/anno.jsonld"))
                 .type(Collections.singletonList(AnnotationType.ANNOTATION))
                 .motivation(Collections.singletonList(Motivation.HIGHLIGHTING))
@@ -64,14 +64,11 @@ public class Annotation {
                 .creatorUsername(AnnotationLib.creatorUsernameFromId(this.id))
                 .target(
                         Stream.of(this.target).map(Target::toAnnotationTargetInput).collect(Collectors.toList())
-                );
-
-        if (this.body != null) {
-            builder.body(
-                    Stream.of(this.body).map(Body::toAnnotationBodyInput).collect(Collectors.toList())
-            );
-        }
-
-        return builder.build();
+                )
+                .body(
+                        this.body != null
+                                ? Stream.of(this.body).map(Body::toAnnotationBodyInput).collect(Collectors.toList())
+                                : null
+                ).build();
     }
 }

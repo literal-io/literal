@@ -1,6 +1,6 @@
 package io.literal.lib;
 
-public interface Callback<T> {
-    void invoke(Exception e, T data);
+public interface Callback<TError, TData> {
+    void invoke(TError e, TData data);
 }
 

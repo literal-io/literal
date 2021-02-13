@@ -2,4 +2,15 @@
     <string name="app_name">Literal</string>
     <string name="annotate">Annotate</string>
     <string name="done">Done</string>
+
+    <string name="annotation_created_notification_channel_id">ANNOTATION_CREATED</string>
+    <string name="annotation_created_notification_channel_name">Annotation Created</string>
+    <string name="annotation_created_notification_channel_description">Confirmation that an annotation has been created.</string>
+    <string name="annotation_created_notification_title">Annotation created</string>
+
+    <string name="source_created_notification_channel_id">SOURCE_CREATED</string>
+    <string name="source_created_notification_channel_name">Source Created</string>
+    <string name="source_created_notification_channel_description">Confirmation that a source has been created and annotated.</string>
+    <string name="source_created_notification_title">Source Created</string>
+    <string name="source_created_notification_description"><i>%1$s</i> has been added to your library.</string>
 </resources>

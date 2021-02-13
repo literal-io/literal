@@ -3,7 +3,13 @@ package io.literal.model;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import io.literal.lib.JsonArrayUtil;
+import type.SelectorInput;
+import type.TextPositionSelectorInput;
+import type.TextPositionSelectorType;
 
 public class TextPositionSelector extends Selector {
     private final int start;
@@ -57,5 +63,23 @@ public class TextPositionSelector extends Selector {
                 this.refinedBy != null ? JsonArrayUtil.stringifyObjectArray(this.refinedBy, Selector::toJson) : null);
 
         return result;
+    }
+
+    @Override
+    public SelectorInput toSelectorInput() {
+        return SelectorInput.builder()
+                .textPositionSelector(
+                        TextPositionSelectorInput.builder()
+                                .type(TextPositionSelectorType.TEXT_POSITION_SELECTOR)
+                                .start(this.start)
+                                .end(this.end)
+                                .refinedBy(
+                                        this.refinedBy != null
+                                                ? Stream.of(this.refinedBy).map(Selector::toSelectorInput).collect(Collectors.toList())
+                                                : null
+                                )
+                                .build()
+                )
+                .build();
     }
 }

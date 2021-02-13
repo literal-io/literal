@@ -1,8 +1,7 @@
 package io.literal.ui.fragment;
 
+import android.app.Activity;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,6 +21,8 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
+import com.apollographql.apollo.exception.ApolloException;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
@@ -32,13 +33,18 @@ import org.json.JSONObject;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import io.literal.R;
+import io.literal.lib.Callback;
+import io.literal.lib.DomainMetadata;
 import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.model.Annotation;
+import io.literal.repository.NotificationRepository;
+import io.literal.repository.ShareTargetHandlerRepository;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
@@ -102,7 +108,7 @@ public class SourceWebView extends Fragment {
                 Log.d("SourceWebView", "setOnReceivedIcon callback error:", e);
             }
 
-            SourceWebViewViewModel.DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
+            DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
             sourceWebViewViewModel.setDomainMetadata(domainMetadata != null ? domainMetadata.getUrl() : null, icon);
         });
         webView.setOnGetWebMessageChannelInitializerScript((_e, _data) -> {
@@ -122,7 +128,7 @@ public class SourceWebView extends Fragment {
         webView.setExternalWebViewClient(new WebViewClient() {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                SourceWebViewViewModel.DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
+                DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
                 try {
                     sourceWebViewViewModel.setDomainMetadata(new URL(url), domainMetadata != null ? domainMetadata.getFavicon() : null);
                 } catch (MalformedURLException ex) {
@@ -206,16 +212,8 @@ public class SourceWebView extends Fragment {
                 toolbar.setTitle(domainMetadata.getUrl().getHost());
                 Bitmap favicon = domainMetadata.getFavicon();
                 if (favicon != null) {
-                    // scale favicon and draw on white background
-                    int faviconSize = getResources().getDimensionPixelSize(R.dimen.source_web_view_favicon_size);
-                    int padding = getResources().getDimensionPixelSize(R.dimen.source_web_view_favicon_padding);
-                    Bitmap scaledBitmap = Bitmap.createScaledBitmap(favicon, faviconSize, faviconSize, true);
-                    Bitmap outputBitmap = Bitmap.createBitmap(scaledBitmap.getWidth() + padding, scaledBitmap.getHeight() + padding, scaledBitmap.getConfig());
-                    Canvas canvas = new Canvas(outputBitmap);
-                    canvas.drawColor(Color.WHITE);
-                    canvas.drawBitmap(scaledBitmap, (float) padding / 2, (float) padding / 2, null);
 
-                    toolbar.setLogo(new BitmapDrawable(getResources(), outputBitmap));
+                    toolbar.setLogo(new BitmapDrawable(getResources(), domainMetadata.getScaledFaviconWithBackground(getContext())));
                 }
             }
         });
@@ -276,7 +274,9 @@ public class SourceWebView extends Fragment {
         });
 
         sourceWebViewViewModel.getWebEvents().observe(requireActivity(), (webEvents) -> {
-            if (webEvents == null) { return; }
+            if (webEvents == null) {
+                return;
+            }
 
             webEvents.iterator().forEachRemaining((webEvent) -> {
                 webView.postWebEvent(webEvent);
@@ -314,6 +314,37 @@ public class SourceWebView extends Fragment {
         sourceWebViewViewModel.setFocusedAnnotation(null);
     }
 
+    private void handleDone() {
+        ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
+        if (annotations != null && annotations.size() > 0) {
+            ShareTargetHandlerRepository.createAnnotations(getContext(), annotations.toArray(new Annotation[0]), new Callback<ApolloException, List<CreateAnnotationMutation.Data>>() {
+                @Override
+                public void invoke(ApolloException e, List<CreateAnnotationMutation.Data> data) {
+                    if (e != null) {
+                        Log.d("SourceWebView", "handleDone", e);
+                        return;
+                    }
+                }
+            });
+
+            DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
+            if (domainMetadata != null) {
+                NotificationRepository.sourceCreatedNotification(
+                        getContext(),
+                        authenticationViewModel.getUsername().getValue(),
+                        domainMetadata
+                );
+            }
+        }
+
+        Activity activity = getActivity();
+        if (activity != null) {
+            activity.finish();
+        } else {
+            Log.d("SourceWebView", "handleDone: unable to call getActivity().finish()");
+        }
+    }
+
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -332,7 +363,7 @@ public class SourceWebView extends Fragment {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
             case R.id.done:
-                // TODO: handle item selected
+                this.handleDone();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

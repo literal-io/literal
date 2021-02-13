@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import io.literal.lib.Crypto;
+import io.literal.lib.DomainMetadata;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
@@ -163,22 +164,4 @@ public class SourceWebViewViewModel extends ViewModel {
     }
 
     public MutableLiveData<ArrayDeque<WebEvent>> getWebEvents() { return webEvents; }
-
-    public class DomainMetadata {
-        private final URL url;
-        private final Bitmap favicon;
-
-        public DomainMetadata(URL url, Bitmap favicon) {
-            this.url = url;
-            this.favicon = favicon;
-        }
-
-        public Bitmap getFavicon() {
-            return favicon;
-        }
-
-        public URL getUrl() {
-            return url;
-        }
-    }
 }

@@ -42,6 +42,7 @@ import io.literal.lib.Constants;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
+import io.literal.repository.NotificationRepository;
 import io.literal.repository.ShareTargetHandlerRepository;
 import io.literal.ui.fragment.AppWebView;
 import io.literal.ui.fragment.SourceWebView;
@@ -68,18 +69,8 @@ public class ShareTargetHandler extends AppCompatActivity {
         authenticationViewModel = new ViewModelProvider(this).get(AuthenticationViewModel.class);
         authenticationViewModel.initialize(this);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel chan = new NotificationChannel(
-                    Constants.NOTIFICATION_CHANNEL_ANNOTATION_CREATED_ID,
-                    Constants.NOTIFICATION_CHANNEL_ANNOTATION_CREATED_NAME,
-                    NotificationManager.IMPORTANCE_LOW
-            );
-            chan.setDescription(Constants.NOTIFICATION_CHANNEL_ANNOTATION_CREATED_DESCRIPTION);
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(chan);
-            }
-        }
+        NotificationRepository.createNewAnnotationNotificationChannel(this);
+        NotificationRepository.createNewExternalTargetNotificationChannel(this);
 
         if (savedInstanceState == null) {
             Intent intent = getIntent();

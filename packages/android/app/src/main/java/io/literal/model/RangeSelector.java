@@ -4,7 +4,13 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import io.literal.lib.JsonArrayUtil;
+import type.RangeSelectorInput;
+import type.RangeSelectorType;
+import type.SelectorInput;
 
 public class RangeSelector extends Selector {
 
@@ -62,5 +68,23 @@ public class RangeSelector extends Selector {
                 this.refinedBy != null ? JsonArrayUtil.stringifyObjectArray(this.refinedBy, Selector::toJson) : null);
 
         return result;
+    }
+
+    @Override
+    public SelectorInput toSelectorInput() {
+        return SelectorInput.builder()
+                .rangeSelector(
+                        RangeSelectorInput.builder()
+                                .type(RangeSelectorType.RANGE_SELECTOR)
+                                .startSelector(this.startSelector.toSelectorInput())
+                                .endSelector(this.endSelector.toSelectorInput())
+                                .refinedBy(
+                                        this.refinedBy != null
+                                                ? Stream.of(this.refinedBy).map(Selector::toSelectorInput).collect(Collectors.toList())
+                                                : null
+                                )
+                                .build()
+                )
+                .build();
     }
 }

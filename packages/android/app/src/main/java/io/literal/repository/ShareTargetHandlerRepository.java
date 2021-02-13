@@ -14,6 +14,7 @@ import com.amazonaws.amplify.generated.graphql.CreateAnnotationFromExternalTarge
 import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
 import com.amazonaws.amplify.generated.graphql.GetAnnotationQuery;
 import com.amazonaws.mobile.client.AWSMobileClient;
+import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient;
 import com.amazonaws.mobileconnectors.appsync.ClearCacheException;
 import com.amazonaws.mobileconnectors.appsync.ClearCacheOptions;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
@@ -29,9 +30,11 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
@@ -40,10 +43,13 @@ import io.literal.factory.AWSMobileClientFactory;
 import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.AnnotationCollectionLib;
 import io.literal.lib.AnnotationLib;
+import io.literal.lib.Callback;
 import io.literal.lib.Constants;
 import io.literal.lib.ContentResolverLib;
 import io.literal.lib.Crypto;
+import io.literal.lib.ManyCallback;
 import io.literal.lib.WebRoutes;
+import io.literal.model.Annotation;
 import io.literal.ui.activity.MainActivity;
 import io.literal.ui.activity.ShareTargetHandler;
 import io.literal.viewmodel.AuthenticationViewModel;
@@ -155,6 +161,39 @@ public class ShareTargetHandlerRepository {
                     });
         } catch (NoSuchAlgorithmException e) {
             listener.onError(e);
+        }
+    }
+
+    public static void createAnnotations(Context context, Annotation[] annotations, Callback<ApolloException, List<CreateAnnotationMutation.Data>> callback) {
+        ManyCallback<ApolloException, CreateAnnotationMutation.Data> manyCallback = new ManyCallback<>(annotations.length, callback);
+        AWSAppSyncClient appSyncClient = AppSyncClientFactory.getInstance(context);
+
+        for (int i = 0; i < annotations.length; i++) {
+            Callback<ApolloException, CreateAnnotationMutation.Data> innerCallback = manyCallback.getCallback(i);
+            appSyncClient
+                    .mutate(
+                        CreateAnnotationMutation.builder()
+                                .input(annotations[i].toCreateAnnotationInput())
+                                .build()
+
+                    )
+                    .enqueue(new GraphQLCall.Callback<CreateAnnotationMutation.Data>() {
+                        @Override
+                        public void onResponse(@Nonnull Response<CreateAnnotationMutation.Data> response) {
+                            if (response.hasErrors()) {
+                                response.errors().forEach((error -> {
+                                    Log.d("ShareTargetHandlerRepository", "createAnnotations error: " + error.message());
+                                }));
+                                innerCallback.invoke(new ApolloException("Server Error"), null);
+                            } else {
+                                innerCallback.invoke(null, response.data());
+                            }
+                        }
+                        @Override
+                        public void onFailure(@Nonnull ApolloException e) {
+                            innerCallback.invoke(e, null);
+                        }
+                    });
         }
     }
 
@@ -280,43 +319,7 @@ public class ShareTargetHandlerRepository {
                             return;
                         }
 
-                        Intent intent = new Intent(context, MainActivity.class);
-                        Uri annotationUri = Uri.parse(
-                                WebRoutes.creatorsIdAnnotationCollectionIdAnnotationId(
-                                        AWSMobileClient.getInstance().getUsername(),
-                                        Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT,
-                                        AnnotationLib.idComponentFromId(annotation.id())
-                                )
-                        );
-                        intent.setData(annotationUri);
-                        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
-
-                        String textualTargetValue = null;
-                        for (GetAnnotationQuery.Target target : annotation.target()) {
-                            GetAnnotationQuery.AsTextualTarget textualTarget = target.asTextualTarget();
-                            if (textualTarget != null) {
-                                textualTargetValue = textualTarget.value();
-                                break;
-                            }
-                        }
-
-                        if (textualTargetValue != null) {
-                            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, Constants.NOTIFICATION_CHANNEL_ANNOTATION_CREATED_ID)
-                                    .setSmallIcon(R.drawable.ic_stat_name)
-                                    .setColor(Color.BLACK)
-                                    .setContentTitle(Constants.NOTIFICATION_ANNOTATION_CREATED_TITLE)
-                                    .setStyle(
-                                            new NotificationCompat.BigTextStyle().bigText(textualTargetValue)
-                                    )
-                                    .setContentText(textualTargetValue)
-                                    .setPriority(NotificationCompat.PRIORITY_LOW)
-                                    .setContentIntent(pendingIntent)
-                                    .setAutoCancel(true);
-                            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-                            notificationManager.notify(annotation.id().hashCode(), builder.build());
-                        } else {
-                            Log.i(Constants.LOG_TAG, "Did not not notify AnnotationCreation: null textualTargetValue");
-                        }
+                        NotificationRepository.annotationCreatedNotification(context, annotation);
                     }
 
                     @Override
