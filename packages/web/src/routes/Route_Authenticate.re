@@ -4,13 +4,23 @@ open Styles;
 let default = () => {
   let authentication = Hooks_CurrentUserInfo.use();
   let (isAuthenticating, setIsAuthenticating) = React.useState(() => false);
+  let router = Next.Router.useRouter();
+  let searchParams =
+    router.asPath
+    ->Js.String2.split("?")
+    ->Belt.Array.get(1)
+    ->Belt.Option.getWithDefault("")
+    ->Webapi.Url.URLSearchParams.make;
 
   let _ =
     React.useEffect1(
       () => {
         let _ =
-          switch (authentication) {
-          | Authenticated(currentUser) =>
+          switch (
+            authentication,
+            searchParams |> Webapi.Url.URLSearchParams.get("forResult"),
+          ) {
+          | (Authenticated(currentUser), None) =>
             setIsAuthenticating(_ => false);
             Routes.CreatorsIdAnnotationCollectionsId.(
               Next.Router.replaceWithAs(
@@ -21,6 +31,13 @@ let default = () => {
                 ),
               )
             );
+          | (Authenticated(currentUser), Some(_)) =>
+            setIsAuthenticating(_ => false);
+            let _ =
+              Webview.(
+                postMessage(WebEvent.make(~type_="ACTIVITY_FINISH", ()))
+              );
+            ();
           | _ => ()
           };
         None;

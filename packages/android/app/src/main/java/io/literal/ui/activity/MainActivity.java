@@ -11,15 +11,20 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.amazonaws.amplify.generated.graphql.CreateAnnotationFromExternalTargetMutation;
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
+import com.amazonaws.mobile.client.UserState;
 import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.mobileconnectors.cognitoauth.AuthClient;
 
 import io.literal.R;
 import io.literal.factory.AWSMobileClientFactory;
 import io.literal.lib.Constants;
+import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
+import io.literal.repository.ShareTargetHandlerRepository;
+import io.literal.ui.MainApplication;
 import io.literal.ui.fragment.AppWebView;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
@@ -46,37 +51,58 @@ public class MainActivity extends AppCompatActivity {
             ViewGroup splash = findViewById(R.id.splash);
             splash.setVisibility(hasFinishedInitializing ? View.INVISIBLE : View.VISIBLE);
         });
+        appWebViewModel.getReceivedWebEvents().observe(this,
+            (webEvents) -> {
+                if (webEvents == null) {
+                    return;
+                }
+                webEvents.iterator().forEachRemaining(webEvent -> {
+                    if (webEvent.getType().equals(WebEvent.TYPE_ACTIVITY_FINISH)) {
+                        setResult(RESULT_OK);
+                        finish();
+                    }
+                });
+                appWebViewModel.clearReceivedWebEvents();
+            }
+        );
 
         if (savedInstanceState == null) {
-            authenticationViewModel.awaitInitialization();
-            String username = authenticationViewModel.getUsername().getValue();
-            String defaultUrl =
-                    username != null
-                            ? WebRoutes.creatorsIdAnnotationCollectionId(username, Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT)
-                            : WebRoutes.authenticate();
-            Intent intent = getIntent();
-            String initialUrl;
-            if (intent != null) {
-                Uri uri = intent.getData();
-                if (uri != null) {
-                    initialUrl = uri.toString();
+            ((MainApplication) getApplication()).getThreadPoolExecutor().execute(() -> {
+                authenticationViewModel.awaitInitialization();
+
+                String initialUrl;
+                String username = authenticationViewModel.getUsername().getValue();
+                String defaultUrl =
+                        username != null
+                                ? WebRoutes.creatorsIdAnnotationCollectionId(username, Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT)
+                                : WebRoutes.authenticate();
+                Intent intent = getIntent();
+                if (intent != null) {
+                    Uri uri = intent.getData();
+                    if (uri != null) {
+                        initialUrl = uri.toString();
+                    } else {
+                        initialUrl = defaultUrl;
+                    }
                 } else {
                     initialUrl = defaultUrl;
                 }
-            } else {
-                initialUrl = defaultUrl;
-            }
 
-            appWebViewFragment = AppWebView.newInstance(initialUrl);
+                appWebViewFragment = AppWebView.newInstance(initialUrl);
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .setReorderingAllowed(true)
+                        .add(R.id.fragment_container, appWebViewFragment)
+                        .commit();
+            });
         } else {
             appWebViewFragment = (AppWebView) getSupportFragmentManager().getFragment(savedInstanceState, APP_WEB_VIEW_FRAGMENT_NAME);
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .setReorderingAllowed(true)
+                    .add(R.id.fragment_container, appWebViewFragment)
+                    .commit();
         }
-
-        getSupportFragmentManager()
-                .beginTransaction()
-                .setReorderingAllowed(true)
-                .add(R.id.fragment_container, appWebViewFragment)
-                .commit();
     }
 
     @Override

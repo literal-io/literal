@@ -24,6 +24,7 @@ import com.amazonaws.mobile.client.results.Tokens;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.util.Map;
 import java.util.UUID;
 
 import io.literal.R;
@@ -150,14 +151,12 @@ public class AppWebView extends Fragment {
     private final WebEvent.Callback webEventCallback = new WebEvent.Callback() {
 
         private void handleSignIn(io.literal.ui.view.AppWebView view) {
-            authenticationViewModel.signInGoogle(getActivity(), (e, userStateDetails) -> {
+            authenticationViewModel.signInGoogle(getActivity(), (e, _void) -> {
                 if (e != null) {
                     Log.d("AppWebView", "handleSignIn", e);
                     return;
                 }
-
                 Tokens tokens = authenticationViewModel.getTokens().getValue();
-                Log.d("AppWebView", "handleSignIn tokens: " + tokens);
                 JSONObject result = new JSONObject();
                 try {
                     result.put("idToken", tokens.getIdToken().getTokenString());
@@ -177,7 +176,6 @@ public class AppWebView extends Fragment {
 
         private void handleGetTokens(io.literal.ui.view.AppWebView view) {
             Tokens tokens = authenticationViewModel.getTokens().getValue();
-
             JSONObject result = new JSONObject();
             try {
                 result.put("idToken", tokens.getIdToken().getTokenString());
@@ -193,13 +191,12 @@ public class AppWebView extends Fragment {
         }
 
         private void handleGetUserInfo(io.literal.ui.view.AppWebView view) {
-
             try {
                 JSONObject result = new JSONObject();
                 result.put("username", authenticationViewModel.getUsername().getValue());
-                result.put("attributes", new JSONObject(authenticationViewModel.getUserAttributes().getValue()));
                 result.put("id", authenticationViewModel.getIdentityId().getValue());
-
+                Map<String, String > userAttributes = authenticationViewModel.getUserAttributes().getValue();
+                result.put("attributes", userAttributes != null ? new JSONObject(userAttributes) : null);
                 appWebView.postWebEvent(
                         new WebEvent(WebEvent.TYPE_AUTH_GET_USER_INFO_RESULT, UUID.randomUUID().toString(), result)
                 );

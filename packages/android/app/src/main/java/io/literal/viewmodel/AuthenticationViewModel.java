@@ -9,7 +9,9 @@ import androidx.lifecycle.ViewModel;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
+import com.amazonaws.mobile.client.UserState;
 import com.amazonaws.mobile.client.UserStateDetails;
+import com.amazonaws.mobile.client.UserStateListener;
 import com.amazonaws.mobile.client.results.Tokens;
 
 import java.util.Map;
@@ -31,8 +33,11 @@ public class AuthenticationViewModel extends ViewModel {
     public MutableLiveData<UserStateDetails> getUserStateDetails() {
         return userStateDetails;
     }
+
     public MutableLiveData<Tokens> getTokens() {
-        if (tokens.getValue() == null) {
+        if (this.isSignedOut()) {
+            tokens.setValue(null);
+        } if (tokens.getValue() == null) {
             try {
                 tokens.setValue(AuthenticationRepository.getTokens());
             } catch (Exception e) {
@@ -43,37 +48,47 @@ public class AuthenticationViewModel extends ViewModel {
     }
 
     public MutableLiveData<Map<String, String>> getUserAttributes() {
-        if (userAttributes.getValue() == null) {
+        Log.d("AuthenticationViewModel", "userStateDetails: " + userStateDetails.getValue().getUserState());
+        if (this.isSignedOut()) {
+            userAttributes.setValue(null);
+        } else if (userAttributes.getValue() == null) {
             try {
                 userAttributes.setValue(AuthenticationRepository.getUserAttributes());
             } catch (Exception e) {
                 Log.d("AuthenticationViewModel", "getUserInfo", e);
             }
         }
+
         return userAttributes;
     }
 
     public MutableLiveData<String> getUsername() {
-        if (username.getValue() == null) {
+        if (this.isSignedOut()) {
+            username.setValue(null);
+        } else if (username.getValue() == null) {
             username.setValue(AuthenticationRepository.getUsername());
         }
         return username;
     }
 
     public MutableLiveData<String> getIdentityId() {
-        if (identityId.getValue() == null) {
+        if (this.isSignedOut()) {
+            identityId.setValue(null);
+        } else if (identityId.getValue() == null) {
             identityId.setValue(AuthenticationRepository.getUsername());
         }
         return identityId;
     }
 
-    public void initialize(Context context) {
-        AWSMobileClientFactory.initializeClient(context, new Callback<UserStateDetails>() {
+    public void initialize(Activity activity) {
+        AWSMobileClientFactory.initializeClient(activity, new Callback<UserStateDetails>() {
             @Override
             public void onResult(UserStateDetails result) {
-                userStateDetails.postValue(result);
-                hasInitializedLatch.countDown();
-                asyncInitializeValues();
+                activity.runOnUiThread(() -> {
+                    userStateDetails.setValue(result);
+                    asyncInitializeValues();
+                    hasInitializedLatch.countDown();
+                });
             }
 
             @Override
@@ -81,6 +96,15 @@ public class AuthenticationViewModel extends ViewModel {
                 Log.d("AuthenticationViewModel", "initialize", e);
             }
         });
+
+        AWSMobileClient.getInstance().addUserStateListener(userStateDetails::postValue);
+    }
+
+    public boolean isSignedOut() {
+        if (userStateDetails.getValue() == null) {
+            return true;
+        }
+        return userStateDetails.getValue().getUserState() != UserState.SIGNED_IN;
     }
 
     private void asyncInitializeValues() {
