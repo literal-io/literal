@@ -24,6 +24,7 @@ public class WebEvent {
     public static final String TYPE_VIEW_STATE_EDIT_ANNOTATION_TAGS = "VIEW_STATE_EDIT_ANNOTATION_TAGS";
     public static final String TYPE_EDIT_ANNOTATION_TAGS_RESULT = "EDIT_ANNOTATION_TAGS_RESULT";
     public static final String TYPE_VIEW_STATE_COLLAPSED_ANNOTATION_TAGS = "VIEW_STATE_COLLAPSED_ANNOTATION_TAGS";
+    public static final String TYPE_SET_VIEW_STATE = "SET_VIEW_STATE";
     public static final String TYPE_CREATE_ANNOTATION = "CREATE_ANNOTATION";
     public static final String TYPE_FOCUS_ANNOTATION = "FOCUS_ANNOTATION";
     public static final String TYPE_BLUR_ANNOTATION = "BLUR_ANNOTATION";

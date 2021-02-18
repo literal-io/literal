@@ -15,7 +15,7 @@ public class Target {
         SPECIFIC_TARGET
     }
 
-    private final Type type;
+    protected final Type type;
 
     public Target(Type type) {
         this.type = type;

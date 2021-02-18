@@ -58,6 +58,10 @@ public class MainActivity extends AppCompatActivity {
                 }
                 webEvents.iterator().forEachRemaining(webEvent -> {
                     if (webEvent.getType().equals(WebEvent.TYPE_ACTIVITY_FINISH)) {
+                        Intent intent = getIntent();
+                        if (intent.hasExtra(Constants.INTENT_MANUAL_FOR_RESULT_DATA)) {
+                            startActivity(intent.getParcelableExtra(Constants.INTENT_MANUAL_FOR_RESULT_DATA));
+                        }
                         setResult(RESULT_OK);
                         finish();
                     }
@@ -67,35 +71,37 @@ public class MainActivity extends AppCompatActivity {
         );
 
         if (savedInstanceState == null) {
-            ((MainApplication) getApplication()).getThreadPoolExecutor().execute(() -> {
-                authenticationViewModel.awaitInitialization();
+            authenticationViewModel.awaitInitialization(
+                    ((MainApplication) getApplication()).getThreadPoolExecutor(),
+                    (e, aVoid) -> runOnUiThread(() -> {
+                        String initialUrl;
+                        String username = authenticationViewModel.getUsername().getValue();
+                        String defaultUrl =
+                                username != null
+                                        ? WebRoutes.creatorsIdAnnotationCollectionId(username, Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT)
+                                        : WebRoutes.authenticate();
+                        Intent intent = getIntent();
+                        if (intent != null) {
+                            Uri uri = intent.getData();
+                            if (uri != null) {
+                                initialUrl = uri.toString();
+                            } else {
+                                initialUrl = defaultUrl;
+                            }
+                        } else {
+                            initialUrl = defaultUrl;
+                        }
 
-                String initialUrl;
-                String username = authenticationViewModel.getUsername().getValue();
-                String defaultUrl =
-                        username != null
-                                ? WebRoutes.creatorsIdAnnotationCollectionId(username, Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT)
-                                : WebRoutes.authenticate();
-                Intent intent = getIntent();
-                if (intent != null) {
-                    Uri uri = intent.getData();
-                    if (uri != null) {
-                        initialUrl = uri.toString();
-                    } else {
-                        initialUrl = defaultUrl;
-                    }
-                } else {
-                    initialUrl = defaultUrl;
-                }
-
-                appWebViewFragment = AppWebView.newInstance(initialUrl);
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .setReorderingAllowed(true)
-                        .add(R.id.fragment_container, appWebViewFragment)
-                        .commit();
-            });
+                        appWebViewFragment = AppWebView.newInstance(initialUrl);
+                        getSupportFragmentManager()
+                                .beginTransaction()
+                                .setReorderingAllowed(true)
+                                .add(R.id.fragment_container, appWebViewFragment)
+                                .commit();
+                    })
+            );
         } else {
+            Log.i("MainActivity", "savedInstanceState");
             appWebViewFragment = (AppWebView) getSupportFragmentManager().getFragment(savedInstanceState, APP_WEB_VIEW_FRAGMENT_NAME);
             getSupportFragmentManager()
                     .beginTransaction()
@@ -114,18 +120,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.i("MainActivity", "onActivityResult: " + requestCode + ", " + resultCode + ", " + data);
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == AuthClient.CUSTOM_TABS_ACTIVITY_CODE) {
-            AWSMobileClientFactory.initializeClient(this, new Callback<UserStateDetails>() {
-                @Override
-                public void onResult(UserStateDetails result) {
-                    AWSMobileClient.getInstance().handleAuthResponse(data);
-                }
-                @Override
-                public void onError(Exception e) {
-                    Log.e(Constants.LOG_TAG, "Unable to initializeClient: ", e);
-                }
-            });
+            AWSMobileClient.getInstance().handleAuthResponse(data);
         }
     }
 }

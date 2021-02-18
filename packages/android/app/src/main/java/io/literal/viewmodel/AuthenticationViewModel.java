@@ -16,6 +16,7 @@ import com.amazonaws.mobile.client.results.Tokens;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import io.literal.factory.AWSMobileClientFactory;
 import io.literal.repository.AuthenticationRepository;
@@ -81,7 +82,7 @@ public class AuthenticationViewModel extends ViewModel {
     }
 
     public void initialize(Activity activity) {
-        AWSMobileClientFactory.initializeClient(activity, new Callback<UserStateDetails>() {
+        AWSMobileClientFactory.initializeClient(activity.getApplicationContext(), new Callback<UserStateDetails>() {
             @Override
             public void onResult(UserStateDetails result) {
                 activity.runOnUiThread(() -> {
@@ -97,7 +98,10 @@ public class AuthenticationViewModel extends ViewModel {
             }
         });
 
-        AWSMobileClient.getInstance().addUserStateListener(userStateDetails::postValue);
+        AWSMobileClient.getInstance().addUserStateListener((userState) -> {
+            Log.i("AuthenticationViewModel", "userState update: " + userState.getUserState());
+            userStateDetails.postValue(userState);
+        });
     }
 
     public boolean isSignedOut() {
@@ -126,6 +130,17 @@ public class AuthenticationViewModel extends ViewModel {
         } catch (InterruptedException e) {
             Log.d("AuthenticationViewModel", "awaitInitialization", e);
         }
+    }
+
+    public void awaitInitialization(ThreadPoolExecutor executor, io.literal.lib.Callback<InterruptedException, Void> callback) {
+        executor.execute(() -> {
+            try {
+                hasInitializedLatch.await();
+                callback.invoke(null, null);
+            } catch (InterruptedException e) {
+                callback.invoke(e, null);
+            }
+        });
     }
 
     public void signInGoogle(Activity activity, AuthenticationRepository.Callback<Void> callback) {

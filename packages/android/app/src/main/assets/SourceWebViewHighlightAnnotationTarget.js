@@ -220,6 +220,7 @@
   }
 
   class AnnotationFocusManager {
+    focusedAnnotationId = null;
     focusedAnnotationElems = null;
     focusedAnnotationIntersectionObserver = null;
     focusedAnnotationElemIsVisible = null;
@@ -236,16 +237,16 @@
         }
       );
 
-      this.messenger.on("ANNOTATION_FOCUS", (data) => {
-        if (!data.annotationId) {
+      this.messenger.on("FOCUS_ANNOTATION", (message) => {
+        if (!message.data.annotationId) {
           console.error(
-            "[Literal] Received ANNOTATION_FOCUS event without annotationId."
+            "[Literal] Received FOCUS_ANNOTATION event without annotationId."
           );
           return;
         }
 
         this._handleFocusAnnotation({
-          annotationId: data.annotationId,
+          annotationId: message.data.annotationId,
           disableNotify: true,
         });
       });
@@ -270,12 +271,19 @@
           return;
         }
 
-        this.handleBlurAnnotation();
+        this._handleBlurAnnotation();
       });
     }
 
     _handleIntersectionObserverEntries(entries) {
       entries.forEach((entry) => {
+        if (!this.focusedAnnotationElemIsVisible) {
+          console.error(
+            `[Literal] Could not set visibility for entry: ${entry}`
+          )
+          return
+        }
+
         this.focusedAnnotationElemIsVisible.set(
           entry.target,
           entry.isIntersecting
@@ -288,10 +296,15 @@
     }
 
     _handleFocusAnnotation({ annotationId, disableNotify }) {
-      if (this.focusedAnnotationElems) {
-        this.handleBlurAnnotation();
+      if (this.focusedAnnotationId === annotationId) {
+        return
       }
 
+      if (this.focusedAnnotationElems) {
+        this._handleBlurAnnotation();
+      }
+
+      this.focusedAnnotationId = annotationId
       this.focusedAnnotationElems = Array.from(document.querySelectorAll(
         `.${HIGHLIGHT_CLASS_NAME}[data-annotation-id="${annotationId}"]`
       ));
@@ -332,6 +345,7 @@
         this.focusedAnnotationIntersectionObserver.unobserve(elem);
       });
       this.focusedAnnotationElems = null;
+      this.focusedAnnotationId = null;
 
       this.messenger.postMessage({
         type: "BLUR_ANNOTATION",

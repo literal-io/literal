@@ -180,6 +180,7 @@ public class SourceWebView extends Fragment {
                 if (focusedAnnotation != null) {
                     JSONObject focusAnnotationData = new JSONObject();
                     focusAnnotationData.put("annotationId", focusedAnnotation.getId());
+                    Log.i("SourceWebView", "focusing annotation: " + focusedAnnotation.getId());
                     sourceWebViewViewModel.dispatchWebEvent(new WebEvent(
                             WebEvent.TYPE_FOCUS_ANNOTATION,
                             UUID.randomUUID().toString(),
@@ -240,10 +241,24 @@ public class SourceWebView extends Fragment {
 
             webEvents.iterator().forEachRemaining((webEvent) -> {
                 switch (webEvent.getType()) {
-                    case WebEvent.TYPE_ACTIVITY_FINISH:
-                        appWebViewViewModel.setBottomSheetState(
-                                sourceWebViewViewModel.getFocusedAnnotation().getValue() != null ? BottomSheetBehavior.STATE_COLLAPSED : BottomSheetBehavior.STATE_HIDDEN
-                        );
+                    case WebEvent.TYPE_SET_VIEW_STATE:
+                        try {
+                            String state = webEvent.getData().getString("state");
+                            switch (state) {
+                                case "COLLAPSED_ANNOTATION_TAGS":
+                                    appWebViewViewModel.setBottomSheetState(
+                                            sourceWebViewViewModel.getFocusedAnnotation().getValue() != null ? BottomSheetBehavior.STATE_COLLAPSED : BottomSheetBehavior.STATE_HIDDEN
+                                    );
+                                    break;
+                                case "EDIT_ANNOTATION_TAGS":
+                                    appWebViewViewModel.setBottomSheetState(
+                                            sourceWebViewViewModel.getFocusedAnnotation().getValue() != null ? BottomSheetBehavior.STATE_EXPANDED : BottomSheetBehavior.STATE_HIDDEN
+                                    );
+                                    break;
+                            }
+                        } catch (JSONException e) {
+                            Log.d("SourceWebView", "Unable to handle SET_VIEW_STATE", e);
+                        }
                         return;
                     case WebEvent.TYPE_EDIT_ANNOTATION_TAGS_RESULT:
                         try {

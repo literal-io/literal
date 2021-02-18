@@ -36,6 +36,12 @@ public class AWSMobileClientFactory {
     static CountDownLatch initializationLatch = new CountDownLatch(1);
 
     public static void initializeClient(Context context, final Callback<UserStateDetails> callback) {
+
+        if (initializationLatch.getCount() == 0) {
+            callback.onResult(AWSMobileClient.getInstance().currentUserState());
+            return;
+        }
+
         context.startService(new Intent(context, TransferService.class));
         AWSMobileClient.getInstance().initialize(context, getConfiguration(context), new Callback<UserStateDetails>() {
             @Override

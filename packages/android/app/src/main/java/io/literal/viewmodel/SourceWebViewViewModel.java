@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -130,10 +131,15 @@ public class SourceWebViewViewModel extends ViewModel {
 
     public boolean updateAnnotation(Annotation annotation) {
         if (annotation.getId() != null) {
+
+            if (focusedAnnotation.getValue() != null && focusedAnnotation.getValue().getId().equals(annotation.getId())) {
+                focusedAnnotation.setValue(annotation);
+            }
+
             ArrayList<Annotation> newAnnotations = (ArrayList<Annotation>) annotations.getValue().clone();
             int idx = -1;
             for (int i = 0; i < newAnnotations.size(); i++) {
-                if (newAnnotations.get(i).getId() == annotation.getId()) {
+                if (newAnnotations.get(i).getId().equals(annotation.getId())) {
                     idx = i;
                     break;
                 }
@@ -163,5 +169,7 @@ public class SourceWebViewViewModel extends ViewModel {
         webEvents.setValue(null);
     }
 
-    public MutableLiveData<ArrayDeque<WebEvent>> getWebEvents() { return webEvents; }
+    public MutableLiveData<ArrayDeque<WebEvent>> getWebEvents() {
+        return webEvents;
+    }
 }

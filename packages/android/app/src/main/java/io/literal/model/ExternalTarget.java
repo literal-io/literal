@@ -5,7 +5,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Arrays;
+
 import io.literal.lib.JsonArrayUtil;
+import type.AnnotationTargetInput;
+import type.ExternalTargetInput;
 
 public class ExternalTarget extends Target {
 
@@ -28,19 +32,6 @@ public class ExternalTarget extends Target {
         this.rights = rights;
     }
 
-    public JSONObject toJson() throws JSONException {
-        JSONObject output = new JSONObject();
-        output.put("id", this.id);
-        output.put("format", this.format.name());
-        output.put("language", this.language.name());
-        output.put("procesisngLanguage", this.processingLanguage.name());
-        output.put("textDirection", this.textDirection.name());
-        output.put("accessibility", this.accessibility != null ? new JSONArray(this.accessibility) : null);
-        output.put("rights", this.rights != null ? new JSONArray(this.rights) : null);
-
-        return output;
-    }
-
     public static ExternalTarget fromJson(JSONObject json) throws JSONException {
         return new ExternalTarget(
                 json.optString("id"),
@@ -51,5 +42,42 @@ public class ExternalTarget extends Target {
                 json.has("accessibility") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("accessibility")) : null,
                 json.has("rights") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("rights")) : null
         );
+    }
+
+    public JSONObject toJson() throws JSONException {
+        JSONObject output = new JSONObject();
+        output.put("id", this.id);
+        output.put("format", this.format != null ? this.format.name() : null);
+        output.put("language", this.language != null ? this.language.name() : null);
+        output.put("processingLanguage", this.processingLanguage != null ? this.processingLanguage.name() : null);
+        output.put("textDirection", this.textDirection != null ? this.textDirection.name() : null);
+        output.put("accessibility", this.accessibility != null ? new JSONArray(this.accessibility) : null);
+        output.put("rights", this.rights != null ? new JSONArray(this.rights) : null);
+        output.put("type", this.type.name());
+
+        return output;
+    }
+
+    @Override
+    public AnnotationTargetInput toAnnotationTargetInput() {
+        return AnnotationTargetInput.builder().externalTarget(
+                ExternalTargetInput.builder()
+                        .id(this.id)
+                        .format(this.format.toGraphQL())
+                        .language(this.language.toGraphQL())
+                        .processingLanguage(this.processingLanguage.toGraphQL())
+                        .textDirection(this.textDirection.toGraphQL())
+                        .accessibility(
+                                this.accessibility != null
+                                        ? Arrays.asList(this.accessibility)
+                                        : null
+                        )
+                        .rights(
+                                this.rights != null
+                                        ? Arrays.asList(this.rights)
+                                        : null
+                        )
+                        .build()
+        ).build();
     }
 }

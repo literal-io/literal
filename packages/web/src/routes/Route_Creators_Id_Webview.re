@@ -69,6 +69,24 @@ let default = (~rehydrated) => {
       }
     );
 
+  let handleSetState = viewState => {
+    let _ = Service_Analytics.(track(Click({action: "close", label: None})));
+    let _ =
+      Webview.(
+        postMessage(
+          WebEvent.make(
+            ~type_="SET_VIEW_STATE",
+            ~data=
+              Js.Json.object_(
+                Js.Dict.fromList([("state", Js.Json.string(viewState))]),
+              ),
+            (),
+          ),
+        )
+      );
+    ();
+  };
+
   switch (viewState) {
   | None => <Loading />
   | Some(EditAnnotationTags(annotation)) =>
@@ -77,14 +95,16 @@ let default = (~rehydrated) => {
       authentication
       annotation
       onAnnotationChange=handleAnnotationChange
+      onCollapse={() => handleSetState("COLLAPSED_ANNOTATION_TAGS")}
     />
   | Some(CollapsedAnnotationTags(annotation)) =>
     <QueryRenderers_WebView_CollapsedAnnotationTags
       rehydrated
       authentication
       annotation
+      onExpand={() => handleSetState("EDIT_ANNOTATION_TAGS")}
     />
   };
 };
 
-let page = "creators/[creatorUsername]/webview.js"
+let page = "creators/[creatorUsername]/webview.js";

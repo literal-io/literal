@@ -1,6 +1,5 @@
 module Annotation = {
   /** io.literal.model.Annotation **/
-
   module Target = {
     [@decco]
     type textualTarget = {
@@ -12,6 +11,8 @@ module Annotation = {
       accessibility: option(array(string)),
       rights: option(array(string)),
       value: string,
+      [@decco.key "type"]
+      type_: string,
     };
 
     type t =
@@ -54,6 +55,8 @@ module Annotation = {
       accessibility: option(array(string)),
       rights: option(array(string)),
       value: string,
+      [@decco.key "type"]
+      type_: string,
     };
 
     type t =
@@ -93,4 +96,4 @@ module Annotation = {
 
   let decode = t_decode;
   let encode = t_encode;
-}
+};

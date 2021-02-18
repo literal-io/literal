@@ -12,7 +12,7 @@ public class Body {
         TEXTUAL_BODY
     }
 
-    private final Type type;
+    protected final Type type;
 
     public Body(Type type) {
         this.type = type;

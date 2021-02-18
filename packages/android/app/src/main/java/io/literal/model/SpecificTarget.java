@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import io.literal.lib.JsonArrayUtil;
 import type.AnnotationTargetInput;
 import type.SpecificTargetInput;
+import type.SpecificResourceType;
 
 public class SpecificTarget extends Target {
 
@@ -60,7 +61,7 @@ public class SpecificTarget extends Target {
                         .selector(
                                 Stream.of(this.selector).map(Selector::toSelectorInput).collect(Collectors.toList())
                         )
-                        .type(type.SpecificResourceType.SPECIFIC_RESOURCE)
+                        .type(SpecificResourceType.SPECIFIC_RESOURCE)
                         .build()
         ).build();
     }

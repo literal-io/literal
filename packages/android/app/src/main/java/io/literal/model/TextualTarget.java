@@ -35,12 +35,12 @@ public class TextualTarget extends Target {
     public static TextualTarget fromJson(JSONObject json) throws JSONException {
         return new TextualTarget(
                 json.optString("id"),
-                json.has("format") ? Format.valueOf(json.getString("format")) : null,
-                json.has("language") ? Language.valueOf(json.getString("language")) : null,
-                json.has("processingLanguage") ? Language.valueOf(json.getString("processingLanguage")) : null,
-                json.has("textDirection") ? TextDirection.valueOf(json.getString("textDirection")) : null,
-                json.has("accessibility") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("accessibility")) : null,
-                json.has("rights") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("rights")) : null,
+                !json.isNull("format") ? Format.valueOf(json.getString("format")) : null,
+                !json.isNull("language") ? Language.valueOf(json.getString("language")) : null,
+                !json.isNull("processingLanguage") ? Language.valueOf(json.getString("processingLanguage")) : null,
+                !json.isNull("textDirection") ? TextDirection.valueOf(json.getString("textDirection")) : null,
+                !json.isNull("accessibility") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("accessibility")) : null,
+                !json.isNull("rights") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("rights")) : null,
                 json.getString("value")
         );
     }
@@ -55,11 +55,12 @@ public class TextualTarget extends Target {
         output.put("id", this.id);
         output.put("format", this.format.name());
         output.put("language", this.language.name());
-        output.put("procesisngLanguage", this.processingLanguage.name());
+        output.put("processingLanguage", this.processingLanguage.name());
         output.put("textDirection", this.textDirection.name());
         output.put("accessibility", this.accessibility != null ? new JSONArray(this.accessibility) : null);
         output.put("rights", this.rights != null ? new JSONArray(this.rights) : null);
         output.put("value", this.value);
+        output.put("type", this.type.name());
 
         return output;
     }

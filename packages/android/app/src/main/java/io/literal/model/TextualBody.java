@@ -1,5 +1,7 @@
 package io.literal.model;
 
+import com.google.gson.JsonObject;
+
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -44,17 +46,19 @@ public class TextualBody extends Body {
     public JSONObject toJson() throws JSONException {
         JSONObject output = new JSONObject();
         output.put("id", this.id);
-        output.put("format", this.format.name());
-        output.put("language", this.language.name());
-        output.put("procesisngLanguage", this.processingLanguage.name());
-        output.put("textDirection", this.textDirection.name());
-        output.put("accessibility", new JSONArray(this.accessibility));
-        output.put("rights", new JSONArray(this.rights));
+        output.put("format", this.format != null ? this.format.name() : null);
+        output.put("language", this.language != null ? this.language.name() : null);
+        output.put("processingLanguage", this.processingLanguage != null ? this.processingLanguage.name() : null);
+        output.put("textDirection", this.textDirection != null ? this.textDirection.name() : null);
+        output.put("accessibility", this.accessibility != null ? new JSONArray(this.accessibility) : null);
+        output.put("rights", this.rights != null ? new JSONArray(this.rights) : null);
         output.put("value", this.value);
+        output.put("type", this.type.name());
 
         return output;
     }
 
+    @Override
     public AnnotationBodyInput toAnnotationBodyInput() {
         return AnnotationBodyInput.builder()
                 .textualBody(
@@ -75,12 +79,12 @@ public class TextualBody extends Body {
     public static TextualBody fromJson(JSONObject json) throws JSONException {
         return new TextualBody(
                 json.optString("id"),
-                json.has("format") ? Format.valueOf(json.getString("format")) : null,
-                json.has("language") ? Language.valueOf(json.getString("language")) : null,
-                json.has("processingLanguage") ? Language.valueOf(json.getString("processingLanguage")) : null,
-                json.has("textDirection") ? TextDirection.valueOf(json.getString("textDirection")) : null,
-                json.has("accessibility") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("accessibility")) : null,
-                json.has("rights") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("rights")) : null,
+                !json.isNull("format") ? Format.valueOf(json.getString("format")) : null,
+                !json.isNull("language") ? Language.valueOf(json.getString("language")) : null,
+                !json.isNull("processingLanguage") ? Language.valueOf(json.getString("processingLanguage")) : null,
+                !json.isNull("textDirection") ? TextDirection.valueOf(json.getString("textDirection")) : null,
+                !json.isNull("accessibility") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("accessibility")) : null,
+                !json.isNull("rights") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("rights")) : null,
                 json.getString("value")
         );
     }

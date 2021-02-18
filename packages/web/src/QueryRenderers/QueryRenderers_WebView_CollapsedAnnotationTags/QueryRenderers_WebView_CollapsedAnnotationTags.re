@@ -1,77 +1,111 @@
+let tagsValueSelector =
+    (~annotation: Lib_WebView_Model.Annotation.t, ~currentUser) =>
+  annotation.body
+  ->Belt.Option.map(bodies =>
+      bodies->Belt.Array.keepMap(body =>
+        switch (body) {
+        | Lib_WebView_Model.Annotation.Body.TextualBody(body) =>
+          let href =
+            body.id
+            ->Belt.Option.map(id =>
+                Lib_GraphQL.AnnotationCollection.(
+                  makeIdFromComponent(
+                    ~annotationCollectionIdComponent=idComponent(id),
+                    ~creatorUsername=
+                      currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                    ~origin=
+                      Webapi.Dom.(window->Window.location->Location.origin),
+                    (),
+                  )
+                )
+              );
+          Some(
+            Containers_AnnotationEditor_Types.{
+              text: body.value,
+              id: body.id,
+              href,
+            },
+          );
+        | _ => None
+        }
+      )
+    )
+  ->Belt.Option.getWithDefault([||]);
+
 module Data = {
   [@react.component]
-  let make = (~currentUser, ~annotation) => {
-    let tags = [||];
+  let make = (~currentUser, ~annotation, ~onExpand) => {
+    let tags = tagsValueSelector(~annotation, ~currentUser);
+
+    let tagsList =
+      Js.Array2.length(tags) > 0
+        ? <ul className={Cn.fromList(["flex-1", "overflow-x-auto", "py-2"])}>
+            {tags
+             ->Belt.Array.mapWithIndex(
+                 (idx, tag: Containers_AnnotationEditor_Types.tag) =>
+                 <div
+                   className={Cn.fromList([
+                     Cn.on("ml-6", idx == 0),
+                     "mr-6",
+                     "border-b",
+                     "border-dotted",
+                     "border-lightPrimary",
+                     "inline",
+                   ])}>
+                   <span
+                     className={Cn.fromList([
+                       "font-sans",
+                       "text-lightSecondary",
+                       "text-base",
+                       "normal-case",
+                     ])}>
+                     {React.string(tag.text)}
+                   </span>
+                 </div>
+               )
+             ->React.array}
+          </ul>
+        : <div
+            className={Cn.fromList(["flex-1", "items-center", "flex"])}
+            onClick={_ => onExpand()}>
+            <span
+              className={Cn.fromList([
+                "font-sans",
+                "font-medium",
+                "text-lightDisabled",
+                "text-sm",
+                "italic",
+                "ml-6",
+              ])}>
+              {React.string("Add Tag...")}
+            </span>
+          </div>;
+
     <div
       className={Cn.fromList([
         "w-full",
         "h-full",
         "bg-black",
         "flex",
-        "flex-col",
+        "flex-row",
       ])}>
+      tagsList
       <div
+        onClick={_ => onExpand()}
         className={Cn.fromList([
           "flex",
-          "flex-row",
-          "flex-1",
-          "border-b",
+          "justify-center",
+          "items-center",
+          "h-12",
+          "w-12",
+          "border-l",
           "border-lightPrimary",
           "border-dotted",
         ])}>
-        <ul
-          className={Cn.fromList([
-            "flex-1",
-            "overflow-x-auto",
-            "py-2",
-            "border-r",
-            "border-lightPrimary",
-            "border-dotted",
-          ])}>
-          {tags
-           ->Belt.Array.map(text =>
-               <div
-                 className={Cn.fromList([
-                   "mr-4",
-                   "border-b",
-                   "border-dotted",
-                   "border-lightPrimary",
-                 ])}>
-                 <span
-                   className={Cn.fromList([
-                     "font-sans",
-                     "text-lightSecondary",
-                     "font-medium",
-                     "text-base",
-                     "normal-case",
-                   ])}>
-                   {React.string(text)}
-                 </span>
-               </div>
-             )
-           ->React.array}
-        </ul>
-        <div
-          className={Cn.fromList([
-            "flex",
-            "justify-center",
-            "items-center",
-            "h-12",
-            "w-12",
-          ])}>
-          <Svg
-            placeholderViewBox="0 0 24 24"
-            className={Cn.fromList(["w-8", "h-8", "pointer-events-none"])}
-            icon=Svg.arrowUp
-          />
-        </div>
-      </div>
-      <div className={Cn.fromList(["flex", "flex-row", "flex-1"])}>
-        <TextInput_Tags
-          disabled=true
-          value=""
-          onValueChange={_ => ()}
-          onValueCommit={_ => ()}
+        <Svg
+          placeholderViewBox="0 0 24 24"
+          className={Cn.fromList(["w-8", "h-8", "pointer-events-none"])}
+          icon=Svg.arrowUp
         />
       </div>
     </div>;
@@ -91,11 +125,13 @@ let make =
       ~rehydrated,
       ~authentication: Hooks_CurrentUserInfo_Types.state,
       ~annotation,
+      ~onExpand,
     ) => {
   switch (rehydrated, authentication) {
   | (_, Unauthenticated)
   | (_, Loading)
   | (false, _) => <Loading />
-  | (true, Authenticated(currentUser)) => <Data currentUser annotation />
+  | (true, Authenticated(currentUser)) =>
+    <Data currentUser annotation onExpand />
   };
 };

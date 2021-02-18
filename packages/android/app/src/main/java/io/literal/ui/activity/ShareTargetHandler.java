@@ -3,26 +3,16 @@ package io.literal.ui.activity;
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.transition.ChangeBounds;
-import android.transition.TransitionManager;
-import android.transition.TransitionSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.widget.FrameLayout;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -33,8 +23,10 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.amplify.generated.graphql.CreateAnnotationFromExternalTargetMutation;
 import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
-import com.amazonaws.mobile.client.UserState;
+import com.amazonaws.mobile.client.AWSMobileClient;
+import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.UserStateDetails;
+import com.amazonaws.mobileconnectors.cognitoauth.AuthClient;
 import com.apollographql.apollo.api.Error;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
@@ -42,9 +34,9 @@ import org.json.JSONException;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import io.literal.R;
+import io.literal.factory.AWSMobileClientFactory;
 import io.literal.lib.Constants;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
@@ -59,7 +51,6 @@ import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
 
 public class ShareTargetHandler extends AppCompatActivity {
-
     private static final String APP_WEB_VIEW_FRAGMENT_NAME = "APP_WEB_VIEW_FRAGMENT";
     private static final String SOURCE_WEB_VIEW_FRAGMENT_NAME = "SOURCE_WEB_VIEW_FRAGMENT";
     private AppWebViewViewModel appWebViewViewModel;
@@ -68,12 +59,13 @@ public class ShareTargetHandler extends AppCompatActivity {
     private AppWebView appWebViewFragment;
     private SourceWebView sourceWebViewFragment;
     private FragmentContainerView bottomSheetFragmentContainer;
-    private ActivityResultLauncher<Intent> startAuthenticationForResult;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_share_target_handler);
+
+        Intent intent = getIntent();
 
         authenticationViewModel = new ViewModelProvider(this).get(AuthenticationViewModel.class);
         authenticationViewModel.initialize(this);
@@ -81,16 +73,8 @@ public class ShareTargetHandler extends AppCompatActivity {
         NotificationRepository.createNewAnnotationNotificationChannel(this);
         NotificationRepository.createNewExternalTargetNotificationChannel(this);
 
-        Intent intent = getIntent();
-        startAuthenticationForResult = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if (result.getResultCode() == Activity.RESULT_OK) {
-                        handleIntent(intent);
-                    }
-                });
-
         if (savedInstanceState == null) {
-           this.handleIntent(intent);
+            this.handleIntent(intent);
         } else {
             Fragment fragment;
             fragment = getSupportFragmentManager().getFragment(savedInstanceState, APP_WEB_VIEW_FRAGMENT_NAME);
@@ -138,7 +122,12 @@ public class ShareTargetHandler extends AppCompatActivity {
         // initialize view model for managing app web view bottom sheet
         appWebViewViewModel = new ViewModelProvider(this).get(AppWebViewViewModel.class);
         appWebViewViewModel.getBottomSheetState().observe(this, bottomSheetState -> {
+            if (bottomSheetState == null) {
+                return;
+            }
+
             Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+
             DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
             Configuration configuration = getResources().getConfiguration();
 
@@ -167,7 +156,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                 animator.setDuration(300);
                 animator.start();
             } else if (bottomSheetState == BottomSheetBehavior.STATE_COLLAPSED) {
-                double targetBottomSheetHeightPx =  96 * displayMetrics.density;
+                double targetBottomSheetHeightPx = 48 * displayMetrics.density;
                 double targetTranslationY;
                 double initialTranslationY;
                 Animator.AnimatorListener animatorListener = null;
@@ -230,7 +219,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                 animator.start();
 
             } else if (bottomSheetState == BottomSheetBehavior.STATE_HIDDEN) {
-                double targetBottomSheetHeightPx =  0;
+                double targetBottomSheetHeightPx = 0;
                 double targetTranslationY = bottomSheetFragmentContainer.getHeight();
                 double initialTranslationY = bottomSheetFragmentContainer.getTranslationY();
 
@@ -298,134 +287,140 @@ public class ShareTargetHandler extends AppCompatActivity {
     }
 
     private void handleCreateFromSource(Intent intent) {
-        ((MainApplication) getApplication()).getThreadPoolExecutor().execute(() -> {
-            authenticationViewModel.awaitInitialization();
-            if (authenticationViewModel.isSignedOut()) {
-                handleSignedOut();
-                return;
-            }
+        authenticationViewModel.awaitInitialization(
+                ((MainApplication) getApplication()).getThreadPoolExecutor(),
+                (e, aVoid) -> runOnUiThread(() -> {
+                    if (authenticationViewModel.isSignedOut()) {
+                        handleSignedOut();
+                        return;
+                    }
 
-            String sourceWebViewUri = intent.getStringExtra(Intent.EXTRA_TEXT);
-            String appWebViewUri = WebRoutes.creatorsIdWebview(
-                    authenticationViewModel.getUsername().getValue()
-            );
-            installSourceWebView(sourceWebViewUri, appWebViewUri);
-        });
+                    String sourceWebViewUri = intent.getStringExtra(Intent.EXTRA_TEXT);
+                    String appWebViewUri = WebRoutes.creatorsIdWebview(
+                            authenticationViewModel.getUsername().getValue()
+                    );
+                    installSourceWebView(sourceWebViewUri, appWebViewUri);
+                })
+        );
     }
 
     private void handleCreateFromText(Intent intent) {
         String text = intent.getStringExtra(Intent.EXTRA_TEXT);
 
-        ((MainApplication) getApplication()).getThreadPoolExecutor().execute(() -> {
-            authenticationViewModel.awaitInitialization();
-            if (authenticationViewModel.isSignedOut()) {
-                handleSignedOut();
-                return;
-            }
-
-            ShareTargetHandlerRepository.createAnnotationFromText(text, ShareTargetHandler.this, authenticationViewModel, new ShareTargetHandlerRepository.CreateListener<CreateAnnotationMutation.Data>() {
-                @Override
-                public void onAnnotationUri(String uri) {
-                    installAppWebView(uri);
-                }
-
-                @Override
-                public void onAnnotationCreated(CreateAnnotationMutation.Data data) {
-                    if (data == null) {
-                        // Error is handled in WebView
-                        Log.d("handleSendFromText", "CreateAnnotationMutation.Data is null");
+        authenticationViewModel.awaitInitialization(
+                ((MainApplication) getApplication()).getThreadPoolExecutor(),
+                (e, aVoid) -> runOnUiThread(() -> {
+                    if (authenticationViewModel.isSignedOut()) {
+                        handleSignedOut();
                         return;
                     }
 
-                    runOnUiThread(() -> {
-                        appWebViewViewModel.getReceivedWebEvents().observe(ShareTargetHandler.this, (webEvents) -> {
-                            if (webEvents == null) {
+                    ShareTargetHandlerRepository.createAnnotationFromText(text, ShareTargetHandler.this, authenticationViewModel, new ShareTargetHandlerRepository.CreateListener<CreateAnnotationMutation.Data>() {
+                        @Override
+                        public void onAnnotationUri(String uri) {
+                            installAppWebView(uri);
+                        }
+
+                        @Override
+                        public void onAnnotationCreated(CreateAnnotationMutation.Data data) {
+                            if (data == null) {
+                                // Error is handled in WebView
+                                Log.d("handleSendFromText", "CreateAnnotationMutation.Data is null");
                                 return;
                             }
 
-                            webEvents.iterator().forEachRemaining(webEvent -> {
-                                if (webEvent.getType().equals(WebEvent.TYPE_ACTIVITY_FINISH)) {
-                                    CreateAnnotationMutation.CreateAnnotation annotation = data.createAnnotation();
-                                    if (annotation != null) {
-                                        ShareTargetHandlerRepository.displayAnnotationCreatedNotification(annotation.annotation().id(), ShareTargetHandler.this);
+                            runOnUiThread(() -> {
+                                appWebViewViewModel.getReceivedWebEvents().observe(ShareTargetHandler.this, (webEvents) -> {
+                                    if (webEvents == null) {
+                                        return;
                                     }
-                                    finish();
-                                }
+
+                                    webEvents.iterator().forEachRemaining(webEvent -> {
+                                        if (webEvent.getType().equals(WebEvent.TYPE_ACTIVITY_FINISH)) {
+                                            CreateAnnotationMutation.CreateAnnotation annotation = data.createAnnotation();
+                                            if (annotation != null) {
+                                                ShareTargetHandlerRepository.displayAnnotationCreatedNotification(annotation.annotation().id(), ShareTargetHandler.this);
+                                            }
+                                            finish();
+                                        }
+                                    });
+
+                                    appWebViewViewModel.clearReceivedWebEvents();
+                                });
                             });
+                        }
 
-                            appWebViewViewModel.clearReceivedWebEvents();
-                        });
+                        @Override
+                        public void onError(Exception e1) {
+                            Log.d("ShareTargetHandlerGraphQLService", "onError", e1);
+                        }
+
+                        @Override
+                        public void onGraphQLError(List<Error> errors) {
+                            errors.forEach(error -> Log.d("ShareTargetHandlerGraphQLService", "onGraphQLError - " + error.message()));
+                        }
                     });
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    Log.d("ShareTargetHandlerGraphQLService", "onError", e);
-                }
-
-                @Override
-                public void onGraphQLError(List<Error> errors) {
-                    errors.forEach(error -> Log.d("ShareTargetHandlerGraphQLService", "onGraphQLError - " + error.message()));
-                }
-            });
-        });
+                })
+        );
     }
 
     private void handleCreateFromImage(Intent intent) {
         Uri imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
-        ((MainApplication) getApplication()).getThreadPoolExecutor().execute(() -> {
-            authenticationViewModel.awaitInitialization();
-            if (authenticationViewModel.isSignedOut()) {
-                handleSignedOut();
-                return;
-            }
-
-            ShareTargetHandlerRepository.createAnnotationFromImage(imageUri, ShareTargetHandler.this, authenticationViewModel, new ShareTargetHandlerRepository.CreateListener<CreateAnnotationFromExternalTargetMutation.Data>() {
-                @Override
-                public void onAnnotationUri(String uri) {
-                    installAppWebView(uri);
-                }
-
-                @Override
-                public void onAnnotationCreated(CreateAnnotationFromExternalTargetMutation.Data data) {
-                    if (data == null) {
-                        // Error is handled in WebView.CreateAnnotationMutation.Data
-                        Log.i("handleCreateFromImage", "CreateAnnotationMutation.Data is null");
+        authenticationViewModel.awaitInitialization(
+                ((MainApplication) getApplication()).getThreadPoolExecutor(),
+                (e, aVoid) -> runOnUiThread(() -> {
+                    if (authenticationViewModel.isSignedOut()) {
+                        handleSignedOut();
                         return;
                     }
 
-                    runOnUiThread(() -> {
-                        appWebViewViewModel.getReceivedWebEvents().observe(ShareTargetHandler.this, (webEvents) -> {
-                            if (webEvents == null) {
+                    ShareTargetHandlerRepository.createAnnotationFromImage(imageUri, ShareTargetHandler.this, authenticationViewModel, new ShareTargetHandlerRepository.CreateListener<CreateAnnotationFromExternalTargetMutation.Data>() {
+                        @Override
+                        public void onAnnotationUri(String uri) {
+                            installAppWebView(uri);
+                        }
+
+                        @Override
+                        public void onAnnotationCreated(CreateAnnotationFromExternalTargetMutation.Data data) {
+                            if (data == null) {
+                                // Error is handled in WebView.CreateAnnotationMutation.Data
+                                Log.i("handleCreateFromImage", "CreateAnnotationMutation.Data is null");
                                 return;
                             }
 
-                            webEvents.iterator().forEachRemaining(webEvent -> {
-                                if (webEvent.getType().equals(WebEvent.TYPE_ACTIVITY_FINISH)) {
-                                    CreateAnnotationFromExternalTargetMutation.CreateAnnotationFromExternalTarget annotation = data.createAnnotationFromExternalTarget();
-                                    if (annotation != null) {
-                                        ShareTargetHandlerRepository.displayAnnotationCreatedNotification(annotation.id(), ShareTargetHandler.this);
+                            runOnUiThread(() -> {
+                                appWebViewViewModel.getReceivedWebEvents().observe(ShareTargetHandler.this, (webEvents) -> {
+                                    if (webEvents == null) {
+                                        return;
                                     }
-                                    finish();
-                                }
+
+                                    webEvents.iterator().forEachRemaining(webEvent -> {
+                                        if (webEvent.getType().equals(WebEvent.TYPE_ACTIVITY_FINISH)) {
+                                            CreateAnnotationFromExternalTargetMutation.CreateAnnotationFromExternalTarget annotation = data.createAnnotationFromExternalTarget();
+                                            if (annotation != null) {
+                                                ShareTargetHandlerRepository.displayAnnotationCreatedNotification(annotation.id(), ShareTargetHandler.this);
+                                            }
+                                            finish();
+                                        }
+                                    });
+
+                                    appWebViewViewModel.clearReceivedWebEvents();
+                                });
                             });
+                        }
 
-                            appWebViewViewModel.clearReceivedWebEvents();
-                        });
+                        @Override
+                        public void onError(Exception e1) {
+                            Log.d("ShareTargetHandlerGraphQLService", "onError", e1);
+                        }
+
+                        @Override
+                        public void onGraphQLError(List<Error> errors) {
+                            errors.forEach(error -> Log.d("ShareTargetHandlerGraphQLService", "onGraphQLError - " + error.message()));
+                        }
                     });
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    Log.d("ShareTargetHandlerGraphQLService", "onError", e);
-                }
-
-                @Override
-                public void onGraphQLError(List<Error> errors) {
-                    errors.forEach(error -> Log.d("ShareTargetHandlerGraphQLService", "onGraphQLError - " + error.message()));
-                }
-            });
-        });
+                })
+        );
 
     }
 
@@ -436,7 +431,16 @@ public class ShareTargetHandler extends AppCompatActivity {
     private void handleSignedOut() {
         Intent intent = new Intent(this, MainActivity.class);
         intent.setData(Uri.parse(WebRoutes.authenticate() + "?forResult=true"));
-        startAuthenticationForResult.launch(intent);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
+
+        // We must set FLAG_ACTIVITY_NEW_TASK for MainActivity to spawn Amplify hosted authentication UI correctly. With the flag
+        // set, startActivityForResult no longer works, so we shuttle along an intent to fire when MainActivity is finished.
+        Intent manualResultIntent = new Intent(getIntent());
+        manualResultIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_TASK_ON_HOME | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        manualResultIntent.setClass(this, ShareTargetHandler.class);
+        intent.putExtra(Constants.INTENT_MANUAL_FOR_RESULT_DATA, manualResultIntent);
+
+        startActivity(intent);
     }
 
     @Override

@@ -2,48 +2,16 @@
 mutation CreateAnnotation($input: CreateAnnotationInput!) {
   createAnnotation(input: $input) {
     annotation {
-      context
-      type
       id
-      created
-      generated
-      modified
-      motivation
-      via
-      canonical
-      creatorUsername
     }
     annotationCollections {
-      context
       id
-      type
-      label
-      total
-      firstAnnotationPageId
-      lastAnnotationPageId
-      creatorUsername
-      created
-      modified
     }
     annotationPageItems {
       id
-      created
-      modified
-      annotationId
-      annotationPageId
-      creatorUsername
     }
     annotationPage {
-      context
       id
-      type
-      startIndex
-      created
-      modified
-      partOfAnnotationCollectionId
-      nextAnnotationPageId
-      prevAnnotationPageId
-      creatorUsername
     }
   }
 }

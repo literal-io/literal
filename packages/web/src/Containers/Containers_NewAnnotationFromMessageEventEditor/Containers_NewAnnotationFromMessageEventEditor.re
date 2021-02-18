@@ -54,6 +54,50 @@ let make =
     ) => {
   let scrollContainerRef = React.useRef(Js.Nullable.null);
   let (pendingTagValue, setPendingTagValue) = React.useState(_ => "");
+  let previousAnnotation = React.useRef(annotation);
+  let textInputRef = React.useRef(Js.Nullable.null);
+
+  let _ =
+    React.useEffect1(
+      () => {
+        let currentTags = tagsValueSelector(~annotation, ~currentUser);
+        let previousTags =
+          tagsValueSelector(
+            ~annotation=previousAnnotation.current,
+            ~currentUser,
+          );
+
+        // scroll the newly added tag into view
+        let _ =
+          switch (
+            Js.Nullable.toOption(scrollContainerRef.current),
+            Js.Nullable.toOption(textInputRef.current),
+          ) {
+          | (Some(scrollContainerElem), Some(textInputElem))
+              when
+                Js.Array2.length(currentTags)
+                > Js.Array2.length(previousTags) =>
+            let rect =
+              Webapi.Dom.Element.getBoundingClientRect(textInputElem);
+            let targetTop =
+              Webapi.Dom.DomRect.top(rect)
+              +. Webapi.Dom.DomRect.height(rect)
+              +. Webapi.Dom.(Window.scrollY(window));
+
+            let _ =
+              Webapi.Dom.Element.scrollToWithOptions(
+                {"top": targetTop, "left": 0., "behavior": "smooth"},
+                scrollContainerElem,
+              );
+            ();
+          | _ => ()
+          };
+
+        previousAnnotation.current = annotation;
+        None;
+      },
+      [|annotation|],
+    );
 
   let handleTagsChange = value => {
     let textualBodies =
@@ -68,6 +112,7 @@ let make =
           textDirection: Some("LTR"),
           language: Some("EN_US"),
           processingLanguage: Some("EN_US"),
+          type_: "TEXTUAL_BODY",
         })
       );
     let updatedBody =
@@ -96,6 +141,7 @@ let make =
     let newTag =
       Containers_AnnotationEditor_Types.{text: value, id: None, href: None};
     let _ = handleTagsChange(Belt.Array.concat(tagsValue, [|newTag|]));
+    let _ = setPendingTagValue(_ => "");
     let _ =
       Lib_GraphQL.AnnotationCollection.makeId(
         ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
@@ -133,6 +179,7 @@ let make =
         tagsValue
         placeholder="Lorem Ipsum"
         disabled=true
+        textInputRef
       />
     </div>
     <div
@@ -150,6 +197,8 @@ let make =
         onValueChange=handlePendingTagChange
         onValueCommit=handlePendingTagCommit
         value=pendingTagValue
+        autoFocus=true
+        placeholder="Add Tag..."
       />
     </div>
   </div>;

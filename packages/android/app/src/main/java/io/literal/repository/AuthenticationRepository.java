@@ -1,6 +1,7 @@
 package io.literal.repository;
 
 import android.app.Activity;
+import android.util.Log;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
@@ -67,6 +68,7 @@ public class AuthenticationRepository {
                 .canCancel(false)
                 .build();
 
+        Log.i("AuthenticationRepository", "signInGoogle: " + activity);
         AWSMobileClient.getInstance().showSignIn(activity, signInUIOptions, new com.amazonaws.mobile.client.Callback<UserStateDetails>() {
             @Override
             public void onResult(UserStateDetails result) {

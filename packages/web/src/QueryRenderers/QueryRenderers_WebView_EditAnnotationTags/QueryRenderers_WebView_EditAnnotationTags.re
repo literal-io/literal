@@ -1,14 +1,6 @@
 module Data = {
   [@react.component]
-  let make = (~annotation, ~onAnnotationChange, ~currentUser) => {
-    let handleDismiss = () => {
-      let _ =
-        Service_Analytics.(track(Click({action: "close", label: None})));
-      let _ =
-        Webview.(postMessage(WebEvent.make(~type_="ACTIVITY_FINISH", ())));
-      ();
-    };
-
+  let make = (~annotation, ~onAnnotationChange, ~currentUser, ~onCollapse) => {
     let handleAnnotationChange = newAnnotation => {
       let _ = onAnnotationChange(newAnnotation);
       let _ =
@@ -35,7 +27,7 @@ module Data = {
         "overflow-y-auto",
       ])}>
       <Containers_NewAnnotationFromMessageEventHeader
-        onDismiss=handleDismiss
+        onDismiss={() => onCollapse()}
       />
       <Containers_NewAnnotationFromMessageEventEditor
         currentUser
@@ -53,6 +45,7 @@ let make =
       ~authentication: Hooks_CurrentUserInfo_Types.state,
       ~annotation,
       ~onAnnotationChange,
+      ~onCollapse,
     ) => {
   switch (rehydrated, authentication) {
   | (_, Unauthenticated) =>
@@ -64,6 +57,6 @@ let make =
   | (_, Loading)
   | (false, _) => <Loading />
   | (true, Authenticated(currentUser)) =>
-    <Data currentUser annotation onAnnotationChange />
+    <Data currentUser annotation onAnnotationChange onCollapse />
   };
 };
