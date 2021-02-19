@@ -1,5 +1,7 @@
 package io.literal.model;
 
+import android.util.Log;
+
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -7,6 +9,7 @@ import org.json.JSONObject;
 
 import java.util.Arrays;
 
+import io.literal.lib.Crypto;
 import io.literal.lib.JsonArrayUtil;
 import type.AnnotationTargetInput;
 import type.ExternalTargetInput;
@@ -60,6 +63,13 @@ public class ExternalTarget extends Target {
 
     @Override
     public AnnotationTargetInput toAnnotationTargetInput() {
+        String hashId = null;
+        try {
+            hashId = Crypto.sha256Hex(this.id);
+        } catch (Exception e) {
+            Log.d("ExternalTarget", "Unable to hash id", e);
+        }
+
         return AnnotationTargetInput.builder().externalTarget(
                 ExternalTargetInput.builder()
                         .id(this.id)
@@ -77,6 +87,7 @@ public class ExternalTarget extends Target {
                                         ? Arrays.asList(this.rights)
                                         : null
                         )
+                        .hashId(hashId)
                         .build()
         ).build();
     }

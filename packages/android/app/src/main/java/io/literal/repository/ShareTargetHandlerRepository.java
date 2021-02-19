@@ -26,6 +26,7 @@ import com.apollographql.apollo.api.Error;
 import com.apollographql.apollo.api.Response;
 import com.apollographql.apollo.exception.ApolloException;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -169,6 +170,11 @@ public class ShareTargetHandlerRepository {
         AWSAppSyncClient appSyncClient = AppSyncClientFactory.getInstance(context);
 
         for (int i = 0; i < annotations.length; i++) {
+            try {
+                Log.i("ShareTargetHandlerRepository", "creating annotation: " + annotations[i].toJson());
+            } catch (JSONException e) {
+                Log.d("ShareTargetHandlerRepository", "serialization error", e);
+            }
             Callback<ApolloException, CreateAnnotationMutation.Data> innerCallback = manyCallback.getCallback(i);
             appSyncClient
                     .mutate(

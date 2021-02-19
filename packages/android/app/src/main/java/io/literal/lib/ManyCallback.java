@@ -1,5 +1,7 @@
 package io.literal.lib;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -18,26 +20,24 @@ public class ManyCallback<TError, TData> {
         this.size = size;
         this.results = new ArrayList<>(size);
         this.callback = callback;
+        for (int i = 0; i < size; i++) {
+            this.results.add(null);
+        }
     }
 
     public Callback<TError, TData> getCallback(int idx) {
-        return new Callback<TError, TData>() {
-            @Override
-            public void invoke(TError e, TData data) {
-                results.set(idx, new Result<>(e, data));
+        return (e, data) -> {
+            results.set(idx, new Result<>(e, data));
 
-                Stream<Result<TError, TData>> errorStream = results.stream().filter((result) -> result.getError() != null);
-                Stream<Result<TError, TData>> dataStream = results.stream().filter((result) -> result.getData() != null);
+            List<TError> errorResult = results.stream().filter((result) -> result.getError() != null).map(Result::getError).collect(Collectors.toList());
+            List<TData> dataResult = results.stream().filter((result) -> result.getData() != null).map(Result::getData).collect(Collectors.toList());
 
-                if (errorStream.findFirst().isPresent() && !hasResult) {
-                    hasResult = true;
-                    callback.invoke(errorStream.findFirst().get().getError(), null);
-                }
-
-                if (dataStream.count() == size) {
-                    hasResult = true;
-                    callback.invoke(null, dataStream.map(Result::getData).collect(Collectors.toList()));
-                }
+            if (errorResult.size() > 0 && !hasResult) {
+                hasResult = true;
+                callback.invoke(errorResult.get(0), null);
+            } else if (dataResult.size() == size) {
+                hasResult = true;
+                callback.invoke(null, dataResult);
             }
         };
     }

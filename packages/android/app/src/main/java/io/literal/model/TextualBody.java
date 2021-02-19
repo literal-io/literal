@@ -1,19 +1,15 @@
 package io.literal.model;
 
-import com.google.gson.JsonObject;
-
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
-import io.literal.lib.AnnotationCollectionLib;
-import io.literal.lib.Constants;
 import io.literal.lib.JsonArrayUtil;
 import type.AnnotationBodyInput;
-import type.Motivation;
 import type.TextualBodyInput;
 import type.TextualBodyType;
 
@@ -25,13 +21,10 @@ public class TextualBody extends Body {
     private final TextDirection textDirection;
     private final String[] accessibility;
     private final String[] rights;
+    private final Motivation[] purpose;
     private final String value;
 
-    public String getValue() {
-        return value;
-    }
-
-    public TextualBody(String id, Format format, Language language, Language processingLanguage, TextDirection textDirection, String[] accessibility, String[] rights, @NotNull String value) {
+    public TextualBody(String id, Format format, Language language, Language processingLanguage, TextDirection textDirection, String[] accessibility, String[] rights, Motivation[] purpose, @NotNull String value) {
         super(Type.TEXTUAL_BODY);
         this.id = id;
         this.format = format;
@@ -39,8 +32,34 @@ public class TextualBody extends Body {
         this.processingLanguage = processingLanguage;
         this.textDirection = textDirection;
         this.accessibility = accessibility;
+        this.purpose = purpose;
         this.rights = rights;
         this.value = value;
+    }
+
+    public static TextualBody fromJson(JSONObject json) throws JSONException {
+        return new TextualBody(
+                json.optString("id"),
+                !json.isNull("format") ? Format.valueOf(json.getString("format")) : null,
+                !json.isNull("language") ? Language.valueOf(json.getString("language")) : null,
+                !json.isNull("processingLanguage") ? Language.valueOf(json.getString("processingLanguage")) : null,
+                !json.isNull("textDirection") ? TextDirection.valueOf(json.getString("textDirection")) : null,
+                !json.isNull("accessibility") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("accessibility")) : null,
+                !json.isNull("rights") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("rights")) : null,
+                !json.isNull("purpose")
+                        ? Arrays.stream(JsonArrayUtil.parseJsonStringArray(json.getJSONArray("purpose")))
+                        .map(Motivation::valueOf).toArray(Motivation[]::new)
+                        : null,
+                json.getString("value")
+        );
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public JSONObject toJson() throws JSONException {
@@ -52,6 +71,7 @@ public class TextualBody extends Body {
         output.put("textDirection", this.textDirection != null ? this.textDirection.name() : null);
         output.put("accessibility", this.accessibility != null ? new JSONArray(this.accessibility) : null);
         output.put("rights", this.rights != null ? new JSONArray(this.rights) : null);
+        output.put("purpose", this.purpose != null ? new JSONArray(Arrays.stream(this.purpose).map(Motivation::name).collect(Collectors.toList())) : null);
         output.put("value", this.value);
         output.put("type", this.type.name());
 
@@ -69,23 +89,14 @@ public class TextualBody extends Body {
                                 .format(this.format.toGraphQL())
                                 .textDirection(this.textDirection.toGraphQL())
                                 .language(this.language.toGraphQL())
-                                .purpose(Collections.singletonList(Motivation.TAGGING))
+                                .purpose(
+                                        this.purpose != null
+                                                ? Arrays.stream(this.purpose).map(Motivation::toGraphQL).collect(Collectors.toList())
+                                                : null
+                                )
                                 .type(TextualBodyType.TEXTUAL_BODY)
                                 .build()
                 )
                 .build();
-    }
-
-    public static TextualBody fromJson(JSONObject json) throws JSONException {
-        return new TextualBody(
-                json.optString("id"),
-                !json.isNull("format") ? Format.valueOf(json.getString("format")) : null,
-                !json.isNull("language") ? Language.valueOf(json.getString("language")) : null,
-                !json.isNull("processingLanguage") ? Language.valueOf(json.getString("processingLanguage")) : null,
-                !json.isNull("textDirection") ? TextDirection.valueOf(json.getString("textDirection")) : null,
-                !json.isNull("accessibility") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("accessibility")) : null,
-                !json.isNull("rights") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("rights")) : null,
-                json.getString("value")
-        );
     }
 }

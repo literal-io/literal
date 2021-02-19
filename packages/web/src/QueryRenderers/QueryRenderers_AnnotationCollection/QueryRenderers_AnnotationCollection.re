@@ -92,6 +92,22 @@ module Data = {
   };
 };
 
+module Error = {
+  [@react.component]
+  let make = (~error) => {
+    let _ =
+      React.useEffect1(
+        () => {
+          Js.log(error);
+          None;
+        },
+        [|error|],
+      );
+
+    <ErrorDisplay />;
+  };
+};
+
 module Empty = {
   [@react.component]
   let make = () => React.string("Empty...");
@@ -269,8 +285,7 @@ let make =
         annotations
       />
     };
-  | ({error: Some(_error)}, _, _) =>
-    /** FIXME: handle apollo error **/ <Empty />
+  | ({error: Some(error)}, _, _) => <Error error />
   | ({error: None, data: None, loading: false}, _, _) =>
     /** FIXME: handle unexpected error **/ <Empty />
   | (_, _, Unauthenticated) =>

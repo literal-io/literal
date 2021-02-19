@@ -4,15 +4,6 @@ mutation CreateAnnotation($input: CreateAnnotationInput!) {
     annotation {
       id
     }
-    annotationCollections {
-      id
-    }
-    annotationPageItems {
-      id
-    }
-    annotationPage {
-      id
-    }
   }
 }
 mutation UpdateAnnotation($input: UpdateAnnotationInput!) {

@@ -28,7 +28,10 @@ let make = (~value, ~onChange, ~disabled=?) => {
 
   let tags =
     value
-    ->Belt.Array.keep(({text}) => text != "recent")
+    ->Belt.Array.keep(({text}) =>
+        text
+        != Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel
+      )
     ->Belt.Array.mapWithIndex((idx, tag) =>
         <li className={Cn.fromList(["mb-5"])} key={tag.text}>
           <TagLinkAndInput

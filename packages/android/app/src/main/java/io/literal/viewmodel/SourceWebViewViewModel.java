@@ -9,7 +9,6 @@ import androidx.lifecycle.ViewModel;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -19,12 +18,22 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import io.literal.lib.AnnotationCollectionLib;
+import io.literal.lib.AnnotationLib;
+import io.literal.lib.ArrayUtil;
+import io.literal.lib.Constants;
 import io.literal.lib.Crypto;
 import io.literal.lib.DomainMetadata;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
+import io.literal.model.Body;
+import io.literal.model.Format;
+import io.literal.model.Language;
+import io.literal.model.Motivation;
 import io.literal.model.Target;
+import io.literal.model.TextDirection;
+import io.literal.model.TextualBody;
 import io.literal.model.TextualTarget;
 
 public class SourceWebViewViewModel extends ViewModel {
@@ -99,6 +108,43 @@ public class SourceWebViewViewModel extends ViewModel {
         try {
             ArrayList<Annotation> newAnnotations = (ArrayList<Annotation>) annotations.getValue().clone();
             Annotation annotation = Annotation.fromJson(new JSONObject(json));
+
+            boolean needsRecentTag =
+                    Arrays.stream(annotation.getBody() == null ? new Body[0] : annotation.getBody())
+                            .noneMatch((body) -> {
+                                if (body.getType() == Body.Type.TEXTUAL_BODY) {
+                                    TextualBody textualBody = (TextualBody) body;
+                                    return AnnotationLib.idComponentFromId(textualBody.getId()).equals(Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT);
+                                }
+                                return false;
+                            });
+            if (needsRecentTag) {
+                Body recentTag = new TextualBody(
+                        AnnotationCollectionLib.makeId(
+                                creatorUsername,
+                                Constants.RECENT_ANNOTATION_COLLECTION_LABEL
+                        ),
+                        Format.TEXT_PLAIN,
+                        Language.EN_US,
+                        Language.EN_US,
+                        TextDirection.LTR,
+                        null,
+                        null,
+                        new Motivation[]{Motivation.TAGGING},
+                        Constants.RECENT_ANNOTATION_COLLECTION_LABEL
+                );
+
+                annotation = new Annotation(
+                        ArrayUtil.add(
+                                annotation.getBody() != null ? annotation.getBody() : new Body[0],
+                                recentTag
+                        ),
+                        annotation.getTarget(),
+                        annotation.getMotivation(),
+                        annotation.getId()
+                );
+            }
+
             if (annotation.getId() == null) {
                 TextualTarget textualTarget = (TextualTarget)
                         Arrays.stream(annotation.getTarget()).filter(target -> target.getType() == Target.Type.TEXTUAL_TARGET)
@@ -110,19 +156,19 @@ public class SourceWebViewViewModel extends ViewModel {
                         creatorUsername,
                         valueHash
                 );
-                Annotation annotationWithId = new Annotation(
+
+                annotation = new Annotation(
                         annotation.getBody(),
                         annotation.getTarget(),
+                        annotation.getMotivation(),
                         annotationId
                 );
-                newAnnotations.add(annotationWithId);
-                annotations.setValue(newAnnotations);
-                return annotationWithId;
-            } else {
-                newAnnotations.add(annotation);
-                annotations.setValue(newAnnotations);
-                return annotation;
+
             }
+
+            newAnnotations.add(annotation);
+            annotations.setValue(newAnnotations);
+            return annotation;
         } catch (Exception e) {
             Log.d("SourceWebViewViewModel", "createAnnotation", e);
             return null;

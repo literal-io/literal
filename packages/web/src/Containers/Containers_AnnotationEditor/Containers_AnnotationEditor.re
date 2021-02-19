@@ -9,12 +9,14 @@ let textValueSelector = (~annotation) =>
       switch (target) {
       | `TextualTarget(_) => true
       | `ExternalTarget(_) => false
+      | `SpecificTarget(_) => false
       }
     )
   ->Belt.Option.flatMap(target =>
       switch (target) {
       | `TextualTarget(target) => Some(target##value)
       | `ExternalTarget(_) => None
+      | `SpecificTarget(_) => None
       }
     )
   ->Belt.Option.getWithDefault("");

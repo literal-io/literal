@@ -30,7 +30,10 @@ let tagsValueSelector =
         }
       )
     )
-  ->Belt.Option.getWithDefault([||]);
+  ->Belt.Option.getWithDefault([||])
+  ->Belt.Array.keep(({text}) =>
+      text != Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel
+    );
 
 module Data = {
   [@react.component]
