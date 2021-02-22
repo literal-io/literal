@@ -130,6 +130,7 @@ module GetAnnotationCollection = {
       ->Belt.Option.map(d =>
           switch (d) {
           | `TEXT_PLAIN => "TEXT_PLAIN"
+          | `TEXT_HTML => "TEXT_HTML"
           }
         )
       ->Js.Null.fromOption,
@@ -195,6 +196,7 @@ module GetAnnotationCollection = {
                 ->Belt.Option.map(d =>
                     switch (d) {
                     | `TEXT_PLAIN => "TEXT_PLAIN"
+                    | `TEXT_HTML => "TEXT_HTML"
                     }
                   )
                 ->Js.Null.fromOption,
@@ -237,6 +239,7 @@ module GetAnnotationCollection = {
                 ->Belt.Option.map(d =>
                     switch (d) {
                     | `TEXT_PLAIN => "TEXT_PLAIN"
+                    | `TEXT_HTML => "TEXT_HTML"
                     }
                   )
                 ->Js.Null.fromOption,

@@ -32,17 +32,8 @@ module GetAnnotationFragment = [%graphql
           accessibility
           rights
         }
-        ... on ExternalTarget {
-          __typename
-
-          externalTargetId: id
-          format
-          language
-          processingLanguage
-          textDirection
-          type_: type
-          accessibility
-          rights
+        ... on SpecificTarget {
+          
         }
       }
     }

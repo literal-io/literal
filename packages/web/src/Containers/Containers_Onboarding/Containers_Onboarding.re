@@ -133,6 +133,7 @@ let make = (~currentUser, ~onAnnotationIdChange) => {
                    "annotationGeneratorId": None,
                    "target": [|
                      {
+                       "specificTarget": None,
                        "externalTarget": None,
                        "textualTarget":
                          Some({

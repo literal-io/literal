@@ -62,7 +62,8 @@ module Annotation = {
 
   let targetInputFromTarget = target =>
     switch (target) {
-    | `TextualTarget(target) => {
+    | `TextualTarget(target) =>
+      Js.Promise.resolve({
         "textualTarget":
           Some({
             "id": target##textualTargetId,
@@ -75,21 +76,28 @@ module Annotation = {
             "value": target##value,
           }),
         "externalTarget": None,
-      }
-    | `ExternalTarget(target) => {
-        "textualTarget": None,
-        "externalTarget":
-          Some({
-            "id": target##externalTargetId,
-            "format": target##format,
-            "language": target##language,
-            "processingLanguage": target##processingLanguage,
-            "textDirection": target##textDirection,
-            "accessibility": target##accessibility,
-            "rights": target##rights,
-            "type": target##type_,
-          }),
-      }
+        "specificTarget": None,
+      })
+    | `ExternalTarget(target) =>
+      makeHash(target##externalTargetId)
+      |> Js.Promise.then_(hashId =>
+           Js.Promise.resolve({
+             "textualTarget": None,
+             "externalTarget":
+               Some({
+                 "id": target##externalTargetId,
+                 "format": target##format,
+                 "language": target##language,
+                 "processingLanguage": target##processingLanguage,
+                 "textDirection": target##textDirection,
+                 "accessibility": target##accessibility,
+                 "rights": target##rights,
+                 "type": target##type_,
+                 "hashId": hashId,
+               }),
+             "specificTarget": None,
+           })
+         )
     };
 
   let annotationFromCreateAnnotationInput = [%raw

@@ -10,13 +10,15 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       ->Belt.Array.getBy(target =>
           switch (target) {
           | `TextualTarget(_) => true
-          | `ExternalTarget(_) => false
+          | `ExternalTarget(_)
+          | `SpecificTarget(_) => false
           }
         )
       ->Belt.Option.flatMap(target =>
           switch (target) {
           | `TextualTarget(target) => Some(target##value)
-          | `ExternalTarget(_) => None
+          | `ExternalTarget(_)
+          | `SpecificTarget(_) => None
           }
         )
       ->Belt.Option.getWithDefault("")
@@ -130,10 +132,11 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
           ();
         };
 
-      updatedTarget->Belt.Array.map(
-        Lib_GraphQL.Annotation.targetInputFromTarget,
-      );
+      updatedTarget
+      ->Belt.Array.map(Lib_GraphQL.Annotation.targetInputFromTarget)
+      ->Js.Promise.all;
     };
+
     let tagsWithIds =
       tagsValue
       ->Belt.Array.map(tag => {
@@ -182,8 +185,8 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
          );
 
     let _ =
-      updateBodyInput
-      |> Js.Promise.then_(updateBodyInput => {
+      Js.Promise.all2((updateBodyInput, updateTargetInput))
+      |> Js.Promise.then_(((updateBodyInput, updateTargetInput)) => {
            let input = {
              "id": annotation##id,
              "creatorUsername":
@@ -250,7 +253,9 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
          })
       |> Js.Promise.then_(_ => {
            let _ =
-             Webview.(postMessage(WebEvent.make(~type_="ACTIVITY_FINISH", ())));
+             Webview.(
+               postMessage(WebEvent.make(~type_="ACTIVITY_FINISH", ()))
+             );
            Js.Promise.resolve();
          });
     ();

@@ -108,6 +108,7 @@ let make = (~currentUser) => {
                      "id": None,
                    }),
                  "externalTarget": None,
+                 "specificTarget": None,
                },
              |],
              "body": Js.Array2.length(body) > 0 ? Some(body) : None,

@@ -253,13 +253,15 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
     let modifiedTs =
       Js.Date.(make()->toISOString)->Js.Json.string->Js.Option.some;
     let _ = setTextValue(_ => ModifiedValue.make(textValue));
+
     let updateTargetInput = {
       let idx =
         annotation##target
         ->Belt.Array.getIndexBy(target =>
             switch (target) {
             | `TextualTarget(_) => true
-            | `ExternalTarget(_) => false
+            | `ExternalTarget(_)
+            | `SpecificTarget(_) => false
             }
           );
       let updatedTextualTarget =
@@ -272,7 +274,8 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
               Some(
                 `TextualTarget(Js.Obj.assign(copy, {"value": textValue})),
               );
-            | `ExternalTarget(_) => None
+            | `ExternalTarget(_)
+            | `SpecificTarget(_) => None
             }
           )
         ->Belt.Option.getWithDefault(
@@ -300,36 +303,44 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
           ();
         };
 
-      updatedTarget->Belt.Array.map(
-        Lib_GraphQL.Annotation.targetInputFromTarget,
-      );
+      updatedTarget
+      ->Belt.Array.map(Lib_GraphQL.Annotation.targetInputFromTarget)
+      ->Js.Promise.all;
     };
 
-    let variables =
-      PatchAnnotationMutation.makeVariables(
-        ~input={
-          "id": annotation##id,
-          "creatorUsername":
-            AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-          "operations": [|
-            {
-              "set":
-                Some({
-                  "body": None,
-                  "target": Some(updateTargetInput),
-                  "modified": None,
-                }),
-            },
-            {
-              "set":
-                Some({"body": None, "target": None, "modified": modifiedTs}),
-            },
-          |],
-        },
-        (),
-      );
-
-    let _ = handleSave(. variables, patchAnnotationMutation);
+    let _ =
+      updateTargetInput
+      |> Js.Promise.then_(updateTargetInput => {
+           let variables =
+             PatchAnnotationMutation.makeVariables(
+               ~input={
+                 "id": annotation##id,
+                 "creatorUsername":
+                   AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                 "operations": [|
+                   {
+                     "set":
+                       Some({
+                         "body": None,
+                         "target": Some(updateTargetInput),
+                         "modified": None,
+                       }),
+                   },
+                   {
+                     "set":
+                       Some({
+                         "body": None,
+                         "target": None,
+                         "modified": modifiedTs,
+                       }),
+                   },
+                 |],
+               },
+               (),
+             );
+           let _ = handleSave(. variables, patchAnnotationMutation);
+           Js.Promise.resolve();
+         });
     ();
   };
 
