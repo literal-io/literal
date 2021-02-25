@@ -55,62 +55,16 @@ module Data = {
                "choiceBody": None,
                "specificBody": None,
              };
-             let existingBodyInputs =
-               annotation##body
-               ->Belt.Option.getWithDefault([||])
-               ->Belt.Array.keepMap(body =>
-                   switch (body) {
-                   | `Nonexhaustive => None
-                   | `TextualBody(body) =>
-                     Some({
-                       "textualBody":
-                         Some({
-                           "id": body##id,
-                           "format": body##format,
-                           "processingLanguage": body##processingLanguage,
-                           "language": body##language,
-                           "textDirection": body##textDirection,
-                           "accessibility": body##accessibility,
-                           "rights": body##rights,
-                           "purpose": body##purpose,
-                           "value": body##value,
-                           "type": Some(`TEXTUAL_BODY),
-                         }),
-                       "externalBody": None,
-                       "choiceBody": None,
-                       "specificBody": None,
-                     })
-                   }
-                 );
              let input = {
                "id": annotation##id,
                "creatorUsername":
                  AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
                "operations": [|
                  {
-                   "set":
-                     Some({
-                       "body":
-                         Some(
-                           Js.Array2.concat(
-                             [|commitBodyInput|],
-                             existingBodyInputs,
-                           ),
-                         ),
-                       "target": None,
-                       "modified": None,
-                     }),
-                 },
-                 {
-                   "set":
-                     Some({
-                       "body": None,
-                       "target": None,
-                       "modified":
-                         Js.Date.(make()->toISOString)
-                         ->Js.Json.string
-                         ->Js.Option.some,
-                     }),
+                   "add":
+                     Some({"body": Some(commitBodyInput), "target": None}),
+                   "set": None,
+                   "remove": None,
                  },
                |],
              };

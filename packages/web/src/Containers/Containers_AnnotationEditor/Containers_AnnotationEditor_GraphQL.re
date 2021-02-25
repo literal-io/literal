@@ -32,9 +32,6 @@ module GetAnnotationFragment = [%graphql
           accessibility
           rights
         }
-        ... on SpecificTarget {
-          
-        }
       }
     }
   |}
