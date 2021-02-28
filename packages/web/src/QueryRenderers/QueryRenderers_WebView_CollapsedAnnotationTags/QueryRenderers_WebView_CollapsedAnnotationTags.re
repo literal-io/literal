@@ -20,7 +20,7 @@ let tagsValueSelector =
                 )
               );
           Some(
-            Containers_AnnotationEditor_Types.{
+            Containers_AnnotationEditor_Tag.{
               text: body.value,
               id: body.id,
               href,
@@ -45,7 +45,7 @@ module Data = {
         ? <ul className={Cn.fromList(["flex-1", "overflow-x-auto", "py-2"])}>
             {tags
              ->Belt.Array.mapWithIndex(
-                 (idx, tag: Containers_AnnotationEditor_Types.tag) =>
+                 (idx, tag: Containers_AnnotationEditor_Tag.t) =>
                  <div
                    className={Cn.fromList([
                      Cn.on("ml-6", idx == 0),

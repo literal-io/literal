@@ -1,5 +1,4 @@
 open Containers_Onboarding_GraphQL;
-open Containers_Onboarding_Apollo;
 
 let onboardingNotes = [|
   (
@@ -54,7 +53,7 @@ let make = (~currentUser, ~onAnnotationIdChange) => {
                   )
                   |> Js.Promise.then_(id =>
                        Js.Promise.resolve(
-                         Containers_AnnotationEditor_Types.{
+                         Containers_AnnotationEditor_Tag.{
                            id: Some(id),
                            text: tag,
                            href: None,
@@ -64,7 +63,7 @@ let make = (~currentUser, ~onAnnotationIdChange) => {
                 )
               ->Belt.Array.concat([|
                   Js.Promise.resolve(
-                    Containers_AnnotationEditor_Types.{
+                    Containers_AnnotationEditor_Tag.{
                       id:
                         Some(
                           Lib_GraphQL.AnnotationCollection.(
@@ -92,63 +91,55 @@ let make = (~currentUser, ~onAnnotationIdChange) => {
 
             Js.Promise.all2((annotationIdP, tagsWithIdsP))
             |> Js.Promise.then_(((annotationId, tagsWithIds)) =>
-                 Js.Promise.resolve({
-                   "context": [|Lib_GraphQL.Annotation.defaultContext|],
-                   "type": [|`ANNOTATION|],
-                   "id": annotationId,
-                   "body":
-                     tagsWithIds
-                     ->Belt.Array.map(
-                         (Containers_AnnotationEditor_Types.{text, id}) =>
-                         {
-                           "textualBody":
-                             Some({
-                               "id": id,
-                               "value": text,
-                               "purpose": Some([|`TAGGING|]),
-                               "rights": None,
-                               "accessibility": None,
-                               "format": Some(`TEXT_PLAIN),
-                               "textDirection": Some(`LTR),
-                               "language": Some(`EN_US),
-                               "processingLanguage": Some(`EN_US),
-                               "type": Some(`TEXTUAL_BODY),
-                             }),
-                           "externalBody": None,
-                           "choiceBody": None,
-                           "specificBody": None,
-                         }
+                 Lib_GraphQL_CreateAnnotationMutation.Input.make(
+                   ~context=[|Lib_GraphQL.Annotation.defaultContext|],
+                   ~id=annotationId,
+                   ~body=
+                     tagsWithIds->Belt.Array.map(
+                       (Containers_AnnotationEditor_Tag.{text, id}) =>
+                       Lib_GraphQL_AnnotationBodyInput.(
+                         makeBody(
+                           ~textualBody=
+                             makeTextualBody(
+                               ~id=id->Belt.Option.getExn,
+                               ~value=text,
+                               ~purpose=[|`TAGGING|],
+                               ~format=`TEXT_PLAIN,
+                               ~textDirection=`LTR,
+                               ~language=`EN_US,
+                               ~processingLanguage=`EN_US,
+                               (),
+                             ),
+                           (),
+                         )
                        )
-                     ->Js.Option.some,
-                   "created": Some(ts->Js.Json.string),
-                   "modified": Some(ts->Js.Json.string),
-                   "generated": Some(ts->Js.Json.string),
-                   "audience": None,
-                   "canonical": None,
-                   "stylesheet": None,
-                   "via": None,
-                   "motivation": Some([|`HIGHLIGHTING|]),
-                   "creatorUsername":
+                     ),
+                   ~created=ts->Js.Json.string,
+                   ~modified=ts->Js.Json.string,
+                   ~generated=ts->Js.Json.string,
+                   ~motivation=[|`HIGHLIGHTING|],
+                   ~creatorUsername=
                      AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-                   "annotationGeneratorId": None,
-                   "target": [|
-                     {
-                       "specificTarget": None,
-                       "externalTarget": None,
-                       "textualTarget":
-                         Some({
-                           "format": Some(`TEXT_PLAIN),
-                           "language": Some(`EN_US),
-                           "processingLanguage": Some(`EN_US),
-                           "textDirection": Some(`LTR),
-                           "accessibility": None,
-                           "rights": None,
-                           "value": text,
-                           "id": None,
-                         }),
-                     },
+                   ~target=[|
+                     Lib_GraphQL_AnnotationTargetInput.(
+                       make(
+                         ~textualTarget=
+                           makeTextualTarget(
+                             ~id=Uuid.makeV4(),
+                             ~value=text,
+                             ~textDirection=`LTR,
+                             ~processingLanguage=`EN_US,
+                             ~language=`EN_US,
+                             ~format=`TEXT_PLAIN,
+                             (),
+                           ),
+                         (),
+                       )
+                     ),
                    |],
-                 })
+                   (),
+                 )
+                 ->Js.Promise.resolve
                );
           });
 
@@ -190,7 +181,11 @@ let make = (~currentUser, ~onAnnotationIdChange) => {
                  (),
                );
              let result = onboardingMutation(~variables, ());
-             let _ = updateCache(~currentUser, ~createAnnotationInputs);
+             let _ =
+               Lib_GraphQL_CreateAnnotationMutation.Apollo.updateCacheMany(
+                 ~currentUser,
+                 ~inputs=createAnnotationInputs,
+               );
              result;
            })
         |> Js.Promise.then_(((mutationResult, _)) => {

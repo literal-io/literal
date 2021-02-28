@@ -8,7 +8,7 @@ let make = (~currentUser) => {
   let (tagsValue, setTagsValue) =
     React.useState(() =>
       [|
-        Containers_AnnotationEditor_Types.{
+        Containers_AnnotationEditor_Tag.{
           text: Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel,
           id:
             Some(
@@ -54,24 +54,23 @@ let make = (~currentUser) => {
             };
           id
           |> Js.Promise.then_(id =>
-               Js.Promise.resolve({
-                 "textualBody":
-                   Some({
-                     "id": Some(id),
-                     "value": tag.text,
-                     "purpose": Some([|`TAGGING|]),
-                     "rights": None,
-                     "accessibility": None,
-                     "format": Some(`TEXT_PLAIN),
-                     "textDirection": Some(`LTR),
-                     "language": Some(`EN_US),
-                     "processingLanguage": Some(`EN_US),
-                     "type": Some(`TEXTUAL_BODY),
-                   }),
-                 "externalBody": None,
-                 "choiceBody": None,
-                 "specificBody": None,
-               })
+               Lib_GraphQL_AnnotationBodyInput.(
+                 makeBody(
+                   ~textualBody=
+                     makeTextualBody(
+                       ~id,
+                       ~value=tag.text,
+                       ~purpose=[|`TAGGING|],
+                       ~format=`TEXT_PLAIN,
+                       ~textDirection=`LTR,
+                       ~language=`EN_US,
+                       ~processingLanguage=`EN_US,
+                       (),
+                     ),
+                   (),
+                 )
+               )
+               ->Js.Promise.resolve
              );
         })
       ->Js.Promise.all;
@@ -79,45 +78,37 @@ let make = (~currentUser) => {
     let _ =
       Js.Promise.all2((idPromise, bodyPromise))
       |> Js.Promise.then_(((id, body)) => {
-           let input = {
-             "context": [|Lib_GraphQL.Annotation.defaultContext|],
-             "type": [|`ANNOTATION|],
-             "id": id,
-             "created": None,
-             "modified": None,
-             "generated": None,
-             "audience": None,
-             "canonical": None,
-             "stylesheet": None,
-             "via": None,
-             "motivation": Some([|`HIGHLIGHTING|]),
-             "creatorUsername":
-               AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-             "annotationGeneratorId": None,
-             "target": [|
-               {
-                 "textualTarget":
-                   Some({
-                     "format": Some(`TEXT_PLAIN),
-                     "language": Some(`EN_US),
-                     "processingLanguage": Some(`EN_US),
-                     "textDirection": Some(`LTR),
-                     "accessibility": None,
-                     "rights": None,
-                     "value": textValue,
-                     "id": None,
-                   }),
-                 "externalTarget": None,
-                 "specificTarget": None,
-               },
-             |],
-             "body": Js.Array2.length(body) > 0 ? Some(body) : None,
-           };
-
+           let input =
+             Lib_GraphQL_CreateAnnotationMutation.Input.make(
+               ~context=[|Lib_GraphQL.Annotation.defaultContext|],
+               ~id,
+               ~motivation=[|`HIGHLIGHTING|],
+               ~creatorUsername=
+                 AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+               ~target=[|
+                 Lib_GraphQL_AnnotationTargetInput.(
+                   make(
+                     ~textualTarget=
+                       makeTextualTarget(
+                         ~format=`TEXT_PLAIN,
+                         ~language=`EN_US,
+                         ~processingLanguage=`EN_US,
+                         ~textDirection=`LTR,
+                         ~value=textValue,
+                         ~id=Uuid.makeV4(),
+                         (),
+                       ),
+                     (),
+                   )
+                 ),
+               |],
+               ~body=?Js.Array2.length(body) > 0 ? Some(body) : None,
+               (),
+             );
            let variables = CreateAnnotationMutation.makeVariables(~input, ());
 
            let _ =
-             Containers_NewAnnotationEditor_Apollo.updateCache(
+             Lib_GraphQL_CreateAnnotationMutation.Apollo.updateCache(
                ~currentUser,
                ~input,
              );
@@ -145,7 +136,7 @@ let make = (~currentUser) => {
       setTagsValue(tags =>
         Js.Array2.concat(
           [|
-            Containers_AnnotationEditor_Types.{
+            Containers_AnnotationEditor_Tag.{
               text: value,
               id: None,
               href: None,
@@ -173,7 +164,7 @@ let make = (~currentUser) => {
                        ~pos=idx,
                        ~remove=1,
                        ~add=[|
-                         Containers_AnnotationEditor_Types.{
+                         Containers_AnnotationEditor_Tag.{
                            text: value,
                            id: Some(id),
                            href: None,

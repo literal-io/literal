@@ -8,7 +8,7 @@ let make = (~value, ~onChange, ~disabled=?) => {
       ->Belt.Array.get(idx)
       ->Belt.Option.flatMap(tag =>
           newText->Belt.Option.map(text =>
-            Containers_AnnotationEditor_Types.{id: None, href: None, text}
+            Containers_AnnotationEditor_Tag.{id: None, href: None, text}
           )
         );
     let newValue = Belt.Array.copy(value);

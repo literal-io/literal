@@ -208,33 +208,41 @@ module FromFileUrl = {
                  ++ result.AwsAmplify.Storage.key;
                };
 
-               let creatorUsername =
-                 currentUser->AwsAmplify.Auth.CurrentUserInfo.username;
-               let variables =
-                 CreateAnnotationFromExternalTargetMutation.makeVariables(
-                   ~input={
-                     "creatorUsername": creatorUsername,
-                     "annotationId":
-                       Some(
-                         Lib_GraphQL.Annotation.makeIdFromComponent(
-                           ~creatorUsername,
-                           ~annotationIdComponent=fileId,
-                         ),
-                       ),
-                     "externalTarget": {
-                       "format": Some(`TEXT_PLAIN),
-                       "language": Some(`EN_US),
-                       "processingLanguage": Some(`EN_US),
-                       "type": Some(`IMAGE),
-                       "rights": None,
-                       "accessibility": None,
-                       "textDirection": Some(`LTR),
-                       "id": s3Url,
-                     },
-                   },
-                   (),
-                 );
-               createAnnotationFromExternalTargetMutation(~variables, ());
+               Lib_GraphQL.makeHash(s3Url)
+               |> Js.Promise.then_(hashId => {
+                    let creatorUsername =
+                      currentUser->AwsAmplify.Auth.CurrentUserInfo.username;
+                    let variables =
+                      CreateAnnotationFromExternalTargetMutation.makeVariables(
+                        ~input=
+                          Lib_GraphQL_CreateAnnotationFromExternalTargetMutation.Input.make(
+                            ~creatorUsername,
+                            ~annotationId=
+                              Lib_GraphQL.Annotation.makeIdFromComponent(
+                                ~creatorUsername,
+                                ~annotationIdComponent=fileId,
+                              )
+                              ->Js.Option.some,
+                            ~externalTarget=
+                              Lib_GraphQL_AnnotationTargetInput.makeExternalTarget(
+                                ~id=s3Url,
+                                ~format=`TEXT_PLAIN,
+                                ~language=`EN_US,
+                                ~processingLanguage=`EN_US,
+                                ~type_=`IMAGE,
+                                ~textDirection=`LTR,
+                                ~hashId,
+                                (),
+                              ),
+                          ),
+                        (),
+                      );
+
+                    createAnnotationFromExternalTargetMutation(
+                      ~variables,
+                      (),
+                    );
+                  });
              })
           |> Js.Promise.then_(((result, _)) => {
                let _ =

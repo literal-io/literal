@@ -36,12 +36,30 @@ module GetAnnotationCollection = {
     "id": string,
     "body":
       Js.Null.t(
-        array({
+        array(
+          Js.Null.t({
+            .
+            "__typename": string,
+            "id": string,
+            "value": string,
+            "purpose": Js.Null.t(array(string)),
+            "format": Js.Null.t(string),
+            "language": Js.Null.t(string),
+            "processingLanguage": Js.Null.t(string),
+            "accessibility": Js.Null.t(array(string)),
+            "rights": Js.Null.t(array(string)),
+            "textDirection": Js.Null.t(string),
+          }),
+        ),
+      ),
+    "target":
+      array(
+        Js.Null.t({
           .
           "__typename": string,
-          "id": Js.Null.t(string),
-          "value": string,
-          "purpose": Js.Null.t(array(string)),
+          "value": Js.Null.t(string),
+          "textualTargetId": Js.Null.t(string),
+          "externalTargetId": Js.Null.t(string),
           "format": Js.Null.t(string),
           "language": Js.Null.t(string),
           "processingLanguage": Js.Null.t(string),
@@ -50,20 +68,6 @@ module GetAnnotationCollection = {
           "textDirection": Js.Null.t(string),
         }),
       ),
-    "target":
-      array({
-        .
-        "__typename": string,
-        "value": Js.Null.t(string),
-        "textualTargetId": Js.Null.t(string),
-        "externalTargetId": Js.Null.t(string),
-        "format": Js.Null.t(string),
-        "language": Js.Null.t(string),
-        "processingLanguage": Js.Null.t(string),
-        "accessibility": Js.Null.t(array(string)),
-        "rights": Js.Null.t(array(string)),
-        "textDirection": Js.Null.t(string),
-      }),
   };
   /**
    * Apollo cache representation of the above query. Note that this will
@@ -101,7 +105,7 @@ module GetAnnotationCollection = {
 
   let parsedTextualBodyToCache = d => {
     "__typename": "TextualBody",
-    "id": d##id->Js.Null.fromOption,
+    "id": d##id,
     "value": d##value,
     "purpose":
       d##purpose
@@ -179,17 +183,20 @@ module GetAnnotationCollection = {
               | `Nonexhaustive => None
               }
             )
-          ->Belt.Array.map(parsedTextualBodyToCache)
+          ->Belt.Array.map(body =>
+              body->parsedTextualBodyToCache->Js.Null.return
+            )
         )
       ->Js.Null.fromOption,
     "target":
       annotation##target
       ->Belt.Array.map(d =>
           switch (d) {
-          | `TextualTarget(d) => {
+          | `TextualTarget(d) =>
+            {
               "__typename": "TextualTarget",
               "value": Js.Null.return(d##value),
-              "textualTargetId": d##textualTargetId->Js.Null.fromOption,
+              "textualTargetId": d##textualTargetId->Js.Null.return,
               "externalTargetId": Js.Null.empty,
               "format":
                 d##format
@@ -229,49 +236,8 @@ module GetAnnotationCollection = {
                   )
                 ->Js.Null.fromOption,
             }
-          | `ExternalTarget(d) => {
-              "__typename": "ExternalTarget",
-              "value": Js.Null.empty,
-              "textualTargetId": Js.Null.empty,
-              "externalTargetId": d##externalTargetId->Js.Null.return,
-              "format":
-                d##format
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `TEXT_PLAIN => "TEXT_PLAIN"
-                    | `TEXT_HTML => "TEXT_HTML"
-                    }
-                  )
-                ->Js.Null.fromOption,
-              "language":
-                d##language
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `EN_US => "EN_US"
-                    }
-                  )
-                ->Js.Null.fromOption,
-              "processingLanguage":
-                d##processingLanguage
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `EN_US => "EN_US"
-                    }
-                  )
-                ->Js.Null.fromOption,
-              "accessibility": d##accessibility->Js.Null.fromOption,
-              "rights": d##rights->Js.Null.fromOption,
-              "textDirection":
-                d##textDirection
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `LTR => "LTR"
-                    | `RTL => "RTL"
-                    | `AUTO => "AUTO"
-                    }
-                  )
-                ->Js.Null.fromOption,
-            }
+            ->Js.Null.return
+          | _ => Js.Null.empty
           }
         ),
   };

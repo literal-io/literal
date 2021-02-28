@@ -33,7 +33,7 @@ let tagsValueSelector =
                 )
               );
           Some(
-            Containers_AnnotationEditor_Types.{
+            Containers_AnnotationEditor_Tag.{
               text: body.value,
               id: body.id,
               href,
@@ -101,7 +101,7 @@ let make =
 
   let handleTagsChange = value => {
     let textualBodies =
-      value->Belt.Array.map((tag: Containers_AnnotationEditor_Types.tag) =>
+      value->Belt.Array.map((tag: Containers_AnnotationEditor_Tag.t) =>
         Lib_WebView_Model.Annotation.Body.TextualBody({
           id: tag.id,
           value: tag.text,
@@ -139,7 +139,7 @@ let make =
   let handlePendingTagChange = value => setPendingTagValue(_ => value);
   let handlePendingTagCommit = value => {
     let newTag =
-      Containers_AnnotationEditor_Types.{text: value, id: None, href: None};
+      Containers_AnnotationEditor_Tag.{text: value, id: None, href: None};
     let _ = handleTagsChange(Belt.Array.concat(tagsValue, [|newTag|]));
     let _ = setPendingTagValue(_ => "");
     let _ =
@@ -149,7 +149,7 @@ let make =
       )
       |> Js.Promise.then_(id => {
            let newTag =
-             Containers_AnnotationEditor_Types.{
+             Containers_AnnotationEditor_Tag.{
                text: value,
                id: Some(id),
                href: None,
