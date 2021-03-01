@@ -277,6 +277,30 @@ module GetAnnotationCollection = {
     Ramda.mergeDeepLeft(newQuery, cacheQuery);
   };
 
+  let makeCache = (~label, ~annotations): cache => {
+    "__typename": "Query",
+    "getAnnotationCollection":
+      Js.Null.return({
+        "__typename": "AnnotationCollection",
+        "label": label,
+        "first":
+          Js.Null.return({
+            "__typename": "AnnotationPage",
+            "items":
+              Js.Null.return({
+                "__typename": "ModelAnnotationPageItemConnection",
+                "nextToken": Js.Null.empty,
+                "items":
+                  annotations
+                  ->Belt.Array.map(a =>
+                      {"__typename": "AnnotationPageItem", "annotation": a}
+                    )
+                  ->Js.Null.return,
+              }),
+          }),
+      }),
+  };
+
   /**
    * FIXME: Return type is not actually Query.t, as Apollo cache
    * does not persist fragment alias fields -- everything is

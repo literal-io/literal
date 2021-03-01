@@ -70,7 +70,8 @@ module Input = {
 };
 
 module Apollo = {
-  let updateCache = (~currentUser, ~input) =>
+  let updateCache =
+      (~currentUser, ~input, ~createAnnotationCollection=false, ()) =>
     input##body
     ->Belt.Option.getWithDefault([||])
     ->Belt.Array.keepMap(body =>
@@ -78,65 +79,108 @@ module Apollo = {
         ->Lib_GraphQL_AnnotationBodyInput.toBody
         ->Belt.Option.flatMap(body =>
             switch (body) {
-            | `TextualBody(body) =>
-              Lib_GraphQL.Annotation.isBodyTag(body) ? Some(body##id) : None
+            | `TextualBody(textualBody) =>
+              Lib_GraphQL.Annotation.isBodyTag(textualBody)
+                ? Some(textualBody) : None
             | _ => None
             }
           )
       )
-    ->Belt.Array.forEach(annotationCollectionId =>
-        Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationToCollection(
-          ~annotation=
-            input
-            ->Input.toAnnotation
-            ->QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.parsedAnnotationToCache,
-          ~currentUser,
-          ~annotationCollectionId,
-        )
-      );
-
-  let updateCacheMany = (~currentUser, ~inputs) =>
-    inputs
-    ->Belt.Array.map(input => {
+    ->Belt.Array.forEach(textualBody => {
         let cacheAnnotation =
           input
           ->Input.toAnnotation
           ->QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.parsedAnnotationToCache;
+        let onCreateAnnotationCollection =
+          createAnnotationCollection
+            ? () =>
+                QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.makeCache(
+                  ~label=textualBody##value,
+                  ~annotations=[|cacheAnnotation|],
+                )
+                ->Js.Option.some
+            : (() => None);
 
-        input##body
-        ->Belt.Option.getWithDefault([||])
-        ->Belt.Array.keepMap(body =>
-            body
-            ->Lib_GraphQL_AnnotationBodyInput.toBody
-            ->Belt.Option.flatMap(body =>
-                switch (body) {
-                | `TextualBody(body) =>
-                  Lib_GraphQL.Annotation.isBodyTag(body)
-                    ? Some((body##id, cacheAnnotation)) : None
-                | _ => None
-                }
-              )
-          );
-      })
-    ->Belt.Array.concatMany
+        Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationToCollection(
+          ~annotation=cacheAnnotation,
+          ~currentUser,
+          ~annotationCollectionId=textualBody##id,
+          ~onCreateAnnotationCollection,
+        );
+      });
+
+  let updateCacheMany =
+      (~currentUser, ~inputs, ~createAnnotationCollection=false, ()) => {
+    let textualBodyAnnotationTuples =
+      inputs
+      ->Belt.Array.map(input => {
+          let cacheAnnotation =
+            input
+            ->Input.toAnnotation
+            ->QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.parsedAnnotationToCache;
+
+          input##body
+          ->Belt.Option.getWithDefault([||])
+          ->Belt.Array.keepMap(body =>
+              body
+              ->Lib_GraphQL_AnnotationBodyInput.toBody
+              ->Belt.Option.flatMap(body =>
+                  switch (body) {
+                  | `TextualBody(body) =>
+                    Lib_GraphQL.Annotation.isBodyTag(body)
+                      ? Some((body, cacheAnnotation)) : None
+                  | _ => None
+                  }
+                )
+            );
+        })
+      ->Belt.Array.concatMany;
+
+    let textualBodyById =
+      textualBodyAnnotationTuples->Belt.Array.reduce(
+        Js.Dict.empty(),
+        (agg, (textualBody, _)) => {
+          if (Js.Dict.get(agg, textualBody##id)->Js.Option.isNone) {
+            let _ = Js.Dict.set(agg, textualBody##id, textualBody);
+            ();
+          };
+          agg;
+        },
+      );
+
+    textualBodyAnnotationTuples
     ->Belt.Array.reduce(
         Js.Dict.empty(),
-        (agg, (annotationCollectionId, cacheAnnotation)) => {
+        (agg, (textualBody, cacheAnnotation)) => {
           let annotations =
             agg
-            ->Js.Dict.get(annotationCollectionId)
+            ->Js.Dict.get(textualBody##id)
             ->Belt.Option.map(a => Belt.Array.concat(a, [|cacheAnnotation|]))
             ->Belt.Option.getWithDefault([|cacheAnnotation|]);
-          let _ = Js.Dict.set(agg, annotationCollectionId, annotations);
+          let _ = Js.Dict.set(agg, textualBody##id, annotations);
           agg;
         },
       )
     ->Js.Dict.entries
-    ->Belt.Array.forEach(((annotationCollectionId, annotations)) =>
+    ->Belt.Array.forEach(((annotationCollectionId, annotations)) => {
+        let onCreateAnnotationCollection =
+          createAnnotationCollection
+            ? () =>
+                Js.Dict.get(textualBodyById, annotationCollectionId)
+                ->Belt.Option.map(textualBody =>
+                    QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.makeCache(
+                      ~label=textualBody##value,
+                      ~annotations,
+                    )
+                  )
+            : (() => None);
+
         Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationsToCollection(
           ~annotations,
           ~annotationCollectionId,
           ~currentUser,
-        )
-      );
+          ~onCreateAnnotationCollection,
+        );
+      });
+  };
 };

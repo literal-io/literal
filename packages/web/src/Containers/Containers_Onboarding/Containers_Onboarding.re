@@ -185,6 +185,8 @@ let make = (~currentUser, ~onAnnotationIdChange) => {
                Lib_GraphQL_CreateAnnotationMutation.Apollo.updateCacheMany(
                  ~currentUser,
                  ~inputs=createAnnotationInputs,
+                 ~createAnnotationCollection=true,
+                 (),
                );
              result;
            })

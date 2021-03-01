@@ -111,6 +111,7 @@ let make = (~currentUser) => {
              Lib_GraphQL_CreateAnnotationMutation.Apollo.updateCache(
                ~currentUser,
                ~input,
+               (),
              );
            let _ = createAnnotationMutation(~variables, ());
            let _ =

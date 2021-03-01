@@ -353,6 +353,7 @@ module Apollo = {
 
     let cacheAnnotation =
       GetAnnotationCollection.parsedAnnotationToCache(updatedAnnotation);
+    let onCreateAnnotationCollection = () => None;
 
     let _ =
       getAnnotationCollectionOperations(
@@ -366,6 +367,7 @@ module Apollo = {
               ~annotation=cacheAnnotation,
               ~currentUser,
               ~annotationCollectionId,
+              ~onCreateAnnotationCollection,
             )
           | Remove(annotationCollectionId) =>
             Lib_GraphQL_AnnotationCollection.Apollo.removeAnnotationFromCollection(
