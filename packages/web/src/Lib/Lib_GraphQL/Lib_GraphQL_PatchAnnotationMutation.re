@@ -258,7 +258,7 @@ module Apollo = {
     | _ => annotation
     };
 
-  let applyRemoveOperation = (~op, ~annotation) =>
+  let applyRemoveOperation = (~op, ~annotation) => {
     switch (op##body, op##target) {
     | (Some(true), _) =>
       annotation
@@ -268,7 +268,8 @@ module Apollo = {
             annotation##body
             ->Belt.Option.getWithDefault([||])
             ->Belt.Array.copy;
-          let _ = Js.Array2.spliceInPlace(copy, ~pos=idx, ~remove=1);
+          let _ =
+            Js.Array2.spliceInPlace(copy, ~pos=idx, ~remove=1, ~add=[||]);
           Ramda.assoc(annotation, "body", copy);
         })
       ->Belt.Option.getWithDefault(annotation)
@@ -283,16 +284,9 @@ module Apollo = {
       ->Belt.Option.getWithDefault(annotation)
     | _ => annotation
     };
+  };
 
-  let updateCache =
-      (
-        ~annotation: {
-           ..
-           "body": option(array([> | `TextualBody({.. "id": string})])),
-         },
-        ~currentUser,
-        ~input,
-      ) => {
+  let updateCache = (~annotation, ~currentUser, ~input) => {
     let parsedOperations = input##operations->Belt.Array.map(Operation.parse);
 
     let updatedAnnotation =
