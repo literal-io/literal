@@ -36,7 +36,7 @@ public class RangeSelector extends Selector {
         return new RangeSelector(
                 Selector.fromJson(json.getJSONObject("startSelector")),
                 Selector.fromJson(json.getJSONObject("endSelector")),
-                json.has("refinedBy")
+                !json.isNull("refinedBy")
                         ? JsonArrayUtil.parseJsonObjectArray(
                         json.getJSONArray("refinedBy"),
                         new Selector[0],

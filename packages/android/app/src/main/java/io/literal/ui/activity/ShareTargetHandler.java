@@ -255,7 +255,7 @@ public class ShareTargetHandler extends AppCompatActivity {
 
         appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
 
-        sourceWebViewFragment = SourceWebView.newInstance(sourceWebViewUri);
+        sourceWebViewFragment = SourceWebView.newInstance(sourceWebViewUri, true);
         appWebViewFragment = AppWebView.newInstance(appWebViewUri);
         getSupportFragmentManager()
                 .beginTransaction()

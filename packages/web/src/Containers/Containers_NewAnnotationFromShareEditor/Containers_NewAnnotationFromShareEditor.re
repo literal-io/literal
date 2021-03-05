@@ -301,14 +301,13 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
     ])}>
     <div className={Cn.fromList(["px-6", "py-16"])}>
       <TextInput.Annotation
-        onTextChange=handleTextChange
-        onTagsChange=handleTagsChange
-        textValue
-        tagsValue
+        onChange=handleTextChange
+        value=textValue
         placeholder="Lorem Ipsum"
         autoFocus=true
         textInputRef
       />
+      <TagsList value=tagsValue onChange=handleTagsChange />
     </div>
     <div
       className={Cn.fromList([

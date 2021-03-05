@@ -43,6 +43,9 @@ import io.literal.lib.DomainMetadata;
 import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.model.Annotation;
+import io.literal.model.ExternalTarget;
+import io.literal.model.SpecificTarget;
+import io.literal.model.Target;
 import io.literal.repository.NotificationRepository;
 import io.literal.repository.ShareTargetHandlerRepository;
 import io.literal.viewmodel.AppWebViewViewModel;
@@ -52,8 +55,10 @@ import io.literal.viewmodel.SourceWebViewViewModel;
 public class SourceWebView extends Fragment {
 
     private static final String PARAM_INITIAL_URL = "PARAM_INITIAL_URL";
+    private static final String PARAM_ENABLE_APP_WEB_VIEW_BOTTOM_SHEET = "PARAM_ENABLE_APP_WEB_VIEW_BOTTOM_SHEET";
 
     private String paramInitialUrl;
+    private Boolean paramEnableAppWebViewBottomSheet;
     private io.literal.ui.view.SourceWebView webView;
     private Toolbar toolbar;
     private AppBarLayout appBarLayout;
@@ -62,13 +67,11 @@ public class SourceWebView extends Fragment {
     private AuthenticationViewModel authenticationViewModel;
     private AppWebViewViewModel appWebViewViewModel;
 
-    public SourceWebView() {
-    }
-
-    public static SourceWebView newInstance(String initialUrl) {
+    public static SourceWebView newInstance(String initialUrl, boolean enableAppWebViewBottomSheet) {
         SourceWebView fragment = new SourceWebView();
         Bundle args = new Bundle();
         args.putString(PARAM_INITIAL_URL, initialUrl);
+        args.putBoolean(PARAM_ENABLE_APP_WEB_VIEW_BOTTOM_SHEET, enableAppWebViewBottomSheet);
         fragment.setArguments(args);
         return fragment;
     }
@@ -78,6 +81,7 @@ public class SourceWebView extends Fragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             paramInitialUrl = getArguments().getString(PARAM_INITIAL_URL);
+            paramEnableAppWebViewBottomSheet = getArguments().getBoolean(PARAM_ENABLE_APP_WEB_VIEW_BOTTOM_SHEET);
         }
     }
 
@@ -138,8 +142,14 @@ public class SourceWebView extends Fragment {
 
             @Override
             public void onPageFinished(WebView view, String url) {
-                if (!sourceWebViewViewModel.getHasFinishedInitializing().getValue()) {
+                if (!isWebviewInitialized()) {
                     sourceWebViewViewModel.setHasFinishedInitializing(true);
+                }
+
+                highlightAnnotationTargets(sourceWebViewViewModel.getAnnotations().getValue());
+                Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+                if (focusedAnnotation != null) {
+                    dispatchFocusAnnotationWebEvent(focusedAnnotation);
                 }
             }
         });
@@ -167,46 +177,11 @@ public class SourceWebView extends Fragment {
                 return;
             }
 
-            try {
-                JSONArray output = JsonArrayUtil.stringifyObjectArray(annotations.toArray(new Annotation[0]), Annotation::toJson);
-                String script = sourceWebViewViewModel.getHighlightAnnotationTargetScript(
-                        getActivity().getAssets(), output
-                );
-                this.webView.evaluateJavascript(script, (result) -> {
-                    /** noop **/
-                });
-
-                Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
-                if (focusedAnnotation != null) {
-                    JSONObject focusAnnotationData = new JSONObject();
-                    focusAnnotationData.put("annotationId", focusedAnnotation.getId());
-                    Log.i("SourceWebView", "focusing annotation: " + focusedAnnotation.getId());
-                    sourceWebViewViewModel.dispatchWebEvent(new WebEvent(
-                            WebEvent.TYPE_FOCUS_ANNOTATION,
-                            UUID.randomUUID().toString(),
-                            focusAnnotationData
-                    ));
-                }
-            } catch (JSONException ex) {
-                Log.d("SourceWebView", "observe annotations", ex);
-            }
+            this.highlightAnnotationTargets(annotations);
+            this.dispatchFocusAnnotationWebEvent(sourceWebViewViewModel.getFocusedAnnotation().getValue());
         });
 
-        sourceWebViewViewModel.getFocusedAnnotation().observe(getActivity(), (focusedAnnotation) -> {
-            if (focusedAnnotation != null) {
-                try {
-                    JSONObject focusAnnotationData = new JSONObject();
-                    focusAnnotationData.put("annotationId", focusedAnnotation.getId());
-                    sourceWebViewViewModel.dispatchWebEvent(new WebEvent(
-                            WebEvent.TYPE_FOCUS_ANNOTATION,
-                            UUID.randomUUID().toString(),
-                            focusAnnotationData
-                    ));
-                } catch (JSONException e) {
-                    Log.d("SourceWebView", "Unable to dispatch WebEvent", e);
-                }
-            }
-        });
+        sourceWebViewViewModel.getFocusedAnnotation().observe(getActivity(), this::dispatchFocusAnnotationWebEvent);
 
         sourceWebViewViewModel.getDomainMetadata().observe(getActivity(), (domainMetadata) -> {
             if (domainMetadata != null) {
@@ -277,16 +252,18 @@ public class SourceWebView extends Fragment {
             appWebViewViewModel.clearReceivedWebEvents();
         });
 
-        appWebViewViewModel.getBottomSheetState().observe(requireActivity(), (bottomSheetState) -> {
-            switch (bottomSheetState) {
-                case BottomSheetBehavior.STATE_COLLAPSED:
-                    appBarLayout.setExpanded(true);
-                    break;
-                case BottomSheetBehavior.STATE_EXPANDED:
-                    appBarLayout.setExpanded(false);
-                    break;
-            }
-        });
+        if (paramEnableAppWebViewBottomSheet) {
+            appWebViewViewModel.getBottomSheetState().observe(requireActivity(), (bottomSheetState) -> {
+                switch (bottomSheetState) {
+                    case BottomSheetBehavior.STATE_COLLAPSED:
+                        appBarLayout.setExpanded(true);
+                        break;
+                    case BottomSheetBehavior.STATE_EXPANDED:
+                        appBarLayout.setExpanded(false);
+                        break;
+                }
+            });
+        }
 
         sourceWebViewViewModel.getWebEvents().observe(requireActivity(), (webEvents) -> {
             if (webEvents == null) {
@@ -321,7 +298,63 @@ public class SourceWebView extends Fragment {
         Annotation unwrappedAnnotation = annotation.get();
 
         sourceWebViewViewModel.setFocusedAnnotation(unwrappedAnnotation);
-        appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+        if (paramEnableAppWebViewBottomSheet) {
+            appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+        }
+    }
+
+    public void handleViewTargetForAnnotation(String annotationId, Target target) {
+        Annotation annotation = new Annotation(null, new Target[]{target}, null, annotationId);
+
+        String sourceUrl = null;
+        if (target.getType() == Target.Type.SPECIFIC_TARGET) {
+            Target source = ((SpecificTarget) target).getSource();
+            if (source.getType() == Target.Type.EXTERNAL_TARGET) {
+                sourceUrl = ((ExternalTarget) source).getId();
+            }
+        } else if (target.getType() == Target.Type.EXTERNAL_TARGET) {
+            sourceUrl = ((ExternalTarget) target).getId();
+        }
+        if (sourceUrl == null) {
+            Log.d("SourceWebView", "handleViewTargetForAnnotation: Unable to parse sourceUrl from Target");
+            return;
+        }
+
+        sourceWebViewViewModel.setHasFinishedInitializing(false);
+        webView.loadUrl(sourceUrl);
+        sourceWebViewViewModel.setFocusedAnnotation(annotation);
+    }
+
+    private void dispatchFocusAnnotationWebEvent(Annotation focusedAnnotation) {
+        if (focusedAnnotation != null && this.isWebviewInitialized()) {
+            try {
+                JSONObject focusAnnotationData = new JSONObject();
+                focusAnnotationData.put("annotationId", focusedAnnotation.getId());
+                sourceWebViewViewModel.dispatchWebEvent(new WebEvent(
+                        WebEvent.TYPE_FOCUS_ANNOTATION,
+                        UUID.randomUUID().toString(),
+                        focusAnnotationData
+                ));
+            } catch (JSONException ex) {
+                Log.d("SourceWebView", "Unable to dispatchFocusAnnotationWebEvent", ex);
+            }
+        }
+    }
+
+    private void highlightAnnotationTargets(ArrayList<Annotation> annotations) {
+        if (this.isWebviewInitialized()) {
+            try {
+                JSONArray output = JsonArrayUtil.stringifyObjectArray(annotations.toArray(new Annotation[0]), Annotation::toJson);
+                String script = sourceWebViewViewModel.getHighlightAnnotationTargetScript(
+                        getActivity().getAssets(), output
+                );
+                this.webView.evaluateJavascript(script, (result) -> {
+                    /** noop **/
+                });
+            } catch (JSONException ex) {
+                Log.d("SourceWebView", "Unable to highlightAnnotationTargets", ex);
+            }
+        }
     }
 
     private void handleAnnotationBlur() {
@@ -358,6 +391,11 @@ public class SourceWebView extends Fragment {
         } else {
             Log.d("SourceWebView", "handleDone: unable to call getActivity().finish()");
         }
+    }
+
+    /** Message channel is established and the desired page is loaded **/
+    private boolean isWebviewInitialized() {
+        return sourceWebViewViewModel != null && sourceWebViewViewModel.getHasFinishedInitializing() != null && sourceWebViewViewModel.getHasFinishedInitializing().getValue();
     }
 
     @Override

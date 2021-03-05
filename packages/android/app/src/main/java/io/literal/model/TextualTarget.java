@@ -5,6 +5,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.UUID;
+
 import io.literal.lib.JsonArrayUtil;
 import type.AnnotationTargetInput;
 import type.TextualTargetInput;
@@ -22,7 +24,7 @@ public class TextualTarget extends Target {
 
     public TextualTarget(String id, Format format, Language language, Language processingLanguage, TextDirection textDirection, String[] accessibility, String[] rights, @NotNull String value) {
         super(Type.TEXTUAL_TARGET);
-        this.id = id;
+        this.id = id == null || id.equals("") ? UUID.randomUUID().toString() : id;
         this.format = format;
         this.language = language;
         this.processingLanguage = processingLanguage;
@@ -77,6 +79,7 @@ public class TextualTarget extends Target {
                                 .processingLanguage(this.language.toGraphQL())
                                 .textDirection(this.textDirection.toGraphQL())
                                 .value(this.value)
+                                .id(this.id)
                                 .build()
                 )
                 .build();

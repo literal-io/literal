@@ -1,13 +1,17 @@
 package io.literal.model;
 
+import android.util.Log;
+
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+import io.literal.lib.Crypto;
 import io.literal.lib.JsonArrayUtil;
 import type.AnnotationBodyInput;
 import type.TextualBodyInput;
@@ -26,7 +30,17 @@ public class TextualBody extends Body {
 
     public TextualBody(String id, Format format, Language language, Language processingLanguage, TextDirection textDirection, String[] accessibility, String[] rights, Motivation[] purpose, @NotNull String value) {
         super(Type.TEXTUAL_BODY);
-        this.id = id;
+
+        String idWithDefault = id;
+        if (id == null || id.equals("")) {
+            try {
+                idWithDefault = Crypto.sha256Hex(value);
+            } catch (NoSuchAlgorithmException ex) {
+                Log.d("TextualBody", "Unable to create default id", ex);
+            }
+        }
+
+        this.id = idWithDefault;
         this.format = format;
         this.language = language;
         this.processingLanguage = processingLanguage;

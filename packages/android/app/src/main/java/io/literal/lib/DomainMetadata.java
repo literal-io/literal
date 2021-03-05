@@ -28,6 +28,9 @@ public class DomainMetadata {
     }
 
     public Bitmap getScaledFaviconWithBackground(Context context) {
+        if (this.favicon == null) {
+            return null;
+        }
         int faviconSize = context.getResources().getDimensionPixelSize(R.dimen.source_web_view_favicon_size);
         int padding = context.getResources().getDimensionPixelSize(R.dimen.source_web_view_favicon_padding);
         Bitmap scaledBitmap = Bitmap.createScaledBitmap(favicon, faviconSize, faviconSize, true);

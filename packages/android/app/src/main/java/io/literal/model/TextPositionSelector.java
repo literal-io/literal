@@ -34,7 +34,7 @@ public class TextPositionSelector extends Selector {
         return new TextPositionSelector(
                 json.getInt("start"),
                 json.getInt("end"),
-                json.has("refinedBy")
+                !json.isNull("refinedBy")
                         ? JsonArrayUtil.parseJsonObjectArray(json.getJSONArray("refinedBy"), new Selector[0], Selector::fromJson)
                         : null
         );

@@ -156,6 +156,40 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       },
       (annotation, currentUser),
     );
+  let handleExternalTargetClick = externalTarget => {
+    let _ =
+      Service_Analytics.(
+        track(Click({action: "open external target", label: None}))
+      );
+
+    let _ =
+      externalTarget
+      ->ExternalTargetMetadata_GraphQL.Webview.makeTarget
+      ->Belt.Option.forEach(target => {
+          let _ =
+            Webview.(
+              postMessage(
+                WebEvent.make(
+                  ~type_="VIEW_TARGET_FOR_ANNOTATION",
+                  ~data=
+                    Js.Json.object_(
+                      Js.Dict.fromList([
+                        ("annotationId", Js.Json.string(annotation##id)),
+                        (
+                          "target",
+                          target->Lib_WebView_Model.Annotation.Target.encode,
+                        ),
+                      ]),
+                    ),
+                  (),
+                ),
+              )
+            );
+          ();
+        });
+
+    ();
+  };
 
   let handleTagsChange = newTagsValue => {
     let modifiedTs =
@@ -392,12 +426,15 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
     ])}>
     <div className={Cn.fromList(["px-6", "py-16"])}>
       <TextInput.Annotation
-        onTextChange=handleTextChange
-        onTagsChange=handleTagsChange
-        textValue
-        tagsValue
+        onChange=handleTextChange
+        value=textValue
         textInputRef
       />
+      <ExternalTargetMetadata
+        annotationFragment=annotation##externalTargetMetadataAnnotationFragment
+        onClick=handleExternalTargetClick
+      />
+      <TagsList value=tagsValue onChange=handleTagsChange />
     </div>
   </div>;
 };

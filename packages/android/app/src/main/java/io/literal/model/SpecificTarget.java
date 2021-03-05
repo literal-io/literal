@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -21,10 +22,12 @@ public class SpecificTarget extends Target {
     public SpecificTarget(String id, @NotNull Target source, @NotNull Selector[] selector) {
         super(Type.SPECIFIC_TARGET);
 
-        this.id = id;
+        this.id = id == null || id.equals("") ? UUID.randomUUID().toString() : id;
         this.source = source;
         this.selector = selector;
     }
+
+    public Target getSource() { return source; };
 
     public static SpecificTarget fromJson(JSONObject json) throws JSONException {
         return new SpecificTarget(

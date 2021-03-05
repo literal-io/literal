@@ -110,23 +110,7 @@ module GetAnnotationCollection = {
     "purpose":
       d##purpose
       ->Belt.Option.map(d =>
-          d->Belt.Array.map(d =>
-            switch (d) {
-            | `TAGGING => "TAGGING"
-            | `ACCESSING => "ACCESSING"
-            | `BOOKMARKING => "BOOKMARKING"
-            | `CLASSIFYING => "CLASSIFYING"
-            | `COMMENTING => "COMMENTING"
-            | `DESCRIBING => "DESCRIBING"
-            | `EDITING => "EDITING"
-            | `HIGHLIGHTING => "HIGHLIGHTING"
-            | `IDENTIFYING => "IDENTIFYING"
-            | `LINKING => "LINKING"
-            | `MODERATING => "MODERATING"
-            | `QUESTIONING => "QUESTIONING"
-            | `REPLYING => "REPLYING"
-            }
-          )
+          d->Belt.Array.map(Lib_GraphQL_Motivation.toString)
         )
       ->Js.Null.fromOption,
     "format":
@@ -140,31 +124,17 @@ module GetAnnotationCollection = {
       ->Js.Null.fromOption,
     "language":
       d##language
-      ->Belt.Option.map(d =>
-          switch (d) {
-          | `EN_US => "EN_US"
-          }
-        )
+      ->Belt.Option.map(Lib_GraphQL_Language.toString)
       ->Js.Null.fromOption,
     "processingLanguage":
       d##processingLanguage
-      ->Belt.Option.map(d =>
-          switch (d) {
-          | `EN_US => "EN_US"
-          }
-        )
+      ->Belt.Option.map(Lib_GraphQL_Language.toString)
       ->Js.Null.fromOption,
     "accessibility": d##accessibility->Js.Null.fromOption,
     "rights": d##rights->Js.Null.fromOption,
     "textDirection":
       d##textDirection
-      ->Belt.Option.map(d =>
-          switch (d) {
-          | `LTR => "LTR"
-          | `RTL => "RTL"
-          | `AUTO => "AUTO"
-          }
-        )
+      ->Belt.Option.map(Lib_GraphQL_TextDirection.toString)
       ->Js.Null.fromOption,
   };
 
@@ -200,40 +170,21 @@ module GetAnnotationCollection = {
               "externalTargetId": Js.Null.empty,
               "format":
                 d##format
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `TEXT_PLAIN => "TEXT_PLAIN"
-                    | `TEXT_HTML => "TEXT_HTML"
-                    }
-                  )
+                ->Belt.Option.map(Lib_GraphQL_Format.toString)
                 ->Js.Null.fromOption,
               "language":
                 d##language
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `EN_US => "EN_US"
-                    }
-                  )
+                ->Belt.Option.map(Lib_GraphQL_Language.toString)
                 ->Js.Null.fromOption,
               "processingLanguage":
                 d##processingLanguage
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `EN_US => "EN_US"
-                    }
-                  )
+                ->Belt.Option.map(Lib_GraphQL_Language.toString)
                 ->Js.Null.fromOption,
               "accessibility": d##accessibility->Js.Null.fromOption,
               "rights": d##rights->Js.Null.fromOption,
               "textDirection":
                 d##textDirection
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `LTR => "LTR"
-                    | `RTL => "RTL"
-                    | `AUTO => "AUTO"
-                    }
-                  )
+                ->Belt.Option.map(Lib_GraphQL_TextDirection.toString)
                 ->Js.Null.fromOption,
             }
             ->Js.Null.return

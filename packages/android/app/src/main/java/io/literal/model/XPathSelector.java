@@ -40,7 +40,7 @@ public class XPathSelector extends Selector {
     public static XPathSelector fromJson(JSONObject json) throws JSONException {
         return new XPathSelector(
                 json.getString("value"),
-                json.has("refinedBy")
+                !json.isNull("refinedBy")
                     ? JsonArrayUtil.parseJsonObjectArray(json.getJSONArray("refinedBy"), new Selector[0], Selector::fromJson) : null
 
         );

@@ -173,14 +173,13 @@ let make =
     ])}>
     <div className={Cn.fromList(["px-6", "py-16"])}>
       <TextInput.Annotation
-        onTextChange={_ => ()}
-        onTagsChange=handleTagsChange
-        textValue
-        tagsValue
+        onChange={_ => ()}
+        value=textValue
         placeholder="Lorem Ipsum"
         disabled=true
         textInputRef
       />
+      <TagsList value=tagsValue onChange=handleTagsChange />
     </div>
     <div
       className={Cn.fromList([

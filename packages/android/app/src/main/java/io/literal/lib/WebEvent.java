@@ -10,15 +10,13 @@ public class WebEvent {
     // App WebView
     public static final String TYPE_ACTIVITY_FINISH = "ACTIVITY_FINISH";
     public static final String TYPE_ROUTER_REPLACE = "ROUTER_REPLACE";
-
     public static final String TYPE_AUTH_SIGN_IN = "AUTH_SIGN_IN";
     public static final String TYPE_AUTH_SIGN_IN_RESULT = "AUTH_SIGN_IN_RESULT";
-
     public static final String TYPE_AUTH_GET_TOKENS = "AUTH_GET_TOKENS";
     public static final String TYPE_AUTH_GET_TOKENS_RESULT = "AUTH_GET_TOKENS_RESULT";
-
     public static final String TYPE_AUTH_GET_USER_INFO = "AUTH_GET_USER_INFO";
     public static final String TYPE_AUTH_GET_USER_INFO_RESULT = "AUTH_GET_USER_INFO_RESULT";
+    public static final String TYPE_VIEW_TARGET_FOR_ANNOTATION = "VIEW_TARGET_FOR_ANNOTATION";
 
     // Source WebView
     public static final String TYPE_VIEW_STATE_EDIT_ANNOTATION_TAGS = "VIEW_STATE_EDIT_ANNOTATION_TAGS";

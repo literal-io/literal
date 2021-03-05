@@ -21,10 +21,11 @@ public class ExternalTarget extends Target {
     private final Language language;
     private final Language processingLanguage;
     private final TextDirection textDirection;
+    private final ResourceType resourceType;
     private final String[] accessibility;
     private final String[] rights;
 
-    public ExternalTarget(@NotNull String id, Format format, Language language, Language processingLanguage, TextDirection textDirection, String[] accessibility, String[] rights) {
+    public ExternalTarget(@NotNull String id, Format format, Language language, Language processingLanguage, TextDirection textDirection, String[] accessibility, String[] rights, ResourceType resourceType) {
         super(Type.EXTERNAL_TARGET);
         this.id = id;
         this.format = format;
@@ -33,17 +34,23 @@ public class ExternalTarget extends Target {
         this.textDirection = textDirection;
         this.accessibility = accessibility;
         this.rights = rights;
+        this.resourceType = resourceType;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public static ExternalTarget fromJson(JSONObject json) throws JSONException {
         return new ExternalTarget(
                 json.optString("id"),
-                json.has("format") ? Format.valueOf(json.getString("format")) : null,
-                json.has("language") ? Language.valueOf(json.getString("language")) : null,
-                json.has("processingLanguage") ? Language.valueOf(json.getString("processingLanguage")) : null,
-                json.has("textDirection") ? TextDirection.valueOf(json.getString("textDirection")) : null,
-                json.has("accessibility") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("accessibility")) : null,
-                json.has("rights") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("rights")) : null
+                !json.isNull("format") ? Format.valueOf(json.getString("format")) : null,
+                !json.isNull("language") ? Language.valueOf(json.getString("language")) : null,
+                !json.isNull("processingLanguage") ? Language.valueOf(json.getString("processingLanguage")) : null,
+                !json.isNull("textDirection") ? TextDirection.valueOf(json.getString("textDirection")) : null,
+                !json.isNull("accessibility") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("accessibility")) : null,
+                !json.isNull("rights") ? JsonArrayUtil.parseJsonStringArray(json.getJSONArray("rights")) : null,
+                !json.isNull("type") ? ResourceType.valueOf(json.getString("type")) : null
         );
     }
 
@@ -56,7 +63,7 @@ public class ExternalTarget extends Target {
         output.put("textDirection", this.textDirection != null ? this.textDirection.name() : null);
         output.put("accessibility", this.accessibility != null ? new JSONArray(this.accessibility) : null);
         output.put("rights", this.rights != null ? new JSONArray(this.rights) : null);
-        output.put("type", this.type.name());
+        output.put("type", this.resourceType);
 
         return output;
     }
@@ -73,10 +80,10 @@ public class ExternalTarget extends Target {
         return AnnotationTargetInput.builder().externalTarget(
                 ExternalTargetInput.builder()
                         .id(this.id)
-                        .format(this.format.toGraphQL())
-                        .language(this.language.toGraphQL())
-                        .processingLanguage(this.processingLanguage.toGraphQL())
-                        .textDirection(this.textDirection.toGraphQL())
+                        .format(this.format != null ? this.format.toGraphQL() : null)
+                        .language(this.language != null ? this.language.toGraphQL() : null)
+                        .processingLanguage(this.processingLanguage != null ? this.processingLanguage.toGraphQL() : null)
+                        .textDirection(this.textDirection != null ? this.textDirection.toGraphQL() : null)
                         .accessibility(
                                 this.accessibility != null
                                         ? Arrays.asList(this.accessibility)
@@ -88,6 +95,9 @@ public class ExternalTarget extends Target {
                                         : null
                         )
                         .hashId(hashId)
+                        .type(
+                                this.resourceType != null ? this.resourceType.toGraphQL() : null
+                        )
                         .build()
         ).build();
     }

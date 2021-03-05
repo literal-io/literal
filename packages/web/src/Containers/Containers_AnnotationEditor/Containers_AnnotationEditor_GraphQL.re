@@ -33,6 +33,7 @@ module GetAnnotationFragment = [%graphql
           rights
         }
       }
+      ...ExternalTargetMetadata_GraphQL.AnnotationFragment.ExternalTargetMetadataAnnotationFragment @bsField(name: "externalTargetMetadataAnnotationFragment")
     }
   |}
 ];
