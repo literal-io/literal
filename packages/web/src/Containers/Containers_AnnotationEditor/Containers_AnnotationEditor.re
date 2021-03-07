@@ -98,7 +98,7 @@ module ModifiedValue = {
 };
 
 [@react.component]
-let make = (~annotationFragment as annotation, ~currentUser) => {
+let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
   let (patchAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(PatchAnnotationMutation.definition);
   let scrollContainerRef = React.useRef(Js.Nullable.null);
@@ -156,14 +156,18 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       },
       (annotation, currentUser),
     );
-  let handleExternalTargetClick = externalTarget => {
-    let _ =
-      Service_Analytics.(
-        track(Click({action: "open external target", label: None}))
-      );
+
+  let handleViewTargetForAnnotation = (~target, ~displayBottomSheet, ()) => {
+    if (displayBottomSheet) {
+      let _ =
+        Service_Analytics.(
+          track(Click({action: "open external target", label: None}))
+        );
+      ();
+    };
 
     let _ =
-      externalTarget
+      target
       ->ExternalTargetMetadata_GraphQL.Webview.makeTarget
       ->Belt.Option.forEach(target => {
           let _ =
@@ -179,6 +183,10 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
                           "target",
                           target->Lib_WebView_Model.Annotation.Target.encode,
                         ),
+                        (
+                          "displayBottomSheet",
+                          Js.Json.boolean(displayBottomSheet),
+                        ),
                       ]),
                     ),
                   (),
@@ -187,7 +195,6 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
             );
           ();
         });
-
     ();
   };
 
@@ -432,7 +439,8 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       />
       <ExternalTargetMetadata
         annotationFragment=annotation##externalTargetMetadataAnnotationFragment
-        onClick=handleExternalTargetClick
+        onViewTargetForAnnotation=handleViewTargetForAnnotation
+        isAnnotationVisible=isVisible
       />
       <TagsList value=tagsValue onChange=handleTagsChange />
     </div>

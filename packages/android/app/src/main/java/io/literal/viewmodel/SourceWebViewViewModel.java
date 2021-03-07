@@ -84,7 +84,7 @@ public class SourceWebViewViewModel extends ViewModel {
         }
 
         String stringifiedParamAnnotations = JSONObject.quote(paramAnnotations.toString());
-        return highlightAnnotationTargetScript.getValue().replaceAll("\\$\\{PARAM_ANNOTATIONS\\}", stringifiedParamAnnotations.substring(1, stringifiedParamAnnotations.length() - 1));
+        return highlightAnnotationTargetScript.getValue().replaceAll("process\\.env\\.PARAM_ANNOTATIONS", stringifiedParamAnnotations.substring(1, stringifiedParamAnnotations.length() - 1));
     }
 
     public MutableLiveData<ArrayList<Annotation>> getAnnotations() {
@@ -173,6 +173,12 @@ public class SourceWebViewViewModel extends ViewModel {
             Log.d("SourceWebViewViewModel", "createAnnotation", e);
             return null;
         }
+    }
+
+    public void addAnnotation(Annotation annotation) {
+        ArrayList<Annotation> newAnnotations = (ArrayList<Annotation>) annotations.getValue().clone();
+        newAnnotations.add(annotation);
+        annotations.setValue(newAnnotations);
     }
 
     public boolean updateAnnotation(Annotation annotation) {

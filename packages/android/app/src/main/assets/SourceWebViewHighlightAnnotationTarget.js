@@ -1,401 +1,682 @@
-(function highlightAnnotationTarget() {
-  const HIGHLIGHT_CLASS_NAME = "literal-highlight";
-  const ANNOTATIONS = ${PARAM_ANNOTATIONS};
+/******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
+/******/ 	var __webpack_modules__ = ({
 
-  class Messenger {
+/***/ 345:
+/***/ ((module) => {
 
-    handlers = new Map() 
 
-    constructor() {
-      window.addEventListener("message", (ev) => {
-        if (ev.ports && ev.ports.length > 0 && !globalThis.literalMessagePort) {
-          globalThis.literalMessagePort = ev.ports[0];
+module.exports = (promise, onFinally) => {
+	onFinally = onFinally || (() => {});
+
+	return promise.then(
+		val => new Promise(resolve => {
+			resolve(onFinally());
+		}).then(() => val),
+		err => new Promise(resolve => {
+			resolve(onFinally());
+		}).then(() => {
+			throw err;
+		})
+	);
+};
+
+
+/***/ }),
+
+/***/ 147:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+
+const pFinally = __webpack_require__(345);
+
+class TimeoutError extends Error {
+	constructor(message) {
+		super(message);
+		this.name = 'TimeoutError';
+	}
+}
+
+const pTimeout = (promise, milliseconds, fallback) => new Promise((resolve, reject) => {
+	if (typeof milliseconds !== 'number' || milliseconds < 0) {
+		throw new TypeError('Expected `milliseconds` to be a positive number');
+	}
+
+	if (milliseconds === Infinity) {
+		resolve(promise);
+		return;
+	}
+
+	const timer = setTimeout(() => {
+		if (typeof fallback === 'function') {
+			try {
+				resolve(fallback());
+			} catch (error) {
+				reject(error);
+			}
+
+			return;
+		}
+
+		const message = typeof fallback === 'string' ? fallback : `Promise timed out after ${milliseconds} milliseconds`;
+		const timeoutError = fallback instanceof Error ? fallback : new TimeoutError(message);
+
+		if (typeof promise.cancel === 'function') {
+			promise.cancel();
+		}
+
+		reject(timeoutError);
+	}, milliseconds);
+
+	// TODO: Use native `finally` keyword when targeting Node.js 10
+	pFinally(
+		// eslint-disable-next-line promise/prefer-await-to-then
+		promise.then(resolve, reject),
+		() => {
+			clearTimeout(timer);
+		}
+	);
+});
+
+module.exports = pTimeout;
+// TODO: Remove this for the next major release
+module.exports.default = pTimeout;
+
+module.exports.TimeoutError = TimeoutError;
+
+
+/***/ }),
+
+/***/ 299:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+const pTimeout = __webpack_require__(147);
+
+const pWaitFor = async (condition, options) => {
+	options = {
+		interval: 20,
+		timeout: Infinity,
+		leadingCheck: true,
+		...options
+	};
+
+	let retryTimeout;
+
+	const promise = new Promise((resolve, reject) => {
+		const check = async () => {
+			try {
+				const value = await condition();
+
+				if (typeof value !== 'boolean') {
+					throw new TypeError('Expected condition to return a boolean');
+				}
+
+				if (value === true) {
+					resolve();
+				} else {
+					retryTimeout = setTimeout(check, options.interval);
+				}
+			} catch (error) {
+				reject(error);
+			}
+		};
+
+		if (options.leadingCheck) {
+			check();
+		} else {
+			retryTimeout = setTimeout(check, options.interval);
+		}
+	});
+
+	if (options.timeout !== Infinity) {
+		try {
+			return await pTimeout(promise, options.timeout);
+		} catch (error) {
+			if (retryTimeout) {
+				clearTimeout(retryTimeout);
+			}
+
+			throw error;
+		}
+	}
+
+	return promise;
+};
+
+module.exports = pWaitFor;
+// TODO: Remove this for the next major release
+module.exports.default = pWaitFor;
+
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		if(__webpack_module_cache__[moduleId]) {
+/******/ 			return __webpack_module_cache__[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
+(() => {
+
+;// CONCATENATED MODULE: ./highlight-annotation-target/messenger.mjs
+class Messenger {
+  constructor() {
+    this.handlers = new Map();
+
+    window.addEventListener("message", (ev) => {
+      if (ev.ports && ev.ports.length > 0 && !globalThis.literalMessagePort) {
+        globalThis.literalMessagePort = ev.ports[0];
+      }
+
+      this._handleMessage(ev);
+    });
+  }
+
+  _handleMessage(ev) {
+    try {
+      const data = JSON.parse(ev.data);
+
+      console.log("[Literal] Receieved message", ev.data);
+      if (this.handlers.has(data.type)) {
+        this.handlers.get(data.type).forEach((handler) => handler(data));
+      }
+    } catch (e) {
+      console.error("[Literal] Unable to parse message", e, ev.data);
+    }
+  }
+
+  postMessage(ev) {
+    if (!globalThis.literalMessagePort) {
+      console.error("[Literal] Unable to dispatch: has not initialized");
+      return;
+    }
+    globalThis.literalMessagePort.postMessage(JSON.stringify(ev));
+  }
+
+  on(type, handler) {
+    if (!this.handlers.has(type)) {
+      this.handlers.set(type, [handler]);
+    } else {
+      this.handlers.get(type).push(handler);
+    }
+  }
+}
+
+;// CONCATENATED MODULE: ./highlight-annotation-target/highlighter.mjs
+// adapted from https://gist.github.com/Gozala/80cf4d2c9f000548b7a11b110b1d7711
+class Highlighter {
+  constructor({ highlightClassName }) {
+    this.highlightClassName = highlightClassName;
+  }
+
+  markText(text, dataset) {
+    const span = document.createElement("span");
+    span.role = "mark";
+    span.style.backgroundColor = "rgb(0, 0, 0)";
+    span.style.color = "rgba(255, 255, 255, 0.92)";
+    span.style.display = "inline";
+    span.classList.add(this.highlightClassName);
+    text.parentNode.replaceChild(span, text);
+    Object.keys(dataset).forEach((key) => {
+      span.setAttribute(`data-${key}`, dataset[key]);
+    });
+    span.appendChild(text);
+    return span;
+  }
+
+  markImage(image, dataset) {
+    const selected = image.cloneNode();
+    selected.role = "mark";
+    selected.style.objectPosition = `${image.width}px`;
+    selected.style.backgroundImage = `url(${image.src})`;
+    selected.style.backgroundColor = "rgba(255, 255, 0, 0.3)";
+    selected.style.backgroundBlendMode = "overlay";
+    selected.classList.add(this.highlightClassName);
+    Object.keys(dataset).forEach((key) => {
+      selected.setAttribute(`data-${key}`, dataset[key]);
+    });
+    // Keep original node so we can remove highlighting by
+    // swapping back images.
+    image.appendChild(selected);
+
+    image.parentElement.replaceChild(selected, image);
+
+    return selected;
+  }
+
+  markNode(node, dataset) {
+    const { Image, Text } = node.ownerDocument.defaultView;
+    if (node instanceof Image) {
+      return this.markImage(node, dataset);
+    } else if (node instanceof Text) {
+      return this.markText(node, dataset);
+    } else {
+      return node;
+    }
+  }
+
+  *filter(p, iterator) {
+    for (let item of iterator) {
+      if (p(item)) {
+        yield item;
+      }
+    }
+  }
+
+  *takeWhile(p, iterator) {
+    for (let item of iterator) {
+      if (p(item)) {
+        yield item;
+      } else {
+        break;
+      }
+    }
+  }
+
+  *nextNodes(node) {
+    let next = node;
+    let isWalkingUp = false;
+    while (next != null) {
+      if (!isWalkingUp && next.firstChild != null) {
+        [isWalkingUp, next] = [false, next.firstChild];
+        yield next;
+      } else if (next.nextSibling != null) {
+        [isWalkingUp, next] = [false, next.nextSibling];
+        yield next;
+      } else {
+        [isWalkingUp, next] = [true, next.parentNode];
+      }
+    }
+  }
+
+  resolveContainer(node, offset) {
+    const { Text } = node.ownerDocument.defaultView;
+    const result =
+      node instanceof Text
+        ? [node, offset]
+        : offset < node.childNodes.length
+        ? [node.childNodes[offset], 0]
+        : Error("No child matching the offset found");
+    return result;
+  }
+
+  highlightTextRange(text, startOffset, endOffset) {
+    const prefix = text;
+    const content = text.splitText(startOffset);
+    const suffix = content.splitText(endOffset - startOffset);
+    return [prefix, content, suffix];
+  }
+
+  isHighlightableNode(node) {
+    return (
+      this.isHighlightableText(node) ||
+      this.isHighlightableImage(node)
+    );
+  }
+
+  isHighlightableText(node) {
+    return (
+      node instanceof node.ownerDocument.defaultView.Text &&
+      node.textContent.trim().length > 0
+    );
+  }
+
+  isHighlightableImage(node) {
+    return node instanceof node.ownerDocument.defaultView.Image;
+  }
+
+  highlightRange(range, markDataset) {
+    const { startContainer, endContainer, startOffset, endOffset } = range;
+    const start = this.resolveContainer(startContainer, startOffset);
+    const end = this.resolveContainer(endContainer, endOffset);
+
+    if (start instanceof Error) {
+      return Error(`Invalid start of the range: ${start}`);
+    } else if (end instanceof Error) {
+      return Error(`Invalid end of the range: ${end}`);
+    } else {
+      const { Text } = startContainer.ownerDocument.defaultView;
+      const [startNode, startOffset] = start;
+      const [endNode, endOffset] = end;
+
+      if (startNode === endNode && startNode instanceof Text) {
+        const [previous, text, next] = this.highlightTextRange(
+          startNode,
+          startOffset,
+          endOffset
+        );
+        this.markText(text, markDataset);
+        range.setStart(text, 0);
+        range.setEnd(next, 0);
+      } else {
+        const contentNodes = this.takeWhile(
+          (node) => node !== endNode,
+          this.nextNodes(startNode)
+        );
+        const highlightableNodes = this.filter(
+          (node) => this.isHighlightableNode(node),
+          contentNodes
+        );
+
+        [...highlightableNodes].forEach((node) =>
+          this.markNode(node, markDataset)
+        );
+
+        if (startNode instanceof Text) {
+          const text =
+            startOffset > 0 ? startNode.splitText(startOffset) : startNode;
+
+          this.markText(text, markDataset);
+          range.setStart(text, 0);
         }
 
-        this._handleMessage(ev);
-      });
+        if (endNode instanceof Text) {
+          const [text, offset] =
+            endOffset < endNode.length
+              ? [endNode.splitText(endOffset).previousSibling, 0]
+              : [endNode, endOffset];
+
+          this.markText(text, markDataset);
+          range.setEnd(text, text.length);
+        }
+      }
+    }
+  }
+
+  removeHighlights() {
+    document.querySelectorAll(`.${this.highlightClassName}`).forEach((elem) => {
+      const parentNode = elem.parentNode;
+      elem.replaceWith(...Array.from(elem.childNodes));
+      parentNode.normalize();
+    });
+  }
+}
+
+;// CONCATENATED MODULE: ./highlight-annotation-target/annotation-focus-manager.mjs
+class AnnotationFocusManager {
+  constructor({ messenger, highlightClassName }) {
+    this.messenger = messenger;
+    this.highlightClassName = highlightClassName;
+    this.eventQueue = [];
+    this.annotationsRendered = false;
+
+    this.focusedAnnotationIntersectionObserver = new IntersectionObserver(
+      this._handleIntersectionObserverEntries,
+      {
+        root: null,
+        rootMargin: "0px",
+        threshold: [0, 1],
+      }
+    );
+
+    this.messenger.on("FOCUS_ANNOTATION", (message) => {
+      this.handleEvent({ type: "FOCUS_ANNOTATION", data: message.data });
+    });
+  }
+
+  handleEvent({ type, data }) {
+    if (!this.annotationsRendered) {
+      this.eventQueue.push({ type, data });
+      return;
     }
 
-    _handleMessage = (ev) => {
-      try {
-        const data = JSON.parse(ev.data)
-
-        if (this.handlers.has(data.type)) {
-          this.handlers.get(data.type).forEach((handler) => handler(data))
-        }
-      } catch (e) {
-        console.error("[Literal] Unable to parse message", e)
-      }
-    };
-
-    postMessage = (ev) => {
-      if (!globalThis.literalMessagePort) {
-        console.error("[Literal] Unable to dispatch: has not initialized");
+    if (type === "FOCUS_ANNOTATION") {
+      if (!data.annotationId) {
+        console.error(
+          "[Literal] Received FOCUS_ANNOTATION event without annotationId."
+        );
         return;
       }
-      globalThis.literalMessagePort.postMessage(JSON.stringify(ev));
-    };
 
-    on = (type, handler) => {
-      if (!this.handlers.has(type)) {
-        this.handlers.set(type, [handler])
-      } else {
-        this.handlers.get(type).push(handler)
-      }
+      this._handleFocusAnnotation({
+        annotationId: data.annotationId,
+        scrollIntoView: true,
+        disableNotify: true,
+      });
     }
   }
 
-  // adapted from https://gist.github.com/Gozala/80cf4d2c9f000548b7a11b110b1d7711
-  class Highlighter {
-    static markText = (text, dataset) => {
-      const span = document.createElement("span");
-      span.role = "mark";
-      span.style.backgroundColor = "rgb(0, 0, 0)";
-      span.style.color = "rgba(255, 255, 255, 0.92)";
-      span.style.display = "inline";
-      span.classList.add(HIGHLIGHT_CLASS_NAME);
-      text.parentNode.replaceChild(span, text);
-      Object.keys(dataset).forEach((key) => {
-        span.setAttribute(`data-${key}`, dataset[key]);
-      });
-      span.appendChild(text);
-      return span;
-    };
-
-    static markImage = (image, dataset) => {
-      const selected = image.cloneNode();
-      selected.role = "mark";
-      selected.style.objectPosition = `${image.width}px`;
-      selected.style.backgroundImage = `url(${image.src})`;
-      selected.style.backgroundColor = "rgba(255, 255, 0, 0.3)";
-      selected.style.backgroundBlendMode = "overlay";
-      selected.classList.add(HIGHLIGHT_CLASS_NAME);
-      Object.keys(dataset).forEach((key) => {
-        selected.setAttribute(`data-${key}`, dataset[key]);
-      });
-      // Keep original node so we can remove highlighting by
-      // swapping back images.
-      image.appendChild(selected);
-
-      image.parentElement.replaceChild(selected, image);
-
-      return selected;
-    };
-
-    static markNode = (node, dataset) => {
-      const { Image, Text } = node.ownerDocument.defaultView;
-      if (node instanceof Image) {
-        return Highlighter.markImage(node, dataset);
-      } else if (node instanceof Text) {
-        return Highlighter.markText(node, dataset);
-      } else {
-        return node;
-      }
-    };
-
-    static filter = function*(p, iterator) {
-      for (let item of iterator) {
-        if (p(item)) {
-          yield item;
-        }
-      }
-    };
-
-    static takeWhile = function*(p, iterator) {
-      for (let item of iterator) {
-        if (p(item)) {
-          yield item;
-        } else {
-          break;
-        }
-      }
-    };
-
-    static nextNodes = function*(node) {
-      let next = node;
-      let isWalkingUp = false;
-      while (next != null) {
-        if (!isWalkingUp && next.firstChild != null) {
-          [isWalkingUp, next] = [false, next.firstChild];
-          yield next;
-        } else if (next.nextSibling != null) {
-          [isWalkingUp, next] = [false, next.nextSibling];
-          yield next;
-        } else {
-          [isWalkingUp, next] = [true, next.parentNode];
-        }
-      }
-    };
-
-    static resolveContainer = (node, offset) => {
-      const { Text } = node.ownerDocument.defaultView;
-      const result =
-        node instanceof Text
-          ? [node, offset]
-          : offset < node.childNodes.length
-          ? [node.childNodes[offset], 0]
-          : Error("No child matching the offset found");
-      return result;
-    };
-
-    static highlightTextRange = (text, startOffset, endOffset) => {
-      const prefix = text;
-      const content = text.splitText(startOffset);
-      const suffix = content.splitText(endOffset - startOffset);
-      return [prefix, content, suffix];
-    };
-
-    static isHighlightableNode = (node) =>
-      Highlighter.isHighlightableText(node) || Highlighter.isHighlightableImage(node);
-
-    static isHighlightableText = (node) =>
-      node instanceof node.ownerDocument.defaultView.Text &&
-      node.textContent.trim().length > 0;
-
-    static isHighlightableImage = (node) =>
-      node instanceof node.ownerDocument.defaultView.Image;
-
-    static highlightRange = (range, markDataset) => {
-      const { startContainer, endContainer, startOffset, endOffset } = range;
-      const start = Highlighter.resolveContainer(startContainer, startOffset);
-      const end = Highlighter.resolveContainer(endContainer, endOffset);
-
-      if (start instanceof Error) {
-        return Error(`Invalid start of the range: ${start}`);
-      } else if (end instanceof Error) {
-        return Error(`Invalid end of the range: ${end}`);
-      } else {
-        const { Text } = startContainer.ownerDocument.defaultView;
-        const [startNode, startOffset] = start;
-        const [endNode, endOffset] = end;
-
-        if (startNode === endNode && startNode instanceof Text) {
-          const [previous, text, next] = Highlighter.highlightTextRange(
-            startNode,
-            startOffset,
-            endOffset
-          );
-          Highlighter.markText(text, markDataset);
-          range.setStart(text, 0);
-          range.setEnd(next, 0);
-        } else {
-          const contentNodes = Highlighter.takeWhile(
-            (node) => node !== endNode,
-            Highlighter.nextNodes(startNode)
-          );
-          const highlightableNodes = Highlighter.filter(Highlighter.isHighlightableNode, contentNodes);
-
-          [...highlightableNodes].forEach((node) =>
-            Highlighter.markNode(node, markDataset)
-          );
-
-          if (startNode instanceof Text) {
-            const text =
-              startOffset > 0 ? startNode.splitText(startOffset) : startNode;
-
-            Highlighter.markText(text, markDataset);
-            range.setStart(text, 0);
-          }
-
-          if (endNode instanceof Text) {
-            const [text, offset] =
-              endOffset < endNode.length
-                ? [endNode.splitText(endOffset).previousSibling, 0]
-                : [endNode, endOffset];
-
-            Highlighter.markText(text, markDataset);
-            range.setEnd(text, text.length);
-          }
-        }
-      }
-    };
-
-    static removeHighlights = () => {
-      document.querySelectorAll(`.${HIGHLIGHT_CLASS_NAME}`).forEach((elem) => {
-        const parentNode = elem.parentNode;
-        elem.replaceWith(...Array.from(elem.childNodes));
-        parentNode.normalize();
-      });
-    };
-  }
-
-  class AnnotationFocusManager {
-    focusedAnnotationId = null;
-    focusedAnnotationElems = null;
-    focusedAnnotationIntersectionObserver = null;
-    focusedAnnotationElemIsVisible = null;
-    messenger = null;
-
-    constructor({ messenger }) {
-      this.messenger = messenger;
-      this.focusedAnnotationIntersectionObserver = new IntersectionObserver(
-        this._handleIntersectionObserverEntries,
-        {
-          root: null,
-          rootMargin: "0px",
-          threshold: [0, 1],
-        }
-      );
-
-      this.messenger.on("FOCUS_ANNOTATION", (message) => {
-        if (!message.data.annotationId) {
-          console.error(
-            "[Literal] Received FOCUS_ANNOTATION event without annotationId."
-          );
-          return;
-        }
+  onAnnotationsRendered() {
+    // focus on annotation click
+    document.querySelectorAll(`.${this.highlightClassName}`).forEach((el) => {
+      el.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
 
         this._handleFocusAnnotation({
-          annotationId: message.data.annotationId,
-          disableNotify: true,
+          annotationId: ev.target.getAttribute("data-annotation-id"),
+          scrollIntoView: true,
         });
       });
-    }
+    });
 
-    registerClickListeners() {
-      // focus on annotation click
-      document.querySelectorAll(`.${HIGHLIGHT_CLASS_NAME}`).forEach((el) => {
-        el.addEventListener("click", (ev) => {
-          ev.preventDefault();
-          ev.stopPropagation();
-
-          this._handleFocusAnnotation({
-            annotationId: ev.target.getAttribute("data-annotation-id"),
-          });
-        });
-      });
-
-      // blur on body click
-      document.body.addEventListener("click", (_ev) => {
-        if (!this.focusedAnnotationElems) {
-          return;
-        }
-
-        this._handleBlurAnnotation();
-      });
-    }
-
-    _handleIntersectionObserverEntries(entries) {
-      entries.forEach((entry) => {
-        if (!this.focusedAnnotationElemIsVisible) {
-          console.error(
-            `[Literal] Could not set visibility for entry: ${entry}`
-          )
-          return
-        }
-
-        this.focusedAnnotationElemIsVisible.set(
-          entry.target,
-          entry.isIntersecting
-        );
-      });
-
-      if (Array.from(entries.values()).every((isVisible) => !isVisible)) {
-        this._handleBlurAnnotation();
-      }
-    }
-
-    _handleFocusAnnotation({ annotationId, disableNotify }) {
-      if (this.focusedAnnotationId === annotationId) {
-        return
-      }
-
-      if (this.focusedAnnotationElems) {
-        this._handleBlurAnnotation();
-      }
-
-      this.focusedAnnotationId = annotationId
-      this.focusedAnnotationElems = Array.from(document.querySelectorAll(
-        `.${HIGHLIGHT_CLASS_NAME}[data-annotation-id="${annotationId}"]`
-      ));
+    // blur on body click
+    document.body.addEventListener("click", (_ev) => {
       if (!this.focusedAnnotationElems) {
-        console.error(
-          `[Literal] Could not find elements for annotation: ${annotationId}`
-        );
-        return null;
-      }
-
-      this.focusedAnnotationElemIsVisible = new Map(
-        this.focusedAnnotationElems.map((elem) => [elem, false])
-      );
-      this.focusedAnnotationElems.forEach((elem) => {
-        this.focusedAnnotationIntersectionObserver.observe(elem);
-      });
-
-      if (!disableNotify) {
-        this.messenger.postMessage({
-          type: "FOCUS_ANNOTATION",
-          data: {
-            annotationId,
-          },
-        });
-      }
-    }
-
-    _handleBlurAnnotation() {
-      if (!this.focusedAnnotationElems) {
-        console.warn(
-          `[Literal] Call to handleBlurAnnotation without a focused annotation.`
-        );
         return;
       }
 
-      this.focusedAnnotationElemIsVisible = null;
-      this.focusedAnnotationElems.forEach((elem) => {
-        this.focusedAnnotationIntersectionObserver.unobserve(elem);
-      });
-      this.focusedAnnotationElems = null;
-      this.focusedAnnotationId = null;
+      this._handleBlurAnnotation();
+    });
 
+    this.annotationsRendered = true;
+    this.eventQueue.forEach((event) => this.handleEvent(event));
+    this.eventQueue = [];
+  }
+
+  _handleIntersectionObserverEntries(entries) {
+    entries.forEach((entry) => {
+      if (!this.focusedAnnotationElemIsVisible) {
+        console.error(`[Literal] Could not set visibility for entry: ${entry}`);
+        return;
+      }
+
+      this.focusedAnnotationElemIsVisible.set(
+        entry.target,
+        entry.isIntersecting
+      );
+    });
+
+    if (Array.from(entries.values()).every((isVisible) => !isVisible)) {
+      this._handleBlurAnnotation();
+    }
+  }
+
+  _handleFocusAnnotation({ annotationId, disableNotify, scrollIntoView }) {
+    if (this.focusedAnnotationId === annotationId) {
+      if (scrollIntoView) {
+        this.focusedAnnotationElems[0].scrollIntoView({
+          behavior: "auto",
+          block: "center",
+          inline: "center",
+        });
+      }
+      return;
+    }
+
+    if (this.focusedAnnotationElems) {
+      this._handleBlurAnnotation();
+    }
+
+    this.focusedAnnotationId = annotationId;
+    this.focusedAnnotationElems = Array.from(
+      document.querySelectorAll(
+        `.${this.highlightClassName}[data-annotation-id="${annotationId}"]`
+      )
+    );
+    if (
+      !this.focusedAnnotationElems ||
+      this.focusedAnnotationElems.length === 0
+    ) {
+      console.error(
+        `[Literal] Could not find elements for annotation: ${annotationId}`
+      );
+      return null;
+    }
+
+    if (scrollIntoView) {
+      this.focusedAnnotationElems[0].scrollIntoView({
+        behavior: "auto",
+        block: "center",
+        inline: "center",
+      });
+    }
+
+    this.focusedAnnotationElemIsVisible = new Map(
+      this.focusedAnnotationElems.map((elem) => [elem, false])
+    );
+    this.focusedAnnotationElems.forEach((elem) => {
+      this.focusedAnnotationIntersectionObserver.observe(elem);
+    });
+
+    if (!disableNotify) {
       this.messenger.postMessage({
-        type: "BLUR_ANNOTATION",
+        type: "FOCUS_ANNOTATION",
+        data: {
+          annotationId,
+        },
       });
     }
   }
 
-  const messenger = new Messenger();
-  const annotationFocusManager = new AnnotationFocusManager({ messenger });
-
-  Highlighter.removeHighlights();
-
-  ANNOTATIONS.reduce((rangeSelectors, annotation) => {
-    if (annotation.target) {
-      return annotation.target
-        .filter(({ type }) => type === "SPECIFIC_RESOURCE")
-        .map(({ selector }) =>
-          selector.filter(({ type }) => type === "RANGE_SELECTOR")
-        )
-        .flat()
-        .map((selector) => ({ ...selector, annotationId: annotation.id }))
-        .concat(rangeSelectors);
+  _handleBlurAnnotation() {
+    if (!this.focusedAnnotationElems) {
+      console.warn(
+        `[Literal] Call to handleBlurAnnotation without a focused annotation.`
+      );
+      return;
     }
-    return rangeSelectors;
-  }, []).forEach(({ startSelector, endSelector, annotationId }) => {
-    const startNode = document.evaluate(
-      startSelector.value,
+
+    this.focusedAnnotationElemIsVisible = null;
+    this.focusedAnnotationElems.forEach((elem) => {
+      this.focusedAnnotationIntersectionObserver.unobserve(elem);
+    });
+    this.focusedAnnotationElems = null;
+    this.focusedAnnotationId = null;
+
+    this.messenger.postMessage({
+      type: "BLUR_ANNOTATION",
+    });
+  }
+}
+
+// EXTERNAL MODULE: ./node_modules/p-wait-for/index.js
+var p_wait_for = __webpack_require__(299);
+;// CONCATENATED MODULE: ./highlight-annotation-target/index.mjs
+
+
+
+
+
+const HIGHLIGHT_CLASS_NAME = "literal-highlight";
+const ANNOTATIONS = process.env.PARAM_ANNOTATIONS;
+
+const messenger = new Messenger({
+  highlightClassName: HIGHLIGHT_CLASS_NAME,
+});
+const annotationFocusManager = new AnnotationFocusManager({
+  messenger,
+  highlightClassName: HIGHLIGHT_CLASS_NAME,
+});
+const highlighter = new Highlighter({
+  highlightClassName: HIGHLIGHT_CLASS_NAME,
+});
+
+const onDocumentReady = (cb) => {
+  if (document.readyState === "complete") {
+    cb();
+  } else {
+    document.addEventListener("DOMContentLoaded", () => {
+      cb();
+    });
+  }
+};
+
+const xPathEvaluate = (value) => {
+  const evaluate = () =>
+    document.evaluate(
+      value,
       document,
       null,
       XPathResult.FIRST_ORDERED_NODE_TYPE,
       null
     ).singleNodeValue;
-    const endNode = document.evaluate(
-      endSelector.value,
-      document,
-      null,
-      XPathResult.FIRST_ORDERED_NODE_TYPE,
-      null
-    ).singleNodeValue;
 
-    const range = document.createRange();
-    range.setStart(startNode, startSelector.refinedBy[0].start);
-    range.setEnd(endNode, endSelector.refinedBy[0].end);
+  return p_wait_for(
+    () => {
+      try {
+        return Boolean(evaluate());
+      } catch (err) {
+        return false;
+      }
+    },
+    { interval: 50, timeout: 5000 }
+  ).then(() => evaluate());
+};
 
-    try {
-      Highlighter.highlightRange(range, { "annotation-id": annotationId });
-    } catch (e) {
-      console.error("[Literal] Unable to highlight range.", range, e);
-    }
-  });
+(() =>
+  onDocumentReady(async () => {
+    highlighter.removeHighlights();
 
-  annotationFocusManager.registerClickListeners();
+    await Promise.all(
+      ANNOTATIONS.reduce((rangeSelectors, annotation) => {
+        if (annotation.target) {
+          return annotation.target
+            .filter(({ type }) => type === "SPECIFIC_RESOURCE")
+            .map(({ selector }) =>
+              selector.filter(({ type }) => type === "RANGE_SELECTOR")
+            )
+            .flat()
+            .map((selector) => ({ ...selector, annotationId: annotation.id }))
+            .concat(rangeSelectors);
+        }
+        return rangeSelectors;
+      }, []).map(async ({ startSelector, endSelector, annotationId }) => {
+        const [startNode, endNode] = await Promise.all([
+          xPathEvaluate(startSelector.value),
+          xPathEvaluate(endSelector.value),
+        ]);
+
+        const range = document.createRange();
+        range.setStart(startNode, startSelector.refinedBy[0].start);
+        range.setEnd(endNode, endSelector.refinedBy[0].end);
+
+        try {
+          highlighter.highlightRange(range, { "annotation-id": annotationId });
+        } catch (e) {
+          console.error("[Literal] Unable to highlight range.", range, e);
+        }
+      })
+    );
+
+    annotationFocusManager.onAnnotationsRendered();
+  }))();
+
 })();
+
+/******/ })()
+;

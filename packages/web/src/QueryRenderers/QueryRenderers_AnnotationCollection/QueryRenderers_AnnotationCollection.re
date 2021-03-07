@@ -78,6 +78,7 @@ module Data = {
            <ScrollSnapList.Item
              key={annotation##id} direction=ScrollSnapList.Horizontal>
              <Containers_AnnotationEditor
+               isVisible={annotation##id == activeAnnotation##id}
                annotationFragment={annotation##editorAnnotationFragment}
                currentUser
              />

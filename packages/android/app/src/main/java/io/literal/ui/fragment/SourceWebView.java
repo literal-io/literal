@@ -146,9 +146,13 @@ public class SourceWebView extends Fragment {
                     sourceWebViewViewModel.setHasFinishedInitializing(true);
                 }
 
+                Log.i("SourceWebView", "onPageFinished: " + url);
+
                 highlightAnnotationTargets(sourceWebViewViewModel.getAnnotations().getValue());
+                Log.i("SourceWebView", "setting annotations: " + sourceWebViewViewModel.getAnnotations().getValue().size());
                 Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
                 if (focusedAnnotation != null) {
+                    Log.i("SourceWebView", "setting focused annotation: " + focusedAnnotation);
                     dispatchFocusAnnotationWebEvent(focusedAnnotation);
                 }
             }
@@ -307,6 +311,7 @@ public class SourceWebView extends Fragment {
         Annotation annotation = new Annotation(null, new Target[]{target}, null, annotationId);
 
         String sourceUrl = null;
+        String currentWebViewUrl = webView.getUrl();
         if (target.getType() == Target.Type.SPECIFIC_TARGET) {
             Target source = ((SpecificTarget) target).getSource();
             if (source.getType() == Target.Type.EXTERNAL_TARGET) {
@@ -320,9 +325,28 @@ public class SourceWebView extends Fragment {
             return;
         }
 
-        sourceWebViewViewModel.setHasFinishedInitializing(false);
-        webView.loadUrl(sourceUrl);
+        if (currentWebViewUrl == null || !currentWebViewUrl.equals(sourceUrl)) {
+            sourceWebViewViewModel.setHasFinishedInitializing(false);
+        }
+
+        ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
+        if (annotations
+                .stream()
+                .noneMatch(committedAnnotation -> committedAnnotation.getId().equals(annotation.getId()))) {
+            sourceWebViewViewModel.addAnnotation(annotation);
+            // TODO: fetch annotation?
+        }
+
         sourceWebViewViewModel.setFocusedAnnotation(annotation);
+
+        if (currentWebViewUrl == null || !currentWebViewUrl.equals(sourceUrl)) {
+            try {
+                sourceWebViewViewModel.setDomainMetadata(new URL(sourceUrl), null);
+            } catch (MalformedURLException e) {
+                Log.d("SourceWebView", "Unable to parse URL", e);
+            }
+            webView.loadUrl(sourceUrl);
+        }
     }
 
     private void dispatchFocusAnnotationWebEvent(Annotation focusedAnnotation) {
@@ -393,7 +417,9 @@ public class SourceWebView extends Fragment {
         }
     }
 
-    /** Message channel is established and the desired page is loaded **/
+    /**
+     * Message channel is established and the desired page is loaded
+     **/
     private boolean isWebviewInitialized() {
         return sourceWebViewViewModel != null && sourceWebViewViewModel.getHasFinishedInitializing() != null && sourceWebViewViewModel.getHasFinishedInitializing().getValue();
     }

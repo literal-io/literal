@@ -15,11 +15,12 @@ export class Messenger {
     try {
       const data = JSON.parse(ev.data);
 
+      console.log("[Literal] Receieved message", ev.data);
       if (this.handlers.has(data.type)) {
         this.handlers.get(data.type).forEach((handler) => handler(data));
       }
     } catch (e) {
-      console.error("[Literal] Unable to parse message", e);
+      console.error("[Literal] Unable to parse message", e, ev.data);
     }
   }
 

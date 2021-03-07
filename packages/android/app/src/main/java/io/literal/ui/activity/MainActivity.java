@@ -113,9 +113,12 @@ public class MainActivity extends AppCompatActivity {
                                 JSONObject data = webEvent.getData();
                                 String annotationId = data.getString("annotationId");
                                 Target target = Target.fromJson(data.getJSONObject("target"));
+                                boolean displayBottomSheet = data.getBoolean("displayBottomSheet");
 
                                 sourceWebViewFragment.handleViewTargetForAnnotation(annotationId, target);
-                                this.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
+                                if (displayBottomSheet) {
+                                    this.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
+                                }
                             } catch (JSONException e) {
                                 Log.d("MainActivity", "Unable to handle event: " + webEvent.toString(), e);
                             }

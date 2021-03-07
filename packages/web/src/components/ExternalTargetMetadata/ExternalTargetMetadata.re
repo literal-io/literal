@@ -1,22 +1,45 @@
 [@react.component]
-let make = (~annotationFragment as annotation, ~onClick) => {
-  annotation##target
-  ->Belt.Array.keepMap(target =>
-      switch (target) {
-      | `SpecificTarget(specficTarget) =>
-        switch (specficTarget##source) {
-        | `ExternalTarget(externalTarget) => Some((target, externalTarget))
+let make =
+    (
+      ~annotationFragment as annotation,
+      ~onViewTargetForAnnotation,
+      ~isAnnotationVisible,
+    ) => {
+  let targetWithExternalTarget =
+    annotation##target
+    ->Belt.Array.keepMap(target =>
+        switch (target) {
+        | `SpecificTarget(specficTarget) =>
+          switch (specficTarget##source) {
+          | `ExternalTarget(externalTarget) => Some((target, externalTarget))
+          | _ => None
+          }
         | _ => None
         }
-      | _ => None
-      }
-    )
-  ->Belt.Array.get(0)
+      )
+    ->Belt.Array.get(0);
+
+  let _ =
+    React.useEffect2(
+      () => {
+        let _ =
+          switch (targetWithExternalTarget) {
+          | Some((target, _)) when isAnnotationVisible =>
+            onViewTargetForAnnotation(~target, ~displayBottomSheet=false, ())
+          | _ => ()
+          };
+        None;
+      },
+      (targetWithExternalTarget, isAnnotationVisible),
+    );
+
+  targetWithExternalTarget
   ->Belt.Option.map(((target, externalTarget)) => {
       let host =
         externalTarget##externalTargetId->Webapi.Url.make->Webapi.Url.host;
 
-      let handleClick = _ => onClick(target);
+      let handleClick = _ =>
+        onViewTargetForAnnotation(~target, ~displayBottomSheet=true, ());
 
       <MaterialUi.Button
         onClick=handleClick

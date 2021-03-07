@@ -34,7 +34,8 @@ export class AnnotationFocusManager {
       }
 
       this._handleFocusAnnotation({
-        annotationId: message.data.annotationId,
+        annotationId: data.annotationId,
+        scrollIntoView: true,
         disableNotify: true,
       });
     }
@@ -49,6 +50,7 @@ export class AnnotationFocusManager {
 
         this._handleFocusAnnotation({
           annotationId: ev.target.getAttribute("data-annotation-id"),
+          scrollIntoView: true,
         });
       });
     });
@@ -85,8 +87,15 @@ export class AnnotationFocusManager {
     }
   }
 
-  _handleFocusAnnotation({ annotationId, disableNotify }) {
+  _handleFocusAnnotation({ annotationId, disableNotify, scrollIntoView }) {
     if (this.focusedAnnotationId === annotationId) {
+      if (scrollIntoView) {
+        this.focusedAnnotationElems[0].scrollIntoView({
+          behavior: "auto",
+          block: "center",
+          inline: "center",
+        });
+      }
       return;
     }
 
@@ -100,11 +109,22 @@ export class AnnotationFocusManager {
         `.${this.highlightClassName}[data-annotation-id="${annotationId}"]`
       )
     );
-    if (!this.focusedAnnotationElems) {
+    if (
+      !this.focusedAnnotationElems ||
+      this.focusedAnnotationElems.length === 0
+    ) {
       console.error(
         `[Literal] Could not find elements for annotation: ${annotationId}`
       );
       return null;
+    }
+
+    if (scrollIntoView) {
+      this.focusedAnnotationElems[0].scrollIntoView({
+        behavior: "auto",
+        block: "center",
+        inline: "center",
+      });
     }
 
     this.focusedAnnotationElemIsVisible = new Map(

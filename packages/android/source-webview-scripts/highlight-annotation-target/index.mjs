@@ -40,7 +40,7 @@ const xPathEvaluate = (value) => {
   return waitFor(
     () => {
       try {
-        return Boolean(evaluate);
+        return Boolean(evaluate());
       } catch (err) {
         return false;
       }

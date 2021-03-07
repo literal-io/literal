@@ -42,9 +42,9 @@ export class Highlighter {
   markNode(node, dataset) {
     const { Image, Text } = node.ownerDocument.defaultView;
     if (node instanceof Image) {
-      return Highlighter.markImage(node, dataset);
+      return this.markImage(node, dataset);
     } else if (node instanceof Text) {
-      return Highlighter.markText(node, dataset);
+      return this.markText(node, dataset);
     } else {
       return node;
     }
@@ -104,8 +104,8 @@ export class Highlighter {
 
   isHighlightableNode(node) {
     return (
-      Highlighter.isHighlightableText(node) ||
-      Highlighter.isHighlightableImage(node)
+      this.isHighlightableText(node) ||
+      this.isHighlightableImage(node)
     );
   }
 
@@ -122,8 +122,8 @@ export class Highlighter {
 
   highlightRange(range, markDataset) {
     const { startContainer, endContainer, startOffset, endOffset } = range;
-    const start = Highlighter.resolveContainer(startContainer, startOffset);
-    const end = Highlighter.resolveContainer(endContainer, endOffset);
+    const start = this.resolveContainer(startContainer, startOffset);
+    const end = this.resolveContainer(endContainer, endOffset);
 
     if (start instanceof Error) {
       return Error(`Invalid start of the range: ${start}`);
@@ -135,33 +135,33 @@ export class Highlighter {
       const [endNode, endOffset] = end;
 
       if (startNode === endNode && startNode instanceof Text) {
-        const [previous, text, next] = Highlighter.highlightTextRange(
+        const [previous, text, next] = this.highlightTextRange(
           startNode,
           startOffset,
           endOffset
         );
-        Highlighter.markText(text, markDataset);
+        this.markText(text, markDataset);
         range.setStart(text, 0);
         range.setEnd(next, 0);
       } else {
-        const contentNodes = Highlighter.takeWhile(
+        const contentNodes = this.takeWhile(
           (node) => node !== endNode,
-          Highlighter.nextNodes(startNode)
+          this.nextNodes(startNode)
         );
-        const highlightableNodes = Highlighter.filter(
-          Highlighter.isHighlightableNode,
+        const highlightableNodes = this.filter(
+          (node) => this.isHighlightableNode(node),
           contentNodes
         );
 
         [...highlightableNodes].forEach((node) =>
-          Highlighter.markNode(node, markDataset)
+          this.markNode(node, markDataset)
         );
 
         if (startNode instanceof Text) {
           const text =
             startOffset > 0 ? startNode.splitText(startOffset) : startNode;
 
-          Highlighter.markText(text, markDataset);
+          this.markText(text, markDataset);
           range.setStart(text, 0);
         }
 
@@ -171,7 +171,7 @@ export class Highlighter {
               ? [endNode.splitText(endOffset).previousSibling, 0]
               : [endNode, endOffset];
 
-          Highlighter.markText(text, markDataset);
+          this.markText(text, markDataset);
           range.setEnd(text, text.length);
         }
       }

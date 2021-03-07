@@ -1,179 +1,176 @@
-(function getAnnotation() {
-  // https://github.com/chromium/chromium/blob/77578ccb4082ae20a9326d9e673225f1189ebb63/third_party/blink/renderer/devtools/front_end/elements/DOMPath.js#L242
-  const getXPath = (function() {
-    const Elements = { DOMPath: {} };
-    Elements.DOMPath.xPath = function(node, optimized) {
-      if (node.nodeType === Node.DOCUMENT_NODE) return "/";
+/******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
+var __webpack_exports__ = {};
 
-      const steps = [];
-      let contextNode = node;
-      while (contextNode) {
-        const step = Elements.DOMPath._xPathValue(contextNode, optimized);
-        if (!step) break; // Error - bail out early.
-        steps.push(step);
-        if (step.optimized) break;
-        contextNode = contextNode.parentNode;
-      }
+;// CONCATENATED MODULE: ./get-annotation/xpath.mjs
+// https://github.com/chromium/chromium/blob/77578ccb4082ae20a9326d9e673225f1189ebb63/third_party/blink/renderer/devtools/front_end/elements/DOMPath.js#L242
 
-      steps.reverse();
-      return (steps.length && steps[0].optimized ? "" : "/") + steps.join("/");
-    };
+const xPath = function(node, optimized) {
+  if (node.nodeType === Node.DOCUMENT_NODE) return "/";
 
-    Elements.DOMPath._xPathValue = function(node, optimized) {
-      let ownValue;
-      const ownIndex = Elements.DOMPath._xPathIndex(node);
-      if (ownIndex === -1) return null; // Error.
+  const steps = [];
+  let contextNode = node;
+  while (contextNode) {
+    const step = _xPathValue(contextNode, optimized);
+    if (!step) break; // Error - bail out early.
+    steps.push(step);
+    if (step.optimized) break;
+    contextNode = contextNode.parentNode;
+  }
 
-      switch (node.nodeType) {
-        case Node.ELEMENT_NODE:
-          if (optimized && node.getAttribute("id"))
-            return new Elements.DOMPath.Step(
-              '//*[@id="' + node.getAttribute("id") + '"]',
-              true
-            );
-          ownValue = node.localName;
-          break;
-        case Node.ATTRIBUTE_NODE:
-          ownValue = "@" + node.nodeName;
-          break;
-        case Node.TEXT_NODE:
-        case Node.CDATA_SECTION_NODE:
-          ownValue = "text()";
-          break;
-        case Node.PROCESSING_INSTRUCTION_NODE:
-          ownValue = "processing-instruction()";
-          break;
-        case Node.COMMENT_NODE:
-          ownValue = "comment()";
-          break;
-        case Node.DOCUMENT_NODE:
-          ownValue = "";
-          break;
-        default:
-          ownValue = "";
-          break;
-      }
+  steps.reverse();
+  return (steps.length && steps[0].optimized ? "" : "/") + steps.join("/");
+};
 
-      if (ownIndex > 0) ownValue += "[" + ownIndex + "]";
+const _xPathValue = function(node, optimized) {
+  let ownValue;
+  const ownIndex = _xPathIndex(node);
+  if (ownIndex === -1) return null; // Error.
 
-      return new Elements.DOMPath.Step(
-        ownValue,
-        node.nodeType === Node.DOCUMENT_NODE
-      );
-    };
+  switch (node.nodeType) {
+    case Node.ELEMENT_NODE:
+      if (optimized && node.getAttribute("id"))
+        return new Step('//*[@id="' + node.getAttribute("id") + '"]', true);
+      ownValue = node.localName;
+      break;
+    case Node.ATTRIBUTE_NODE:
+      ownValue = "@" + node.nodeName;
+      break;
+    case Node.TEXT_NODE:
+    case Node.CDATA_SECTION_NODE:
+      ownValue = "text()";
+      break;
+    case Node.PROCESSING_INSTRUCTION_NODE:
+      ownValue = "processing-instruction()";
+      break;
+    case Node.COMMENT_NODE:
+      ownValue = "comment()";
+      break;
+    case Node.DOCUMENT_NODE:
+      ownValue = "";
+      break;
+    default:
+      ownValue = "";
+      break;
+  }
 
-    Elements.DOMPath._xPathIndex = function(node) {
-      // Returns -1 in case of error, 0 if no siblings matching the same expression, <XPath index among the same expression-matching sibling nodes> otherwise.
-      function areNodesSimilar(left, right) {
-        if (left === right) return true;
+  if (ownIndex > 0) ownValue += "[" + ownIndex + "]";
 
-        if (
-          left.nodeType === Node.ELEMENT_NODE &&
-          right.nodeType === Node.ELEMENT_NODE
-        )
-          return left.localName === right.localName;
+  return new Step(ownValue, node.nodeType === Node.DOCUMENT_NODE);
+};
 
-        if (left.nodeType === right.nodeType) return true;
+const _xPathIndex = function(node) {
+  // Returns -1 in case of error, 0 if no siblings matching the same expression, <XPath index among the same expression-matching sibling nodes> otherwise.
+  function areNodesSimilar(left, right) {
+    if (left === right) return true;
 
-        // XPath treats CDATA as text nodes.
-        const leftType =
-          left.nodeType === Node.CDATA_SECTION_NODE
-            ? Node.TEXT_NODE
-            : left.nodeType;
-        const rightType =
-          right.nodeType === Node.CDATA_SECTION_NODE
-            ? Node.TEXT_NODE
-            : right.nodeType;
-        return leftType === rightType;
-      }
+    if (
+      left.nodeType === Node.ELEMENT_NODE &&
+      right.nodeType === Node.ELEMENT_NODE
+    )
+      return left.localName === right.localName;
 
-      const siblings = node.parentNode ? node.parentNode.childNodes : null;
-      if (!siblings) return 0; // Root node - no siblings.
-      let hasSameNamedElements;
-      for (let i = 0; i < siblings.length; ++i) {
-        if (areNodesSimilar(node, siblings[i]) && siblings[i] !== node) {
-          hasSameNamedElements = true;
-          break;
-        }
-      }
-      if (!hasSameNamedElements) return 0;
-      let ownIndex = 1; // XPath indices start with 1.
-      for (let i = 0; i < siblings.length; ++i) {
-        if (areNodesSimilar(node, siblings[i])) {
-          if (siblings[i] === node) return ownIndex;
-          ++ownIndex;
-        }
-      }
-      return -1; // An error occurred: |node| not found in parent's children.
-    };
+    if (left.nodeType === right.nodeType) return true;
 
-    Elements.DOMPath.Step = class {
-      constructor(value, optimized) {
-        this.value = value;
-        this.optimized = optimized || false;
-      }
+    // XPath treats CDATA as text nodes.
+    const leftType =
+      left.nodeType === Node.CDATA_SECTION_NODE
+        ? Node.TEXT_NODE
+        : left.nodeType;
+    const rightType =
+      right.nodeType === Node.CDATA_SECTION_NODE
+        ? Node.TEXT_NODE
+        : right.nodeType;
+    return leftType === rightType;
+  }
 
-      toString() {
-        return this.value;
-      }
-    };
+  const siblings = node.parentNode ? node.parentNode.childNodes : null;
+  if (!siblings) return 0; // Root node - no siblings.
+  let hasSameNamedElements;
+  for (let i = 0; i < siblings.length; ++i) {
+    if (areNodesSimilar(node, siblings[i]) && siblings[i] !== node) {
+      hasSameNamedElements = true;
+      break;
+    }
+  }
+  if (!hasSameNamedElements) return 0;
+  let ownIndex = 1; // XPath indices start with 1.
+  for (let i = 0; i < siblings.length; ++i) {
+    if (areNodesSimilar(node, siblings[i])) {
+      if (siblings[i] === node) return ownIndex;
+      ++ownIndex;
+    }
+  }
+  return -1; // An error occurred: |node| not found in parent's children.
+};
 
-    return Elements.DOMPath.xPath;
-  })();
+const Step = class {
+  constructor(value, optimized) {
+    this.value = value;
+    this.optimized = optimized || false;
+  }
 
-  const range = window.getSelection().getRangeAt(0);
-  const selectorFromRangeBoundary = ({
-    container,
-    startPosition,
-    endPosition,
-  }) => ({
-    type: "XPATH_SELECTOR",
-    value: getXPath(container),
-    refinedBy: [
-      {
-        type: "TEXT_POSITION_SELECTOR",
-        start: startPosition,
-        end: endPosition,
-      },
-    ],
-  });
+  toString() {
+    return this.value;
+  }
+};
 
-  // FIXME: We need to expand the GraphQL enum to support more languages.
-  // const language = window.navigator.language.toUpperCase();
-  const language = "EN_US";
-  const textDirection = getComputedStyle(
-    window.document.body
-  ).direction.toUpperCase();
-  const output = {
+;// CONCATENATED MODULE: ./get-annotation/model.mjs
+
+
+const LANGUAGE = "EN_US";
+const TEXT_DIRECTION = getComputedStyle(
+  window.document.body
+).direction.toUpperCase();
+
+const makeXPathSelectorFromRange = ({
+  container,
+  startPosition,
+  endPosition,
+}) => ({
+  type: "XPATH_SELECTOR",
+  value: xPath(container),
+  refinedBy: [
+    {
+      type: "TEXT_POSITION_SELECTOR",
+      start: startPosition,
+      end: endPosition,
+    },
+  ],
+});
+
+const makeAnnotationFromSelection = ({ selection }) => {
+  const range = selection.getRangeAt(0);
+  return {
     context: ["http://www.w3.org/ns/anno.jsonld"],
     motivation: ["HIGHLIGHTING"],
     type: "ANNOTATION",
     target: [
       {
-        value: window.getSelection().toString(),
+        value: selection.toString(),
         format: "TEXT_PLAIN",
-        language,
-        processingLanguage: language,
-        textDirection,
+        language: LANGUAGE,
+        processingLanguage: LANGUAGE,
+        textDirection: TEXT_DIRECTION,
       },
       {
         source: {
           id: window.location.href,
           format: "TEXT_HTML",
-          language,
-          processingLanguage: language,
-          textDirection,
+          language: LANGUAGE,
+          processingLanguage: LANGUAGE,
+          textDirection: TEXT_DIRECTION,
           type: "TEXT",
         },
         selector: [
           {
             type: "RANGE_SELECTOR",
-            startSelector: selectorFromRangeBoundary({
+            startSelector: makeXPathSelectorFromRange({
               container: range.startContainer,
               startPosition: range.startOffset,
               endPosition: range.startContainer.textContent.length,
             }),
-            endSelector: selectorFromRangeBoundary({
+            endSelector: makeXPathSelectorFromRange({
               container: range.endContainer,
               startPosition: 0,
               endPosition: range.endOffset,
@@ -183,8 +180,20 @@
       },
     ],
   };
+};
+
+;// CONCATENATED MODULE: ./get-annotation/index.mjs
+
+
+(() => {
+  const output = !window.getSelection().empty()
+    ? makeAnnotationFromSelection({ selection: window.getSelection() })
+    : null;
 
   window.getSelection().removeAllRanges();
 
   return output;
 })();
+
+/******/ })()
+;
