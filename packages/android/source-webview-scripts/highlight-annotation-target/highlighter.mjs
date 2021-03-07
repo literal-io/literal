@@ -6,10 +6,13 @@ export class Highlighter {
 
   markText(text, dataset) {
     const span = document.createElement("span");
+
     span.role = "mark";
     span.style.backgroundColor = "rgb(0, 0, 0)";
     span.style.color = "rgba(255, 255, 255, 0.92)";
     span.style.display = "inline";
+    span.style.userSelect = "none";
+
     span.classList.add(this.highlightClassName);
     text.parentNode.replaceChild(span, text);
     Object.keys(dataset).forEach((key) => {
@@ -21,12 +24,15 @@ export class Highlighter {
 
   markImage(image, dataset) {
     const selected = image.cloneNode();
+
     selected.role = "mark";
     selected.style.objectPosition = `${image.width}px`;
     selected.style.backgroundImage = `url(${image.src})`;
     selected.style.backgroundColor = "rgba(255, 255, 0, 0.3)";
     selected.style.backgroundBlendMode = "overlay";
+    span.style.userSelect = "none";
     selected.classList.add(this.highlightClassName);
+
     Object.keys(dataset).forEach((key) => {
       selected.setAttribute(`data-${key}`, dataset[key]);
     });

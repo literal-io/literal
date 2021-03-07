@@ -1,12 +1,13 @@
 {
   "name": "source-webview-scripts",
-  "type": "module",
-  "sideEffects": true,
   "version": "1.0.0",
+  "type": "module",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "webpack"
+    "build": "npm run build:webpack && npm run build:wrap-executor",
+    "build:webpack": "webpack",
+    "build:wrap-executor": "node ./wrap-dist-with-executor.mjs"
   },
   "author": "",
   "license": "ISC",

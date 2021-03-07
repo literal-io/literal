@@ -1,10 +1,17 @@
 import { Messenger } from "./messenger.mjs";
 import { Highlighter } from "./highlighter.mjs";
 import { AnnotationFocusManager } from "./annotation-focus-manager.mjs";
-import { evaluate as evaluateXPath } from "./xpath.mjs";
+import {
+  evaluate as evaluateXPath,
+  xPathRangeSelectorPredicate,
+} from "../shared/xpath.mjs";
+import {
+  set as storageSet,
+  get as storageGet,
+  initialize as storageInitialize,
+} from "../shared/storage.mjs";
 
 import waitFor from "p-wait-for";
-import { xPathRangeSelectorPredicate } from "./xpath.mjs";
 
 const HIGHLIGHT_CLASS_NAME = "literal-highlight";
 const ANNOTATIONS = process.env.PARAM_ANNOTATIONS;
@@ -43,9 +50,11 @@ const waitForXPath = (value) => {
   ).then(() => evaluateXPath(value));
 };
 
-(() =>
+export default () =>
   onDocumentReady(async () => {
+    storageInitialize();
     highlighter.removeHighlights();
+    storageSet("annotationRanges", {});
 
     await Promise.all(
       ANNOTATIONS.reduce((rangeSelectors, annotation) => {
@@ -80,6 +89,10 @@ const waitForXPath = (value) => {
 
         try {
           highlighter.highlightRange(range, { "annotation-id": annotationId });
+          storageSet("annotationRanges", {
+            ...storageGet("annotationRanges"),
+            [annotationId]: range,
+          });
         } catch (e) {
           console.error("[Literal] Unable to highlight range.", range, e);
         }
@@ -87,4 +100,4 @@ const waitForXPath = (value) => {
     );
 
     annotationFocusManager.onAnnotationsRendered(ANNOTATIONS);
-  }))();
+  });

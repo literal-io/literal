@@ -1,3 +1,4 @@
+var Literal;
 /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
@@ -178,9 +179,45 @@ module.exports.default = pWaitFor;
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
+// ESM COMPAT FLAG
+__webpack_require__.r(__webpack_exports__);
+
+// EXPORTS
+__webpack_require__.d(__webpack_exports__, {
+  "default": () => (/* binding */ highlight_annotation_target)
+});
 
 ;// CONCATENATED MODULE: ./highlight-annotation-target/messenger.mjs
 class Messenger {
@@ -235,10 +272,13 @@ class Highlighter {
 
   markText(text, dataset) {
     const span = document.createElement("span");
+
     span.role = "mark";
     span.style.backgroundColor = "rgb(0, 0, 0)";
     span.style.color = "rgba(255, 255, 255, 0.92)";
     span.style.display = "inline";
+    span.style.userSelect = "none";
+
     span.classList.add(this.highlightClassName);
     text.parentNode.replaceChild(span, text);
     Object.keys(dataset).forEach((key) => {
@@ -250,12 +290,15 @@ class Highlighter {
 
   markImage(image, dataset) {
     const selected = image.cloneNode();
+
     selected.role = "mark";
     selected.style.objectPosition = `${image.width}px`;
     selected.style.backgroundImage = `url(${image.src})`;
     selected.style.backgroundColor = "rgba(255, 255, 0, 0.3)";
     selected.style.backgroundBlendMode = "overlay";
+    span.style.userSelect = "none";
     selected.classList.add(this.highlightClassName);
+
     Object.keys(dataset).forEach((key) => {
       selected.setAttribute(`data-${key}`, dataset[key]);
     });
@@ -416,7 +459,7 @@ class Highlighter {
   }
 }
 
-;// CONCATENATED MODULE: ./highlight-annotation-target/xpath.mjs
+;// CONCATENATED MODULE: ./shared/xpath.mjs
 const evaluate = (value) =>
   document.evaluate(
     value,
@@ -441,7 +484,21 @@ const xPathRangeSelectorPredicate = ({
     (refinedBySelector) => refinedBySelector.type === "TEXT_POSITION_SELECTOR"
   );
 
+;// CONCATENATED MODULE: ./shared/storage.mjs
+const NAMESPACE = "__literal";
+
+const initialize = () => {
+  window[NAMESPACE] = window[NAMESPACE] || {};
+};
+
+const set = (key, value) => {
+  window[NAMESPACE][key] = value;
+};
+
+const get = (key) => window[NAMESPACE][key];
+
 ;// CONCATENATED MODULE: ./highlight-annotation-target/annotation-focus-manager.mjs
+
 
 
 class AnnotationFocusManager {
@@ -500,37 +557,6 @@ class AnnotationFocusManager {
           annotationId: ev.target.getAttribute("data-annotation-id"),
           scrollIntoView: true,
         });
-      });
-
-      let longPressTimeout = null;
-      el.addEventListener("touchstart", (ev) => {
-        ev.preventDefault()
-        if (longPressTimeout) {
-          clearTimeout(longPressTimeout);
-          longPressTimeout = null;
-        }
-
-        longPressTimeout = setTimeout(() => {
-          this._handleEditAnnotationTarget({
-            annotationId: ev.target.getAttribute("data-annotation-id"),
-          });
-        }, 3 * 1000);
-      });
-
-      el.addEventListener("touchend", () => {
-        ev.preventDefault()
-        if (longPressTimeout) {
-          clearTimeout(longPressTimeout);
-          longPressTimeout = null;
-        }
-      });
-
-      el.addEventListener("mouseout", () => {
-        ev.preventDefault()
-        if (longPressTimeout) {
-          clearTimeout(longPressTimeout);
-          longPressTimeout = null;
-        }
       });
     });
 
@@ -605,9 +631,6 @@ class AnnotationFocusManager {
     const startNode = evaluate(targetRangeSelector.startSelector.value);
     const endNode = evaluate(targetRangeSelector.endSelector.value);
 
-    console.log(startNode, targetRangeSelector.startSelector.value)
-    console.log(endNode, targetRangeSelector.endSelector.value)
-
     const range = document.createRange();
     range.setStart(startNode, startTextPositionSelector.start);
     range.setEnd(endNode, endTextPositionSelector.end);
@@ -632,6 +655,28 @@ class AnnotationFocusManager {
           block: "center",
           inline: "center",
         });
+
+        if (!disableNotify) {
+          const ranges = get("annotationRanges");
+          if (!ranges || !ranges[annotationId]) {
+            console.error("[Literal] Unable to find range for annotation");
+            return;
+          }
+
+          const boundingBox = ranges[annotationId].getBoundingClientRect();
+          this.messenger.postMessage({
+            type: "FOCUS_ANNOTATION",
+            data: {
+              annotationId,
+              boundingBox: {
+                left: boundingBox.left * window.devicePixelRatio,
+                top: boundingBox.top * window.devicePixelRatio,
+                right: boundingBox.right * window.devicePixelRatio,
+                bottom: boundingBox.bottom * window.devicePixelRatio,
+              },
+            },
+          });
+        }
       }
       return;
     }
@@ -672,10 +717,23 @@ class AnnotationFocusManager {
     });
 
     if (!disableNotify) {
+      const ranges = get("annotationRanges");
+      if (!ranges || !ranges[annotationId]) {
+        console.error("[Literal] Unable to find range for annotation");
+        return;
+      }
+
+      const boundingBox = ranges[annotationId].getBoundingClientRect();
       this.messenger.postMessage({
         type: "FOCUS_ANNOTATION",
         data: {
           annotationId,
+          boundingBox: {
+            left: boundingBox.left * window.devicePixelRatio,
+            top: boundingBox.top * window.devicePixelRatio,
+            right: boundingBox.right * window.devicePixelRatio,
+            bottom: boundingBox.bottom * window.devicePixelRatio,
+          },
         },
       });
     }
@@ -750,9 +808,11 @@ const waitForXPath = (value) => {
   ).then(() => evaluate(value));
 };
 
-(() =>
+/* harmony default export */ const highlight_annotation_target = (() =>
   onDocumentReady(async () => {
+    initialize();
     highlighter.removeHighlights();
+    set("annotationRanges", {});
 
     await Promise.all(
       ANNOTATIONS.reduce((rangeSelectors, annotation) => {
@@ -787,6 +847,10 @@ const waitForXPath = (value) => {
 
         try {
           highlighter.highlightRange(range, { "annotation-id": annotationId });
+          set("annotationRanges", {
+            ...get("annotationRanges"),
+            [annotationId]: range,
+          });
         } catch (e) {
           console.error("[Literal] Unable to highlight range.", range, e);
         }
@@ -794,9 +858,11 @@ const waitForXPath = (value) => {
     );
 
     annotationFocusManager.onAnnotationsRendered(ANNOTATIONS);
-  }))();
+  }));
 
 })();
 
+Literal = __webpack_exports__;
 /******/ })()
 ;
+ Literal.default();

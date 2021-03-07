@@ -1,7 +1,8 @@
 import {
   evaluate as evaluateXPath,
   xPathRangeSelectorPredicate,
-} from "./xpath.mjs";
+} from "../shared/xpath.mjs";
+import { get as storageGet } from "../shared/storage.mjs";
 
 export class AnnotationFocusManager {
   constructor({ messenger, highlightClassName }) {
@@ -59,37 +60,6 @@ export class AnnotationFocusManager {
           annotationId: ev.target.getAttribute("data-annotation-id"),
           scrollIntoView: true,
         });
-      });
-
-      let longPressTimeout = null;
-      el.addEventListener("touchstart", (ev) => {
-        ev.preventDefault()
-        if (longPressTimeout) {
-          clearTimeout(longPressTimeout);
-          longPressTimeout = null;
-        }
-
-        longPressTimeout = setTimeout(() => {
-          this._handleEditAnnotationTarget({
-            annotationId: ev.target.getAttribute("data-annotation-id"),
-          });
-        }, 3 * 1000);
-      });
-
-      el.addEventListener("touchend", () => {
-        ev.preventDefault()
-        if (longPressTimeout) {
-          clearTimeout(longPressTimeout);
-          longPressTimeout = null;
-        }
-      });
-
-      el.addEventListener("mouseout", () => {
-        ev.preventDefault()
-        if (longPressTimeout) {
-          clearTimeout(longPressTimeout);
-          longPressTimeout = null;
-        }
       });
     });
 
@@ -164,9 +134,6 @@ export class AnnotationFocusManager {
     const startNode = evaluateXPath(targetRangeSelector.startSelector.value);
     const endNode = evaluateXPath(targetRangeSelector.endSelector.value);
 
-    console.log(startNode, targetRangeSelector.startSelector.value)
-    console.log(endNode, targetRangeSelector.endSelector.value)
-
     const range = document.createRange();
     range.setStart(startNode, startTextPositionSelector.start);
     range.setEnd(endNode, endTextPositionSelector.end);
@@ -191,6 +158,28 @@ export class AnnotationFocusManager {
           block: "center",
           inline: "center",
         });
+
+        if (!disableNotify) {
+          const ranges = storageGet("annotationRanges");
+          if (!ranges || !ranges[annotationId]) {
+            console.error("[Literal] Unable to find range for annotation");
+            return;
+          }
+
+          const boundingBox = ranges[annotationId].getBoundingClientRect();
+          this.messenger.postMessage({
+            type: "FOCUS_ANNOTATION",
+            data: {
+              annotationId,
+              boundingBox: {
+                left: boundingBox.left * window.devicePixelRatio,
+                top: boundingBox.top * window.devicePixelRatio,
+                right: boundingBox.right * window.devicePixelRatio,
+                bottom: boundingBox.bottom * window.devicePixelRatio,
+              },
+            },
+          });
+        }
       }
       return;
     }
@@ -231,10 +220,23 @@ export class AnnotationFocusManager {
     });
 
     if (!disableNotify) {
+      const ranges = storageGet("annotationRanges");
+      if (!ranges || !ranges[annotationId]) {
+        console.error("[Literal] Unable to find range for annotation");
+        return;
+      }
+
+      const boundingBox = ranges[annotationId].getBoundingClientRect();
       this.messenger.postMessage({
         type: "FOCUS_ANNOTATION",
         data: {
           annotationId,
+          boundingBox: {
+            left: boundingBox.left * window.devicePixelRatio,
+            top: boundingBox.top * window.devicePixelRatio,
+            right: boundingBox.right * window.devicePixelRatio,
+            bottom: boundingBox.bottom * window.devicePixelRatio,
+          },
         },
       });
     }

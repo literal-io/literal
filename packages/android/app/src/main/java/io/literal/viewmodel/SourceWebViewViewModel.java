@@ -39,9 +39,13 @@ import io.literal.model.TextualTarget;
 public class SourceWebViewViewModel extends ViewModel {
     private static final String GET_ANNOTATION_SCRIPT_NAME = "SourceWebViewGetAnnotation.js";
     private static final String HIGHLIGHT_ANNOTATION_TARGET_SCRIPT_NAME = "SourceWebViewHighlightAnnotationTarget.js";
+    private static final String GET_ANNOTATION_BOUNDING_BOX_SCRIPT_NAME = "SourceWebViewGetAnnotationBoundingBox.js";
+
+    private String getAnnotationScript = null;
+    private String highlightAnnotationTargetScript = null;
+    private String getAnnotationBoundingBoxScript = null;
+
     private final MutableLiveData<Boolean> hasFinishedInitializing = new MutableLiveData<>(false);
-    private final MutableLiveData<String> getSelectorScript = new MutableLiveData<>(null);
-    private final MutableLiveData<String> highlightAnnotationTargetScript = new MutableLiveData<>(null);
     private final MutableLiveData<ArrayList<Annotation>> annotations = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<DomainMetadata> domainMetadata = new MutableLiveData<>(null);
     private final MutableLiveData<Annotation> focusedAnnotation = new MutableLiveData<>(null);
@@ -60,31 +64,49 @@ public class SourceWebViewViewModel extends ViewModel {
     }
 
     public String getGetAnnotationScript(AssetManager assetManager) {
-        if (getSelectorScript.getValue() == null) {
+        if (getAnnotationScript == null) {
             try {
-                getSelectorScript.setValue(
-                        IOUtils.toString(assetManager.open(GET_ANNOTATION_SCRIPT_NAME), StandardCharsets.UTF_8)
-                );
+                getAnnotationScript =
+                        IOUtils.toString(assetManager.open(GET_ANNOTATION_SCRIPT_NAME), StandardCharsets.UTF_8);
             } catch (IOException e) {
                 Log.d("SourceWebViewViewModel", "getGetSelectorScript", e);
             }
         }
-        return getSelectorScript.getValue();
+        return getAnnotationScript;
     }
 
     public String getHighlightAnnotationTargetScript(AssetManager assetManager, JSONArray paramAnnotations) {
-        if (highlightAnnotationTargetScript.getValue() == null) {
+        if (highlightAnnotationTargetScript == null) {
             try {
-                highlightAnnotationTargetScript.setValue(
-                        IOUtils.toString(assetManager.open(HIGHLIGHT_ANNOTATION_TARGET_SCRIPT_NAME), StandardCharsets.UTF_8)
-                );
+                highlightAnnotationTargetScript =
+                        IOUtils.toString(assetManager.open(HIGHLIGHT_ANNOTATION_TARGET_SCRIPT_NAME), StandardCharsets.UTF_8);
             } catch (IOException e) {
                 Log.d("SourceWebViewViewModel", "getHighlightAnnotationTargetScript", e);
             }
         }
 
         String stringifiedParamAnnotations = JSONObject.quote(paramAnnotations.toString());
-        return highlightAnnotationTargetScript.getValue().replaceAll("process\\.env\\.PARAM_ANNOTATIONS", stringifiedParamAnnotations.substring(1, stringifiedParamAnnotations.length() - 1));
+        return highlightAnnotationTargetScript
+                .replaceAll(
+                        "process\\.env\\.PARAM_ANNOTATIONS",
+                        stringifiedParamAnnotations.substring(1, stringifiedParamAnnotations.length() - 1)
+                );
+    }
+
+    public String getGetAnnotationBoundingBoxScript(AssetManager assetManager, JSONObject paramAnnotation) {
+        if (getAnnotationBoundingBoxScript == null) {
+            try {
+                getAnnotationBoundingBoxScript = IOUtils.toString(assetManager.open(GET_ANNOTATION_BOUNDING_BOX_SCRIPT_NAME), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                Log.d("SourceWebViewViewModel", "getAnnotationBoundingBoxScript", e);
+            }
+        }
+        String stringifiedParamAnnotation = JSONObject.quote(paramAnnotation.toString());
+        return getAnnotationBoundingBoxScript
+                .replaceAll(
+                        "process\\.env\\.PARAM_ANNOTATION",
+                        stringifiedParamAnnotation.substring(1, stringifiedParamAnnotation.length() - 1)
+                );
     }
 
     public MutableLiveData<ArrayList<Annotation>> getAnnotations() {

@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">Literal</string>
+
     <string name="annotate">Annotate</string>
+    <string name="edit">Edit</string>
+    <string name="remove">Remove</string>
     <string name="done">Done</string>
 
     <string name="annotation_created_notification_channel_id">ANNOTATION_CREATED</string>

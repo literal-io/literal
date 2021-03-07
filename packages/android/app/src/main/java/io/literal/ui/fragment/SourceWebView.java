@@ -2,9 +2,11 @@ package io.literal.ui.fragment;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -41,6 +43,7 @@ import io.literal.R;
 import io.literal.lib.Callback;
 import io.literal.lib.DomainMetadata;
 import io.literal.lib.JsonArrayUtil;
+import io.literal.lib.ResultCallback;
 import io.literal.lib.WebEvent;
 import io.literal.model.Annotation;
 import io.literal.model.ExternalTarget;
@@ -48,6 +51,7 @@ import io.literal.model.SpecificTarget;
 import io.literal.model.Target;
 import io.literal.repository.NotificationRepository;
 import io.literal.repository.ShareTargetHandlerRepository;
+import io.literal.ui.MainApplication;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
@@ -62,6 +66,7 @@ public class SourceWebView extends Fragment {
     private io.literal.ui.view.SourceWebView webView;
     private Toolbar toolbar;
     private AppBarLayout appBarLayout;
+    private ActionMode editAnnotationActionMode;
 
     private SourceWebViewViewModel sourceWebViewViewModel;
     private AuthenticationViewModel authenticationViewModel;
@@ -200,9 +205,19 @@ public class SourceWebView extends Fragment {
         webView.setWebEventCallback((e, webView, event) -> {
             switch (event.getType()) {
                 case WebEvent.TYPE_FOCUS_ANNOTATION:
-                    String annotationId = event.getData().optString("annotationId");
-                    if (!annotationId.isEmpty()) {
-                        handleAnnotationFocus(annotationId);
+                    try {
+                        String annotationId = event.getData().getString("annotationId");
+                        JSONObject boundingBox = event.getData().getJSONObject("boundingBox");
+                        Rect annotationBoundingBox = new Rect(
+                                boundingBox.getInt("left"),
+                                boundingBox.getInt("top"),
+                                boundingBox.getInt("right"),
+                                boundingBox.getInt("bottom")
+                        );
+
+                        handleAnnotationFocus(annotationId, annotationBoundingBox);
+                    } catch (JSONException ex) {
+                        Log.d("SourceWebView", "Unable to parse FOCUS_ANNOTATION data: " + event.getData(), e);
                     }
                     break;
                 case WebEvent.TYPE_BLUR_ANNOTATION:
@@ -288,7 +303,7 @@ public class SourceWebView extends Fragment {
         }
     }
 
-    private void handleAnnotationFocus(String annotationId) {
+    private void handleAnnotationFocus(String annotationId, Rect annotationBoundingBox) {
         Optional<Annotation> annotation = sourceWebViewViewModel
                 .getAnnotations()
                 .getValue()
@@ -305,6 +320,26 @@ public class SourceWebView extends Fragment {
         if (paramEnableAppWebViewBottomSheet) {
             appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
         }
+
+        if (editAnnotationActionMode != null) {
+            editAnnotationActionMode.finish();
+        }
+
+        io.literal.ui.view.SourceWebView.EditAnnotationActionModeCallback callback = new io.literal.ui.view.SourceWebView.EditAnnotationActionModeCallback(
+                annotationBoundingBox,
+                (e, data) -> {
+                    try {
+                        return sourceWebViewViewModel.getGetAnnotationBoundingBoxScript(
+                                getActivity().getAssets(),
+                                annotation.get().toJson()
+                        );
+                    } catch (JSONException ex) {
+                        Log.d("SourceWebView", "Unable to stringify annotation: " + annotation.get(), ex);
+                        return null;
+                    }
+                }
+        );
+        editAnnotationActionMode = webView.startActionMode(callback, ActionMode.TYPE_FLOATING);
     }
 
     public void handleViewTargetForAnnotation(String annotationId, Target target) {
@@ -384,6 +419,10 @@ public class SourceWebView extends Fragment {
     private void handleAnnotationBlur() {
         appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
         sourceWebViewViewModel.setFocusedAnnotation(null);
+        if (editAnnotationActionMode != null) {
+            editAnnotationActionMode.finish();
+            editAnnotationActionMode = null;
+        }
     }
 
     private void handleDone() {

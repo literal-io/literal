@@ -1,4 +1,4 @@
-import path from "path";
+const resolvePath = (path) => new URL(path, import.meta.url).pathname;
 
 const config = {
   mode: "production",
@@ -6,19 +6,18 @@ const config = {
     minimize: false,
   },
   entry: {
-    GetAnnotation: new URL(
-      "./get-annotation/index.mjs",
-      import.meta.url
-    ).pathname,
-    HighlightAnnotationTarget: new URL(
-      "./highlight-annotation-target/index.mjs",
-      import.meta.url
-    ).pathname,
+    GetAnnotation: resolvePath("./get-annotation/index.mjs"),
+    HighlightAnnotationTarget: resolvePath(
+      "./highlight-annotation-target/index.mjs"
+    ),
+    GetAnnotationBoundingBox: resolvePath(
+      "./get-annotation-bounding-box/index.mjs"
+    ),
   },
   output: {
     filename: "SourceWebView[name].js",
-    path: new URL("../app/src/main/assets/", import.meta.url).pathname,
-    iife: true
+    path: resolvePath("./dist"),
+    library: "Literal"
   },
 };
 
