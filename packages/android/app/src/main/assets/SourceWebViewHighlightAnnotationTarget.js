@@ -416,7 +416,34 @@ class Highlighter {
   }
 }
 
+;// CONCATENATED MODULE: ./highlight-annotation-target/xpath.mjs
+const evaluate = (value) =>
+  document.evaluate(
+    value,
+    document,
+    null,
+    XPathResult.FIRST_ORDERED_NODE_TYPE,
+    null
+  ).singleNodeValue;
+
+const xPathRangeSelectorPredicate = ({
+  type,
+  startSelector,
+  endSelector,
+}) =>
+  type === "RANGE_SELECTOR" &&
+  startSelector.type === "XPATH_SELECTOR" &&
+  (startSelector.refinedBy || []).some(
+    (refinedBySelector) => refinedBySelector.type === "TEXT_POSITION_SELECTOR"
+  ) &&
+  endSelector.type === "XPATH_SELECTOR" &&
+  (endSelector.refinedBy || []).some(
+    (refinedBySelector) => refinedBySelector.type === "TEXT_POSITION_SELECTOR"
+  );
+
 ;// CONCATENATED MODULE: ./highlight-annotation-target/annotation-focus-manager.mjs
+
+
 class AnnotationFocusManager {
   constructor({ messenger, highlightClassName }) {
     this.messenger = messenger;
@@ -460,7 +487,9 @@ class AnnotationFocusManager {
     }
   }
 
-  onAnnotationsRendered() {
+  onAnnotationsRendered(annotations) {
+    this.annotations = annotations;
+
     // focus on annotation click
     document.querySelectorAll(`.${this.highlightClassName}`).forEach((el) => {
       el.addEventListener("click", (ev) => {
@@ -471,6 +500,37 @@ class AnnotationFocusManager {
           annotationId: ev.target.getAttribute("data-annotation-id"),
           scrollIntoView: true,
         });
+      });
+
+      let longPressTimeout = null;
+      el.addEventListener("touchstart", (ev) => {
+        ev.preventDefault()
+        if (longPressTimeout) {
+          clearTimeout(longPressTimeout);
+          longPressTimeout = null;
+        }
+
+        longPressTimeout = setTimeout(() => {
+          this._handleEditAnnotationTarget({
+            annotationId: ev.target.getAttribute("data-annotation-id"),
+          });
+        }, 3 * 1000);
+      });
+
+      el.addEventListener("touchend", () => {
+        ev.preventDefault()
+        if (longPressTimeout) {
+          clearTimeout(longPressTimeout);
+          longPressTimeout = null;
+        }
+      });
+
+      el.addEventListener("mouseout", () => {
+        ev.preventDefault()
+        if (longPressTimeout) {
+          clearTimeout(longPressTimeout);
+          longPressTimeout = null;
+        }
       });
     });
 
@@ -504,6 +564,64 @@ class AnnotationFocusManager {
     if (Array.from(entries.values()).every((isVisible) => !isVisible)) {
       this._handleBlurAnnotation();
     }
+  }
+
+  _handleEditAnnotationTarget({ annotationId }) {
+    const annotation = this.annotations.find(
+      (annotation) => annotation.id === annotationId
+    );
+    if (!annotation) {
+      console.error(
+        "[Literal] Unable to find annotation.",
+        annotationId,
+        this.annotations
+      );
+      return;
+    }
+
+    const target = annotation.target.find(
+      (target) =>
+        target.type === "SPECIFIC_RESOURCE" &&
+        (target.selector || []).some(xPathRangeSelectorPredicate)
+    );
+    if (!target) {
+      console.error(
+        "[Literal] Unable to find supported long press target.",
+        annotation
+      );
+      return;
+    }
+
+    const targetRangeSelector = target.selector.find(
+      ({ type }) => type === "RANGE_SELECTOR"
+    );
+    const startTextPositionSelector = targetRangeSelector.startSelector.refinedBy.find(
+      ({ type }) => type === "TEXT_POSITION_SELECTOR"
+    );
+    const endTextPositionSelector = targetRangeSelector.endSelector.refinedBy.find(
+      ({ type }) => type === "TEXT_POSITION_SELECTOR"
+    );
+
+    const startNode = evaluate(targetRangeSelector.startSelector.value);
+    const endNode = evaluate(targetRangeSelector.endSelector.value);
+
+    console.log(startNode, targetRangeSelector.startSelector.value)
+    console.log(endNode, targetRangeSelector.endSelector.value)
+
+    const range = document.createRange();
+    range.setStart(startNode, startTextPositionSelector.start);
+    range.setEnd(endNode, endTextPositionSelector.end);
+
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+
+    this.messenger.postMessage({
+      type: "EDIT_ANNOTATION_TARGET",
+      data: {
+        annotationId,
+        targetId,
+      },
+    });
   }
 
   _handleFocusAnnotation({ annotationId, disableNotify, scrollIntoView }) {
@@ -592,6 +710,9 @@ var p_wait_for = __webpack_require__(299);
 
 
 
+
+
+
 const HIGHLIGHT_CLASS_NAME = "literal-highlight";
 const ANNOTATIONS = process.env.PARAM_ANNOTATIONS;
 
@@ -616,26 +737,17 @@ const onDocumentReady = (cb) => {
   }
 };
 
-const xPathEvaluate = (value) => {
-  const evaluate = () =>
-    document.evaluate(
-      value,
-      document,
-      null,
-      XPathResult.FIRST_ORDERED_NODE_TYPE,
-      null
-    ).singleNodeValue;
-
+const waitForXPath = (value) => {
   return p_wait_for(
     () => {
       try {
-        return Boolean(evaluate());
+        return Boolean(evaluate(value));
       } catch (err) {
         return false;
       }
     },
     { interval: 50, timeout: 5000 }
-  ).then(() => evaluate());
+  ).then(() => evaluate(value));
 };
 
 (() =>
@@ -646,24 +758,32 @@ const xPathEvaluate = (value) => {
       ANNOTATIONS.reduce((rangeSelectors, annotation) => {
         if (annotation.target) {
           return annotation.target
-            .filter(({ type }) => type === "SPECIFIC_RESOURCE")
-            .map(({ selector }) =>
-              selector.filter(({ type }) => type === "RANGE_SELECTOR")
+            .filter(
+              (target) =>
+                target.type === "SPECIFIC_RESOURCE" &&
+                (target.selector || []).some(xPathRangeSelectorPredicate)
             )
+            .map(({ selector }) => selector.filter(xPathRangeSelectorPredicate))
             .flat()
             .map((selector) => ({ ...selector, annotationId: annotation.id }))
             .concat(rangeSelectors);
         }
         return rangeSelectors;
       }, []).map(async ({ startSelector, endSelector, annotationId }) => {
+        const startTextPositionSelector = startSelector.refinedBy.find(
+          ({ type }) => type === "TEXT_POSITION_SELECTOR"
+        );
+        const endTextPositionSelector = endSelector.refinedBy.find(
+          ({ type }) => type === "TEXT_POSITION_SELECTOR"
+        );
         const [startNode, endNode] = await Promise.all([
-          xPathEvaluate(startSelector.value),
-          xPathEvaluate(endSelector.value),
+          waitForXPath(startSelector.value),
+          waitForXPath(endSelector.value),
         ]);
 
         const range = document.createRange();
-        range.setStart(startNode, startSelector.refinedBy[0].start);
-        range.setEnd(endNode, endSelector.refinedBy[0].end);
+        range.setStart(startNode, startTextPositionSelector.start);
+        range.setEnd(endNode, endTextPositionSelector.end);
 
         try {
           highlighter.highlightRange(range, { "annotation-id": annotationId });
@@ -673,7 +793,7 @@ const xPathEvaluate = (value) => {
       })
     );
 
-    annotationFocusManager.onAnnotationsRendered();
+    annotationFocusManager.onAnnotationsRendered(ANNOTATIONS);
   }))();
 
 })();

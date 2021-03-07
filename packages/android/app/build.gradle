@@ -60,6 +60,17 @@ android {
 
 }
 
+task buildSourceWebViewScripts(type: Exec) {
+  commandLine rootProject.file('./source-webview-scripts/build.sh')
+}
+
+tasks.whenTaskAdded { task ->
+    if (task.name == 'assembleRelease' || task.name == 'assembleDebug') {
+        task.dependsOn buildSourceWebViewScripts
+    }
+}
+
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 

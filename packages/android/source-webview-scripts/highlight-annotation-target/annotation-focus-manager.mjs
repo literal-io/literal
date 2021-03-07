@@ -1,3 +1,8 @@
+import {
+  evaluate as evaluateXPath,
+  xPathRangeSelectorPredicate,
+} from "./xpath.mjs";
+
 export class AnnotationFocusManager {
   constructor({ messenger, highlightClassName }) {
     this.messenger = messenger;
@@ -41,7 +46,9 @@ export class AnnotationFocusManager {
     }
   }
 
-  onAnnotationsRendered() {
+  onAnnotationsRendered(annotations) {
+    this.annotations = annotations;
+
     // focus on annotation click
     document.querySelectorAll(`.${this.highlightClassName}`).forEach((el) => {
       el.addEventListener("click", (ev) => {
@@ -52,6 +59,37 @@ export class AnnotationFocusManager {
           annotationId: ev.target.getAttribute("data-annotation-id"),
           scrollIntoView: true,
         });
+      });
+
+      let longPressTimeout = null;
+      el.addEventListener("touchstart", (ev) => {
+        ev.preventDefault()
+        if (longPressTimeout) {
+          clearTimeout(longPressTimeout);
+          longPressTimeout = null;
+        }
+
+        longPressTimeout = setTimeout(() => {
+          this._handleEditAnnotationTarget({
+            annotationId: ev.target.getAttribute("data-annotation-id"),
+          });
+        }, 3 * 1000);
+      });
+
+      el.addEventListener("touchend", () => {
+        ev.preventDefault()
+        if (longPressTimeout) {
+          clearTimeout(longPressTimeout);
+          longPressTimeout = null;
+        }
+      });
+
+      el.addEventListener("mouseout", () => {
+        ev.preventDefault()
+        if (longPressTimeout) {
+          clearTimeout(longPressTimeout);
+          longPressTimeout = null;
+        }
       });
     });
 
@@ -85,6 +123,64 @@ export class AnnotationFocusManager {
     if (Array.from(entries.values()).every((isVisible) => !isVisible)) {
       this._handleBlurAnnotation();
     }
+  }
+
+  _handleEditAnnotationTarget({ annotationId }) {
+    const annotation = this.annotations.find(
+      (annotation) => annotation.id === annotationId
+    );
+    if (!annotation) {
+      console.error(
+        "[Literal] Unable to find annotation.",
+        annotationId,
+        this.annotations
+      );
+      return;
+    }
+
+    const target = annotation.target.find(
+      (target) =>
+        target.type === "SPECIFIC_RESOURCE" &&
+        (target.selector || []).some(xPathRangeSelectorPredicate)
+    );
+    if (!target) {
+      console.error(
+        "[Literal] Unable to find supported long press target.",
+        annotation
+      );
+      return;
+    }
+
+    const targetRangeSelector = target.selector.find(
+      ({ type }) => type === "RANGE_SELECTOR"
+    );
+    const startTextPositionSelector = targetRangeSelector.startSelector.refinedBy.find(
+      ({ type }) => type === "TEXT_POSITION_SELECTOR"
+    );
+    const endTextPositionSelector = targetRangeSelector.endSelector.refinedBy.find(
+      ({ type }) => type === "TEXT_POSITION_SELECTOR"
+    );
+
+    const startNode = evaluateXPath(targetRangeSelector.startSelector.value);
+    const endNode = evaluateXPath(targetRangeSelector.endSelector.value);
+
+    console.log(startNode, targetRangeSelector.startSelector.value)
+    console.log(endNode, targetRangeSelector.endSelector.value)
+
+    const range = document.createRange();
+    range.setStart(startNode, startTextPositionSelector.start);
+    range.setEnd(endNode, endTextPositionSelector.end);
+
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+
+    this.messenger.postMessage({
+      type: "EDIT_ANNOTATION_TARGET",
+      data: {
+        annotationId,
+        targetId,
+      },
+    });
   }
 
   _handleFocusAnnotation({ annotationId, disableNotify, scrollIntoView }) {

@@ -1,7 +1,10 @@
 import { Messenger } from "./messenger.mjs";
 import { Highlighter } from "./highlighter.mjs";
 import { AnnotationFocusManager } from "./annotation-focus-manager.mjs";
+import { evaluate as evaluateXPath } from "./xpath.mjs";
+
 import waitFor from "p-wait-for";
+import { xPathRangeSelectorPredicate } from "./xpath.mjs";
 
 const HIGHLIGHT_CLASS_NAME = "literal-highlight";
 const ANNOTATIONS = process.env.PARAM_ANNOTATIONS;
@@ -27,26 +30,17 @@ const onDocumentReady = (cb) => {
   }
 };
 
-const xPathEvaluate = (value) => {
-  const evaluate = () =>
-    document.evaluate(
-      value,
-      document,
-      null,
-      XPathResult.FIRST_ORDERED_NODE_TYPE,
-      null
-    ).singleNodeValue;
-
+const waitForXPath = (value) => {
   return waitFor(
     () => {
       try {
-        return Boolean(evaluate());
+        return Boolean(evaluateXPath(value));
       } catch (err) {
         return false;
       }
     },
     { interval: 50, timeout: 5000 }
-  ).then(() => evaluate());
+  ).then(() => evaluateXPath(value));
 };
 
 (() =>
@@ -57,24 +51,32 @@ const xPathEvaluate = (value) => {
       ANNOTATIONS.reduce((rangeSelectors, annotation) => {
         if (annotation.target) {
           return annotation.target
-            .filter(({ type }) => type === "SPECIFIC_RESOURCE")
-            .map(({ selector }) =>
-              selector.filter(({ type }) => type === "RANGE_SELECTOR")
+            .filter(
+              (target) =>
+                target.type === "SPECIFIC_RESOURCE" &&
+                (target.selector || []).some(xPathRangeSelectorPredicate)
             )
+            .map(({ selector }) => selector.filter(xPathRangeSelectorPredicate))
             .flat()
             .map((selector) => ({ ...selector, annotationId: annotation.id }))
             .concat(rangeSelectors);
         }
         return rangeSelectors;
       }, []).map(async ({ startSelector, endSelector, annotationId }) => {
+        const startTextPositionSelector = startSelector.refinedBy.find(
+          ({ type }) => type === "TEXT_POSITION_SELECTOR"
+        );
+        const endTextPositionSelector = endSelector.refinedBy.find(
+          ({ type }) => type === "TEXT_POSITION_SELECTOR"
+        );
         const [startNode, endNode] = await Promise.all([
-          xPathEvaluate(startSelector.value),
-          xPathEvaluate(endSelector.value),
+          waitForXPath(startSelector.value),
+          waitForXPath(endSelector.value),
         ]);
 
         const range = document.createRange();
-        range.setStart(startNode, startSelector.refinedBy[0].start);
-        range.setEnd(endNode, endSelector.refinedBy[0].end);
+        range.setStart(startNode, startTextPositionSelector.start);
+        range.setEnd(endNode, endTextPositionSelector.end);
 
         try {
           highlighter.highlightRange(range, { "annotation-id": annotationId });
@@ -84,5 +86,5 @@ const xPathEvaluate = (value) => {
       })
     );
 
-    annotationFocusManager.onAnnotationsRendered();
+    annotationFocusManager.onAnnotationsRendered(ANNOTATIONS);
   }))();
