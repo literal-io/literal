@@ -154,12 +154,40 @@ public class SourceWebView extends NestedScrollingChildWebView {
     @Override
     public ActionMode startActionMode(ActionMode.Callback callback, int type) {
         if (callback instanceof EditAnnotationActionModeCallback) {
-            return super.startActionMode(callback, type);
+            ActionMode actionMode = super.startActionMode(callback, type);
+            return actionMode;
         } else {
             // Default Chrome text selection action mode, which we intercept to provide different menu options.
             ActionMode.Callback2 cb = new CreateAnnotationActionModeCallback((ActionMode.Callback2) callback);
             return super.startActionMode(cb, type);
         }
+    }
+
+    public ActionMode startEditAnnotationActionMode(String getAnnotationBoundingBoxScript, Rect initialAnnotationBoundingBox) {
+        EditAnnotationActionModeCallback actionModeCallback = new EditAnnotationActionModeCallback(initialAnnotationBoundingBox);
+        ActionMode actionMode = super.startActionMode(actionModeCallback, ActionMode.TYPE_FLOATING);
+
+        setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> evaluateJavascript(getAnnotationBoundingBoxScript, value -> {
+            try {
+                JSONObject boundingBox = new JSONObject(value);
+                int left = boundingBox.getInt("left");
+                int top = boundingBox.getInt("top");
+                int right = boundingBox.getInt("right");
+                int bottom = boundingBox.getInt("bottom");
+
+                actionModeCallback.setAnnotationBoundingBox(new Rect(left, top, right, bottom));
+                actionMode.invalidateContentRect();
+            } catch (JSONException ex) {
+                Log.d("SourceWebView", "Unable to parse bounding box: " + value, ex);
+            }
+        }));
+
+        return actionMode;
+    }
+
+    public void finishEditAnnotationActionMode(ActionMode actionMode) {
+        setOnScrollChangeListener(null);
+        actionMode.finish();
     }
 
     public void setOnAnnotationCreated(Callback<Exception, View> onAnnotationCreated) {
@@ -183,12 +211,9 @@ public class SourceWebView extends NestedScrollingChildWebView {
     }
 
     public static class EditAnnotationActionModeCallback extends ActionMode.Callback2 {
-
-        ResultCallback<String, Void> onGetGetAnnotationBoundingBoxScript;
         Rect annotationBoundingBox;
 
-        public EditAnnotationActionModeCallback(Rect annotationBoundingBox, ResultCallback<String, Void> onGetGetAnnotationBoundingBoxScript) {
-            this.onGetGetAnnotationBoundingBoxScript = onGetGetAnnotationBoundingBoxScript;
+        public EditAnnotationActionModeCallback(Rect annotationBoundingBox) {
             this.annotationBoundingBox = annotationBoundingBox;
         }
 
@@ -197,6 +222,10 @@ public class SourceWebView extends NestedScrollingChildWebView {
             MenuInflater inflater = mode.getMenuInflater();
             inflater.inflate(R.menu.source_webview_edit_annotation_menu, menu);
             return true;
+        }
+
+        public void setAnnotationBoundingBox(Rect annotationBoundingBox) {
+            this.annotationBoundingBox = annotationBoundingBox;
         }
 
         @Override
@@ -214,28 +243,8 @@ public class SourceWebView extends NestedScrollingChildWebView {
 
         }
 
-        public void setAnnotationBoundingBox(Rect annotationBoundingBox) {
-            this.annotationBoundingBox = annotationBoundingBox;
-        }
-
         @Override
         public void onGetContentRect (ActionMode mode, View view, Rect outRect){
-
-            String script = onGetGetAnnotationBoundingBoxScript.invoke(null, null);
-            ((WebView) view).evaluateJavascript(script, value -> {
-                try {
-                    JSONObject boundingBox = new JSONObject(value);
-                    int left = boundingBox.getInt("left");
-                    int top = boundingBox.getInt("top");
-                    int right = boundingBox.getInt("right");
-                    int bottom = boundingBox.getInt("bottom");
-
-                    annotationBoundingBox = new Rect(left, top, right, bottom);
-                } catch (JSONException ex) {
-                    Log.d("SourceWebView", "Unable to parse bounding box: " + value, ex);
-                }
-            });
-
             outRect.set(annotationBoundingBox);
         }
     }

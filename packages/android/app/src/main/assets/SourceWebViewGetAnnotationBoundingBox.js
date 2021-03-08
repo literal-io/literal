@@ -71,10 +71,10 @@ const ANNOTATION = process.env.PARAM_ANNOTATION;
 
   const boundingBox = ranges[ANNOTATION.id].getBoundingClientRect();
   return {
-    left: boundingBox.left,
-    top: boundingBox.top,
-    right: boundingBox.right,
-    bottom: boundingBox.bottom,
+    left: boundingBox.left * window.devicePixelRatio,
+    top: boundingBox.top * window.devicePixelRatio,
+    right: boundingBox.right * window.devicePixelRatio,
+    bottom: boundingBox.bottom * window.devicePixelRatio,
   };
 });
 

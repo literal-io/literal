@@ -325,21 +325,15 @@ public class SourceWebView extends Fragment {
             editAnnotationActionMode.finish();
         }
 
-        io.literal.ui.view.SourceWebView.EditAnnotationActionModeCallback callback = new io.literal.ui.view.SourceWebView.EditAnnotationActionModeCallback(
-                annotationBoundingBox,
-                (e, data) -> {
-                    try {
-                        return sourceWebViewViewModel.getGetAnnotationBoundingBoxScript(
-                                getActivity().getAssets(),
-                                annotation.get().toJson()
-                        );
-                    } catch (JSONException ex) {
-                        Log.d("SourceWebView", "Unable to stringify annotation: " + annotation.get(), ex);
-                        return null;
-                    }
-                }
-        );
-        editAnnotationActionMode = webView.startActionMode(callback, ActionMode.TYPE_FLOATING);
+        try {
+            String getAnnotationBoundingBoxScript = sourceWebViewViewModel.getGetAnnotationBoundingBoxScript(
+                    getActivity().getAssets(),
+                    annotation.get().toJson()
+            );
+            editAnnotationActionMode = webView.startEditAnnotationActionMode(getAnnotationBoundingBoxScript, annotationBoundingBox);
+        } catch (JSONException e) {
+            Log.d("SourceWebView", "Unable to stringify annotation: " + annotation.get(), e);
+        }
     }
 
     public void handleViewTargetForAnnotation(String annotationId, Target target) {
@@ -420,7 +414,7 @@ public class SourceWebView extends Fragment {
         appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
         sourceWebViewViewModel.setFocusedAnnotation(null);
         if (editAnnotationActionMode != null) {
-            editAnnotationActionMode.finish();
+            webView.finishEditAnnotationActionMode(editAnnotationActionMode);
             editAnnotationActionMode = null;
         }
     }

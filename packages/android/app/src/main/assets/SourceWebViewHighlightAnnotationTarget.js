@@ -509,7 +509,7 @@ class AnnotationFocusManager {
     this.annotationsRendered = false;
 
     this.focusedAnnotationIntersectionObserver = new IntersectionObserver(
-      this._handleIntersectionObserverEntries,
+      (entries) => this._handleIntersectionObserverEntries(entries),
       {
         root: null,
         rootMargin: "0px",
@@ -587,7 +587,11 @@ class AnnotationFocusManager {
       );
     });
 
-    if (Array.from(entries.values()).every((isVisible) => !isVisible)) {
+    if (
+      Array.from(this.focusedAnnotationElemIsVisible.values()).every(
+        (isVisible) => !isVisible
+      )
+    ) {
       this._handleBlurAnnotation();
     }
   }
@@ -649,34 +653,38 @@ class AnnotationFocusManager {
 
   _handleFocusAnnotation({ annotationId, disableNotify, scrollIntoView }) {
     if (this.focusedAnnotationId === annotationId) {
-      if (scrollIntoView) {
+      const isVisible = Array.from(
+        this.focusedAnnotationElemIsVisible.values()
+      ).some((isVisible) => isVisible);
+
+      if (scrollIntoView && !isVisible) {
         this.focusedAnnotationElems[0].scrollIntoView({
           behavior: "auto",
           block: "center",
           inline: "center",
         });
+      }
 
-        if (!disableNotify) {
-          const ranges = get("annotationRanges");
-          if (!ranges || !ranges[annotationId]) {
-            console.error("[Literal] Unable to find range for annotation");
-            return;
-          }
-
-          const boundingBox = ranges[annotationId].getBoundingClientRect();
-          this.messenger.postMessage({
-            type: "FOCUS_ANNOTATION",
-            data: {
-              annotationId,
-              boundingBox: {
-                left: boundingBox.left * window.devicePixelRatio,
-                top: boundingBox.top * window.devicePixelRatio,
-                right: boundingBox.right * window.devicePixelRatio,
-                bottom: boundingBox.bottom * window.devicePixelRatio,
-              },
-            },
-          });
+      if (!disableNotify) {
+        const ranges = get("annotationRanges");
+        if (!ranges || !ranges[annotationId]) {
+          console.error("[Literal] Unable to find range for annotation");
+          return;
         }
+
+        const boundingBox = ranges[annotationId].getBoundingClientRect();
+        this.messenger.postMessage({
+          type: "FOCUS_ANNOTATION",
+          data: {
+            annotationId,
+            boundingBox: {
+              left: boundingBox.left * window.devicePixelRatio,
+              top: boundingBox.top * window.devicePixelRatio,
+              right: boundingBox.right * window.devicePixelRatio,
+              bottom: boundingBox.bottom * window.devicePixelRatio,
+            },
+          },
+        });
       }
       return;
     }
@@ -740,6 +748,7 @@ class AnnotationFocusManager {
   }
 
   _handleBlurAnnotation() {
+    console.log("handleBlurAnnotation");
     if (!this.focusedAnnotationElems) {
       console.warn(
         `[Literal] Call to handleBlurAnnotation without a focused annotation.`
