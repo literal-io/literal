@@ -375,10 +375,7 @@ class Highlighter {
   }
 
   isHighlightableNode(node) {
-    return (
-      this.isHighlightableText(node) ||
-      this.isHighlightableImage(node)
-    );
+    return this.isHighlightableText(node) || this.isHighlightableImage(node);
   }
 
   isHighlightableText(node) {
@@ -450,6 +447,18 @@ class Highlighter {
     }
   }
 
+  removeHighlight(annotationId) {
+    document
+      .querySelectorAll(
+        `.${this.highlightClassName}[data-annotation-id="${annotationId}"]`
+      )
+      .forEach((elem) => {
+        const parentNode = elem.parentNode;
+        elem.replaceWith(...Array.from(elem.childNodes));
+        parentNode.normalize();
+      });
+  }
+
   removeHighlights() {
     document.querySelectorAll(`.${this.highlightClassName}`).forEach((elem) => {
       const parentNode = elem.parentNode;
@@ -502,9 +511,10 @@ const get = (key) => window[NAMESPACE][key];
 
 
 class AnnotationFocusManager {
-  constructor({ messenger, highlightClassName }) {
+  constructor({ messenger, highlightClassName, highlighter }) {
     this.messenger = messenger;
     this.highlightClassName = highlightClassName;
+    this.highlighter = highlighter;
     this.eventQueue = [];
     this.annotationsRendered = false;
 
@@ -519,6 +529,9 @@ class AnnotationFocusManager {
 
     this.messenger.on("FOCUS_ANNOTATION", (message) => {
       this.handleEvent({ type: "FOCUS_ANNOTATION", data: message.data });
+    });
+    this.messenger.on("EDIT_ANNOTATION", (message) => {
+      this.handleEvent({ type: "EDIT_ANNOTATION", data: message.data });
     });
   }
 
@@ -540,6 +553,16 @@ class AnnotationFocusManager {
         annotationId: data.annotationId,
         scrollIntoView: true,
         disableNotify: true,
+      });
+    } else if (type === "EDIT_ANNOTATION") {
+      if (!data.annotationId) {
+        console.error(
+          "[Literal] Received FOCUS_ANNOTATION event without annotationId."
+        );
+        return;
+      }
+      this._handleEditAnnotation({
+        annotationId: data.annotationId,
       });
     }
   }
@@ -566,7 +589,7 @@ class AnnotationFocusManager {
         return;
       }
 
-      this._handleBlurAnnotation();
+      this._handleBlurAnnotation({ disableNotify: false });
     });
 
     this.annotationsRendered = true;
@@ -592,11 +615,11 @@ class AnnotationFocusManager {
         (isVisible) => !isVisible
       )
     ) {
-      this._handleBlurAnnotation();
+      this._handleBlurAnnotation({ disableNotify: false });
     }
   }
 
-  _handleEditAnnotationTarget({ annotationId }) {
+  _handleEditAnnotation({ annotationId }) {
     const annotation = this.annotations.find(
       (annotation) => annotation.id === annotationId
     );
@@ -632,6 +655,12 @@ class AnnotationFocusManager {
       ({ type }) => type === "TEXT_POSITION_SELECTOR"
     );
 
+    if (this.focusedAnnotationId === annotationId) {
+      this._handleBlurAnnotation({ disableNotify: true });
+    }
+
+    this.highlighter.removeHighlight(annotationId);
+
     const startNode = evaluate(targetRangeSelector.startSelector.value);
     const endNode = evaluate(targetRangeSelector.endSelector.value);
 
@@ -642,11 +671,26 @@ class AnnotationFocusManager {
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
 
+    const boundingBox =
+      range.getClientRects().length > 0
+        ? range.getClientRects()[0]
+        : range.getBoundingClientRect();
+
+    console.log(
+      "boxes",
+      JSON.stringify(range.getBoundingClientRect()),
+      JSON.stringify(range.getClientRects())
+    );
+
     this.messenger.postMessage({
-      type: "EDIT_ANNOTATION_TARGET",
+      type: "SELECTION_CREATED",
       data: {
-        annotationId,
-        targetId,
+        boundingBox: {
+          left: boundingBox.left * window.devicePixelRatio,
+          top: boundingBox.top * window.devicePixelRatio,
+          right: boundingBox.right * window.devicePixelRatio,
+          bottom: boundingBox.bottom * window.devicePixelRatio,
+        },
       },
     });
   }
@@ -690,7 +734,7 @@ class AnnotationFocusManager {
     }
 
     if (this.focusedAnnotationElems) {
-      this._handleBlurAnnotation();
+      this._handleBlurAnnotation({ disableNotify: false });
     }
 
     this.focusedAnnotationId = annotationId;
@@ -747,8 +791,7 @@ class AnnotationFocusManager {
     }
   }
 
-  _handleBlurAnnotation() {
-    console.log("handleBlurAnnotation");
+  _handleBlurAnnotation({ disableNotify }) {
     if (!this.focusedAnnotationElems) {
       console.warn(
         `[Literal] Call to handleBlurAnnotation without a focused annotation.`
@@ -763,9 +806,11 @@ class AnnotationFocusManager {
     this.focusedAnnotationElems = null;
     this.focusedAnnotationId = null;
 
-    this.messenger.postMessage({
-      type: "BLUR_ANNOTATION",
-    });
+    if (!disableNotify) {
+      this.messenger.postMessage({
+        type: "BLUR_ANNOTATION",
+      });
+    }
   }
 }
 
@@ -786,11 +831,12 @@ const ANNOTATIONS = process.env.PARAM_ANNOTATIONS;
 const messenger = new Messenger({
   highlightClassName: HIGHLIGHT_CLASS_NAME,
 });
-const annotationFocusManager = new AnnotationFocusManager({
-  messenger,
+const highlighter = new Highlighter({
   highlightClassName: HIGHLIGHT_CLASS_NAME,
 });
-const highlighter = new Highlighter({
+const annotationFocusManager = new AnnotationFocusManager({
+  messenger,
+  highlighter,
   highlightClassName: HIGHLIGHT_CLASS_NAME,
 });
 

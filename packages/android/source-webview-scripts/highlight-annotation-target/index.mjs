@@ -19,11 +19,12 @@ const ANNOTATIONS = process.env.PARAM_ANNOTATIONS;
 const messenger = new Messenger({
   highlightClassName: HIGHLIGHT_CLASS_NAME,
 });
-const annotationFocusManager = new AnnotationFocusManager({
-  messenger,
+const highlighter = new Highlighter({
   highlightClassName: HIGHLIGHT_CLASS_NAME,
 });
-const highlighter = new Highlighter({
+const annotationFocusManager = new AnnotationFocusManager({
+  messenger,
+  highlighter,
   highlightClassName: HIGHLIGHT_CLASS_NAME,
 });
 

@@ -32,6 +32,7 @@ import androidx.webkit.WebMessagePortCompat;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Attr;
@@ -163,8 +164,13 @@ public class SourceWebView extends NestedScrollingChildWebView {
         }
     }
 
-    public ActionMode startEditAnnotationActionMode(String getAnnotationBoundingBoxScript, Rect initialAnnotationBoundingBox) {
-        EditAnnotationActionModeCallback actionModeCallback = new EditAnnotationActionModeCallback(initialAnnotationBoundingBox);
+    public ActionMode startEditAnnotationActionMode(
+            String getAnnotationBoundingBoxScript,
+            Rect initialAnnotationBoundingBox,
+            Callback<Void, Void> onEditAnnotation,
+            Callback<Void, Void> onDeleteAnnotation
+        ) {
+        EditAnnotationActionModeCallback actionModeCallback = new EditAnnotationActionModeCallback(initialAnnotationBoundingBox, onEditAnnotation, onDeleteAnnotation);
         ActionMode actionMode = super.startActionMode(actionModeCallback, ActionMode.TYPE_FLOATING);
 
         setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> evaluateJavascript(getAnnotationBoundingBoxScript, value -> {
@@ -212,9 +218,13 @@ public class SourceWebView extends NestedScrollingChildWebView {
 
     public static class EditAnnotationActionModeCallback extends ActionMode.Callback2 {
         Rect annotationBoundingBox;
+        Callback<Void, Void> onEditAnnotation;
+        Callback<Void, Void> onDeleteAnnotation;
 
-        public EditAnnotationActionModeCallback(Rect annotationBoundingBox) {
+        public EditAnnotationActionModeCallback(@NotNull Rect annotationBoundingBox, @NotNull Callback<Void, Void> onEditAnnotation, @NotNull Callback<Void, Void> onDeleteAnnotation) {
             this.annotationBoundingBox = annotationBoundingBox;
+            this.onEditAnnotation = onEditAnnotation;
+            this.onDeleteAnnotation = onDeleteAnnotation;
         }
 
         @Override
@@ -235,7 +245,16 @@ public class SourceWebView extends NestedScrollingChildWebView {
 
         @Override
         public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-            return false;
+            switch (item.getItemId()) {
+                case R.id.menu_item_edit:
+                    onEditAnnotation.invoke(null, null);
+                    return true;
+                case R.id.menu_item_remove:
+                    onDeleteAnnotation.invoke(null, null);
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         @Override

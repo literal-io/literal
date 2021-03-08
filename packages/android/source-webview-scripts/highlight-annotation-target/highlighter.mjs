@@ -109,10 +109,7 @@ export class Highlighter {
   }
 
   isHighlightableNode(node) {
-    return (
-      this.isHighlightableText(node) ||
-      this.isHighlightableImage(node)
-    );
+    return this.isHighlightableText(node) || this.isHighlightableImage(node);
   }
 
   isHighlightableText(node) {
@@ -182,6 +179,18 @@ export class Highlighter {
         }
       }
     }
+  }
+
+  removeHighlight(annotationId) {
+    document
+      .querySelectorAll(
+        `.${this.highlightClassName}[data-annotation-id="${annotationId}"]`
+      )
+      .forEach((elem) => {
+        const parentNode = elem.parentNode;
+        elem.replaceWith(...Array.from(elem.childNodes));
+        parentNode.normalize();
+      });
   }
 
   removeHighlights() {

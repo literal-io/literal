@@ -26,6 +26,8 @@ public class WebEvent {
     public static final String TYPE_CREATE_ANNOTATION = "CREATE_ANNOTATION";
     public static final String TYPE_FOCUS_ANNOTATION = "FOCUS_ANNOTATION";
     public static final String TYPE_BLUR_ANNOTATION = "BLUR_ANNOTATION";
+    public static final String TYPE_EDIT_ANNOTATION = "EDIT_ANNOTATION";
+    public static final String TYPE_SELECTION_CREATED = "SELECTION_CREATED";
 
     private String type;
     private String pid;

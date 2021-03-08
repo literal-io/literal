@@ -5,9 +5,10 @@ import {
 import { get as storageGet } from "../shared/storage.mjs";
 
 export class AnnotationFocusManager {
-  constructor({ messenger, highlightClassName }) {
+  constructor({ messenger, highlightClassName, highlighter }) {
     this.messenger = messenger;
     this.highlightClassName = highlightClassName;
+    this.highlighter = highlighter;
     this.eventQueue = [];
     this.annotationsRendered = false;
 
@@ -22,6 +23,9 @@ export class AnnotationFocusManager {
 
     this.messenger.on("FOCUS_ANNOTATION", (message) => {
       this.handleEvent({ type: "FOCUS_ANNOTATION", data: message.data });
+    });
+    this.messenger.on("EDIT_ANNOTATION", (message) => {
+      this.handleEvent({ type: "EDIT_ANNOTATION", data: message.data });
     });
   }
 
@@ -43,6 +47,16 @@ export class AnnotationFocusManager {
         annotationId: data.annotationId,
         scrollIntoView: true,
         disableNotify: true,
+      });
+    } else if (type === "EDIT_ANNOTATION") {
+      if (!data.annotationId) {
+        console.error(
+          "[Literal] Received FOCUS_ANNOTATION event without annotationId."
+        );
+        return;
+      }
+      this._handleEditAnnotation({
+        annotationId: data.annotationId,
       });
     }
   }
@@ -69,7 +83,7 @@ export class AnnotationFocusManager {
         return;
       }
 
-      this._handleBlurAnnotation();
+      this._handleBlurAnnotation({ disableNotify: false });
     });
 
     this.annotationsRendered = true;
@@ -95,11 +109,11 @@ export class AnnotationFocusManager {
         (isVisible) => !isVisible
       )
     ) {
-      this._handleBlurAnnotation();
+      this._handleBlurAnnotation({ disableNotify: false });
     }
   }
 
-  _handleEditAnnotationTarget({ annotationId }) {
+  _handleEditAnnotation({ annotationId }) {
     const annotation = this.annotations.find(
       (annotation) => annotation.id === annotationId
     );
@@ -135,6 +149,12 @@ export class AnnotationFocusManager {
       ({ type }) => type === "TEXT_POSITION_SELECTOR"
     );
 
+    if (this.focusedAnnotationId === annotationId) {
+      this._handleBlurAnnotation({ disableNotify: true });
+    }
+
+    this.highlighter.removeHighlight(annotationId);
+
     const startNode = evaluateXPath(targetRangeSelector.startSelector.value);
     const endNode = evaluateXPath(targetRangeSelector.endSelector.value);
 
@@ -145,11 +165,20 @@ export class AnnotationFocusManager {
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
 
+    const boundingBox =
+      range.getClientRects().length > 0
+        ? range.getClientRects()[0]
+        : range.getBoundingClientRect();
+
     this.messenger.postMessage({
-      type: "EDIT_ANNOTATION_TARGET",
+      type: "SELECTION_CREATED",
       data: {
-        annotationId,
-        targetId,
+        boundingBox: {
+          left: boundingBox.left * window.devicePixelRatio,
+          top: boundingBox.top * window.devicePixelRatio,
+          right: boundingBox.right * window.devicePixelRatio,
+          bottom: boundingBox.bottom * window.devicePixelRatio,
+        },
       },
     });
   }
@@ -193,7 +222,7 @@ export class AnnotationFocusManager {
     }
 
     if (this.focusedAnnotationElems) {
-      this._handleBlurAnnotation();
+      this._handleBlurAnnotation({ disableNotify: false });
     }
 
     this.focusedAnnotationId = annotationId;
@@ -250,8 +279,7 @@ export class AnnotationFocusManager {
     }
   }
 
-  _handleBlurAnnotation() {
-    console.log("handleBlurAnnotation");
+  _handleBlurAnnotation({ disableNotify }) {
     if (!this.focusedAnnotationElems) {
       console.warn(
         `[Literal] Call to handleBlurAnnotation without a focused annotation.`
@@ -266,8 +294,10 @@ export class AnnotationFocusManager {
     this.focusedAnnotationElems = null;
     this.focusedAnnotationId = null;
 
-    this.messenger.postMessage({
-      type: "BLUR_ANNOTATION",
-    });
+    if (!disableNotify) {
+      this.messenger.postMessage({
+        type: "BLUR_ANNOTATION",
+      });
+    }
   }
 }
