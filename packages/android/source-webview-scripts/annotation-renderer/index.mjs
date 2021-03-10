@@ -28,6 +28,7 @@ const annotationFocusManager = new AnnotationFocusManager({
 const renderer = new Renderer({
   messenger,
   highlighter,
+  annotationFocusManager
 });
 
 const onDocumentReady = (cb) => {
@@ -48,7 +49,7 @@ export default () =>
 
     await renderer.render(ANNOTATIONS);
     renderer.onInitialAnnotationsRendered();
-    annotationFocusManager.onInitialAnnotationsRendered({
+    annotationFocusManager.onAnnotationsRendered({
       annotations: ANNOTATIONS,
       focusedAnnotationId: FOCUSED_ANNOTATION_ID,
     });

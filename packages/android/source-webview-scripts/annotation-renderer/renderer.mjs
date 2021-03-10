@@ -20,9 +20,10 @@ const waitForXPath = (value) => {
 };
 
 export class Renderer {
-  constructor({ messenger, highlighter }) {
+  constructor({ messenger, highlighter, annotationFocusManager }) {
     this.messenger = messenger;
     this.highlighter = highlighter;
+    this.annotationFocusManager = annotationFocusManager;
     this.initialAnnotationsRendered = false;
     this.eventQueue = [];
 
@@ -44,7 +45,11 @@ export class Renderer {
     }
 
     if (type === "RENDER_ANNOTATIONS") {
-      this.render(data.annotations);
+      this.render(data.annotations).then(() => {
+        this.annotationFocusManager.onAnnotationsRendered({
+          annotations: data.annotations,
+        });
+      });
     }
   }
 

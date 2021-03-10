@@ -24,6 +24,9 @@ export class AnnotationFocusManager {
     this.messenger.on("FOCUS_ANNOTATION", (message) => {
       this.handleEvent({ type: "FOCUS_ANNOTATION", data: message.data });
     });
+    this.messenger.on("BLUR_ANNOTATION", (message) => {
+      this.handleEvent({ type: "BLUR_ANNOTATION", data: message.data });
+    });
     this.messenger.on("EDIT_ANNOTATION", (message) => {
       this.handleEvent({ type: "EDIT_ANNOTATION", data: message.data });
     });
@@ -48,6 +51,8 @@ export class AnnotationFocusManager {
         scrollIntoView: true,
         disableNotify: true,
       });
+    } else if (type === "BLUR_ANNOTATION") {
+      this._handleBlurAnnotation({ disableNotify: true });
     } else if (type === "EDIT_ANNOTATION") {
       if (!data.annotationId) {
         console.error(
@@ -61,7 +66,7 @@ export class AnnotationFocusManager {
     }
   }
 
-  onInitialAnnotationsRendered({ annotations, focusedAnnotationId }) {
+  onAnnotationsRendered({ annotations, focusedAnnotationId }) {
     this.annotations = annotations;
 
     // focus on annotation click
@@ -172,7 +177,11 @@ export class AnnotationFocusManager {
 
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
-    console.log("handleEditAnotation", window.getSelection(), window.getSelection().rangeCount)
+    console.log(
+      "handleEditAnotation",
+      window.getSelection(),
+      window.getSelection().rangeCount
+    );
 
     const boundingBox =
       range.getClientRects().length > 0

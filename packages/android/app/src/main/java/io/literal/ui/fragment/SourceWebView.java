@@ -27,6 +27,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
 import com.amazonaws.amplify.generated.graphql.GetAnnotationQuery;
+import com.amazonaws.services.cognitoidentityprovider.model.transform.UnsupportedUserStateExceptionUnmarshaller;
 import com.apollographql.apollo.exception.ApolloException;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
@@ -352,7 +353,8 @@ public class SourceWebView extends Fragment {
         }
 
         if (editAnnotationActionMode != null) {
-            editAnnotationActionMode.finish();
+            webView.finishEditAnnotationActionMode(editAnnotationActionMode);
+            editAnnotationActionMode = null;
         }
 
         try {
@@ -372,7 +374,21 @@ public class SourceWebView extends Fragment {
     }
 
     private void handleAnnotationCancelEdit() {
-
+        this.handleRenderAnnotations(sourceWebViewViewModel.getAnnotations().getValue());
+        Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+        if (focusedAnnotation != null) {
+            webView.postWebEvent(new WebEvent(
+                    WebEvent.TYPE_BLUR_ANNOTATION,
+                    UUID.randomUUID().toString(),
+                    new JSONObject()
+            ));
+            sourceWebViewViewModel.setFocusedAnnotation(null);
+        }
+        if (editAnnotationActionMode != null) {
+            webView.finishEditAnnotationActionMode(editAnnotationActionMode);
+            editAnnotationActionMode = null;
+            isEditingAnnotation = false;
+        }
     }
 
     private void handleAnnotationCommitEdit() {
@@ -482,8 +498,25 @@ public class SourceWebView extends Fragment {
                 if (!updated) {
                     Log.d("SourceWebView", "Failed to update viewmodel for annotation");
                 }
+
             } catch (JSONException e) {
                 Log.d("SourceWebView", "Unable to parse annotation: " + value, e);
+            } finally {
+                if (editAnnotationActionMode != null) {
+                    webView.finishEditAnnotationActionMode(editAnnotationActionMode);
+                    editAnnotationActionMode = null;
+                    isEditingAnnotation = false;
+                }
+
+                Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+                if (focusedAnnotation != null) {
+                    webView.postWebEvent(new WebEvent(
+                            WebEvent.TYPE_BLUR_ANNOTATION,
+                            UUID.randomUUID().toString(),
+                            new JSONObject()
+                    ));
+                    sourceWebViewViewModel.setFocusedAnnotation(null);
+                }
             }
         });
 
@@ -595,6 +628,7 @@ public class SourceWebView extends Fragment {
         if (this.editAnnotationActionMode != null) {
             webView.finishEditAnnotationActionMode(editAnnotationActionMode);
             editAnnotationActionMode = null;
+            isEditingAnnotation = false;
         }
         isEditingAnnotation = true;
         try {
