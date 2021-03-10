@@ -7,9 +7,7 @@ const config = {
   },
   entry: {
     GetAnnotation: resolvePath("./get-annotation/index.mjs"),
-    HighlightAnnotationTarget: resolvePath(
-      "./highlight-annotation-target/index.mjs"
-    ),
+    AnnotationRenderer: resolvePath("./annotation-renderer/index.mjs"),
     GetAnnotationBoundingBox: resolvePath(
       "./get-annotation-bounding-box/index.mjs"
     ),
@@ -17,7 +15,7 @@ const config = {
   output: {
     filename: "SourceWebView[name].js",
     path: resolvePath("./dist"),
-    library: "Literal"
+    library: "Literal",
   },
 };
 

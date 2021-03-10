@@ -157,7 +157,8 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
       (annotation, currentUser),
     );
 
-  let handleViewTargetForAnnotation = (~target, ~displayBottomSheet, ()) => {
+  let handleViewTargetForAnnotation =
+      (~targetId, ~annotation, ~displayBottomSheet, ()) => {
     if (displayBottomSheet) {
       let _ =
         Service_Analytics.(
@@ -165,36 +166,31 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
         );
       ();
     };
-
     let _ =
-      target
-      ->ExternalTargetMetadata_GraphQL.Webview.makeTarget
-      ->Belt.Option.forEach(target => {
-          let _ =
-            Webview.(
-              postMessage(
-                WebEvent.make(
-                  ~type_="VIEW_TARGET_FOR_ANNOTATION",
-                  ~data=
-                    Js.Json.object_(
-                      Js.Dict.fromList([
-                        ("annotationId", Js.Json.string(annotation##id)),
-                        (
-                          "target",
-                          target->Lib_WebView_Model.Annotation.Target.encode,
-                        ),
-                        (
-                          "displayBottomSheet",
-                          Js.Json.boolean(displayBottomSheet),
-                        ),
-                      ]),
-                    ),
-                  (),
-                ),
-              )
-            );
-          ();
-        });
+      Webview.(
+        postMessage(
+          WebEvent.make(
+            ~type_="VIEW_TARGET_FOR_ANNOTATION",
+            ~data=
+              Js.Json.object_(
+                Js.Dict.fromList([
+                  ("targetId", Js.Json.string(targetId)),
+                  (
+                    "annotation",
+                    annotation
+                    ->ExternalTargetMetadata_GraphQL.Webview.makeAnnotation
+                    ->Lib_WebView_Model_Annotation.encode,
+                  ),
+                  (
+                    "displayBottomSheet",
+                    Js.Json.boolean(displayBottomSheet),
+                  ),
+                ]),
+              ),
+            (),
+          ),
+        )
+      );
     ();
   };
 

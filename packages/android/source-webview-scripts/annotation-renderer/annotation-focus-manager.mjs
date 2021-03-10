@@ -61,7 +61,7 @@ export class AnnotationFocusManager {
     }
   }
 
-  onAnnotationsRendered(annotations) {
+  onInitialAnnotationsRendered({ annotations, focusedAnnotationId }) {
     this.annotations = annotations;
 
     // focus on annotation click
@@ -85,6 +85,14 @@ export class AnnotationFocusManager {
 
       this._handleBlurAnnotation({ disableNotify: false });
     });
+
+    if (focusedAnnotationId) {
+      this._handleFocusAnnotation({
+        annotationId: focusedAnnotationId,
+        disableNotify: true,
+        scrollIntoView: true,
+      });
+    }
 
     this.annotationsRendered = true;
     this.eventQueue.forEach((event) => this.handleEvent(event));
@@ -164,6 +172,7 @@ export class AnnotationFocusManager {
 
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
+    console.log("handleEditAnotation", window.getSelection(), window.getSelection().rangeCount)
 
     const boundingBox =
       range.getClientRects().length > 0

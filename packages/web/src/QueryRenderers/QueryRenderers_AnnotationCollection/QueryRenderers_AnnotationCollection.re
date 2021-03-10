@@ -53,6 +53,36 @@ module Data = {
         [|activeAnnotation|],
       );
 
+    let handleSetCacheAnnotation = ev => {
+      let _ =
+        ev
+        ->Belt.Option.flatMap(ev => ev->Js.Json.decodeObject)
+        ->Belt.Option.flatMap(dict => Js.Dict.get(dict, "annotation"))
+        ->Belt.Option.flatMap(json =>
+            switch (Lib_WebView_Model_Annotation.decode(json)) {
+            | Ok(r) => Some(r)
+            | Error(e) => None
+            }
+          )
+        ->Belt.Option.forEach(annotation =>
+            Lib_WebView_Model_Apollo.writeToCache(~annotation, ~currentUser)
+          );
+      ();
+    };
+
+    let _ =
+      React.useEffect0(() => {
+        let _ =
+          Webview.WebEventHandler.register((
+            "SET_CACHE_ANNOTATION",
+            handleSetCacheAnnotation,
+          ));
+
+        Some(
+          () => {Webview.WebEventHandler.unregister("SET_CACHE_ANNOTATION")},
+        );
+      });
+
     let handleIdxChange = idx => {
       setActiveIdx(_ => idx);
     };

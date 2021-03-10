@@ -11,7 +11,8 @@ let make =
         switch (target) {
         | `SpecificTarget(specficTarget) =>
           switch (specficTarget##source) {
-          | `ExternalTarget(externalTarget) => Some((target, externalTarget))
+          | `ExternalTarget(externalTarget) =>
+            Some((specficTarget##specificTargetId, externalTarget))
           | _ => None
           }
         | _ => None
@@ -24,8 +25,13 @@ let make =
       () => {
         let _ =
           switch (targetWithExternalTarget) {
-          | Some((target, _)) when isAnnotationVisible =>
-            onViewTargetForAnnotation(~target, ~displayBottomSheet=false, ())
+          | Some((targetId, _)) when isAnnotationVisible =>
+            onViewTargetForAnnotation(
+              ~targetId,
+              ~annotation,
+              ~displayBottomSheet=false,
+              (),
+            )
           | _ => ()
           };
         None;
@@ -34,12 +40,17 @@ let make =
     );
 
   targetWithExternalTarget
-  ->Belt.Option.map(((target, externalTarget)) => {
+  ->Belt.Option.map(((targetId, externalTarget)) => {
       let host =
         externalTarget##externalTargetId->Webapi.Url.make->Webapi.Url.host;
 
       let handleClick = _ =>
-        onViewTargetForAnnotation(~target, ~displayBottomSheet=true, ());
+        onViewTargetForAnnotation(
+          ~targetId,
+          ~annotation,
+          ~displayBottomSheet=true,
+          (),
+        );
 
       <MaterialUi.Button
         onClick=handleClick

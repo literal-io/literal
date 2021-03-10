@@ -31,6 +31,7 @@ import io.literal.factory.AWSMobileClientFactory;
 import io.literal.lib.Constants;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
+import io.literal.model.Annotation;
 import io.literal.model.Target;
 import io.literal.repository.ShareTargetHandlerRepository;
 import io.literal.ui.MainApplication;
@@ -111,11 +112,11 @@ public class MainActivity extends AppCompatActivity {
                         } else if (webEvent.getType().equals(WebEvent.TYPE_VIEW_TARGET_FOR_ANNOTATION)) {
                             try {
                                 JSONObject data = webEvent.getData();
-                                String annotationId = data.getString("annotationId");
-                                Target target = Target.fromJson(data.getJSONObject("target"));
+                                String targetId = data.getString("targetId");
+                                Annotation annotation = Annotation.fromJson(data.getJSONObject("annotation"));
                                 boolean displayBottomSheet = data.getBoolean("displayBottomSheet");
 
-                                sourceWebViewFragment.handleViewTargetForAnnotation(annotationId, target);
+                                sourceWebViewFragment.handleViewTargetForAnnotation(annotation, targetId);
                                 if (displayBottomSheet) {
                                     this.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
                                 }

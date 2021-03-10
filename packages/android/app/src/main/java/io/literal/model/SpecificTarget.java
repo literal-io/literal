@@ -9,9 +9,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.literal.lib.JsonArrayUtil;
+import type.AnnotationAddOperationInput;
+import type.AnnotationSetOperationInput;
 import type.AnnotationTargetInput;
-import type.SpecificTargetInput;
+import type.AnnotationWhereInput;
+import type.PatchAnnotationOperationInput;
 import type.SpecificResourceType;
+import type.SpecificTargetInput;
 
 public class SpecificTarget extends Target {
 
@@ -27,8 +31,6 @@ public class SpecificTarget extends Target {
         this.selector = selector;
     }
 
-    public Target getSource() { return source; };
-
     public static SpecificTarget fromJson(JSONObject json) throws JSONException {
         return new SpecificTarget(
                 json.optString("id"),
@@ -39,6 +41,18 @@ public class SpecificTarget extends Target {
                         Selector::fromJson
                 )
         );
+    };
+
+    public String getId() {
+        return id;
+    }
+
+    public Target getSource() {
+        return source;
+    }
+
+    public Selector[] getSelector() {
+        return selector;
     }
 
     @Override
@@ -67,5 +81,35 @@ public class SpecificTarget extends Target {
                         .type(SpecificResourceType.SPECIFIC_RESOURCE)
                         .build()
         ).build();
+    }
+
+    @Override
+    public PatchAnnotationOperationInput toPatchAnnotationOperationInputAdd() {
+        return PatchAnnotationOperationInput.builder()
+                .add(
+                        AnnotationAddOperationInput
+                                .builder()
+                                .target(
+                                        this.toAnnotationTargetInput()
+                                )
+                                .build()
+                )
+                .build();
+    }
+
+    @Override
+    public PatchAnnotationOperationInput toPatchAnnotationOperationInputSet() {
+        return PatchAnnotationOperationInput.builder()
+                .set(
+                        AnnotationSetOperationInput.builder()
+                                .where(
+                                        AnnotationWhereInput.builder()
+                                                .id(this.id)
+                                                .build()
+                                )
+                                .target(this.toAnnotationTargetInput())
+                                .build()
+                )
+                .build();
     }
 }

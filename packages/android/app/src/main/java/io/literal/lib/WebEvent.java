@@ -17,17 +17,20 @@ public class WebEvent {
     public static final String TYPE_AUTH_GET_USER_INFO = "AUTH_GET_USER_INFO";
     public static final String TYPE_AUTH_GET_USER_INFO_RESULT = "AUTH_GET_USER_INFO_RESULT";
     public static final String TYPE_VIEW_TARGET_FOR_ANNOTATION = "VIEW_TARGET_FOR_ANNOTATION";
+    public static final String TYPE_SET_CACHE_ANNOTATION = "SET_CACHE_ANNOTATION";
 
     // Source WebView
     public static final String TYPE_VIEW_STATE_EDIT_ANNOTATION_TAGS = "VIEW_STATE_EDIT_ANNOTATION_TAGS";
     public static final String TYPE_EDIT_ANNOTATION_TAGS_RESULT = "EDIT_ANNOTATION_TAGS_RESULT";
     public static final String TYPE_VIEW_STATE_COLLAPSED_ANNOTATION_TAGS = "VIEW_STATE_COLLAPSED_ANNOTATION_TAGS";
     public static final String TYPE_SET_VIEW_STATE = "SET_VIEW_STATE";
+    public static final String TYPE_RENDER_ANNOTATIONS = "RENDER_ANNOTATIONS";
     public static final String TYPE_CREATE_ANNOTATION = "CREATE_ANNOTATION";
     public static final String TYPE_FOCUS_ANNOTATION = "FOCUS_ANNOTATION";
     public static final String TYPE_BLUR_ANNOTATION = "BLUR_ANNOTATION";
     public static final String TYPE_EDIT_ANNOTATION = "EDIT_ANNOTATION";
     public static final String TYPE_SELECTION_CREATED = "SELECTION_CREATED";
+    public static final String TYPE_ANNOTATION_RENDERER_INITIALIZED = "ANNOTATION_RENDERER_INITIALIZED";
 
     private String type;
     private String pid;

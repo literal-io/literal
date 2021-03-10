@@ -6,54 +6,7 @@ mutation CreateAnnotation($input: CreateAnnotationInput!) {
     }
   }
 }
-mutation UpdateAnnotation($input: UpdateAnnotationInput!) {
-  updateAnnotation(input: $input) {
-    annotation {
-      context
-      id
-      created
-      generated
-      modified
-      motivation
-      via
-      canonical
-      creatorUsername
-    }
-    createdAnnotationCollections {
-      context
-      id
-      label
-      total
-      firstAnnotationPageId
-      lastAnnotationPageId
-      creatorUsername
-      created
-      modified
-    }
-    createdAnnotationPageItems {
-      id
-      created
-      modified
-      annotationId
-      annotationPageId
-      creatorUsername
-    }
-    createdAnnotationPages {
-      context
-      id
-      startIndex
-      created
-      modified
-      partOfAnnotationCollectionId
-      nextAnnotationPageId
-      prevAnnotationPageId
-      creatorUsername
-    }
-    deletedAnnotationCollectionIds
-    deletedAnnotationPageItemIds
-    deletedAnnotationPageIds
-  }
-}
+
 mutation DeleteAnnotation($input: DeleteAnnotationInput!) {
   deleteAnnotation(input: $input) {
     annotation {
@@ -84,41 +37,9 @@ mutation PatchAnnotation($input: PatchAnnotationInput!) {
       canonical
       creatorUsername
     }
-    createdAnnotationCollections {
-      context
-      id
-      label
-      total
-      firstAnnotationPageId
-      lastAnnotationPageId
-      creatorUsername
-      created
-      modified
-    }
-    createdAnnotationPageItems {
-      id
-      created
-      modified
-      annotationId
-      annotationPageId
-      creatorUsername
-    }
-    createdAnnotationPages {
-      context
-      id
-      startIndex
-      created
-      modified
-      partOfAnnotationCollectionId
-      nextAnnotationPageId
-      prevAnnotationPageId
-      creatorUsername
-    }
-    deletedAnnotationCollectionIds
-    deletedAnnotationPageItemIds
-    deletedAnnotationPageIds
   }
 }
+
 mutation CreateAnnotationFromExternalTarget(
   $input: CreateAnnotationFromExternalTargetInput!
 ) {

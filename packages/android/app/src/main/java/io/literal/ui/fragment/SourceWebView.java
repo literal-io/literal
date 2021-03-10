@@ -26,6 +26,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
+import com.amazonaws.amplify.generated.graphql.GetAnnotationQuery;
 import com.apollographql.apollo.exception.ApolloException;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
@@ -34,11 +35,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -47,18 +47,20 @@ import io.literal.R;
 import io.literal.lib.Callback;
 import io.literal.lib.DomainMetadata;
 import io.literal.lib.JsonArrayUtil;
-import io.literal.lib.ResultCallback;
 import io.literal.lib.WebEvent;
 import io.literal.model.Annotation;
 import io.literal.model.ExternalTarget;
 import io.literal.model.SpecificTarget;
 import io.literal.model.Target;
+import io.literal.model.TextualTarget;
+import io.literal.repository.AnnotationRepository;
 import io.literal.repository.NotificationRepository;
 import io.literal.repository.ShareTargetHandlerRepository;
-import io.literal.ui.MainApplication;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
+import type.PatchAnnotationInput;
+import type.PatchAnnotationOperationInput;
 
 public class SourceWebView extends Fragment {
 
@@ -70,7 +72,10 @@ public class SourceWebView extends Fragment {
     private io.literal.ui.view.SourceWebView webView;
     private Toolbar toolbar;
     private AppBarLayout appBarLayout;
+
     private ActionMode editAnnotationActionMode;
+    /** Show a different CAB if text is selected while editing annotation **/
+    private boolean isEditingAnnotation;
 
     private SourceWebViewViewModel sourceWebViewViewModel;
     private AuthenticationViewModel authenticationViewModel;
@@ -124,19 +129,7 @@ public class SourceWebView extends Fragment {
             DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
             sourceWebViewViewModel.setDomainMetadata(domainMetadata != null ? domainMetadata.getUrl() : null, icon);
         });
-        webView.setOnGetWebMessageChannelInitializerScript((_e, _data) -> {
-            try {
-                ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
-                JSONArray output = JsonArrayUtil.stringifyObjectArray(annotations.toArray(new Annotation[0]), Annotation::toJson);
-                String script = sourceWebViewViewModel.getHighlightAnnotationTargetScript(
-                        getActivity().getAssets(), output
-                );
-                return script;
-            } catch (JSONException e) {
-                Log.d("SourceWebView", "setOnGetWebMessageChannelInitializerScript callback", e);
-            }
-            return null;
-        });
+        webView.setOnGetWebMessageChannelInitializerScript((_e, _data) -> getAnnotationRendererScript());
 
         webView.setExternalWebViewClient(new WebViewClient() {
             @Override
@@ -151,14 +144,7 @@ public class SourceWebView extends Fragment {
 
             @Override
             public void onPageFinished(WebView view, String url) {
-                if (!isWebviewInitialized()) {
-                    sourceWebViewViewModel.setHasFinishedInitializing(true);
-                }
-                highlightAnnotationTargets(sourceWebViewViewModel.getAnnotations().getValue());
-                Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
-                if (focusedAnnotation != null) {
-                    dispatchFocusAnnotationWebEvent(focusedAnnotation);
-                }
+                // noop: moved initialization to WebMessageChannelInitializer
             }
         });
 
@@ -175,9 +161,16 @@ public class SourceWebView extends Fragment {
                 sourceWebViewViewModel.setFocusedAnnotation(annotation);
                 appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
             });
-
-
         });
+        webView.setOnAnnotationCancelEdit((e, _view) -> {
+            this.handleAnnotationCancelEdit();
+        });
+        webView.setOnAnnotationCommitEdit((e, _view) -> {
+            this.handleAnnotationCommitEdit();
+        });
+        webView.setOnGetTextSelectionMenu((e, data) -> isEditingAnnotation
+                ? R.menu.source_webview_commit_edit_annotation_menu
+                : R.menu.source_webview_create_annotation_menu);
 
         sourceWebViewViewModel.getAnnotations().observe(getActivity(), (annotations) -> {
             if (this.webView == null) {
@@ -185,8 +178,7 @@ public class SourceWebView extends Fragment {
                 return;
             }
 
-            this.highlightAnnotationTargets(annotations);
-            this.dispatchFocusAnnotationWebEvent(sourceWebViewViewModel.getFocusedAnnotation().getValue());
+            this.handleRenderAnnotations(annotations);
         });
 
         sourceWebViewViewModel.getFocusedAnnotation().observe(getActivity(), this::dispatchFocusAnnotationWebEvent);
@@ -225,7 +217,6 @@ public class SourceWebView extends Fragment {
                     }
                     break;
                 case WebEvent.TYPE_SELECTION_CREATED:
-                    Log.i("SourceWebView", "handling selection created");
                     try {
                         JSONObject rawBoundingBox = event.getData().getJSONObject("boundingBox");
                         Rect boundingBox = new Rect(
@@ -236,18 +227,12 @@ public class SourceWebView extends Fragment {
                         );
                         webView.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, (float) boundingBox.left, (float) boundingBox.top, 0));
                         webView.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, (float) boundingBox.left, (float) boundingBox.top, 0));
-
-                        /**
-                        try {
-                            Method method = WebView.class.getMethod("selectText", Integer.class, Integer.class);
-                            method.invoke(webView, boundingBox.left, boundingBox.top);
-                        } catch (Exception ex) {
-                            Log.d("SourceWebView", "Unable to reflect", ex);
-                        }
-                         **/
                     } catch (JSONException ex) {
                         Log.d("SourceWebView", "Unable to parse event data: " + event.getData(), ex);
                     }
+                case WebEvent.TYPE_ANNOTATION_RENDERER_INITIALIZED:
+                    sourceWebViewViewModel.setHasFinishedInitializing(true);
+                    break;
             }
         });
 
@@ -326,6 +311,28 @@ public class SourceWebView extends Fragment {
         }
     }
 
+    private String getAnnotationRendererScript() {
+        if (sourceWebViewViewModel.getHasFinishedInitializing().getValue()) {
+            Log.d("SourceWebView", "handleInitializeWebview: Expected uninitialized Webview, but found it already initialized.");
+            return null;
+        }
+
+        ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
+        Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+
+        try {
+            JSONArray paramAnnotations = JsonArrayUtil.stringifyObjectArray(annotations.toArray(new Annotation[0]), Annotation::toJson);
+            return sourceWebViewViewModel.getAnnotationRendererScript(
+                    getActivity().getAssets(),
+                    paramAnnotations,
+                    focusedAnnotation != null ? focusedAnnotation.getId() : ""
+            );
+        } catch (JSONException ex) {
+            Log.d("SourceWebView", "Unable to highlightAnnotationTargets", ex);
+        }
+        return null;
+    }
+
     private void handleAnnotationFocus(String annotationId, Rect annotationBoundingBox) {
         Optional<Annotation> annotation = sourceWebViewViewModel
                 .getAnnotations()
@@ -364,8 +371,142 @@ public class SourceWebView extends Fragment {
         }
     }
 
-    public void handleViewTargetForAnnotation(String annotationId, Target target) {
-        Annotation annotation = new Annotation(null, new Target[]{target}, null, annotationId);
+    private void handleAnnotationCancelEdit() {
+
+    }
+
+    private void handleAnnotationCommitEdit() {
+        String script = sourceWebViewViewModel.getGetAnnotationScript(getActivity().getAssets());
+        Annotation annotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+        if (annotation == null) {
+            Log.d("SourceWebView", "Expected focusedAnnotation, but found null.");
+            return;
+        }
+
+        webView.evaluateJavascript(script, value -> {
+            try {
+                Annotation parsedAnnotation = Annotation.fromJson(new JSONObject(value));
+
+                ArrayList<Target> updatedTarget = new ArrayList<>();
+                ArrayList<PatchAnnotationOperationInput> patchAnnotationOperationInputs = new ArrayList<>();
+                Arrays.stream(parsedAnnotation.getTarget()).forEach((target) -> {
+                    Optional<Target> existingTarget = Arrays
+                            .stream(annotation.getTarget())
+                            .filter((t) -> t.getType().equals(target.getType()))
+                            .findFirst();
+                    if (!existingTarget.isPresent()) {
+                        updatedTarget.add(target);
+                        patchAnnotationOperationInputs.add(target.toPatchAnnotationOperationInputAdd());
+                    }
+
+                    if (target.getType() == Target.Type.SPECIFIC_TARGET) {
+                        SpecificTarget existingSpecificTarget = (SpecificTarget) target;
+                        SpecificTarget updatedSpecificTarget = new SpecificTarget(
+                                ((SpecificTarget) existingTarget.get()).getId(),
+                                existingSpecificTarget.getSource(),
+                                existingSpecificTarget.getSelector()
+                        );
+                        updatedTarget.add(updatedSpecificTarget);
+                        patchAnnotationOperationInputs.add(updatedSpecificTarget.toPatchAnnotationOperationInputSet());
+                    } else if (target.getType() == Target.Type.EXTERNAL_TARGET) {
+                        ExternalTarget existingExternalTarget = (ExternalTarget) target;
+                        ExternalTarget updatedExternalTarget = new ExternalTarget(
+                                ((ExternalTarget) existingTarget.get()).getId(),
+                                existingExternalTarget.getFormat(),
+                                existingExternalTarget.getLanguage(),
+                                existingExternalTarget.getProcessingLanguage(),
+                                existingExternalTarget.getTextDirection(),
+                                existingExternalTarget.getAccessibility(),
+                                existingExternalTarget.getRights(),
+                                existingExternalTarget.getResourceType()
+                        );
+                        updatedTarget.add(updatedExternalTarget);
+                        patchAnnotationOperationInputs.add(updatedExternalTarget.toPatchAnnotationOperationInputSet());
+                    } else if (target.getType() == Target.Type.TEXTUAL_TARGET) {
+                        TextualTarget existingTextualTarget = (TextualTarget) target;
+                        TextualTarget updatedTextualTarget = new TextualTarget(
+                                ((TextualTarget) existingTarget.get()).getId(),
+                                existingTextualTarget.getFormat(),
+                                existingTextualTarget.getLanguage(),
+                                existingTextualTarget.getProcessingLanguage(),
+                                existingTextualTarget.getTextDirection(),
+                                existingTextualTarget.getAccessibility(),
+                                existingTextualTarget.getRights(),
+                                existingTextualTarget.getValue()
+                        );
+                        updatedTarget.add(updatedTextualTarget);
+                        patchAnnotationOperationInputs.add(updatedTextualTarget.toPatchAnnotationOperationInputSet());
+                    }
+                });
+                Annotation updatedAnnotation = new Annotation(
+                  annotation.getBody(),
+                  updatedTarget.toArray(new Target[0]),
+                  annotation.getMotivation(),
+                  annotation.getCreated(),
+                  annotation.getModified(),
+                  annotation.getId()
+                );
+                String username = authenticationViewModel.getUsername().getValue();
+                if (username == null) {
+                    Log.d("SourceWebView", "Expected username, but found none");
+                    return;
+                }
+                PatchAnnotationInput input = PatchAnnotationInput.builder()
+                        .creatorUsername(username)
+                        .id(updatedAnnotation.getId())
+                        .operations(patchAnnotationOperationInputs).build();
+                AnnotationRepository.patchAnnotationMutation(
+                        getContext(),
+                        input,
+                        (e, data) -> {
+                            if (e != null) {
+                                return;
+                            }
+                            try {
+                                JSONObject setCacheAnnotationData = new JSONObject();
+                                setCacheAnnotationData.put("annotation", updatedAnnotation.toJson());
+                                getActivity().runOnUiThread(() -> appWebViewViewModel.dispatchWebEvent(
+                                        new WebEvent(
+                                                WebEvent.TYPE_SET_CACHE_ANNOTATION,
+                                                UUID.randomUUID().toString(),
+                                                setCacheAnnotationData
+                                        )
+                                ));
+
+                            } catch (JSONException ex) {
+                                Log.d("SourceWebView", "Unable to serialize annotation: " + annotation, ex);
+                            }
+                        }
+                );
+                boolean updated = sourceWebViewViewModel.updateAnnotation(updatedAnnotation);
+                if (!updated) {
+                    Log.d("SourceWebView", "Failed to update viewmodel for annotation");
+                }
+            } catch (JSONException e) {
+                Log.d("SourceWebView", "Unable to parse annotation: " + value, e);
+            }
+        });
+
+    }
+
+    public void handleViewTargetForAnnotation(Annotation annotation, String targetId) {
+
+        Optional<Target> targetOption = Arrays.stream(annotation.getTarget()).filter((t) -> {
+            if (t.getType().equals(Target.Type.EXTERNAL_TARGET)) {
+                return ((ExternalTarget) t).getId().equals(targetId);
+            } else if (t.getType().equals(Target.Type.SPECIFIC_TARGET)) {
+                return ((SpecificTarget) t).getId().equals(targetId);
+            } else if (t.getType().equals(Target.Type.TEXTUAL_TARGET)) {
+                return ((TextualTarget) t).getId().equals(targetId);
+            }
+            return false;
+        }).findFirst();
+
+        if (!targetOption.isPresent()) {
+            Log.d("SourceWebView", "Could not find target for annotation: " + annotation + ", target: " + targetId);
+            return;
+        }
+        Target target = targetOption.get();
 
         String sourceUrl = null;
         String currentWebViewUrl = webView.getUrl();
@@ -391,7 +532,6 @@ public class SourceWebView extends Fragment {
                 .stream()
                 .noneMatch(committedAnnotation -> committedAnnotation.getId().equals(annotation.getId()))) {
             sourceWebViewViewModel.addAnnotation(annotation);
-            // TODO: fetch annotation?
         }
 
         sourceWebViewViewModel.setFocusedAnnotation(annotation);
@@ -422,19 +562,22 @@ public class SourceWebView extends Fragment {
         }
     }
 
-    private void highlightAnnotationTargets(ArrayList<Annotation> annotations) {
-        if (this.isWebviewInitialized()) {
-            try {
-                JSONArray output = JsonArrayUtil.stringifyObjectArray(annotations.toArray(new Annotation[0]), Annotation::toJson);
-                String script = sourceWebViewViewModel.getHighlightAnnotationTargetScript(
-                        getActivity().getAssets(), output
-                );
-                this.webView.evaluateJavascript(script, (result) -> {
-                    /** noop **/
-                });
-            } catch (JSONException ex) {
-                Log.d("SourceWebView", "Unable to highlightAnnotationTargets", ex);
-            }
+    private void handleRenderAnnotations(ArrayList<Annotation> annotations) {
+        if (!this.isWebviewInitialized()) {
+            Log.d("SourceWebView", "handleRenderAnnotations: expected webview to be initialized, nooping.");
+            return;
+        }
+
+        try {
+            JSONObject renderAnnotationsData = new JSONObject();
+            renderAnnotationsData.put("annotations", JsonArrayUtil.stringifyObjectArray(annotations.toArray(new Annotation[0]), Annotation::toJson));
+            webView.postWebEvent(new WebEvent(
+                    WebEvent.TYPE_RENDER_ANNOTATIONS,
+                    UUID.randomUUID().toString(),
+                    renderAnnotationsData
+            ));
+        } catch (JSONException ex) {
+            Log.d("SourceWebView", "handleRenderAnnotations: Unable to dispatch RENDER_ANNOTATIONS.", ex);
         }
     }
 
@@ -444,6 +587,7 @@ public class SourceWebView extends Fragment {
         if (editAnnotationActionMode != null) {
             webView.finishEditAnnotationActionMode(editAnnotationActionMode);
             editAnnotationActionMode = null;
+            isEditingAnnotation = false;
         }
     }
 
@@ -452,7 +596,7 @@ public class SourceWebView extends Fragment {
             webView.finishEditAnnotationActionMode(editAnnotationActionMode);
             editAnnotationActionMode = null;
         }
-
+        isEditingAnnotation = true;
         try {
             JSONObject editAnnotationData = new JSONObject();
             editAnnotationData.put("annotationId", annotationId);

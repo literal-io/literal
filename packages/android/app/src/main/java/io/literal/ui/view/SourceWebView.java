@@ -57,8 +57,12 @@ import io.literal.ui.MainApplication;
 public class SourceWebView extends NestedScrollingChildWebView {
 
     private Callback<Exception, View> onAnnotationCreated;
+    private Callback<Exception, View> onAnnotationCommitEdit;
+    private Callback<Exception, View> onAnnotationCancelEdit;
     private Callback2<View, Bitmap> onReceivedIcon;
+
     private ResultCallback<String, Void> onGetWebMessageChannelInitializerScript;
+    private ResultCallback<Integer, Void> onGetTextSelectionMenu;
 
     private Callback2<SourceWebView, WebEvent> webEventCallback;
     private WebViewClient externalWebViewClient;
@@ -148,8 +152,14 @@ public class SourceWebView extends NestedScrollingChildWebView {
 
     @Override
     public ActionMode startActionMode(ActionMode.Callback callback) {
-        ActionMode.Callback2 cb = new CreateAnnotationActionModeCallback((ActionMode.Callback2) callback);
-        return super.startActionMode(cb);
+        if (onGetTextSelectionMenu != null) {
+            ActionMode.Callback2 cb = new CreateAnnotationActionModeCallback(
+                    (ActionMode.Callback2) callback,
+                    onGetTextSelectionMenu.invoke(null, null)
+            );
+            return super.startActionMode(cb);
+        }
+        return super.startActionMode(callback);
     }
 
     @Override
@@ -157,11 +167,15 @@ public class SourceWebView extends NestedScrollingChildWebView {
         if (callback instanceof EditAnnotationActionModeCallback) {
             ActionMode actionMode = super.startActionMode(callback, type);
             return actionMode;
-        } else {
+        } else if (onGetTextSelectionMenu != null) {
             // Default Chrome text selection action mode, which we intercept to provide different menu options.
-            ActionMode.Callback2 cb = new CreateAnnotationActionModeCallback((ActionMode.Callback2) callback);
+            ActionMode.Callback2 cb = new CreateAnnotationActionModeCallback(
+                    (ActionMode.Callback2) callback,
+                    onGetTextSelectionMenu.invoke(null, null)
+            );
             return super.startActionMode(cb, type);
         }
+        return super.startActionMode(callback, type);
     }
 
     public ActionMode startEditAnnotationActionMode(
@@ -199,6 +213,12 @@ public class SourceWebView extends NestedScrollingChildWebView {
     public void setOnAnnotationCreated(Callback<Exception, View> onAnnotationCreated) {
         this.onAnnotationCreated = onAnnotationCreated;
     }
+    public void setOnAnnotationCommitEdit(Callback<Exception, View> onAnnotationCommitEdit) {
+        this.onAnnotationCommitEdit = onAnnotationCommitEdit;
+    }
+    public void setOnAnnotationCancelEdit(Callback<Exception, View> onAnnotationCancelEdit) {
+        this.onAnnotationCancelEdit = onAnnotationCancelEdit;
+    }
 
     public void setOnReceivedIcon(Callback2<View, Bitmap> onReceivedIcon) {
         this.onReceivedIcon = onReceivedIcon;
@@ -214,6 +234,10 @@ public class SourceWebView extends NestedScrollingChildWebView {
 
     public void setWebEventCallback(Callback2<SourceWebView, WebEvent> webEventCallback) {
         this.webEventCallback = webEventCallback;
+    }
+
+    public void setOnGetTextSelectionMenu(ResultCallback<Integer, Void> onGetTextSelectionMenu) {
+        this.onGetTextSelectionMenu = onGetTextSelectionMenu;
     }
 
     public static class EditAnnotationActionModeCallback extends ActionMode.Callback2 {
@@ -271,15 +295,17 @@ public class SourceWebView extends NestedScrollingChildWebView {
     private class CreateAnnotationActionModeCallback extends ActionMode.Callback2 {
 
         ActionMode.Callback2 originalCallback;
+        int menu;
 
-        public CreateAnnotationActionModeCallback(ActionMode.Callback2 originalCallback) {
+        public CreateAnnotationActionModeCallback(ActionMode.Callback2 originalCallback, int menu) {
             this.originalCallback = originalCallback;
+            this.menu = menu;
         }
 
         @Override
         public boolean onCreateActionMode(ActionMode mode, Menu menu) {
             MenuInflater inflater = mode.getMenuInflater();
-            inflater.inflate(R.menu.source_webview_create_annotation_menu, menu);
+            inflater.inflate(this.menu, menu);
             return true;
         }
 
@@ -296,6 +322,18 @@ public class SourceWebView extends NestedScrollingChildWebView {
                         onAnnotationCreated.invoke(null, SourceWebView.this);
                     }
                     mode.finish();
+                    return true;
+                case R.id.menu_item_commit_edit:
+                    if (onAnnotationCommitEdit != null) {
+                        onAnnotationCommitEdit.invoke(null, SourceWebView.this);
+                    }
+                    //mode.finish();
+                    return true;
+                case R.id.menu_item_cancel_edit:
+                    if (onAnnotationCancelEdit != null) {
+                        onAnnotationCancelEdit.invoke(null, SourceWebView.this);
+                    }
+                    //mode.finish();
                     return true;
                 default:
                     return false;

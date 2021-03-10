@@ -1,9 +1,8 @@
-let textValueSelector = (~annotation: Lib_WebView_Model.Annotation.t) =>
+let textValueSelector = (~annotation: Lib_WebView_Model_Annotation.t) =>
   annotation.target
   ->Belt.Array.keepMap(target =>
       switch (target) {
-      | Lib_WebView_Model.Annotation.Target.TextualTarget(target) =>
-        Some(target)
+      | Lib_WebView_Model_Target.TextualTarget(target) => Some(target)
       | _ => None
       }
     )
@@ -12,12 +11,12 @@ let textValueSelector = (~annotation: Lib_WebView_Model.Annotation.t) =>
   ->Belt.Option.getWithDefault("");
 
 let tagsValueSelector =
-    (~annotation: Lib_WebView_Model.Annotation.t, ~currentUser) =>
+    (~annotation: Lib_WebView_Model_Annotation.t, ~currentUser) =>
   annotation.body
   ->Belt.Option.map(bodies =>
       bodies->Belt.Array.keepMap(body =>
         switch (body) {
-        | Lib_WebView_Model.Annotation.Body.TextualBody(body) =>
+        | Lib_WebView_Model_Body.TextualBody(body) =>
           let href =
             body.id
             ->Belt.Option.map(id =>
@@ -48,7 +47,7 @@ let tagsValueSelector =
 [@react.component]
 let make =
     (
-      ~annotation: Lib_WebView_Model.Annotation.t,
+      ~annotation: Lib_WebView_Model_Annotation.t,
       ~currentUser,
       ~onAnnotationChange,
     ) => {
@@ -102,26 +101,27 @@ let make =
   let handleTagsChange = value => {
     let textualBodies =
       value->Belt.Array.map((tag: Containers_AnnotationEditor_Tag.t) =>
-        Lib_WebView_Model.Annotation.Body.TextualBody({
-          id: tag.id,
-          value: tag.text,
-          purpose: Some([|"TAGGING"|]),
-          rights: None,
-          accessibility: None,
-          format: Some("TEXT_PLAIN"),
-          textDirection: Some("LTR"),
-          language: Some("EN_US"),
-          processingLanguage: Some("EN_US"),
-          type_: "TEXTUAL_BODY",
-        })
+        Lib_WebView_Model_Body.(
+          TextualBody(
+            makeTextualBody(
+              ~id=?tag.id,
+              ~value=tag.text,
+              ~purpose=[|"TAGGING"|],
+              ~format="TEXT_PLAIN",
+              ~textDirection="LTR",
+              ~language="EN_US",
+              ~processingLanguage="EN_US",
+              (),
+            ),
+          )
+        )
       );
     let updatedBody =
       annotation.body
       ->Belt.Option.getWithDefault([||])
       ->Belt.Array.keep(body =>
           switch (body) {
-          | Lib_WebView_Model.Annotation.Body.NotImplemented_Passthrough(_) =>
-            true
+          | Lib_WebView_Model_Body.NotImplemented_Passthrough(_) => true
           | _ => false
           }
         )

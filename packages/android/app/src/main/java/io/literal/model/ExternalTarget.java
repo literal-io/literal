@@ -11,8 +11,12 @@ import java.util.Arrays;
 
 import io.literal.lib.Crypto;
 import io.literal.lib.JsonArrayUtil;
+import type.AnnotationAddOperationInput;
+import type.AnnotationSetOperationInput;
 import type.AnnotationTargetInput;
+import type.AnnotationWhereInput;
 import type.ExternalTargetInput;
+import type.PatchAnnotationOperationInput;
 
 public class ExternalTarget extends Target {
 
@@ -40,6 +44,13 @@ public class ExternalTarget extends Target {
     public String getId() {
         return id;
     }
+    public Format getFormat() { return format; }
+    public Language getLanguage() { return language; }
+    public Language getProcessingLanguage() { return processingLanguage; }
+    public ResourceType getResourceType() { return resourceType; }
+    public String[] getAccessibility() { return accessibility; }
+    public String[] getRights() { return rights; }
+    public TextDirection getTextDirection() { return textDirection; }
 
     public static ExternalTarget fromJson(JSONObject json) throws JSONException {
         return new ExternalTarget(
@@ -100,5 +111,35 @@ public class ExternalTarget extends Target {
                         )
                         .build()
         ).build();
+    }
+
+    @Override
+    public PatchAnnotationOperationInput toPatchAnnotationOperationInputAdd() {
+        return PatchAnnotationOperationInput.builder()
+                .add(
+                        AnnotationAddOperationInput
+                                .builder()
+                                .target(
+                                        this.toAnnotationTargetInput()
+                                )
+                                .build()
+                )
+                .build();
+    }
+
+    @Override
+    public PatchAnnotationOperationInput toPatchAnnotationOperationInputSet() {
+        return PatchAnnotationOperationInput.builder()
+                .set(
+                        AnnotationSetOperationInput.builder()
+                                .where(
+                                        AnnotationWhereInput.builder()
+                                                .id(this.id)
+                                                .build()
+                                )
+                                .target(this.toAnnotationTargetInput())
+                                .build()
+                )
+                .build();
     }
 }

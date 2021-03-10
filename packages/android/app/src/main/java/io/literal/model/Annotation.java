@@ -19,13 +19,17 @@ public class Annotation {
     private final Body[] body;
     private final Target[] target;
     private final Motivation[] motivation;
+    private final String created;
+    private final String modified;
     private final String id;
 
-    public Annotation(Body[] body, @NotNull Target[] target, Motivation[] motivation, String id) {
+    public Annotation(Body[] body, @NotNull Target[] target, Motivation[] motivation, String created, String modified, String id) {
         this.body = body;
         this.target = target;
         this.motivation = motivation;
         this.id = id;
+        this.created = created;
+        this.modified = modified;
     }
 
     public static Annotation fromJson(JSONObject json) throws JSONException {
@@ -38,6 +42,8 @@ public class Annotation {
                         ? Arrays.stream(JsonArrayUtil.parseJsonStringArray(json.getJSONArray("motivation")))
                         .map(Motivation::valueOf).toArray(Motivation[]::new)
                         : null,
+                json.optString("created", null),
+                json.optString("modified", null),
                 json.optString("id", null)
         );
     }
@@ -45,20 +51,21 @@ public class Annotation {
     public String getId() {
         return id;
     }
-
     public Target[] getTarget() {
         return target;
     }
-
     public Body[] getBody() {
         return body;
     }
-
     public Motivation[] getMotivation() { return motivation; }
+    public String getCreated() { return created; }
+    public String getModified() { return modified; }
 
     public JSONObject toJson() throws JSONException {
         JSONObject output = new JSONObject();
         output.put("id", this.id);
+        output.put("created", this.created);
+        output.put("modified", this.modified);
         output.put("body", this.body != null ? JsonArrayUtil.stringifyObjectArray(this.body, Body::toJson) : null);
         output.put("target", JsonArrayUtil.stringifyObjectArray(this.target, Target::toJson));
         output.put("motivation", this.motivation != null ? new JSONArray(Arrays.stream(this.motivation).map(Motivation::name).collect(Collectors.toList())) : null);

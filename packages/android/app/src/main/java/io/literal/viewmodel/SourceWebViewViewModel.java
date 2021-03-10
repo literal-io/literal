@@ -38,11 +38,11 @@ import io.literal.model.TextualTarget;
 
 public class SourceWebViewViewModel extends ViewModel {
     private static final String GET_ANNOTATION_SCRIPT_NAME = "SourceWebViewGetAnnotation.js";
-    private static final String HIGHLIGHT_ANNOTATION_TARGET_SCRIPT_NAME = "SourceWebViewHighlightAnnotationTarget.js";
+    private static final String ANNOTATION_RENDERER_SCRIPT_NAME = "SourceWebViewAnnotationRenderer.js";
     private static final String GET_ANNOTATION_BOUNDING_BOX_SCRIPT_NAME = "SourceWebViewGetAnnotationBoundingBox.js";
 
     private String getAnnotationScript = null;
-    private String highlightAnnotationTargetScript = null;
+    private String annotationRendererScript = null;
     private String getAnnotationBoundingBoxScript = null;
 
     private final MutableLiveData<Boolean> hasFinishedInitializing = new MutableLiveData<>(false);
@@ -75,22 +75,27 @@ public class SourceWebViewViewModel extends ViewModel {
         return getAnnotationScript;
     }
 
-    public String getHighlightAnnotationTargetScript(AssetManager assetManager, JSONArray paramAnnotations) {
-        if (highlightAnnotationTargetScript == null) {
+    public String getAnnotationRendererScript(AssetManager assetManager, JSONArray paramAnnotations, String paramFocusedAnnotationId) {
+        if (annotationRendererScript == null) {
             try {
-                highlightAnnotationTargetScript =
-                        IOUtils.toString(assetManager.open(HIGHLIGHT_ANNOTATION_TARGET_SCRIPT_NAME), StandardCharsets.UTF_8);
+                annotationRendererScript =
+                        IOUtils.toString(assetManager.open(ANNOTATION_RENDERER_SCRIPT_NAME), StandardCharsets.UTF_8);
             } catch (IOException e) {
                 Log.d("SourceWebViewViewModel", "getHighlightAnnotationTargetScript", e);
             }
         }
 
         String stringifiedParamAnnotations = JSONObject.quote(paramAnnotations.toString());
-        return highlightAnnotationTargetScript
+        String output = annotationRendererScript
                 .replaceAll(
                         "process\\.env\\.PARAM_ANNOTATIONS",
                         stringifiedParamAnnotations.substring(1, stringifiedParamAnnotations.length() - 1)
+                )
+                .replaceAll(
+                        "process\\.env\\.PARAM_FOCUSED_ANNOTATION_ID",
+                        JSONObject.quote(paramFocusedAnnotationId)
                 );
+        return output;
     }
 
     public String getGetAnnotationBoundingBoxScript(AssetManager assetManager, JSONObject paramAnnotation) {
@@ -163,6 +168,8 @@ public class SourceWebViewViewModel extends ViewModel {
                         ),
                         annotation.getTarget(),
                         annotation.getMotivation(),
+                        annotation.getCreated(),
+                        annotation.getModified(),
                         annotation.getId()
                 );
             }
@@ -183,6 +190,8 @@ public class SourceWebViewViewModel extends ViewModel {
                         annotation.getBody(),
                         annotation.getTarget(),
                         annotation.getMotivation(),
+                        annotation.getCreated(),
+                        annotation.getModified(),
                         annotationId
                 );
 

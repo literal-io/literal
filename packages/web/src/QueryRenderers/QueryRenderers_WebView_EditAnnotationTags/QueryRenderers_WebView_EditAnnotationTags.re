@@ -8,7 +8,7 @@ module Data = {
           postMessage(
             WebEvent.make(
               ~type_="EDIT_ANNOTATION_TAGS_RESULT",
-              ~data=Lib_WebView_Model.Annotation.encode(newAnnotation),
+              ~data=Lib_WebView_Model_Annotation.encode(newAnnotation),
               (),
             ),
           )
