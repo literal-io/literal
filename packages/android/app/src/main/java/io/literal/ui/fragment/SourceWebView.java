@@ -60,6 +60,7 @@ import io.literal.repository.ShareTargetHandlerRepository;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
+import type.DeleteAnnotationInput;
 import type.PatchAnnotationInput;
 import type.PatchAnnotationOperationInput;
 
@@ -172,6 +173,11 @@ public class SourceWebView extends Fragment {
         webView.setOnGetTextSelectionMenu((e, data) -> isEditingAnnotation
                 ? R.menu.source_webview_commit_edit_annotation_menu
                 : R.menu.source_webview_create_annotation_menu);
+        webView.setOnDestroyTextSelectionMenu((e, actionMode) -> {
+            if (isEditingAnnotation) {
+                this.handleAnnotationCancelEdit();
+            }
+        });
 
         sourceWebViewViewModel.getAnnotations().observe(getActivity(), (annotations) -> {
             if (this.webView == null) {
@@ -476,6 +482,7 @@ public class SourceWebView extends Fragment {
                         input,
                         (e, data) -> {
                             if (e != null) {
+                                Log.d("SourceWebView", "Unable to handleAnnotationCommit", e);
                                 return;
                             }
                             try {
@@ -488,7 +495,6 @@ public class SourceWebView extends Fragment {
                                                 setCacheAnnotationData
                                         )
                                 ));
-
                             } catch (JSONException ex) {
                                 Log.d("SourceWebView", "Unable to serialize annotation: " + annotation, ex);
                             }
@@ -645,7 +651,52 @@ public class SourceWebView extends Fragment {
     }
 
     private void handleAnnotationDelete(String annotationId) {
+        Annotation annotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+        if (annotation == null) {
+            Log.d("SourceWebView", "handleAnnotationDelete expected focusedAnnotation, but found null.");
+            return;
+        }
 
+        sourceWebViewViewModel.setFocusedAnnotation(null);
+
+        if (this.editAnnotationActionMode != null) {
+            webView.finishEditAnnotationActionMode(editAnnotationActionMode);
+            editAnnotationActionMode = null;
+            isEditingAnnotation = false;
+        }
+
+        boolean updated = sourceWebViewViewModel.removeAnnotation(annotationId);
+        if (!updated) {
+            Log.d("SourceWebView", "handleAnnotationDelete: Unable to find annotation for id " + annotationId);
+            return;
+        }
+
+        AnnotationRepository.deleteAnnotationMutation(
+                getContext(),
+                DeleteAnnotationInput.builder()
+                        .creatorUsername(authenticationViewModel.getUsername().getValue())
+                        .id(annotationId)
+                        .build(),
+                (e, _data) -> {
+                    if (e != null) {
+                        Log.d("SourceWebView", "Unable to handleAnnotationDelete", e);
+                        return;
+                    }
+                    try {
+                        JSONObject deleteCacheAnnotationData = new JSONObject();
+                        deleteCacheAnnotationData.put("annotation", annotation.toJson());
+                        getActivity().runOnUiThread(() -> appWebViewViewModel.dispatchWebEvent(
+                                new WebEvent(
+                                        WebEvent.TYPE_DELETE_CACHE_ANNOTATION,
+                                        UUID.randomUUID().toString(),
+                                        deleteCacheAnnotationData
+                                )
+                        ));
+                    } catch (JSONException ex) {
+                        Log.d("SourceWebView", "Unable to serialize annotation: " + annotation, ex);
+                    }
+                }
+        );
     }
 
     private void handleDone() {

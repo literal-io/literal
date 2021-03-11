@@ -56,7 +56,7 @@ export class AnnotationFocusManager {
     } else if (type === "EDIT_ANNOTATION") {
       if (!data.annotationId) {
         console.error(
-          "[Literal] Received FOCUS_ANNOTATION event without annotationId."
+          "[Literal] Received EDIT_ANNOTATION event without annotationId."
         );
         return;
       }
@@ -177,11 +177,6 @@ export class AnnotationFocusManager {
 
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
-    console.log(
-      "handleEditAnotation",
-      window.getSelection(),
-      window.getSelection().rangeCount
-    );
 
     const boundingBox =
       range.getClientRects().length > 0

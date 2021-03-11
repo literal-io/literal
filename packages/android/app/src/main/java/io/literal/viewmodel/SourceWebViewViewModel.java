@@ -12,6 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
@@ -235,6 +236,15 @@ public class SourceWebViewViewModel extends ViewModel {
             }
         }
         return false;
+    }
+
+    public boolean removeAnnotation(String annotationId) {
+        ArrayList<Annotation> updatedAnnotations = (ArrayList<Annotation>) annotations.getValue().clone();
+        boolean updated = updatedAnnotations.removeIf((annotation) -> annotation.getId().equals(annotationId));
+        if (updated) {
+            annotations.setValue(updatedAnnotations);
+        }
+        return updated;
     }
 
     public void dispatchWebEvent(WebEvent webEvent) {

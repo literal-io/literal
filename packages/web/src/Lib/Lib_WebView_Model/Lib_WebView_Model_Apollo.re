@@ -80,11 +80,38 @@ let writeToCache = (~annotation, ~currentUser) => {
       }
     )
   ->Belt.Array.forEach(annotationCollectionId => {
-      Js.log3("writeToCache", cacheAnnotation, annotationCollectionId);
       Lib_GraphQL_AnnotationCollection.Apollo.setAnnotationInCollection(
         ~annotation=cacheAnnotation,
         ~currentUser,
         ~annotationCollectionId,
-      );
+      )
     });
+};
+
+let deleteFromCache = (~annotation, ~currentUser) => {
+  annotation.Lib_WebView_Model_Annotation.body
+  ->Belt.Option.getWithDefault([||])
+  ->Belt.Array.keepMap(body =>
+      switch (body) {
+      | Lib_WebView_Model_Body.TextualBody(textualBody)
+          when
+            textualBody.purpose
+            ->Belt.Option.map(a =>
+                a->Belt.Array.some(purpose => purpose == "TAGGING")
+              )
+            ->Belt.Option.getWithDefault(false) =>
+        textualBody.id
+      | _ => None
+      }
+    )
+  ->Belt.Array.forEach(annotationCollectionId =>
+      annotation.id
+      ->Belt.Option.forEach(annotationId =>
+          Lib_GraphQL_AnnotationCollection.Apollo.removeAnnotationFromCollection(
+            ~annotationId,
+            ~currentUser,
+            ~annotationCollectionId,
+          )
+        )
+    );
 };

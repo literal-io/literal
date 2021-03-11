@@ -1,10 +1,13 @@
 export class Messenger {
   constructor() {
     this.handlers = new Map();
+    this.eventQueue = [];
 
     window.addEventListener("message", (ev) => {
       if (ev.ports && ev.ports.length > 0 && !globalThis.literalMessagePort) {
         globalThis.literalMessagePort = ev.ports[0];
+        this.eventQueue.forEach(this.postMessage);
+        this.eventQueue = [];
       }
 
       this._handleMessage(ev);
@@ -26,7 +29,7 @@ export class Messenger {
 
   postMessage(ev) {
     if (!globalThis.literalMessagePort) {
-      console.error("[Literal] Unable to dispatch: has not initialized");
+      this.eventQueue.push(ev);
       return;
     }
     globalThis.literalMessagePort.postMessage(JSON.stringify(ev));

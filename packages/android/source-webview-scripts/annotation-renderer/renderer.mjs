@@ -54,6 +54,8 @@ export class Renderer {
   }
 
   render(annotations) {
+    this.highlighter.removeHighlights();
+    storageSet("annotationRanges", {});
     return Promise.all(
       annotations
         .reduce((rangeSelectors, annotation) => {

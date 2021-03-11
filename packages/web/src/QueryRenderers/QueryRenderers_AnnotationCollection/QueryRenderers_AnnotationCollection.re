@@ -70,16 +70,42 @@ module Data = {
       ();
     };
 
+    let handleDeleteCacheAnnotation = ev => {
+      let _ =
+        ev
+        ->Belt.Option.flatMap(ev => ev->Js.Json.decodeObject)
+        ->Belt.Option.flatMap(dict => Js.Dict.get(dict, "annotation"))
+        ->Belt.Option.flatMap(json =>
+            switch (Lib_WebView_Model_Annotation.decode(json)) {
+            | Ok(r) => Some(r)
+            | Error(e) => None
+            }
+          )
+        ->Belt.Option.forEach(annotation =>
+            Lib_WebView_Model_Apollo.deleteFromCache(
+              ~annotation,
+              ~currentUser,
+            )
+          );
+      ();
+    };
+
     let _ =
       React.useEffect0(() => {
+        let eventHandlers = [|
+          ("SET_CACHE_ANNOTATION", handleSetCacheAnnotation),
+          ("DELETE_CACHE_ANNOTATION", handleDeleteCacheAnnotation),
+        |];
+
         let _ =
-          Webview.WebEventHandler.register((
-            "SET_CACHE_ANNOTATION",
-            handleSetCacheAnnotation,
-          ));
+          eventHandlers->Belt.Array.forEach(Webview.WebEventHandler.register);
 
         Some(
-          () => {Webview.WebEventHandler.unregister("SET_CACHE_ANNOTATION")},
+          () => {
+            eventHandlers->Belt.Array.forEach(((type_, _)) =>
+              Webview.WebEventHandler.unregister(type_)
+            )
+          },
         );
       });
 

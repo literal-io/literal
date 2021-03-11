@@ -3,6 +3,7 @@ package io.literal.repository;
 import android.content.Context;
 import android.util.Log;
 
+import com.amazonaws.amplify.generated.graphql.DeleteAnnotationMutation;
 import com.amazonaws.amplify.generated.graphql.GetAnnotationQuery;
 import com.amazonaws.amplify.generated.graphql.PatchAnnotationMutation;
 import com.apollographql.apollo.GraphQLCall;
@@ -13,6 +14,7 @@ import javax.annotation.Nonnull;
 
 import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.Callback;
+import type.DeleteAnnotationInput;
 import type.PatchAnnotationInput;
 
 public class AnnotationRepository {
@@ -38,6 +40,30 @@ public class AnnotationRepository {
                     }
                 });
     }
+
+    public static void deleteAnnotationMutation(Context context, DeleteAnnotationInput input, Callback<ApolloException, DeleteAnnotationMutation.Data> callback) {
+        AppSyncClientFactory.getInstance(context)
+                .mutate(DeleteAnnotationMutation.builder().input(input).build())
+                .enqueue(new GraphQLCall.Callback<DeleteAnnotationMutation.Data>() {
+                    @Override
+                    public void onResponse(@Nonnull Response<DeleteAnnotationMutation.Data> response) {
+                        if (response.hasErrors()) {
+                            response.errors().forEach((error -> {
+                                Log.d("AnnotationRepository", "deleteAnnotationMutation error: " + error.message());
+                            }));
+                            callback.invoke(new ApolloException("Server Error"), null);
+                        } else {
+                            callback.invoke(null, response.data());
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@Nonnull ApolloException e) {
+                        callback.invoke(e, null);
+                    }
+                });
+    }
+
 
     public static void getAnnotationQuery(Context context, GetAnnotationQuery query, Callback<ApolloException, GetAnnotationQuery.Data> callback) {
         AppSyncClientFactory.getInstance(context)

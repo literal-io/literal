@@ -18,6 +18,7 @@ public class WebEvent {
     public static final String TYPE_AUTH_GET_USER_INFO_RESULT = "AUTH_GET_USER_INFO_RESULT";
     public static final String TYPE_VIEW_TARGET_FOR_ANNOTATION = "VIEW_TARGET_FOR_ANNOTATION";
     public static final String TYPE_SET_CACHE_ANNOTATION = "SET_CACHE_ANNOTATION";
+    public static final String TYPE_DELETE_CACHE_ANNOTATION = "DELETE_CACHE_ANNOTATION";
 
     // Source WebView
     public static final String TYPE_VIEW_STATE_EDIT_ANNOTATION_TAGS = "VIEW_STATE_EDIT_ANNOTATION_TAGS";

@@ -63,6 +63,7 @@ public class SourceWebView extends NestedScrollingChildWebView {
 
     private ResultCallback<String, Void> onGetWebMessageChannelInitializerScript;
     private ResultCallback<Integer, Void> onGetTextSelectionMenu;
+    private Callback<Void, ActionMode> onDestroyTextSelectionMenu;
 
     private Callback2<SourceWebView, WebEvent> webEventCallback;
     private WebViewClient externalWebViewClient;
@@ -152,10 +153,11 @@ public class SourceWebView extends NestedScrollingChildWebView {
 
     @Override
     public ActionMode startActionMode(ActionMode.Callback callback) {
-        if (onGetTextSelectionMenu != null) {
+        if (onGetTextSelectionMenu != null && onDestroyTextSelectionMenu != null) {
             ActionMode.Callback2 cb = new CreateAnnotationActionModeCallback(
                     (ActionMode.Callback2) callback,
-                    onGetTextSelectionMenu.invoke(null, null)
+                    onGetTextSelectionMenu.invoke(null, null),
+                    onDestroyTextSelectionMenu
             );
             return super.startActionMode(cb);
         }
@@ -171,7 +173,8 @@ public class SourceWebView extends NestedScrollingChildWebView {
             // Default Chrome text selection action mode, which we intercept to provide different menu options.
             ActionMode.Callback2 cb = new CreateAnnotationActionModeCallback(
                     (ActionMode.Callback2) callback,
-                    onGetTextSelectionMenu.invoke(null, null)
+                    onGetTextSelectionMenu.invoke(null, null),
+                    onDestroyTextSelectionMenu
             );
             return super.startActionMode(cb, type);
         }
@@ -240,6 +243,10 @@ public class SourceWebView extends NestedScrollingChildWebView {
         this.onGetTextSelectionMenu = onGetTextSelectionMenu;
     }
 
+    public void setOnDestroyTextSelectionMenu(Callback<Void, ActionMode> onDestroyTextSelectionMenu) {
+        this.onDestroyTextSelectionMenu = onDestroyTextSelectionMenu;
+    }
+
     public static class EditAnnotationActionModeCallback extends ActionMode.Callback2 {
         Rect annotationBoundingBox;
         Callback<Void, Void> onEditAnnotation;
@@ -295,10 +302,12 @@ public class SourceWebView extends NestedScrollingChildWebView {
     private class CreateAnnotationActionModeCallback extends ActionMode.Callback2 {
 
         ActionMode.Callback2 originalCallback;
+        Callback<Void, ActionMode> onDestroyActionMode;
         int menu;
 
-        public CreateAnnotationActionModeCallback(ActionMode.Callback2 originalCallback, int menu) {
+        public CreateAnnotationActionModeCallback(ActionMode.Callback2 originalCallback, int menu, Callback<Void, ActionMode> onDestroyActionMode) {
             this.originalCallback = originalCallback;
+            this.onDestroyActionMode = onDestroyActionMode;
             this.menu = menu;
         }
 
@@ -342,6 +351,7 @@ public class SourceWebView extends NestedScrollingChildWebView {
 
         @Override
         public void onDestroyActionMode(ActionMode mode) {
+            this.onDestroyActionMode.invoke(null, mode);
         }
 
         @Override
