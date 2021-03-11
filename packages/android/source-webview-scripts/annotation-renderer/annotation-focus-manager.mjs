@@ -205,8 +205,8 @@ export class AnnotationFocusManager {
       if (scrollIntoView && !isVisible) {
         this.focusedAnnotationElems[0].scrollIntoView({
           behavior: "auto",
-          block: "center",
-          inline: "center",
+          block: "start",
+          inline: "start",
         });
       }
 
@@ -257,8 +257,8 @@ export class AnnotationFocusManager {
     if (scrollIntoView) {
       this.focusedAnnotationElems[0].scrollIntoView({
         behavior: "auto",
-        block: "center",
-        inline: "center",
+        block: "start",
+        inline: "start",
       });
     }
 

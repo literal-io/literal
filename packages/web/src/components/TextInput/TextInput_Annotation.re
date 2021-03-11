@@ -10,6 +10,7 @@ let make =
       ~placeholder=?,
       ~tagsInputRef=?,
       ~textInputRef=?,
+      ~inputClasses=?
     ) => {
   /** Reuse the ref prop if one was passed in, otherwise use our own **/
   let textInputRef = {
@@ -58,6 +59,7 @@ let make =
     ?placeholder
     ?autoFocus
     ?disabled
+    ?inputClasses
     inputProps={"onKeyDown": handleTextKeyDown, "disableUnderline": false}
   />;
 };

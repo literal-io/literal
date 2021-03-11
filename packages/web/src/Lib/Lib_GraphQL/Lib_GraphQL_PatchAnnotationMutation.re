@@ -286,7 +286,33 @@ module Apollo = {
     };
   };
 
-  let updateCache = (~annotation, ~currentUser, ~input) => {
+  let updateCache =
+      (
+        ~annotation: {
+           ..
+           "target":
+             array(
+               [>
+                 | `TextualTarget(
+                     {
+                       ..
+                       "__typename": string,
+                       "textualTargetId": string,
+                       "format": option(Lib_GraphQL_Format.t),
+                       "processingLanguage": option(Lib_GraphQL_Language.t),
+                       "language": option(Lib_GraphQL_Language.t),
+                       "textDirection": option(Lib_GraphQL_TextDirection.t),
+                       "accessibility": option(array(string)),
+                       "rights": option(array(string)),
+                       "value": string,
+                     },
+                   )
+               ],
+             ),
+         },
+        ~currentUser,
+        ~input,
+      ) => {
     let parsedOperations = input##operations->Belt.Array.map(Operation.parse);
 
     let updatedAnnotation =

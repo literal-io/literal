@@ -44,9 +44,6 @@ const onDocumentReady = (cb) => {
 export default () =>
   onDocumentReady(async () => {
     storageInitialize();
-    highlighter.removeHighlights();
-    storageSet("annotationRanges", {});
-
     await renderer.render(ANNOTATIONS);
     renderer.onInitialAnnotationsRendered();
     annotationFocusManager.onAnnotationsRendered({

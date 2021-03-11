@@ -72,7 +72,7 @@ let make =
         "justify-between",
         "items-center",
         "py-2",
-        "mx-6",
+        "mx-4",
         "flex",
         "flex-1",
       ])}>

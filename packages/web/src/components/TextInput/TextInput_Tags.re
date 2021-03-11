@@ -66,6 +66,7 @@ let make =
             "transition-colors",
             "duration-300",
             "ease-in-out",
+            "bg-darkAccent",
             isFocused ? "border-lightPrimary" : "border-lightDisabled",
             Cn.take(className),
           ]),

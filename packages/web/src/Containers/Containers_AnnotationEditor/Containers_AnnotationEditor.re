@@ -1,9 +1,8 @@
-open Containers_AnnotationEditor_GraphQL;
-
 let modifiedSelector = (~annotation) =>
   annotation##modified->Belt.Option.flatMap(Js.Json.decodeString);
 
-let textValueSelector = (~annotation) =>
+let textualTargetSelector =
+    (~annotation): option({.. "externalTargetCard_TextualTargetFragment": 'a}) =>
   annotation##target
   ->Belt.Array.getBy(target =>
       switch (target) {
@@ -13,10 +12,14 @@ let textValueSelector = (~annotation) =>
     )
   ->Belt.Option.flatMap(target =>
       switch (target) {
-      | `TextualTarget(target) => Some(target##value)
+      | `TextualTarget(target) => Some(target)
       | _ => None
       }
-    )
+    );
+
+let textValueSelector = (~annotation) =>
+  textualTargetSelector(~annotation)
+  ->Belt.Option.map(target => target##value)
   ->Belt.Option.getWithDefault("");
 
 let tagsValueSelector = (~currentUser, ~annotation) =>
@@ -62,12 +65,29 @@ let tagsValueSelector = (~currentUser, ~annotation) =>
       },
     |]);
 
+let targetWithExternalTargetSelector = (~annotation) =>
+  annotation##target
+  ->Belt.Array.keepMap(target =>
+      switch (target) {
+      | `SpecificTarget(specficTarget) =>
+        switch (specficTarget##source) {
+        | `ExternalTarget(externalTarget) =>
+          Some((specficTarget##specificTargetId, externalTarget))
+        | _ => None
+        }
+      | _ => None
+      }
+    )
+  ->Belt.Array.get(0);
+
 let handleSave =
   Lodash.debounce2(
     (.
       variables,
       updateAnnotationMutation:
-        ApolloHooks.Mutation.mutation(PatchAnnotationMutation.t),
+        ApolloHooks.Mutation.mutation(
+          Containers_AnnotationEditor_GraphQL.PatchAnnotationMutation.t,
+        ),
     ) => {
       let _ = updateAnnotationMutation(~variables, ());
       ();
@@ -100,7 +120,9 @@ module ModifiedValue = {
 [@react.component]
 let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
   let (patchAnnotationMutation, _s, _f) =
-    ApolloHooks.useMutation(PatchAnnotationMutation.definition);
+    ApolloHooks.useMutation(
+      Containers_AnnotationEditor_GraphQL.PatchAnnotationMutation.definition,
+    );
   let scrollContainerRef = React.useRef(Js.Nullable.null);
   let textInputRef = React.useRef(Js.Nullable.null);
   let previousAnnotation = React.useRef(annotation);
@@ -178,7 +200,7 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
                   (
                     "annotation",
                     annotation
-                    ->ExternalTargetMetadata_GraphQL.Webview.makeAnnotation
+                    ->Containers_AnnotationEditor_GraphQL.Webview.makeAnnotation
                     ->Lib_WebView_Model_Annotation.encode,
                   ),
                   (
@@ -193,6 +215,27 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
       );
     ();
   };
+
+  let targetWithExternalTarget =
+    targetWithExternalTargetSelector(~annotation);
+  let _ =
+    React.useEffect2(
+      () => {
+        let _ =
+          switch (targetWithExternalTarget) {
+          | Some((targetId, _)) when isVisible =>
+            handleViewTargetForAnnotation(
+              ~targetId,
+              ~annotation,
+              ~displayBottomSheet=false,
+              (),
+            )
+          | _ => ()
+          };
+        None;
+      },
+      (targetWithExternalTarget, isVisible),
+    );
 
   let handleTagsChange = newTagsValue => {
     let modifiedTs =
@@ -248,7 +291,10 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
              );
            let _ =
              handleSave(.
-               PatchAnnotationMutation.makeVariables(~input, ()),
+               Containers_AnnotationEditor_GraphQL.PatchAnnotationMutation.makeVariables(
+                 ~input,
+                 (),
+               ),
                patchAnnotationMutation,
              );
            let _ =
@@ -355,7 +401,10 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
                  );
                let _ =
                  handleSave(.
-                   PatchAnnotationMutation.makeVariables(~input, ()),
+                   Containers_AnnotationEditor_GraphQL.PatchAnnotationMutation.makeVariables(
+                     ~input,
+                     (),
+                   ),
                    patchAnnotationMutation,
                  );
                Js.Promise.resolve();
@@ -427,17 +476,30 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
       "flex-col",
       "overflow-y-auto",
     ])}>
-    <div className={Cn.fromList(["px-6", "py-16"])}>
-      <TextInput.Annotation
-        onChange=handleTextChange
-        value=textValue
-        textInputRef
-      />
-      <ExternalTargetMetadata
-        annotationFragment=annotation##externalTargetMetadataAnnotationFragment
-        onViewTargetForAnnotation=handleViewTargetForAnnotation
-        isAnnotationVisible=isVisible
-      />
+    <div className={Cn.fromList(["px-4", "py-16"])}>
+      {switch (targetWithExternalTarget, textualTargetSelector(~annotation)) {
+       | (Some((targetId, externalTarget)), Some(textualTarget)) =>
+         <ExternalTargetCard
+           onClick={_ => {
+             handleViewTargetForAnnotation(
+               ~annotation,
+               ~targetId,
+               ~displayBottomSheet=true,
+               (),
+             )
+           }}
+           externalTargetFragment=
+             externalTarget##externalTargetCard_ExternalTargetFragment
+           textualTargetFragment=
+             textualTarget##externalTargetCard_TextualTargetFragment
+         />
+       | _ =>
+         <TextInput.Annotation
+           onChange=handleTextChange
+           value=textValue
+           textInputRef
+         />
+       }}
       <TagsList value=tagsValue onChange=handleTagsChange />
     </div>
   </div>;

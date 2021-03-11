@@ -73,6 +73,27 @@ let makeFromTarget = target =>
   | _ => Js.Promise.resolve(None)
   };
 
+/**
+ * FIXME: toTarget below requires this to keep the **input** annotation target input type polymorphic (i.e.
+ * Lib_GraphQL_PatchAnnotationMutation.updateCache annotation), as unwrapped seems to constrain to just the
+ * specified fields. Perhaps something with polymorphic variants being constrained on the first set of fields?
+ */
+external opaqueType:
+  {
+    ..
+    "__typename": string,
+    "textualTargetId": string,
+    "format": option(Lib_GraphQL_Format.t),
+    "processingLanguage": option(Lib_GraphQL_Language.t),
+    "language": option(Lib_GraphQL_Language.t),
+    "textDirection": option(Lib_GraphQL_TextDirection.t),
+    "accessibility": option(array(string)),
+    "rights": option(array(string)),
+    "value": string,
+  } =>
+  Js.t('b) =
+  "%identity";
+
 let toTarget = targetInput =>
   switch (
     targetInput##textualTarget,
@@ -81,17 +102,19 @@ let toTarget = targetInput =>
   ) {
   | (Some(textualTarget), None, None) =>
     Some(
-      `TextualTarget({
-        "__typename": "TextualTarget",
-        "textualTargetId": textualTarget##id,
-        "format": textualTarget##format,
-        "processingLanguage": textualTarget##processingLanguage,
-        "language": textualTarget##language,
-        "textDirection": textualTarget##textDirection,
-        "accessibility": textualTarget##accessibility,
-        "rights": textualTarget##rights,
-        "value": textualTarget##value,
-      }),
+      `TextualTarget(
+        opaqueType({
+          "__typename": "TextualTarget",
+          "textualTargetId": textualTarget##id,
+          "format": textualTarget##format,
+          "processingLanguage": textualTarget##processingLanguage,
+          "language": textualTarget##language,
+          "textDirection": textualTarget##textDirection,
+          "accessibility": textualTarget##accessibility,
+          "rights": textualTarget##rights,
+          "value": textualTarget##value,
+        }),
+      ),
     )
   | _ => None
   };
