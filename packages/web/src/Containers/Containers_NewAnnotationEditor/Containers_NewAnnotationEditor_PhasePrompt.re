@@ -52,6 +52,8 @@ let make = (~onCreateFromText, ~onCreateFromFile) => {
           "border-b",
           "border-white-o50",
           "border-dotted",
+          "bg-darkAccent",
+          "rounded-sm",
         ])}>
         <MaterialUi.IconButton
           size=`Medium
@@ -117,10 +119,11 @@ let make = (~onCreateFromText, ~onCreateFromFile) => {
         "flex-row",
         "items-center",
         "p-6",
+        "bg-darkAccent",
       ])}>
       <p className={Cn.fromList(["text-lightSecondary", "mr-6", "text-xs"])}>
         {React.string(
-           "Use the sharesheet to import highlighted text and screenshots directly from the apps you use to read.",
+           "Use your device sharesheet to annotate text, screenshots, and web pages directly from the apps you use to read.",
          )}
       </p>
       <Svg

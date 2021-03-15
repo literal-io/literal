@@ -215,7 +215,6 @@ public class SourceWebViewViewModel extends ViewModel {
 
     public boolean updateAnnotation(Annotation annotation) {
         if (annotation.getId() != null) {
-
             if (focusedAnnotation.getValue() != null && focusedAnnotation.getValue().getId().equals(annotation.getId())) {
                 focusedAnnotation.setValue(annotation);
             }

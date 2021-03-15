@@ -17,7 +17,7 @@ let make =
       },
     }
     classes={MaterialUi.Button.Classes.make(
-      ~root=Cn.fromList(["p-0", "bg-darkAccent", "rounded-md"]),
+      ~root=Cn.fromList(["p-0", "bg-darkAccent", "rounded-sm"]),
       ~label=Cn.fromList(["flex", "flex-col", "items-stretch"]),
       (),
     )}

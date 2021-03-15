@@ -171,7 +171,6 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
            let mutationResult = patchAnnotationMutation(~variables, ());
            let _ =
              Lib_GraphQL_PatchAnnotationMutation.Apollo.updateCache(
-               ~annotation,
                ~currentUser,
                ~input,
              );
@@ -299,13 +298,18 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       "flex-col",
       "overflow-y-auto",
     ])}>
-    <div className={Cn.fromList(["px-6", "py-16"])}>
+    <div className={Cn.fromList(["px-4", "py-16"])}>
       <TextInput.Annotation
         onChange=handleTextChange
         value=textValue
         placeholder="Lorem Ipsum"
         autoFocus=true
         textInputRef
+        inputClasses={MaterialUi.Input.Classes.make(
+          ~root=Cn.fromList(["p-4", "bg-darkAccent", "rounded-sm"]),
+          ~inputMultiline=Cn.fromList(["px-0"]),
+          (),
+        )}
       />
       <TagsList value=tagsValue onChange=handleTagsChange />
     </div>

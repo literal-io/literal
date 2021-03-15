@@ -71,7 +71,6 @@ module Data = {
                PatchAnnotationMutation.makeVariables(~input, ());
              let _ =
                Lib_GraphQL_PatchAnnotationMutation.Apollo.updateCache(
-                 ~annotation,
                  ~currentUser,
                  ~input,
                );

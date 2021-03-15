@@ -53,9 +53,20 @@ module Apollo = {
 
   let setAnnotationInCollection =
       (~annotation, ~currentUser, ~annotationCollectionId) => {
+    let annotationId = a =>
+      a
+      ->Js.Json.decodeObject
+      ->Belt.Option.flatMap(a => a->Js.Dict.get("id"))
+      ->Belt.Option.flatMap(Js.Json.decodeString);
+
     let onUpdateItems = items =>
       items
-      ->Belt.Array.getIndexBy(a => a##annotation##id === annotation##id)
+      ->Belt.Array.getIndexBy(a =>
+          switch (annotationId(a##annotation), annotationId(annotation)) {
+          | (Some(id1), Some(id2)) when id1 == id2 => true
+          | _ => false
+          }
+        )
       ->Belt.Option.map(idx => {
           let newItems = Js.Array2.copy(items);
           let _ =
@@ -126,7 +137,14 @@ module Apollo = {
       (~annotationId, ~currentUser, ~annotationCollectionId) => {
     let onUpdateItems = items =>
       items
-      ->Belt.Array.keep(d => d##annotation##id != annotationId)
+      ->Belt.Array.keep(d =>
+          d##annotation
+          ->Js.Json.decodeObject
+          ->Belt.Option.flatMap(a => a->Js.Dict.get("id"))
+          ->Belt.Option.flatMap(Js.Json.decodeString)
+          ->Belt.Option.map(id => id != annotationId)
+          ->Belt.Option.getWithDefault(true)
+        )
       ->Js.Option.some;
 
     let onCreateAnnotationCollection = () => None;

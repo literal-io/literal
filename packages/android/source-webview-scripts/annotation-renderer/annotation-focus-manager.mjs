@@ -77,7 +77,7 @@ export class AnnotationFocusManager {
 
         this._handleFocusAnnotation({
           annotationId: ev.target.getAttribute("data-annotation-id"),
-          scrollIntoView: true,
+          scrollIntoView: false,
         });
       });
     });
@@ -90,7 +90,7 @@ export class AnnotationFocusManager {
 
       this._handleBlurAnnotation({ disableNotify: false });
     });
-
+    this._handleBlurAnnotation({ disableNotify: true });
     if (focusedAnnotationId) {
       this._handleFocusAnnotation({
         annotationId: focusedAnnotationId,

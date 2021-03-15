@@ -34,6 +34,51 @@ module Input = {
     "body": body,
   };
 
+  let toCacheAnnotation = input =>
+    Js.Dict.fromList([
+      ("id", input##id->Js.Json.string),
+      ("creatorUsername", input##creatorUsername->Js.Json.string),
+      (
+        "context",
+        input##context->Belt.Array.map(c => c->Js.Json.string)->Js.Json.array,
+      ),
+      (
+        "motivation",
+        input##motivation
+        ->Belt.Option.map(m =>
+            m
+            ->Belt.Array.map(m =>
+                m->Lib_GraphQL_Motivation.toString->Js.Json.string
+              )
+            ->Js.Json.array
+          )
+        ->Belt.Option.getWithDefault(Js.Json.null),
+      ),
+      ("__typename", "Annotation"->Js.Json.string),
+      (
+        "modified",
+        input##modified->Belt.Option.getWithDefault(Js.Json.null),
+      ),
+      ("created", input##created->Belt.Option.getWithDefault(Js.Json.null)),
+      (
+        "body",
+        input##body
+        ->Belt.Option.map(b =>
+            b
+            ->Belt.Array.keepMap(Lib_GraphQL_AnnotationBodyInput.toCache)
+            ->Js.Json.array
+          )
+        ->Belt.Option.getWithDefault(Js.Json.null),
+      ),
+      (
+        "target",
+        input##target
+        ->Belt.Array.keepMap(Lib_GraphQL_AnnotationTargetInput.toCache)
+        ->Js.Json.array,
+      ),
+    ])
+    ->Js.Json.object_;
+
   let toAnnotation = input => {
     "__typename": "Annotation",
     "id": input##id,
@@ -87,10 +132,8 @@ module Apollo = {
           )
       )
     ->Belt.Array.forEach(textualBody => {
-        let cacheAnnotation =
-          input
-          ->Input.toAnnotation
-          ->QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.parsedAnnotationToCache;
+        let cacheAnnotation = input->Input.toCacheAnnotation;
+
         let onCreateAnnotationCollection =
           createAnnotationCollection
             ? () =>
@@ -114,10 +157,7 @@ module Apollo = {
     let textualBodyAnnotationTuples =
       inputs
       ->Belt.Array.map(input => {
-          let cacheAnnotation =
-            input
-            ->Input.toAnnotation
-            ->QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.parsedAnnotationToCache;
+          let cacheAnnotation = input->Input.toCacheAnnotation;
 
           input##body
           ->Belt.Option.getWithDefault([||])

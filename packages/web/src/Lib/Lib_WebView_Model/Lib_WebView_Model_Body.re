@@ -45,6 +45,32 @@ type t =
   | TextualBody(textualBody)
   | NotImplemented_Passthrough(Js.Json.t);
 
+let makeTextualBodyFromGraphQL = textualBody =>
+  TextualBody(
+    makeTextualBody(
+      ~language=?
+        textualBody##language->Belt.Option.map(Lib_GraphQL_Language.toString),
+      ~processingLanguage=?
+        textualBody##processingLanguage
+        ->Belt.Option.map(Lib_GraphQL_Language.toString),
+      ~accessibility=?textualBody##accessibility,
+      ~rights=?textualBody##rights,
+      ~textDirection=?
+        textualBody##textDirection
+        ->Belt.Option.map(Lib_GraphQL_TextDirection.toString),
+      ~format=?
+        textualBody##format->Belt.Option.map(Lib_GraphQL_Format.toString),
+      ~purpose=?
+        textualBody##purpose
+        ->Belt.Option.map(d =>
+            d->Belt.Array.map(Lib_GraphQL_Motivation.toString)
+          ),
+      ~value=textualBody##value,
+      ~id=textualBody##id,
+      (),
+    ),
+  );
+
 let decoder = json =>
   switch (json->Js.Json.classify) {
   | JSONObject(_) =>

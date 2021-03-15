@@ -36,5 +36,14 @@ let make = (~id=?, ~target, ~body=?, ~created=?, ~modified=?, ()) => {
     ->Js.Option.some,
 };
 
+let makeAnnotationFromGraphQL = (~makeTarget, ~makeBody, annotation) =>
+  make(
+    ~id=annotation##id,
+    ~target=annotation##target->Belt.Array.keepMap(makeTarget),
+    ~body=?
+      annotation##body->Belt.Option.map(a => a->Belt.Array.keepMap(makeBody)),
+    (),
+  );
+
 let encode = t_encode;
 let decode = t_decode;

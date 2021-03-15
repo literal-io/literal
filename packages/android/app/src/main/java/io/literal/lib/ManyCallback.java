@@ -29,8 +29,8 @@ public class ManyCallback<TError, TData> {
         return (e, data) -> {
             results.set(idx, new Result<>(e, data));
 
-            List<TError> errorResult = results.stream().filter((result) -> result.getError() != null).map(Result::getError).collect(Collectors.toList());
-            List<TData> dataResult = results.stream().filter((result) -> result.getData() != null).map(Result::getData).collect(Collectors.toList());
+            List<TError> errorResult = results.stream().filter((result) -> result != null && result.getError() != null).map(Result::getError).collect(Collectors.toList());
+            List<TData> dataResult = results.stream().filter((result) -> result != null && result.getData() != null).map(Result::getData).collect(Collectors.toList());
 
             if (errorResult.size() > 0 && !hasResult) {
                 hasResult = true;

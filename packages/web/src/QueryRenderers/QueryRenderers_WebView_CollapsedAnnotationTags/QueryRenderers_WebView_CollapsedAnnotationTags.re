@@ -47,6 +47,7 @@ module Data = {
              ->Belt.Array.mapWithIndex(
                  (idx, tag: Containers_AnnotationEditor_Tag.t) =>
                  <div
+                   key={tag.text}
                    className={Cn.fromList([
                      Cn.on("ml-6", idx == 0),
                      "mr-6",

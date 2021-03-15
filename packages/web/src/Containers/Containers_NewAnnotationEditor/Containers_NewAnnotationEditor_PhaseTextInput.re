@@ -226,13 +226,18 @@ let make = (~currentUser) => {
       "flex-col",
       "overflow-y-auto",
     ])}>
-    <div className={Cn.fromList(["px-6", "py-16"])}>
+    <div className={Cn.fromList(["px-4", "py-16"])}>
       <TextInput.Annotation
         onChange=handleTextChange
         value=textValue
         placeholder="Lorem Ipsum..."
         autoFocus=true
         textInputRef
+        inputClasses={MaterialUi.Input.Classes.make(
+          ~root=Cn.fromList(["p-4", "bg-darkAccent", "rounded-sm"]),
+          ~inputMultiline=Cn.fromList(["px-0"]),
+          (),
+        )}
       />
       <TagsList value=tagsValue onChange=handleTagsChange />
     </div>

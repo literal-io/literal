@@ -48,6 +48,7 @@ export class Renderer {
       this.render(data.annotations).then(() => {
         this.annotationFocusManager.onAnnotationsRendered({
           annotations: data.annotations,
+          focusedAnnotationId: data.focusedAnnotationId,
         });
       });
     }

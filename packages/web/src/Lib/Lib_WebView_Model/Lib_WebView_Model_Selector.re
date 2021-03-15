@@ -40,6 +40,16 @@ let makeTextPositionSelector = (~end_, ~start, ~type_, ()) => {
   typename: "TextPositionSelector",
 };
 
+let makeTextPositionSelectorFromGraphQL = textPositionSelector =>
+  TextPositionSelector(
+    makeTextPositionSelector(
+      ~start=textPositionSelector##start,
+      ~end_=textPositionSelector##end_,
+      ~type_="TEXT_POSITION_SELECTOR",
+      (),
+    ),
+  );
+
 let makeXPathSelector = (~value, ~refinedBy=?, ~type_, ()) => {
   value,
   refinedBy,
@@ -47,11 +57,44 @@ let makeXPathSelector = (~value, ~refinedBy=?, ~type_, ()) => {
   typename: "XPathSelector",
 };
 
+let makeXPathSelectorFromGraphQL = (~makeRefinedBy, xPathSelector) =>
+  XPathSelector(
+    makeXPathSelector(
+      ~value=xPathSelector##value,
+      ~refinedBy=?
+        xPathSelector##refinedBy
+        ->Belt.Option.map(r => r->Belt.Array.keepMap(makeRefinedBy)),
+      ~type_="XPATH_SELECTOR",
+      (),
+    ),
+  );
+
 let makeRangeSelector = (~startSelector, ~endSelector, ~type_, ()) => {
   startSelector,
   endSelector,
   type_,
   typename: "RangeSelector",
+};
+
+let makeRangeSelectorFromGraphQL =
+    (~makeStartSelector, ~makeEndSelector, rangeSelector) => {
+  switch (
+    makeStartSelector(rangeSelector##startSelector),
+    makeEndSelector(rangeSelector##endSelector),
+  ) {
+  | (Some(startSelector), Some(endSelector)) =>
+    Some(
+      RangeSelector(
+        makeRangeSelector(
+          ~startSelector,
+          ~endSelector,
+          ~type_="RANGE_SELECTOR",
+          (),
+        ),
+      ),
+    )
+  | _ => None
+  };
 };
 
 let t_decode = json =>

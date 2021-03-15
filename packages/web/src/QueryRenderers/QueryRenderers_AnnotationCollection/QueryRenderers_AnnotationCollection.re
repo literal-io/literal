@@ -48,6 +48,8 @@ module Data = {
             let _ = onFetchMore();
             ();
           };
+
+          Js.log(Lib_GraphQL_Annotation.readCache(activeAnnotation##id));
           None;
         },
         [|activeAnnotation|],

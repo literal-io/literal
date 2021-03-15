@@ -185,7 +185,10 @@ public class SourceWebView extends Fragment {
                 return;
             }
 
-            this.handleRenderAnnotations(annotations);
+            this.handleRenderAnnotations(
+                    annotations,
+                    sourceWebViewViewModel.getFocusedAnnotation().getValue()
+            );
         });
 
         sourceWebViewViewModel.getFocusedAnnotation().observe(getActivity(), this::dispatchFocusAnnotationWebEvent);
@@ -253,18 +256,7 @@ public class SourceWebView extends Fragment {
                     case WebEvent.TYPE_SET_VIEW_STATE:
                         try {
                             String state = webEvent.getData().getString("state");
-                            switch (state) {
-                                case "COLLAPSED_ANNOTATION_TAGS":
-                                    appWebViewViewModel.setBottomSheetState(
-                                            sourceWebViewViewModel.getFocusedAnnotation().getValue() != null ? BottomSheetBehavior.STATE_COLLAPSED : BottomSheetBehavior.STATE_HIDDEN
-                                    );
-                                    break;
-                                case "EDIT_ANNOTATION_TAGS":
-                                    appWebViewViewModel.setBottomSheetState(
-                                            sourceWebViewViewModel.getFocusedAnnotation().getValue() != null ? BottomSheetBehavior.STATE_EXPANDED : BottomSheetBehavior.STATE_HIDDEN
-                                    );
-                                    break;
-                            }
+                            this.handleSetBottomSheetState(state);
                         } catch (JSONException e) {
                             Log.d("SourceWebView", "Unable to handle SET_VIEW_STATE", e);
                         }
@@ -315,6 +307,26 @@ public class SourceWebView extends Fragment {
             webView.restoreState(savedInstanceState);
         } else {
             webView.loadUrl(paramInitialUrl);
+        }
+    }
+
+    private void handleSetBottomSheetState(String state) {
+        if (editAnnotationActionMode != null) {
+            webView.finishEditAnnotationActionMode(editAnnotationActionMode);
+            editAnnotationActionMode = null;
+            isEditingAnnotation = false;
+        }
+        switch (state) {
+            case "COLLAPSED_ANNOTATION_TAGS":
+                appWebViewViewModel.setBottomSheetState(
+                        sourceWebViewViewModel.getFocusedAnnotation().getValue() != null ? BottomSheetBehavior.STATE_COLLAPSED : BottomSheetBehavior.STATE_HIDDEN
+                );
+                break;
+            case "EDIT_ANNOTATION_TAGS":
+                appWebViewViewModel.setBottomSheetState(
+                        sourceWebViewViewModel.getFocusedAnnotation().getValue() != null ? BottomSheetBehavior.STATE_EXPANDED : BottomSheetBehavior.STATE_HIDDEN
+                );
+                break;
         }
     }
 
@@ -380,7 +392,10 @@ public class SourceWebView extends Fragment {
     }
 
     private void handleAnnotationCancelEdit() {
-        this.handleRenderAnnotations(sourceWebViewViewModel.getAnnotations().getValue());
+        this.handleRenderAnnotations(
+                sourceWebViewViewModel.getAnnotations().getValue(),
+                sourceWebViewViewModel.getFocusedAnnotation().getValue()
+        );
         Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
         if (focusedAnnotation != null) {
             webView.postWebEvent(new WebEvent(
@@ -601,7 +616,7 @@ public class SourceWebView extends Fragment {
         }
     }
 
-    private void handleRenderAnnotations(ArrayList<Annotation> annotations) {
+    private void handleRenderAnnotations(ArrayList<Annotation> annotations, Annotation focusedAnnotation) {
         if (!this.isWebviewInitialized()) {
             Log.d("SourceWebView", "handleRenderAnnotations: expected webview to be initialized, nooping.");
             return;
@@ -610,6 +625,9 @@ public class SourceWebView extends Fragment {
         try {
             JSONObject renderAnnotationsData = new JSONObject();
             renderAnnotationsData.put("annotations", JsonArrayUtil.stringifyObjectArray(annotations.toArray(new Annotation[0]), Annotation::toJson));
+            if (focusedAnnotation != null) {
+                renderAnnotationsData.put("focusedAnnotationId", focusedAnnotation.getId());
+            }
             webView.postWebEvent(new WebEvent(
                     WebEvent.TYPE_RENDER_ANNOTATIONS,
                     UUID.randomUUID().toString(),

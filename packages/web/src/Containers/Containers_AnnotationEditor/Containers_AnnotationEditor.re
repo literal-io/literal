@@ -2,7 +2,8 @@ let modifiedSelector = (~annotation) =>
   annotation##modified->Belt.Option.flatMap(Js.Json.decodeString);
 
 let textualTargetSelector =
-    (~annotation): option({.. "externalTargetCard_TextualTargetFragment": 'a}) =>
+    (~annotation)
+    : option({.. "externalTargetCard_TextualTargetFragment": 'a}) =>
   annotation##target
   ->Belt.Array.getBy(target =>
       switch (target) {
@@ -299,7 +300,6 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
              );
            let _ =
              Lib_GraphQL_PatchAnnotationMutation.Apollo.updateCache(
-               ~annotation,
                ~currentUser,
                ~input,
              );
@@ -498,6 +498,11 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
            onChange=handleTextChange
            value=textValue
            textInputRef
+           inputClasses={MaterialUi.Input.Classes.make(
+             ~root=Cn.fromList(["p-4", "bg-darkAccent", "rounded-sm"]),
+             ~inputMultiline=Cn.fromList(["px-0"]),
+             (),
+           )}
          />
        }}
       <TagsList value=tagsValue onChange=handleTagsChange />

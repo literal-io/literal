@@ -7,7 +7,7 @@ let make = () => {
     ();
   };
 
-  <Header className={cn(["py-2", "mx-6"])}>
+  <Header className={cn(["py-2", "mx-4"])}>
     <MaterialUi.IconButton
       size=`Small
       edge=MaterialUi.IconButton.Edge.start

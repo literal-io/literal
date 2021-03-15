@@ -70,7 +70,6 @@ module Input = {
 };
 
 module Apollo = {
-  open QueryRenderers_AnnotationCollection_GraphQL;
   module Operation = {
     type t('a, 'b, 'c) =
       | Add('a)
@@ -121,56 +120,114 @@ module Apollo = {
     };
 
   let getAnnotationBodyIndexByWhere = (annotation, clause) =>
-    annotation##body
-    ->Belt.Option.getWithDefault([||])
-    ->Belt.Array.getIndexBy(body =>
-        switch (body) {
-        | `TextualBody(body) => body##id == clause##id
-        | _ => false
-        }
+    annotation
+    ->Js.Json.decodeObject
+    ->Belt.Option.flatMap(dict => dict->Js.Dict.get("body"))
+    ->Belt.Option.flatMap(Js.Json.decodeArray)
+    ->Belt.Option.flatMap(arr =>
+        arr->Belt.Array.getIndexBy(body =>
+          body
+          ->Js.Json.decodeObject
+          ->Belt.Option.map(body => {
+              switch (
+                body
+                ->Js.Dict.get("__typename")
+                ->Belt.Option.flatMap(Js.Json.decodeString),
+                body
+                ->Js.Dict.get("id")
+                ->Belt.Option.flatMap(Js.Json.decodeString),
+              ) {
+              | (Some("TextualBody"), Some(id)) when id == clause##id => true
+              | _ => false
+              }
+            })
+          ->Belt.Option.getWithDefault(false)
+        )
       );
 
   let getAnnotationTargetIndexByWhere = (annotation, clause) =>
-    annotation##target
-    ->Belt.Array.getIndexBy(target =>
-        switch (target) {
-        | `TextualTarget(target) => target##textualTargetId == clause##id
-        | _ => false
-        }
+    annotation
+    ->Js.Json.decodeObject
+    ->Belt.Option.flatMap(dict => dict->Js.Dict.get("target"))
+    ->Belt.Option.flatMap(Js.Json.decodeArray)
+    ->Belt.Option.flatMap(arr =>
+        arr->Belt.Array.getIndexBy(body =>
+          body
+          ->Js.Json.decodeObject
+          ->Belt.Option.map(body => {
+              switch (
+                body
+                ->Js.Dict.get("textualTargetId")
+                ->Belt.Option.flatMap(Js.Json.decodeString),
+                body
+                ->Js.Dict.get("specificTargetId")
+                ->Belt.Option.flatMap(Js.Json.decodeString),
+                body
+                ->Js.Dict.get("externalTargetId")
+                ->Belt.Option.flatMap(Js.Json.decodeString),
+              ) {
+              | (Some(id), _, _)
+              | (_, Some(id), _)
+              | (_, _, Some(id)) when id == clause##id => true
+              | _ => false
+              }
+            })
+          ->Belt.Option.getWithDefault(false)
+        )
       );
 
   let getAnnotationCollectionOperations =
       (~annotation, ~operations): array(Operation.t(string, string, string)) =>
-    annotation##body
+    annotation
+    ->Js.Json.decodeObject
+    ->Belt.Option.flatMap(dict => dict->Js.Dict.get("body"))
+    ->Belt.Option.flatMap(Js.Json.decodeArray)
     ->Belt.Option.getWithDefault([||])
     ->Belt.Array.keepMap(body =>
-        switch (body) {
-        | `TextualBody(body) =>
-          if (Lib_GraphQL.Annotation.isBodyTag(body)) {
-            Some(body);
-          } else {
-            None;
-          }
-        | _ => None
-        }
+        body
+        ->Js.Json.decodeObject
+        ->Belt.Option.flatMap(body =>
+            switch (
+              body
+              ->Js.Dict.get("__typename")
+              ->Belt.Option.flatMap(Js.Json.decodeString),
+              body
+              ->Js.Dict.get("purpose")
+              ->Belt.Option.flatMap(Js.Json.decodeArray)
+              ->Belt.Option.map(p =>
+                  p->Belt.Array.some(p =>
+                    p
+                    ->Js.Json.decodeString
+                    ->Belt.Option.map(s => s == "TAGGING")
+                    ->Belt.Option.getWithDefault(false)
+                  )
+                )
+              ->Belt.Option.getWithDefault(false),
+            ) {
+            | (Some("TextualBody"), true) =>
+              body
+              ->Js.Dict.get("id")
+              ->Belt.Option.flatMap(Js.Json.decodeString)
+            | _ => None
+            }
+          )
       )
-    ->Belt.Array.map(textualBody =>
+    ->Belt.Array.map(textualBodyId =>
         operations
         ->Belt.Array.getBy(op =>
             switch (op) {
             | Operation.(Some(Remove(remove))) =>
-              remove##where##id == textualBody##id
+              remove##where##id == textualBodyId
             | _ => false
             }
           )
         ->Belt.Option.flatMap(op => {
             switch (op) {
-            | Some(Remove(remove)) =>
-              Operation.(Some(Remove(textualBody##id)))
+            | Some(Remove(_)) => Operation.(Some(Remove(textualBodyId)))
             | _ => None
             }
           })
-        ->Belt.Option.getWithDefault(Set(textualBody##id))
+        ->Belt.Option.getWithDefault(Set(textualBodyId))
       )
     ->Belt.Array.concat(
         operations->Belt.Array.keepMap(op =>
@@ -194,7 +251,6 @@ module Apollo = {
               } else {
                 None;
               }
-
             | _ => None
             }
           | _ => None
@@ -204,24 +260,31 @@ module Apollo = {
 
   let applyAddOperation = (~op, ~annotation) => {
     switch (
-      op##body->Belt.Option.flatMap(Lib_GraphQL_AnnotationBodyInput.toBody),
+      op##body->Belt.Option.flatMap(Lib_GraphQL_AnnotationBodyInput.toCache),
       op##target
-      ->Belt.Option.flatMap(Lib_GraphQL_AnnotationTargetInput.toTarget),
+      ->Belt.Option.flatMap(Lib_GraphQL_AnnotationTargetInput.toCache),
     ) {
     | (Some(body), None) =>
       Ramda.assoc(
         annotation,
         "body",
-        Belt.Array.concat(
-          annotation##body->Belt.Option.getWithDefault([||]),
-          [|body|],
-        ),
+        annotation
+        ->Js.Json.decodeObject
+        ->Belt.Option.flatMap(dict => dict->Js.Dict.get("body"))
+        ->Belt.Option.flatMap(Js.Json.decodeArray)
+        ->Belt.Option.getWithDefault([||])
+        ->Belt.Array.concat([|body|]),
       )
     | (None, Some(target)) =>
       Ramda.assoc(
         annotation,
         "target",
-        Belt.Array.concat(annotation##target, [|target|]),
+        annotation
+        ->Js.Json.decodeObject
+        ->Belt.Option.flatMap(dict => dict->Js.Dict.get("target"))
+        ->Belt.Option.flatMap(Js.Json.decodeArray)
+        ->Belt.Option.getWithDefault([||])
+        ->Belt.Array.concat([|target|]),
       )
     | _ => annotation
     };
@@ -229,18 +292,22 @@ module Apollo = {
 
   let applySetOperation = (~op, ~annotation) =>
     switch (
-      op##body->Belt.Option.flatMap(Lib_GraphQL_AnnotationBodyInput.toBody),
+      op##body->Belt.Option.flatMap(Lib_GraphQL_AnnotationBodyInput.toCache),
       op##target
-      ->Belt.Option.flatMap(Lib_GraphQL_AnnotationTargetInput.toTarget),
+      ->Belt.Option.flatMap(Lib_GraphQL_AnnotationTargetInput.toCache),
     ) {
     | (Some(body), None) =>
       annotation
       ->getAnnotationBodyIndexByWhere(op##where)
       ->Belt.Option.map(idx => {
           let copy =
-            annotation##body
+            annotation
+            ->Js.Json.decodeObject
+            ->Belt.Option.flatMap(dict => dict->Js.Dict.get("body"))
+            ->Belt.Option.flatMap(Js.Json.decodeArray)
             ->Belt.Option.getWithDefault([||])
             ->Belt.Array.copy;
+
           let _ = Belt.Array.set(copy, idx, body);
           Ramda.assoc(annotation, "body", copy);
         })
@@ -249,7 +316,14 @@ module Apollo = {
       annotation
       ->getAnnotationTargetIndexByWhere(op##where)
       ->Belt.Option.map(idx => {
-          let copy = annotation##target->Belt.Array.copy;
+          let copy =
+            annotation
+            ->Js.Json.decodeObject
+            ->Belt.Option.flatMap(dict => dict->Js.Dict.get("target"))
+            ->Belt.Option.flatMap(Js.Json.decodeArray)
+            ->Belt.Option.getWithDefault([||])
+            ->Belt.Array.copy;
+
           let _ = Belt.Array.set(copy, idx, target);
           Ramda.assoc(annotation, "target", copy);
         })
@@ -260,24 +334,35 @@ module Apollo = {
 
   let applyRemoveOperation = (~op, ~annotation) => {
     switch (op##body, op##target) {
-    | (Some(true), _) =>
+    | (Some(_), _) =>
       annotation
       ->getAnnotationBodyIndexByWhere(op##where)
       ->Belt.Option.map(idx => {
           let copy =
-            annotation##body
+            annotation
+            ->Js.Json.decodeObject
+            ->Belt.Option.flatMap(dict => dict->Js.Dict.get("body"))
+            ->Belt.Option.flatMap(Js.Json.decodeArray)
             ->Belt.Option.getWithDefault([||])
             ->Belt.Array.copy;
+
           let _ =
             Js.Array2.spliceInPlace(copy, ~pos=idx, ~remove=1, ~add=[||]);
           Ramda.assoc(annotation, "body", copy);
         })
       ->Belt.Option.getWithDefault(annotation)
-    | (_, Some(true)) =>
+    | (_, Some(_)) =>
       annotation
       ->getAnnotationTargetIndexByWhere(op##where)
       ->Belt.Option.map(idx => {
-          let copy = annotation##target->Belt.Array.copy;
+          let copy =
+            annotation
+            ->Js.Json.decodeObject
+            ->Belt.Option.flatMap(dict => dict->Js.Dict.get("target"))
+            ->Belt.Option.flatMap(Js.Json.decodeArray)
+            ->Belt.Option.getWithDefault([||])
+            ->Belt.Array.copy;
+
           let _ = Js.Array2.spliceInPlace(copy, ~pos=idx, ~remove=1);
           Ramda.assoc(annotation, "target", copy);
         })
@@ -286,34 +371,10 @@ module Apollo = {
     };
   };
 
-  let updateCache =
-      (
-        ~annotation: {
-           ..
-           "target":
-             array(
-               [>
-                 | `TextualTarget(
-                     {
-                       ..
-                       "__typename": string,
-                       "textualTargetId": string,
-                       "format": option(Lib_GraphQL_Format.t),
-                       "processingLanguage": option(Lib_GraphQL_Language.t),
-                       "language": option(Lib_GraphQL_Language.t),
-                       "textDirection": option(Lib_GraphQL_TextDirection.t),
-                       "accessibility": option(array(string)),
-                       "rights": option(array(string)),
-                       "value": string,
-                     },
-                   )
-               ],
-             ),
-         },
-        ~currentUser,
-        ~input,
-      ) => {
+  let updateCache = (~currentUser, ~input) => {
     let parsedOperations = input##operations->Belt.Array.map(Operation.parse);
+    let cacheAnnotation =
+      Lib_GraphQL_Annotation.readCache(input##id)->Belt.Option.getExn;
 
     let updatedAnnotation =
       parsedOperations
@@ -332,8 +393,14 @@ module Apollo = {
             ) {
             | (Some(Body(_)), Some(Body(_))) =>
               switch (
-                getAnnotationBodyIndexByWhere(annotation, remove1##where),
-                getAnnotationBodyIndexByWhere(annotation, remove2##where),
+                getAnnotationBodyIndexByWhere(
+                  cacheAnnotation,
+                  remove1##where,
+                ),
+                getAnnotationBodyIndexByWhere(
+                  cacheAnnotation,
+                  remove2##where,
+                ),
               ) {
               | (Some(idx1), Some(idx2)) => idx2 - idx1
               | (Some(_), _) => (-1)
@@ -342,8 +409,14 @@ module Apollo = {
               }
             | (Some(Target(_)), Some(Target(_))) =>
               switch (
-                getAnnotationTargetIndexByWhere(annotation, remove1##where),
-                getAnnotationTargetIndexByWhere(annotation, remove2##where),
+                getAnnotationTargetIndexByWhere(
+                  cacheAnnotation,
+                  remove1##where,
+                ),
+                getAnnotationTargetIndexByWhere(
+                  cacheAnnotation,
+                  remove1##where,
+                ),
               ) {
               | (Some(idx1), Some(idx2)) => idx2 - idx1
               | (Some(_), _) => (-1)
@@ -357,13 +430,15 @@ module Apollo = {
           | _ => 0
           }
         })
-      ->Belt.Array.reduce(annotation, (annotation, operation) =>
+      ->Belt.Array.reduce(cacheAnnotation, (cacheAnnotation, operation) =>
           switch (operation) {
-          | Some(Add(add)) => applyAddOperation(~op=add, ~annotation)
-          | Some(Set(set)) => applySetOperation(~op=set, ~annotation)
+          | Some(Add(add)) =>
+            applyAddOperation(~op=add, ~annotation=cacheAnnotation)
+          | Some(Set(set)) =>
+            applySetOperation(~op=set, ~annotation=cacheAnnotation)
           | Some(Remove(remove)) =>
-            applyRemoveOperation(~op=remove, ~annotation)
-          | _ => annotation
+            applyRemoveOperation(~op=remove, ~annotation=cacheAnnotation)
+          | _ => cacheAnnotation
           }
         )
       ->Ramda.assoc(
@@ -371,33 +446,31 @@ module Apollo = {
           Js.Date.(make()->toISOString)->Js.Json.string,
         );
 
-    let cacheAnnotation =
-      GetAnnotationCollection.parsedAnnotationToCache(updatedAnnotation);
     let onCreateAnnotationCollection = () => None;
 
     let _ =
       getAnnotationCollectionOperations(
-        ~annotation,
+        ~annotation=cacheAnnotation,
         ~operations=parsedOperations,
       )
       ->Belt.Array.forEach(op =>
           switch (op) {
           | Add(annotationCollectionId) =>
             Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationToCollection(
-              ~annotation=cacheAnnotation,
+              ~annotation=updatedAnnotation,
               ~currentUser,
               ~annotationCollectionId,
               ~onCreateAnnotationCollection,
             )
           | Remove(annotationCollectionId) =>
             Lib_GraphQL_AnnotationCollection.Apollo.removeAnnotationFromCollection(
-              ~annotationId=cacheAnnotation##id,
+              ~annotationId=input##id,
               ~currentUser,
               ~annotationCollectionId,
             )
           | Set(annotationCollectionId) =>
             Lib_GraphQL_AnnotationCollection.Apollo.setAnnotationInCollection(
-              ~annotation=cacheAnnotation,
+              ~annotation=updatedAnnotation,
               ~currentUser,
               ~annotationCollectionId,
             )

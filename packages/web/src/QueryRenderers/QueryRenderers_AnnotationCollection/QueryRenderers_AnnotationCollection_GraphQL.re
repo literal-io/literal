@@ -95,7 +95,7 @@ module GetAnnotationCollection = {
                     array({
                       .
                       "__typename": string,
-                      "annotation": cacheAnnotation,
+                      "annotation": Js.Json.t,
                     }),
                   ),
               }),
@@ -206,7 +206,7 @@ module GetAnnotationCollection = {
           Js.Null.t(
             array({
               .
-              "annotation": cacheAnnotation,
+              "annotation": Js.Json.t,
               "__typename": string,
             }),
           ),

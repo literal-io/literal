@@ -50,7 +50,7 @@ module.exports = {
         lightDisabled: "rgba(255, 255, 255, .50)",
 
         // accent black
-        darkAccent: "#181818",
+        darkAccent: "#1A1A1A",
 
         // used for fix width backgrounds
         backgroundGray: "rgb(229, 229, 229)",
