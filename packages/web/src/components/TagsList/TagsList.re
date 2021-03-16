@@ -23,25 +23,27 @@ let make = (~value, ~onChange, ~disabled=?) => {
           | None => [||]
           },
       );
+    Js.log4("handleChange", newText, idx, newValue);
     onChange(newValue);
   };
 
   let tags =
     value
-    ->Belt.Array.keep(({text}) =>
-        text
-        != Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel
-      )
     ->Belt.Array.mapWithIndex((idx, tag) =>
-        <li className={Cn.fromList(["mb-5"])} key={tag.text}>
-          <TagLinkAndInput
-            key={tag.text}
-            onChange={newText => handleChange(~newText, ~idx)}
-            text={tag.text}
-            href={tag.href}
-            ?disabled
-          />
-        </li>
+        if (tag.text
+            == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel) {
+          React.null;
+        } else {
+          <li className={Cn.fromList(["mb-5"])} key={tag.text}>
+            <TagLinkAndInput
+              key={tag.text}
+              onChange={newText => handleChange(~newText, ~idx)}
+              text={tag.text}
+              href={tag.href}
+              ?disabled
+            />
+          </li>;
+        }
       )
     ->React.array;
 

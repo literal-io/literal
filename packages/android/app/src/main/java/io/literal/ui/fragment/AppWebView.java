@@ -148,6 +148,10 @@ public class AppWebView extends Fragment {
         }
     }
 
+    public void postWebEvent(WebEvent webEvent) {
+        this.appWebView.postWebEvent(webEvent);
+    }
+
     private final WebEvent.Callback webEventCallback = new WebEvent.Callback() {
 
         private void handleSignIn(io.literal.ui.view.AppWebView view) {

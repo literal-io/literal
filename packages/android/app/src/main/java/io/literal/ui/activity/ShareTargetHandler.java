@@ -31,13 +31,16 @@ import com.apollographql.apollo.api.Error;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 import io.literal.R;
 import io.literal.factory.AWSMobileClientFactory;
 import io.literal.lib.Constants;
+import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
@@ -53,6 +56,9 @@ import io.literal.viewmodel.SourceWebViewViewModel;
 public class ShareTargetHandler extends AppCompatActivity {
     private static final String APP_WEB_VIEW_FRAGMENT_NAME = "APP_WEB_VIEW_FRAGMENT";
     private static final String SOURCE_WEB_VIEW_FRAGMENT_NAME = "SOURCE_WEB_VIEW_FRAGMENT";
+
+    public static final String RESULT_EXTRA_ANNOTATIONS = "RESULT_EXTRA_ANNOTATIONS";
+
     private AppWebViewViewModel appWebViewViewModel;
     private SourceWebViewViewModel sourceWebViewViewModel;
     private AuthenticationViewModel authenticationViewModel;
@@ -256,6 +262,8 @@ public class ShareTargetHandler extends AppCompatActivity {
         appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
 
         sourceWebViewFragment = SourceWebView.newInstance(sourceWebViewUri, true);
+        sourceWebViewFragment.setOnDoneCallback((_e, result) -> this.handleCreateFromSourceDone(result));
+
         appWebViewFragment = AppWebView.newInstance(appWebViewUri);
         getSupportFragmentManager()
                 .beginTransaction()
@@ -302,6 +310,24 @@ public class ShareTargetHandler extends AppCompatActivity {
                     installSourceWebView(sourceWebViewUri, appWebViewUri);
                 })
         );
+    }
+
+    private void handleCreateFromSourceDone(Annotation[] annotations) {
+        Log.i("ShareTargetHandler", "handleCreateFromSourceDone: " + Arrays.toString(annotations));
+        if (annotations != null && annotations.length > 0) {
+            String resultAnnotationsJson = "";
+            try {
+                resultAnnotationsJson = JsonArrayUtil.stringifyObjectArray(annotations, Annotation::toJson).toString();
+            } catch (JSONException e) {
+                Log.d("ShareTargetHandler", "handleCreateFromSourceDone: Unable to serialize result annotations", e);
+            }
+            Intent intent = new Intent();
+            intent.putExtra(RESULT_EXTRA_ANNOTATIONS, resultAnnotationsJson);
+            setResult(RESULT_OK, intent);
+        } else {
+            setResult(RESULT_CANCELED);
+        }
+        finish();
     }
 
     private void handleCreateFromText(Intent intent) {

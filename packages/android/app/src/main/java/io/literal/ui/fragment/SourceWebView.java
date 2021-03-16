@@ -1,6 +1,7 @@
 package io.literal.ui.fragment;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
@@ -26,8 +27,6 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
-import com.amazonaws.amplify.generated.graphql.GetAnnotationQuery;
-import com.amazonaws.services.cognitoidentityprovider.model.transform.UnsupportedUserStateExceptionUnmarshaller;
 import com.apollographql.apollo.exception.ApolloException;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
@@ -74,9 +73,12 @@ public class SourceWebView extends Fragment {
     private io.literal.ui.view.SourceWebView webView;
     private Toolbar toolbar;
     private AppBarLayout appBarLayout;
+    private Callback<Void, Annotation[]> onDoneCallback;
 
     private ActionMode editAnnotationActionMode;
-    /** Show a different CAB if text is selected while editing annotation **/
+    /**
+     * Show a different CAB if text is selected while editing annotation
+     **/
     private boolean isEditingAnnotation;
 
     private SourceWebViewViewModel sourceWebViewViewModel;
@@ -131,7 +133,10 @@ public class SourceWebView extends Fragment {
             DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
             sourceWebViewViewModel.setDomainMetadata(domainMetadata != null ? domainMetadata.getUrl() : null, icon);
         });
-        webView.setOnGetWebMessageChannelInitializerScript((_e, _data) -> getAnnotationRendererScript());
+        webView.setOnGetWebMessageChannelInitializerScript((_e, _data) -> {
+            sourceWebViewViewModel.setHasInjectedAnnotationRendererScript(true);
+            return getAnnotationRendererScript();
+        });
 
         webView.setExternalWebViewClient(new WebViewClient() {
             @Override
@@ -142,11 +147,15 @@ public class SourceWebView extends Fragment {
                 } catch (MalformedURLException ex) {
                     Log.d("SourceWebView", "Unable to execute setDomainMetadata:", ex);
                 }
+                sourceWebViewViewModel.setHasInjectedAnnotationRendererScript(false);
             }
 
             @Override
             public void onPageFinished(WebView view, String url) {
-                // noop: moved initialization to WebMessageChannelInitializer
+                if (!sourceWebViewViewModel.getHasInjectedAnnotationRendererScript().getValue()) {
+                    sourceWebViewViewModel.setHasInjectedAnnotationRendererScript(true);
+                    webView.evaluateJavascript(getAnnotationRendererScript(), _v -> { /** noop **/});
+                }
             }
         });
 
@@ -331,11 +340,6 @@ public class SourceWebView extends Fragment {
     }
 
     private String getAnnotationRendererScript() {
-        if (sourceWebViewViewModel.getHasFinishedInitializing().getValue()) {
-            Log.d("SourceWebView", "handleInitializeWebview: Expected uninitialized Webview, but found it already initialized.");
-            return null;
-        }
-
         ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
         Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
 
@@ -383,8 +387,12 @@ public class SourceWebView extends Fragment {
             editAnnotationActionMode = webView.startEditAnnotationActionMode(
                     getAnnotationBoundingBoxScript,
                     annotationBoundingBox,
-                    (_e, _d) -> { handleAnnotationEdit(annotationId); },
-                    (_e, _d) -> { handleAnnotationDelete(annotationId); }
+                    (_e, _d) -> {
+                        handleAnnotationEdit(annotationId);
+                    },
+                    (_e, _d) -> {
+                        handleAnnotationDelete(annotationId);
+                    }
             );
         } catch (JSONException e) {
             Log.d("SourceWebView", "Unable to stringify annotation: " + annotation.get(), e);
@@ -476,12 +484,12 @@ public class SourceWebView extends Fragment {
                     }
                 });
                 Annotation updatedAnnotation = new Annotation(
-                  annotation.getBody(),
-                  updatedTarget.toArray(new Target[0]),
-                  annotation.getMotivation(),
-                  annotation.getCreated(),
-                  annotation.getModified(),
-                  annotation.getId()
+                        annotation.getBody(),
+                        updatedTarget.toArray(new Target[0]),
+                        annotation.getMotivation(),
+                        annotation.getCreated(),
+                        annotation.getModified(),
+                        annotation.getId()
                 );
                 String username = authenticationViewModel.getUsername().getValue();
                 if (username == null) {
@@ -717,6 +725,10 @@ public class SourceWebView extends Fragment {
         );
     }
 
+    public void setOnDoneCallback(Callback<Void, Annotation[]> onDoneCallback) {
+        this.onDoneCallback = onDoneCallback;
+    }
+
     private void handleDone() {
         ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
         if (annotations != null && annotations.size() > 0) {
@@ -739,12 +751,17 @@ public class SourceWebView extends Fragment {
                 );
             }
         }
-
-        Activity activity = getActivity();
-        if (activity != null) {
-            activity.finish();
+        if (onDoneCallback != null) {
+            onDoneCallback.invoke(
+                    null,
+                    annotations != null ? annotations.toArray(new Annotation[0]) : null
+            );
         } else {
-            Log.d("SourceWebView", "handleDone: unable to call getActivity().finish()");
+            Activity activity = getActivity();
+            if (activity != null) {
+                activity.setResult(Activity.RESULT_CANCELED);
+                activity.finish();
+            }
         }
     }
 

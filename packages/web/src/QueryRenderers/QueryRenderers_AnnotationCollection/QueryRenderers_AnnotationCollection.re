@@ -48,8 +48,6 @@ module Data = {
             let _ = onFetchMore();
             ();
           };
-
-          Js.log(Lib_GraphQL_Annotation.readCache(activeAnnotation##id));
           None;
         },
         [|activeAnnotation|],
@@ -58,7 +56,7 @@ module Data = {
     let handleSetCacheAnnotation = ev => {
       let _ =
         ev
-        ->Belt.Option.flatMap(ev => ev->Js.Json.decodeObject)
+        ->Belt.Option.flatMap(Js.Json.decodeObject)
         ->Belt.Option.flatMap(dict => Js.Dict.get(dict, "annotation"))
         ->Belt.Option.flatMap(json =>
             switch (Lib_WebView_Model_Annotation.decode(json)) {

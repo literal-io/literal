@@ -75,7 +75,7 @@ let writeToCache = (~annotation, ~currentUser) => {
                 a->Belt.Array.some(purpose => purpose == "TAGGING")
               )
             ->Belt.Option.getWithDefault(false) =>
-        textualBody.id
+        Some(textualBody.id)
       | _ => None
       }
     )
@@ -85,6 +85,68 @@ let writeToCache = (~annotation, ~currentUser) => {
         ~currentUser,
         ~annotationCollectionId,
       )
+    });
+};
+
+let addManyToCache = (~annotations, ~currentUser) => {
+  let textualBodyAnnotationTuples =
+    annotations
+    ->Belt.Array.map(annotation => {
+        let cacheAnnotation =
+          annotation->Lib_WebView_Model_Annotation.encode->unsafeAsCache;
+
+        annotation.body
+        ->Belt.Option.getWithDefault([||])
+        ->Belt.Array.keepMap(body =>
+            switch (body) {
+            | TextualBody(body)
+                when
+                  body.purpose
+                  ->Belt.Option.map(a =>
+                      a->Belt.Array.some(purpose => purpose == "TAGGING")
+                    )
+                  ->Belt.Option.getWithDefault(false) =>
+              Some((body, cacheAnnotation))
+            | _ => None
+            }
+          );
+      })
+    ->Belt.Array.concatMany;
+
+  let textualBodyById =
+    textualBodyAnnotationTuples->Belt.Array.reduce(
+      Js.Dict.empty(),
+      (agg, (textualBody, _)) => {
+        if (Js.Dict.get(agg, textualBody.id)->Js.Option.isNone) {
+          let _ = Js.Dict.set(agg, textualBody.id, textualBody);
+          ();
+        };
+        agg;
+      },
+    );
+
+  textualBodyAnnotationTuples
+  ->Belt.Array.reduce(
+      Js.Dict.empty(),
+      (agg, (textualBody, cacheAnnotation)) => {
+        let annotations =
+          agg
+          ->Js.Dict.get(textualBody.id)
+          ->Belt.Option.map(a => Belt.Array.concat(a, [|cacheAnnotation|]))
+          ->Belt.Option.getWithDefault([|cacheAnnotation|]);
+        let _ = Js.Dict.set(agg, textualBody.id, annotations);
+        agg;
+      },
+    )
+  ->Js.Dict.entries
+  ->Belt.Array.forEach(((annotationCollectionId, annotations)) => {
+      let onCreateAnnotationCollection = () => None;
+      Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationsToCollection(
+        ~annotations,
+        ~annotationCollectionId,
+        ~currentUser,
+        ~onCreateAnnotationCollection,
+      );
     });
 };
 
@@ -100,7 +162,7 @@ let deleteFromCache = (~annotation, ~currentUser) => {
                 a->Belt.Array.some(purpose => purpose == "TAGGING")
               )
             ->Belt.Option.getWithDefault(false) =>
-        textualBody.id
+        Some(textualBody.id)
       | _ => None
       }
     )

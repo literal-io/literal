@@ -18,24 +18,20 @@ let tagsValueSelector =
         switch (body) {
         | Lib_WebView_Model_Body.TextualBody(body) =>
           let href =
-            body.id
-            ->Belt.Option.map(id =>
-                Lib_GraphQL.AnnotationCollection.(
-                  makeIdFromComponent(
-                    ~annotationCollectionIdComponent=idComponent(id),
-                    ~creatorUsername=
-                      currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-                    ~origin=
-                      Webapi.Dom.(window->Window.location->Location.origin),
-                    (),
-                  )
-                )
-              );
+            Lib_GraphQL.AnnotationCollection.(
+              makeIdFromComponent(
+                ~annotationCollectionIdComponent=idComponent(body.id),
+                ~creatorUsername=
+                  currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                ~origin=Webapi.Dom.(window->Window.location->Location.origin),
+                (),
+              )
+            );
           Some(
             Containers_AnnotationEditor_Tag.{
               text: body.value,
-              id: body.id,
-              href,
+              id: Some(body.id),
+              href: Some(href),
             },
           );
         | _ => None
@@ -104,7 +100,7 @@ let make =
         Lib_WebView_Model_Body.(
           TextualBody(
             makeTextualBody(
-              ~id=?tag.id,
+              ~id=tag.id->Belt.Option.getWithDefault(tag.text),
               ~value=tag.text,
               ~purpose=[|"TAGGING"|],
               ~format="TEXT_PLAIN",

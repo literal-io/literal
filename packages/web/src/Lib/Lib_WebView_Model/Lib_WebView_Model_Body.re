@@ -1,6 +1,6 @@
 [@decco]
 type textualBody = {
-  id: option(string),
+  id: string,
   format: option(string),
   language: option(string),
   processingLanguage: option(string),
@@ -18,7 +18,7 @@ type textualBody = {
 let makeTextualBody =
     (
       ~value,
-      ~id=?,
+      ~id,
       ~format=?,
       ~language=?,
       ~processingLanguage=?,

@@ -9,7 +9,6 @@ let default = (~rehydrated) => {
   let _ =
     React.useEffect0(() => {
       let handleEditAnnotationTags = (event: option(Js.Json.t)) => {
-        Js.log2("handleEvent", "EDIT_ANNOTATION_TAGS");
         event
         ->Belt.Option.map(Lib_WebView_Model_Annotation.decode)
         ->Belt.Option.forEach(result =>
@@ -22,7 +21,6 @@ let default = (~rehydrated) => {
       };
 
       let handleCollapsedAnnotationTags = (event: option(Js.Json.t)) => {
-        Js.log2("handleEvent", "COLLAPSED_ANNOTATION_TAGS");
         event
         ->Belt.Option.map(Lib_WebView_Model_Annotation.decode)
         ->Belt.Option.forEach(result =>

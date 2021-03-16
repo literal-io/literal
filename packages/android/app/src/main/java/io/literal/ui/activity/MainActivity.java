@@ -8,6 +8,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
@@ -23,6 +27,8 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.UUID;
 
 import javax.xml.transform.Source;
 
@@ -47,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
 
     private AppWebView appWebViewFragment;
     private SourceWebView sourceWebViewFragment;
+    private final ActivityResultLauncher<Intent> createAnnotationFromSourceLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> MainActivity.this.handleCreateAnnotationFromSourceResult(result));
 
     private static final String APP_WEB_VIEW_FRAGMENT_NAME = "MAIN_ACTIVITY_APP_WEB_VIEW_FRAGMENT";
     private static final String SOURCE_WEB_VIEW_FRAGMENT_NAME = "MAIN_ACTIVITY_SOURCE_WEB_VIEW_FRAGMENT";
@@ -123,6 +130,8 @@ public class MainActivity extends AppCompatActivity {
                             } catch (JSONException e) {
                                 Log.d("MainActivity", "Unable to handle event: " + webEvent.toString(), e);
                             }
+                        } else if (webEvent.getType().equals(WebEvent.TYPE_CREATE_ANNOTATION_FROM_SOURCE)) {
+                            this.handleCreateAnnotationFromSource();
                         }
                     });
                     appWebViewModel.clearReceivedWebEvents();
@@ -147,6 +156,34 @@ public class MainActivity extends AppCompatActivity {
                 .add(R.id.fragment_container, appWebViewFragment)
                 .add(R.id.bottom_sheet_fragment_container, sourceWebViewFragment)
                 .commit();
+    }
+
+    private void handleCreateAnnotationFromSource() {
+        Intent intent = new Intent(this, ShareTargetHandler.class);
+        intent.setAction(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_TEXT, "https://google.com");
+
+        createAnnotationFromSourceLauncher.launch(intent);
+    }
+
+    private void handleCreateAnnotationFromSourceResult(ActivityResult result) {
+        Intent data = result.getData();
+        Log.i("MainActivity", "handleCreateAnnotationFromSourceResult: " + result.getResultCode());
+        if (result.getResultCode() == ShareTargetHandler.RESULT_OK && data != null) {
+            String json = data.getStringExtra(ShareTargetHandler.RESULT_EXTRA_ANNOTATIONS);
+            try {
+                JSONObject addCacheAnnotationsData = new JSONObject();
+                addCacheAnnotationsData.put("annotations", json);
+                appWebViewFragment.postWebEvent(new WebEvent(
+                        WebEvent.TYPE_ADD_CACHE_ANNOTATIONS,
+                        UUID.randomUUID().toString(),
+                        addCacheAnnotationsData
+                ));
+            } catch (JSONException e) {
+                Log.d("MainActivity", "Unable to dispatch ADD_CACHE_ANNOTATIONS", e);
+            }
+        }
     }
 
     private void setBottomSheetState(int bottomSheetState) {

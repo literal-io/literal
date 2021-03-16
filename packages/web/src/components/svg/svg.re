@@ -14,6 +14,7 @@ let textFields: string = [%raw "require('./text-fields.svg')"];
 let textSnippet: string = [%raw "require('./text-snippet.svg')"];
 let label: string = [%raw "require('./label.svg')"];
 let helpOutline: string = [%raw "require('./help-outline.svg')"];
+let language: string = [%raw "require('./language.svg')"];
 
 type state = {
   isLoading: bool,

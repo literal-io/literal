@@ -3,6 +3,7 @@ import { Highlighter } from "./highlighter.mjs";
 import { Renderer } from "./renderer.mjs";
 import { AnnotationFocusManager } from "./annotation-focus-manager.mjs";
 import {
+  get as storageGet,
   set as storageSet,
   initialize as storageInitialize,
 } from "../shared/storage.mjs";
@@ -28,7 +29,7 @@ const annotationFocusManager = new AnnotationFocusManager({
 const renderer = new Renderer({
   messenger,
   highlighter,
-  annotationFocusManager
+  annotationFocusManager,
 });
 
 const onDocumentReady = (cb) => {
@@ -44,6 +45,14 @@ const onDocumentReady = (cb) => {
 export default () =>
   onDocumentReady(async () => {
     storageInitialize();
+    if (storageGet("hasInitialized")) {
+      console.log(
+        "[Literal] Expeted uninitialized DOM, but found it already initialized: noop-ing."
+      );
+      return;
+    }
+    storageSet("hasInitialized", true)
+
     await renderer.render(ANNOTATIONS);
     renderer.onInitialAnnotationsRendered();
     annotationFocusManager.onAnnotationsRendered({

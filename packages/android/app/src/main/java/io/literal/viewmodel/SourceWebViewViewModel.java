@@ -47,6 +47,7 @@ public class SourceWebViewViewModel extends ViewModel {
     private String getAnnotationBoundingBoxScript = null;
 
     private final MutableLiveData<Boolean> hasFinishedInitializing = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> hasInjectedAnnotationRendererScript = new MutableLiveData<>(false);
     private final MutableLiveData<ArrayList<Annotation>> annotations = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<DomainMetadata> domainMetadata = new MutableLiveData<>(null);
     private final MutableLiveData<Annotation> focusedAnnotation = new MutableLiveData<>(null);
@@ -62,6 +63,14 @@ public class SourceWebViewViewModel extends ViewModel {
 
     public void setDomainMetadata(URL url, Bitmap favicon) {
         this.domainMetadata.setValue(new DomainMetadata(url, favicon));
+    }
+
+    public void setHasInjectedAnnotationRendererScript(boolean hasInjectedAnnotationRendererScript) {
+        this.hasInjectedAnnotationRendererScript.setValue(hasInjectedAnnotationRendererScript);
+    }
+
+    public MutableLiveData<Boolean> getHasInjectedAnnotationRendererScript() {
+        return hasInjectedAnnotationRendererScript;
     }
 
     public String getGetAnnotationScript(AssetManager assetManager) {
