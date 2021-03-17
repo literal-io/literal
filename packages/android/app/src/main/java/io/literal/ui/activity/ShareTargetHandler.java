@@ -12,6 +12,7 @@ import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -46,6 +47,7 @@ import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
 import io.literal.repository.NotificationRepository;
 import io.literal.repository.ShareTargetHandlerRepository;
+import io.literal.repository.ToastRepository;
 import io.literal.ui.MainApplication;
 import io.literal.ui.fragment.AppWebView;
 import io.literal.ui.fragment.SourceWebView;
@@ -121,6 +123,10 @@ public class ShareTargetHandler extends AppCompatActivity {
         sourceWebViewViewModel.getHasFinishedInitializing().observe(this, hasFinishedInitializing -> {
             ViewGroup splash = findViewById(R.id.share_target_handler_splash);
             splash.setVisibility(hasFinishedInitializing ? View.INVISIBLE : View.VISIBLE);
+
+            if (hasFinishedInitializing) {
+                ToastRepository.show(this, R.string.toast_create_from_source);
+            }
         });
 
         bottomSheetFragmentContainer = findViewById(R.id.bottom_sheet_fragment_container);
@@ -313,7 +319,6 @@ public class ShareTargetHandler extends AppCompatActivity {
     }
 
     private void handleCreateFromSourceDone(Annotation[] annotations) {
-        Log.i("ShareTargetHandler", "handleCreateFromSourceDone: " + Arrays.toString(annotations));
         if (annotations != null && annotations.length > 0) {
             String resultAnnotationsJson = "";
             try {

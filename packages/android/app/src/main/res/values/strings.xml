@@ -8,6 +8,10 @@
     <string name="commit">Commit</string>
     <string name="cancel">Cancel</string>
 
+    <string name="toast_create_from_source">Highlight text to annotate</string>
+    <string name="toast_annotation_created">Annotation created</string>
+    <string name="toast_annotations_created">Annotations created</string>
+
     <string name="annotation_created_notification_channel_id">ANNOTATION_CREATED</string>
     <string name="annotation_created_notification_channel_name">Annotation Created</string>
     <string name="annotation_created_notification_channel_description">Confirmation that an annotation has been created.</string>

@@ -250,7 +250,9 @@ public class SourceWebView extends Fragment {
                         Log.d("SourceWebView", "Unable to parse event data: " + event.getData(), ex);
                     }
                 case WebEvent.TYPE_ANNOTATION_RENDERER_INITIALIZED:
-                    sourceWebViewViewModel.setHasFinishedInitializing(true);
+                    if (!sourceWebViewViewModel.getHasFinishedInitializing().getValue()) {
+                        sourceWebViewViewModel.setHasFinishedInitializing(true);
+                    }
                     break;
             }
         });
@@ -741,7 +743,13 @@ public class SourceWebView extends Fragment {
                     }
                 }
             });
-
+        }
+        if (onDoneCallback != null) {
+            onDoneCallback.invoke(
+                    null,
+                    annotations != null ? annotations.toArray(new Annotation[0]) : null
+            );
+        } else {
             DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
             if (domainMetadata != null) {
                 NotificationRepository.sourceCreatedNotification(
@@ -750,13 +758,6 @@ public class SourceWebView extends Fragment {
                         domainMetadata
                 );
             }
-        }
-        if (onDoneCallback != null) {
-            onDoneCallback.invoke(
-                    null,
-                    annotations != null ? annotations.toArray(new Annotation[0]) : null
-            );
-        } else {
             Activity activity = getActivity();
             if (activity != null) {
                 activity.setResult(Activity.RESULT_CANCELED);

@@ -22,6 +22,7 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
+                android:background="@color/colorDarkAccent"
                 app:elevation="6dp"
                 app:titleTextAppearance="@style/SourceWebViewTitleTextAppearance"
                 app:titleMarginStart="32dp"/>

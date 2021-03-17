@@ -24,7 +24,9 @@ import com.amazonaws.mobile.client.UserState;
 import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.mobileconnectors.cognitoauth.AuthClient;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.gson.JsonArray;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -35,11 +37,13 @@ import javax.xml.transform.Source;
 import io.literal.R;
 import io.literal.factory.AWSMobileClientFactory;
 import io.literal.lib.Constants;
+import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
 import io.literal.model.Target;
 import io.literal.repository.ShareTargetHandlerRepository;
+import io.literal.repository.ToastRepository;
 import io.literal.ui.MainApplication;
 import io.literal.ui.fragment.AppWebView;
 import io.literal.ui.fragment.SourceWebView;
@@ -108,6 +112,8 @@ public class MainActivity extends AppCompatActivity {
                     if (webEvents == null) {
                         return;
                     }
+
+                    // FIXME: push this into fragment
                     webEvents.iterator().forEachRemaining(webEvent -> {
                         if (webEvent.getType().equals(WebEvent.TYPE_ACTIVITY_FINISH)) {
                             Intent intent = getIntent();
@@ -169,7 +175,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleCreateAnnotationFromSourceResult(ActivityResult result) {
         Intent data = result.getData();
-        Log.i("MainActivity", "handleCreateAnnotationFromSourceResult: " + result.getResultCode());
         if (result.getResultCode() == ShareTargetHandler.RESULT_OK && data != null) {
             String json = data.getStringExtra(ShareTargetHandler.RESULT_EXTRA_ANNOTATIONS);
             try {
@@ -180,6 +185,17 @@ public class MainActivity extends AppCompatActivity {
                         UUID.randomUUID().toString(),
                         addCacheAnnotationsData
                 ));
+                Annotation[] annotations;
+                try {
+                    annotations = JsonArrayUtil.parseJsonObjectArray(new JSONArray(json), new Annotation[0], Annotation::fromJson);
+                } catch (JSONException e) {
+                    annotations = new Annotation[0];
+                }
+                if (annotations.length == 1) {
+                    ToastRepository.show(this, R.string.toast_annotation_created, ToastRepository.STYLE_DARK_ACCENT);
+                } else if (annotations.length > 1) {
+                    ToastRepository.show(this, R.string.toast_annotations_created, ToastRepository.STYLE_DARK_ACCENT);
+                }
             } catch (JSONException e) {
                 Log.d("MainActivity", "Unable to dispatch ADD_CACHE_ANNOTATIONS", e);
             }
