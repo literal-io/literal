@@ -25,8 +25,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
-import com.apollographql.apollo.exception.ApolloException;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
@@ -38,7 +36,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -66,13 +63,16 @@ public class SourceWebView extends Fragment {
 
     private static final String PARAM_INITIAL_URL = "PARAM_INITIAL_URL";
     private static final String PARAM_APP_WEB_VIEW_MODEL_KEY = "PARAM_APP_WEB_VIEW_MODEL_KEY";
+    private static final String PARAM_TOOLBAR_PRIMARY_ACTION_ICON_RESOURCE_ID = "PARAM_PRIMARY_TOOLBAR_ACTION_ICON_RESOURCE_ID";
 
     private String paramInitialUrl;
     private String paramAppWebViewModelKey;
+    private int paramToolbarPrimaryActionResourceId;
+
     private io.literal.ui.view.SourceWebView webView;
     private Toolbar toolbar;
     private AppBarLayout appBarLayout;
-    private Callback<Void, Annotation[]> onDoneCallback;
+    private Callback<Void, Annotation[]> onToolbarPrimaryActionCallback;
 
     private ActionMode editAnnotationActionMode;
     /**
@@ -84,11 +84,12 @@ public class SourceWebView extends Fragment {
     private AuthenticationViewModel authenticationViewModel;
     private AppWebViewViewModel appWebViewViewModel;
 
-    public static SourceWebView newInstance(String initialUrl, String appWebViewModelKey) {
+    public static SourceWebView newInstance(String initialUrl, String appWebViewModelKey, int toolbarPrimaryActionResourceId) {
         SourceWebView fragment = new SourceWebView();
         Bundle args = new Bundle();
         args.putString(PARAM_INITIAL_URL, initialUrl);
         args.putString(PARAM_APP_WEB_VIEW_MODEL_KEY, appWebViewModelKey);
+        args.putInt(PARAM_TOOLBAR_PRIMARY_ACTION_ICON_RESOURCE_ID, toolbarPrimaryActionResourceId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -99,6 +100,7 @@ public class SourceWebView extends Fragment {
         if (getArguments() != null) {
             paramInitialUrl = getArguments().getString(PARAM_INITIAL_URL);
             paramAppWebViewModelKey = getArguments().getString(PARAM_APP_WEB_VIEW_MODEL_KEY);
+            paramToolbarPrimaryActionResourceId = getArguments().getInt(PARAM_TOOLBAR_PRIMARY_ACTION_ICON_RESOURCE_ID);
         }
     }
 
@@ -166,14 +168,8 @@ public class SourceWebView extends Fragment {
                 Log.d("SourceWebView", "setOnAnnotationCreated callback error:", e);
                 return;
             }
+            this.handleAnnotationCreated();
 
-            String script = sourceWebViewViewModel.getGetAnnotationScript(getActivity().getAssets());
-            webView.evaluateJavascript(script, value -> {
-                String creatorUsername = authenticationViewModel.getUsername().getValue();
-                Annotation annotation = sourceWebViewViewModel.createAnnotation(value, creatorUsername);
-                sourceWebViewViewModel.setFocusedAnnotation(annotation);
-                appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
-            });
         });
         webView.setOnAnnotationCancelEdit((e, _view) -> {
             this.handleAnnotationCancelEdit();
@@ -356,6 +352,16 @@ public class SourceWebView extends Fragment {
             Log.d("SourceWebView", "Unable to highlightAnnotationTargets", ex);
         }
         return null;
+    }
+
+    private void handleAnnotationCreated() {
+        String script = sourceWebViewViewModel.getGetAnnotationScript(getActivity().getAssets());
+        webView.evaluateJavascript(script, value -> {
+            String creatorUsername = authenticationViewModel.getUsername().getValue();
+            Annotation annotation = sourceWebViewViewModel.createAnnotation(value, creatorUsername);
+            sourceWebViewViewModel.setFocusedAnnotation(annotation);
+            appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
+        });
     }
 
     private void handleAnnotationFocus(String annotationId, Rect annotationBoundingBox) {
@@ -729,27 +735,27 @@ public class SourceWebView extends Fragment {
         );
     }
 
-    public void setOnDoneCallback(Callback<Void, Annotation[]> onDoneCallback) {
-        this.onDoneCallback = onDoneCallback;
+    public void setOnToolbarPrimaryActionCallback(Callback<Void, Annotation[]> onToolbarPrimaryActionCallback) {
+        this.onToolbarPrimaryActionCallback = onToolbarPrimaryActionCallback;
     }
 
-    private void handleDone() {
+    private void handleToolbarPrimaryAction() {
         ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
-        if (annotations != null && annotations.size() > 0) {
-            ShareTargetHandlerRepository.createAnnotations(getContext(), annotations.toArray(new Annotation[0]), new Callback<ApolloException, List<CreateAnnotationMutation.Data>>() {
-                @Override
-                public void invoke(ApolloException e, List<CreateAnnotationMutation.Data> data) {
-                    if (e != null) {
-                        Log.d("SourceWebView", "handleDone", e);
-                        return;
-                    }
+        ArrayList<String> createdAnnotationIds = sourceWebViewViewModel.getCreatedAnnotationIds();
+        Annotation[] createdAnnotations = new Annotation[0];
+        if (createdAnnotationIds != null && annotations != null && createdAnnotationIds.size() > 0) {
+            createdAnnotations = annotations.stream().filter((annotation) -> createdAnnotationIds.contains(annotation.getId())).toArray(Annotation[]::new);
+
+            ShareTargetHandlerRepository.createAnnotations(getContext(), createdAnnotations, (e, data) -> {
+                if (e != null) {
+                    Log.d("SourceWebView", "handleDone", e);
                 }
             });
         }
-        if (onDoneCallback != null) {
-            onDoneCallback.invoke(
+        if (onToolbarPrimaryActionCallback != null) {
+            onToolbarPrimaryActionCallback.invoke(
                     null,
-                    annotations != null ? annotations.toArray(new Annotation[0]) : null
+                    createdAnnotations
             );
         } else {
             DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
@@ -786,14 +792,16 @@ public class SourceWebView extends Fragment {
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         inflater.inflate(R.menu.source_webview_toolbar, menu);
+
+        menu.getItem(0).setIcon(paramToolbarPrimaryActionResourceId);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.done:
-                this.handleDone();
+            case R.id.primary:
+                this.handleToolbarPrimaryAction();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

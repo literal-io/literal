@@ -147,13 +147,18 @@ public class MainActivity extends AppCompatActivity {
 
         appWebViewViewModelBottomSheet = new ViewModelProvider(this).get(APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME, AppWebViewViewModel.class);
         appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
-        appWebViewViewModelBottomSheet.getBottomSheetState().observe(this, bottomSheetState -> AppWebViewBottomSheetAnimator.handleBottomSheetStateChange(
-                findViewById(R.id.app_web_view_bottom_sheet_fragment_container),
-                sourceWebViewViewModelBottomSheet.getFocusedAnnotation().getValue(),
-                getResources(),
-                bottomSheetState,
-                (_e, webEvent) -> appWebViewBottomSheetFragment.postWebEvent(webEvent)
-        ));
+        appWebViewViewModelBottomSheet.getBottomSheetState().observe(this, bottomSheetState -> {
+            if (bottomSheetState == BottomSheetBehavior.STATE_EXPANDED) {
+                sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+            }
+            AppWebViewBottomSheetAnimator.handleBottomSheetStateChange(
+                    findViewById(R.id.app_web_view_bottom_sheet_fragment_container),
+                    sourceWebViewViewModelBottomSheet.getFocusedAnnotation().getValue(),
+                    getResources(),
+                    bottomSheetState,
+                    (_e, webEvent) -> appWebViewBottomSheetFragment.postWebEvent(webEvent)
+            );
+        });
     }
 
     private void commitFragments(Bundle savedInstanceState, String initialUrl) {
@@ -163,7 +168,11 @@ public class MainActivity extends AppCompatActivity {
             sourceWebViewBottomSheetFragment = (SourceWebView) getSupportFragmentManager().getFragment(savedInstanceState, SOURCE_WEB_VIEW_FRAGMENT_NAME);
         } else {
             appWebViewPrimaryFragment = AppWebView.newInstance(initialUrl, APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME);
-            sourceWebViewBottomSheetFragment = SourceWebView.newInstance(null, APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME);
+            sourceWebViewBottomSheetFragment = SourceWebView.newInstance(
+                    null,
+                    APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME,
+                    R.drawable.done_white
+            );
             appWebViewBottomSheetFragment = AppWebView.newInstance(
                     WebRoutes.creatorsIdWebview(authenticationViewModel.getUsername().getValue()),
                     APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME
@@ -180,6 +189,10 @@ public class MainActivity extends AppCompatActivity {
             }
         }));
 
+        sourceWebViewBottomSheetFragment.setOnToolbarPrimaryActionCallback((_e, createdAnnotations) -> {
+            this.handleSourceWebViewBottomSheetHidden(createdAnnotations);
+        });
+
         getSupportFragmentManager()
                 .beginTransaction()
                 .setReorderingAllowed(true)
@@ -189,6 +202,7 @@ public class MainActivity extends AppCompatActivity {
                 .commit();
     }
 
+
     private void handleCreateAnnotationFromSource() {
         Intent intent = new Intent(this, ShareTargetHandler.class);
         intent.setAction(Intent.ACTION_SEND);
@@ -196,6 +210,33 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra(Intent.EXTRA_TEXT, "https://google.com");
 
         createAnnotationFromSourceLauncher.launch(intent);
+    }
+
+    private void handleSourceWebViewBottomSheetHidden(Annotation[] createdAnnotations) {
+        sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+        try {
+            String json = JsonArrayUtil.stringifyObjectArray(createdAnnotations, Annotation::toJson).toString();
+            JSONObject addCacheAnnotationsData = new JSONObject();
+            addCacheAnnotationsData.put("annotations", json);
+            appWebViewPrimaryFragment.postWebEvent(new WebEvent(
+                    WebEvent.TYPE_ADD_CACHE_ANNOTATIONS,
+                    UUID.randomUUID().toString(),
+                    addCacheAnnotationsData
+            ));
+            Annotation[] annotations;
+            try {
+                annotations = JsonArrayUtil.parseJsonObjectArray(new JSONArray(json), new Annotation[0], Annotation::fromJson);
+            } catch (JSONException e) {
+                annotations = new Annotation[0];
+            }
+            if (annotations.length == 1) {
+                ToastRepository.show(this, R.string.toast_annotation_created, ToastRepository.STYLE_DARK_ACCENT);
+            } else if (annotations.length > 1) {
+                ToastRepository.show(this, R.string.toast_annotations_created, ToastRepository.STYLE_DARK_ACCENT);
+            }
+        } catch (JSONException e) {
+            Log.d("MainActivity", "Unable to dispatch ADD_CACHE_ANNOTATIONS", e);
+        }
     }
 
     private void handleCreateAnnotationFromSourceResult(ActivityResult result) {

@@ -130,8 +130,12 @@ public class ShareTargetHandler extends AppCompatActivity {
 
         appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
 
-        sourceWebViewFragment = SourceWebView.newInstance(sourceWebViewUri, null);
-        sourceWebViewFragment.setOnDoneCallback((_e, result) -> this.handleCreateFromSourceDone(result));
+        sourceWebViewFragment = SourceWebView.newInstance(
+                sourceWebViewUri,
+                null,
+                R.drawable.done_white
+        );
+        sourceWebViewFragment.setOnToolbarPrimaryActionCallback((_e, result) -> this.handleCreateFromSourceDone(result));
 
         appWebViewFragment = AppWebView.newInstance(appWebViewUri, null);
         getSupportFragmentManager()

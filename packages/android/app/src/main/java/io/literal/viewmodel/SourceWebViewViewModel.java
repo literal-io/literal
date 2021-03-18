@@ -49,6 +49,8 @@ public class SourceWebViewViewModel extends ViewModel {
     private final MutableLiveData<Boolean> hasFinishedInitializing = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> hasInjectedAnnotationRendererScript = new MutableLiveData<>(false);
     private final MutableLiveData<ArrayList<Annotation>> annotations = new MutableLiveData<>(new ArrayList<>());
+    private final ArrayList<String> createdAnnotationIds = new ArrayList<>();
+
     private final MutableLiveData<DomainMetadata> domainMetadata = new MutableLiveData<>(null);
     private final MutableLiveData<Annotation> focusedAnnotation = new MutableLiveData<>(null);
     private final MutableLiveData<ArrayDeque<WebEvent>> webEvents = new MutableLiveData<>(null);
@@ -127,15 +129,13 @@ public class SourceWebViewViewModel extends ViewModel {
     public MutableLiveData<ArrayList<Annotation>> getAnnotations() {
         return annotations;
     }
-
     public MutableLiveData<DomainMetadata> getDomainMetadata() {
         return domainMetadata;
     }
-
     public MutableLiveData<Annotation> getFocusedAnnotation() {
         return focusedAnnotation;
     }
-
+    public ArrayList<String> getCreatedAnnotationIds() { return createdAnnotationIds; }
 
     public void setFocusedAnnotation(Annotation annotation) {
         focusedAnnotation.setValue(annotation);
@@ -209,6 +209,7 @@ public class SourceWebViewViewModel extends ViewModel {
 
             newAnnotations.add(annotation);
             annotations.setValue(newAnnotations);
+            createdAnnotationIds.add(annotation.getId());
             return annotation;
         } catch (Exception e) {
             Log.d("SourceWebViewViewModel", "createAnnotation", e);
