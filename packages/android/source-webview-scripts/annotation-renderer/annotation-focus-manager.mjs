@@ -3,6 +3,7 @@ import {
   xPathRangeSelectorPredicate,
 } from "../shared/xpath.mjs";
 import { get as storageGet } from "../shared/storage.mjs";
+import { isElementInViewport } from "./util.mjs"
 
 export class AnnotationFocusManager {
   constructor({ messenger, highlightClassName, highlighter }) {
@@ -263,8 +264,9 @@ export class AnnotationFocusManager {
     }
 
     this.focusedAnnotationElemIsVisible = new Map(
-      this.focusedAnnotationElems.map((elem) => [elem, false])
+      this.focusedAnnotationElems.map((elem) => [elem, isElementInViewport(elem)])
     );
+
     this.focusedAnnotationElems.forEach((elem) => {
       this.focusedAnnotationIntersectionObserver.observe(elem);
     });

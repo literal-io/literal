@@ -176,7 +176,8 @@ public class SourceWebView extends NestedScrollingChildWebView {
                     onGetTextSelectionMenu.invoke(null, null),
                     onDestroyTextSelectionMenu
             );
-            return super.startActionMode(cb, type);
+            ActionMode actionMode = super.startActionMode(cb, type);
+            return actionMode;
         }
         return super.startActionMode(callback, type);
     }

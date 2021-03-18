@@ -9,7 +9,6 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -17,14 +16,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.amazonaws.amplify.generated.graphql.CreateAnnotationFromExternalTargetMutation;
 import com.amazonaws.mobile.client.AWSMobileClient;
-import com.amazonaws.mobile.client.Callback;
-import com.amazonaws.mobile.client.UserState;
-import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.mobileconnectors.cognitoauth.AuthClient;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.gson.JsonArray;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -32,34 +26,39 @@ import org.json.JSONObject;
 
 import java.util.UUID;
 
-import javax.xml.transform.Source;
-
 import io.literal.R;
-import io.literal.factory.AWSMobileClientFactory;
+import io.literal.lib.Callback;
 import io.literal.lib.Constants;
 import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
-import io.literal.model.Target;
-import io.literal.repository.ShareTargetHandlerRepository;
 import io.literal.repository.ToastRepository;
 import io.literal.ui.MainApplication;
 import io.literal.ui.fragment.AppWebView;
+import io.literal.ui.fragment.AppWebViewBottomSheetAnimator;
 import io.literal.ui.fragment.SourceWebView;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
+import io.literal.viewmodel.SourceWebViewViewModel;
 
 public class MainActivity extends AppCompatActivity {
 
-    private AppWebViewViewModel appWebViewModel;
+    private AppWebViewViewModel appWebViewModelPrimary;
+    private AppWebViewViewModel appWebViewViewModelBottomSheet;
+    private SourceWebViewViewModel sourceWebViewViewModelBottomSheet;
     private AuthenticationViewModel authenticationViewModel;
 
-    private AppWebView appWebViewFragment;
-    private SourceWebView sourceWebViewFragment;
+    private AppWebView appWebViewPrimaryFragment;
+    private SourceWebView sourceWebViewBottomSheetFragment;
+    private AppWebView appWebViewBottomSheetFragment;
+    private BottomSheetBehavior<FrameLayout> sourceWebViewBottomSheetBehavior;
+
+
     private final ActivityResultLauncher<Intent> createAnnotationFromSourceLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> MainActivity.this.handleCreateAnnotationFromSourceResult(result));
 
-    private static final String APP_WEB_VIEW_FRAGMENT_NAME = "MAIN_ACTIVITY_APP_WEB_VIEW_FRAGMENT";
+    private static final String APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME = "MAIN_ACTIVITY_APP_WEB_VIEW_PRIMARY_FRAGMENT";
+    private static final String APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME = "MAIN_ACTIVITY_APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT";
     private static final String SOURCE_WEB_VIEW_FRAGMENT_NAME = "MAIN_ACTIVITY_SOURCE_WEB_VIEW_FRAGMENT";
 
     @Override
@@ -102,12 +101,12 @@ public class MainActivity extends AppCompatActivity {
         authenticationViewModel = new ViewModelProvider(this).get(AuthenticationViewModel.class);
         authenticationViewModel.initialize(this);
 
-        appWebViewModel = new ViewModelProvider(this).get(AppWebViewViewModel.class);
-        appWebViewModel.getHasFinishedInitializing().observe(this, hasFinishedInitializing -> {
+        appWebViewModelPrimary = new ViewModelProvider(this).get(APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME, AppWebViewViewModel.class);
+        appWebViewModelPrimary.getHasFinishedInitializing().observe(this, hasFinishedInitializing -> {
             ViewGroup splash = findViewById(R.id.splash);
             splash.setVisibility(hasFinishedInitializing ? View.INVISIBLE : View.VISIBLE);
         });
-        appWebViewModel.getReceivedWebEvents().observe(this,
+        appWebViewModelPrimary.getReceivedWebEvents().observe(this,
                 (webEvents) -> {
                     if (webEvents == null) {
                         return;
@@ -129,9 +128,9 @@ public class MainActivity extends AppCompatActivity {
                                 Annotation annotation = Annotation.fromJson(data.getJSONObject("annotation"));
                                 boolean displayBottomSheet = data.getBoolean("displayBottomSheet");
 
-                                sourceWebViewFragment.handleViewTargetForAnnotation(annotation, targetId);
+                                sourceWebViewBottomSheetFragment.handleViewTargetForAnnotation(annotation, targetId);
                                 if (displayBottomSheet) {
-                                    this.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
+                                    sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
                                 }
                             } catch (JSONException e) {
                                 Log.d("MainActivity", "Unable to handle event: " + webEvent.toString(), e);
@@ -140,27 +139,53 @@ public class MainActivity extends AppCompatActivity {
                             this.handleCreateAnnotationFromSource();
                         }
                     });
-                    appWebViewModel.clearReceivedWebEvents();
+                    appWebViewModelPrimary.clearReceivedWebEvents();
                 }
         );
+
+        sourceWebViewViewModelBottomSheet = new ViewModelProvider(this).get(SourceWebViewViewModel.class);
+
+        appWebViewViewModelBottomSheet = new ViewModelProvider(this).get(APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME, AppWebViewViewModel.class);
+        appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
+        appWebViewViewModelBottomSheet.getBottomSheetState().observe(this, bottomSheetState -> AppWebViewBottomSheetAnimator.handleBottomSheetStateChange(
+                findViewById(R.id.app_web_view_bottom_sheet_fragment_container),
+                sourceWebViewViewModelBottomSheet.getFocusedAnnotation().getValue(),
+                getResources(),
+                bottomSheetState,
+                (_e, webEvent) -> appWebViewBottomSheetFragment.postWebEvent(webEvent)
+        ));
     }
 
     private void commitFragments(Bundle savedInstanceState, String initialUrl) {
         if (savedInstanceState != null) {
-            appWebViewFragment = (AppWebView) getSupportFragmentManager().getFragment(savedInstanceState, APP_WEB_VIEW_FRAGMENT_NAME);
-            sourceWebViewFragment = (SourceWebView) getSupportFragmentManager().getFragment(savedInstanceState, SOURCE_WEB_VIEW_FRAGMENT_NAME);
+            appWebViewPrimaryFragment = (AppWebView) getSupportFragmentManager().getFragment(savedInstanceState, APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME);
+            appWebViewBottomSheetFragment = (AppWebView) getSupportFragmentManager().getFragment(savedInstanceState, APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME);
+            sourceWebViewBottomSheetFragment = (SourceWebView) getSupportFragmentManager().getFragment(savedInstanceState, SOURCE_WEB_VIEW_FRAGMENT_NAME);
         } else {
-            appWebViewFragment = AppWebView.newInstance(initialUrl);
-            sourceWebViewFragment = SourceWebView.newInstance(null, false);
+            appWebViewPrimaryFragment = AppWebView.newInstance(initialUrl, APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME);
+            sourceWebViewBottomSheetFragment = SourceWebView.newInstance(null, APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME);
+            appWebViewBottomSheetFragment = AppWebView.newInstance(
+                    WebRoutes.creatorsIdWebview(authenticationViewModel.getUsername().getValue()),
+                    APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME
+            );
         }
 
-        setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
+
+        FrameLayout bottomSheetBehaviorContainer = findViewById(R.id.source_web_view_bottom_sheet_behavior_container);
+        sourceWebViewBottomSheetBehavior = BottomSheetBehavior.from(bottomSheetBehaviorContainer);
+        sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+        sourceWebViewBottomSheetBehavior.addBottomSheetCallback(new SourceWebViewBottomSheetCallback((_e, _d) -> {
+            if (sourceWebViewViewModelBottomSheet.getFocusedAnnotation().getValue() != null) {
+                sourceWebViewBottomSheetFragment.handleAnnotationBlur();
+            }
+        }));
 
         getSupportFragmentManager()
                 .beginTransaction()
                 .setReorderingAllowed(true)
-                .add(R.id.fragment_container, appWebViewFragment)
-                .add(R.id.bottom_sheet_fragment_container, sourceWebViewFragment)
+                .add(R.id.fragment_container, appWebViewPrimaryFragment)
+                .add(R.id.source_web_view_bottom_sheet_fragment_container, sourceWebViewBottomSheetFragment)
+                .add(R.id.app_web_view_bottom_sheet_fragment_container, appWebViewBottomSheetFragment)
                 .commit();
     }
 
@@ -180,7 +205,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 JSONObject addCacheAnnotationsData = new JSONObject();
                 addCacheAnnotationsData.put("annotations", json);
-                appWebViewFragment.postWebEvent(new WebEvent(
+                appWebViewPrimaryFragment.postWebEvent(new WebEvent(
                         WebEvent.TYPE_ADD_CACHE_ANNOTATIONS,
                         UUID.randomUUID().toString(),
                         addCacheAnnotationsData
@@ -202,19 +227,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setBottomSheetState(int bottomSheetState) {
-        FrameLayout bottomSheetBehaviorContainer = findViewById(R.id.bottom_sheet_behavior_container);
-        BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(bottomSheetBehaviorContainer);
-        behavior.setState(bottomSheetState);
-    }
-
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
 
         FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.putFragment(outState, APP_WEB_VIEW_FRAGMENT_NAME, appWebViewFragment);
-        fragmentManager.putFragment(outState, SOURCE_WEB_VIEW_FRAGMENT_NAME, sourceWebViewFragment);
+        fragmentManager.putFragment(outState, APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME, appWebViewPrimaryFragment);
+        fragmentManager.putFragment(outState, SOURCE_WEB_VIEW_FRAGMENT_NAME, sourceWebViewBottomSheetFragment);
     }
 
     @Override
@@ -223,6 +242,31 @@ public class MainActivity extends AppCompatActivity {
 
         if (requestCode == AuthClient.CUSTOM_TABS_ACTIVITY_CODE) {
             AWSMobileClient.getInstance().handleAuthResponse(data);
+        }
+    }
+
+    private class SourceWebViewBottomSheetCallback extends BottomSheetBehavior.BottomSheetCallback {
+
+        private Float prevSlideOffset;
+        private Callback<Void, Void> onSlideBelowThreshold;
+
+        public SourceWebViewBottomSheetCallback(Callback<Void, Void> onSlideBelowThreshold) {
+            super();
+            prevSlideOffset = null;
+            this.onSlideBelowThreshold = onSlideBelowThreshold;
+        }
+
+        @Override
+        public void onStateChanged(@NonNull View bottomSheet, int newState) {
+            /** noop **/
+        }
+
+        @Override
+        public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+            if ((prevSlideOffset == null || slideOffset < prevSlideOffset) && slideOffset < -.25) {
+                onSlideBelowThreshold.invoke(null, null);
+            }
+            prevSlideOffset = slideOffset;
         }
     }
 }

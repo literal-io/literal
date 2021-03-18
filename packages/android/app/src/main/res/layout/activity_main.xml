@@ -19,7 +19,7 @@
             android:layout_height="match_parent" />
 
         <FrameLayout
-            android:id="@+id/bottom_sheet_behavior_container"
+            android:id="@+id/source_web_view_bottom_sheet_behavior_container"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@color/colorPrimary"
@@ -28,11 +28,19 @@
             app:behavior_hideable="true"
             app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
             <androidx.fragment.app.FragmentContainerView
-                android:id="@+id/bottom_sheet_fragment_container"
+                android:id="@+id/source_web_view_bottom_sheet_fragment_container"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
         </FrameLayout>
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/app_web_view_bottom_sheet_fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_alignParentBottom="true"
+        android:elevation="12dp"
+        android:background="@color/colorPrimary" />
 
     <RelativeLayout
         android:id="@+id/splash"

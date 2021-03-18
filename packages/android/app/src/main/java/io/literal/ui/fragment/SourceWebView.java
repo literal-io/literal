@@ -1,7 +1,6 @@
 package io.literal.ui.fragment;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
@@ -66,10 +65,10 @@ import type.PatchAnnotationOperationInput;
 public class SourceWebView extends Fragment {
 
     private static final String PARAM_INITIAL_URL = "PARAM_INITIAL_URL";
-    private static final String PARAM_ENABLE_APP_WEB_VIEW_BOTTOM_SHEET = "PARAM_ENABLE_APP_WEB_VIEW_BOTTOM_SHEET";
+    private static final String PARAM_APP_WEB_VIEW_MODEL_KEY = "PARAM_APP_WEB_VIEW_MODEL_KEY";
 
     private String paramInitialUrl;
-    private Boolean paramEnableAppWebViewBottomSheet;
+    private String paramAppWebViewModelKey;
     private io.literal.ui.view.SourceWebView webView;
     private Toolbar toolbar;
     private AppBarLayout appBarLayout;
@@ -85,11 +84,11 @@ public class SourceWebView extends Fragment {
     private AuthenticationViewModel authenticationViewModel;
     private AppWebViewViewModel appWebViewViewModel;
 
-    public static SourceWebView newInstance(String initialUrl, boolean enableAppWebViewBottomSheet) {
+    public static SourceWebView newInstance(String initialUrl, String appWebViewModelKey) {
         SourceWebView fragment = new SourceWebView();
         Bundle args = new Bundle();
         args.putString(PARAM_INITIAL_URL, initialUrl);
-        args.putBoolean(PARAM_ENABLE_APP_WEB_VIEW_BOTTOM_SHEET, enableAppWebViewBottomSheet);
+        args.putString(PARAM_APP_WEB_VIEW_MODEL_KEY, appWebViewModelKey);
         fragment.setArguments(args);
         return fragment;
     }
@@ -99,7 +98,7 @@ public class SourceWebView extends Fragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             paramInitialUrl = getArguments().getString(PARAM_INITIAL_URL);
-            paramEnableAppWebViewBottomSheet = getArguments().getBoolean(PARAM_ENABLE_APP_WEB_VIEW_BOTTOM_SHEET);
+            paramAppWebViewModelKey = getArguments().getString(PARAM_APP_WEB_VIEW_MODEL_KEY);
         }
     }
 
@@ -117,7 +116,10 @@ public class SourceWebView extends Fragment {
 
         sourceWebViewViewModel = new ViewModelProvider(requireActivity()).get(SourceWebViewViewModel.class);
         authenticationViewModel = new ViewModelProvider(requireActivity()).get(AuthenticationViewModel.class);
-        appWebViewViewModel = new ViewModelProvider(requireActivity()).get(AppWebViewViewModel.class);
+        appWebViewViewModel =
+                paramAppWebViewModelKey != null
+                        ? new ViewModelProvider(requireActivity()).get(paramAppWebViewModelKey, AppWebViewViewModel.class)
+                        : new ViewModelProvider(requireActivity()).get(AppWebViewViewModel.class);
 
         toolbar = view.findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
@@ -289,18 +291,16 @@ public class SourceWebView extends Fragment {
             appWebViewViewModel.clearReceivedWebEvents();
         });
 
-        if (paramEnableAppWebViewBottomSheet) {
-            appWebViewViewModel.getBottomSheetState().observe(requireActivity(), (bottomSheetState) -> {
-                switch (bottomSheetState) {
-                    case BottomSheetBehavior.STATE_COLLAPSED:
-                        appBarLayout.setExpanded(true);
-                        break;
-                    case BottomSheetBehavior.STATE_EXPANDED:
-                        appBarLayout.setExpanded(false);
-                        break;
-                }
-            });
-        }
+        appWebViewViewModel.getBottomSheetState().observe(requireActivity(), (bottomSheetState) -> {
+            switch (bottomSheetState) {
+                case BottomSheetBehavior.STATE_COLLAPSED:
+                    appBarLayout.setExpanded(true);
+                    break;
+                case BottomSheetBehavior.STATE_EXPANDED:
+                    appBarLayout.setExpanded(false);
+                    break;
+            }
+        });
 
         sourceWebViewViewModel.getWebEvents().observe(requireActivity(), (webEvents) -> {
             if (webEvents == null) {
@@ -371,10 +371,12 @@ public class SourceWebView extends Fragment {
         }
         Annotation unwrappedAnnotation = annotation.get();
 
-        sourceWebViewViewModel.setFocusedAnnotation(unwrappedAnnotation);
-        if (paramEnableAppWebViewBottomSheet) {
-            appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+        Annotation currentFocusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+        if (currentFocusedAnnotation == null || !currentFocusedAnnotation.getId().equals(unwrappedAnnotation.getId())) {
+            sourceWebViewViewModel.setFocusedAnnotation(unwrappedAnnotation);
         }
+
+        appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
 
         if (editAnnotationActionMode != null) {
             webView.finishEditAnnotationActionMode(editAnnotationActionMode);
@@ -648,7 +650,7 @@ public class SourceWebView extends Fragment {
         }
     }
 
-    private void handleAnnotationBlur() {
+    public void handleAnnotationBlur() {
         appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
         sourceWebViewViewModel.setFocusedAnnotation(null);
         if (editAnnotationActionMode != null) {

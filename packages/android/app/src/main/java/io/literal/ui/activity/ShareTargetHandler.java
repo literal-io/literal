@@ -1,21 +1,13 @@
 package io.literal.ui.activity;
 
-import android.animation.Animator;
-import android.animation.ObjectAnimator;
-import android.app.Activity;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
@@ -24,22 +16,14 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.amplify.generated.graphql.CreateAnnotationFromExternalTargetMutation;
 import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
-import com.amazonaws.mobile.client.AWSMobileClient;
-import com.amazonaws.mobile.client.Callback;
-import com.amazonaws.mobile.client.UserStateDetails;
-import com.amazonaws.mobileconnectors.cognitoauth.AuthClient;
 import com.apollographql.apollo.api.Error;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 import io.literal.R;
-import io.literal.factory.AWSMobileClientFactory;
 import io.literal.lib.Constants;
 import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
@@ -50,6 +34,7 @@ import io.literal.repository.ShareTargetHandlerRepository;
 import io.literal.repository.ToastRepository;
 import io.literal.ui.MainApplication;
 import io.literal.ui.fragment.AppWebView;
+import io.literal.ui.fragment.AppWebViewBottomSheetAnimator;
 import io.literal.ui.fragment.SourceWebView;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
@@ -134,143 +119,21 @@ public class ShareTargetHandler extends AppCompatActivity {
         // initialize view model for managing app web view bottom sheet
         appWebViewViewModel = new ViewModelProvider(this).get(AppWebViewViewModel.class);
         appWebViewViewModel.getBottomSheetState().observe(this, bottomSheetState -> {
-            if (bottomSheetState == null) {
-                return;
-            }
-
-            Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
-
-            DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-            Configuration configuration = getResources().getConfiguration();
-
-            if (bottomSheetState == BottomSheetBehavior.STATE_EXPANDED) {
-                double targetBottomSheetHeightPx = configuration.screenHeightDp * 0.8 * displayMetrics.density;
-                double targetTranslationY = 0;
-                double initialTranslationY = targetBottomSheetHeightPx - Math.abs(bottomSheetFragmentContainer.getTranslationY());
-
-                ViewGroup.LayoutParams bottomSheetLayout = bottomSheetFragmentContainer.getLayoutParams();
-                bottomSheetLayout.height = (int) targetBottomSheetHeightPx;
-                bottomSheetFragmentContainer.setLayoutParams(bottomSheetLayout);
-                bottomSheetFragmentContainer.setTranslationY((float) initialTranslationY);
-
-                try {
-                    WebEvent webEvent = new WebEvent(
-                            WebEvent.TYPE_VIEW_STATE_EDIT_ANNOTATION_TAGS,
-                            UUID.randomUUID().toString(),
-                            focusedAnnotation.toJson()
-                    );
-                    appWebViewViewModel.dispatchWebEvent(webEvent);
-                } catch (JSONException ex) {
-                    Log.d("ShareTargetHandler", "Unable to serialize annotation", ex);
-                }
-
-                ObjectAnimator animator = ObjectAnimator.ofFloat(bottomSheetFragmentContainer, "translationY", (float) initialTranslationY, (float) targetTranslationY);
-                animator.setDuration(300);
-                animator.start();
-            } else if (bottomSheetState == BottomSheetBehavior.STATE_COLLAPSED) {
-                double targetBottomSheetHeightPx = 48 * displayMetrics.density;
-                double targetTranslationY;
-                double initialTranslationY;
-                Animator.AnimatorListener animatorListener = null;
-
-                if (bottomSheetFragmentContainer.getHeight() == 0) {
-                    // animating from hidden state
-                    initialTranslationY = targetBottomSheetHeightPx;
-                    targetTranslationY = 0;
-
-                    ViewGroup.LayoutParams bottomSheetLayout = bottomSheetFragmentContainer.getLayoutParams();
-                    bottomSheetLayout.height = (int) targetBottomSheetHeightPx;
-                    bottomSheetFragmentContainer.setLayoutParams(bottomSheetLayout);
-                    bottomSheetFragmentContainer.setTranslationY((float) initialTranslationY);
-                } else {
-                    // animating from expanded state
-                    targetTranslationY = bottomSheetFragmentContainer.getHeight() - targetBottomSheetHeightPx;
-                    initialTranslationY = bottomSheetFragmentContainer.getTranslationY();
-                    animatorListener = new Animator.AnimatorListener() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            ViewGroup.LayoutParams bottomSheetLayout = bottomSheetFragmentContainer.getLayoutParams();
-                            bottomSheetLayout.height = (int) targetBottomSheetHeightPx;
-                            bottomSheetFragmentContainer.setLayoutParams(bottomSheetLayout);
-                            bottomSheetFragmentContainer.setTranslationY(0);
-                        }
-
-                        @Override
-                        public void onAnimationStart(Animator animation) {
-                            // noop
-                        }
-
-                        @Override
-                        public void onAnimationCancel(Animator animation) {
-                            // noop
-                        }
-
-                        @Override
-                        public void onAnimationRepeat(Animator animation) {
-                            // noop
-                        }
-                    };
-                }
-
-                try {
-                    WebEvent webEvent = new WebEvent(
-                            WebEvent.TYPE_VIEW_STATE_COLLAPSED_ANNOTATION_TAGS,
-                            UUID.randomUUID().toString(),
-                            focusedAnnotation.toJson()
-                    );
-                    appWebViewViewModel.dispatchWebEvent(webEvent);
-                } catch (JSONException ex) {
-                    Log.d("ShareTargetHandler", "Unable to serialize annotation", ex);
-                }
-
-                ObjectAnimator animator = ObjectAnimator.ofFloat(bottomSheetFragmentContainer, "translationY", (float) initialTranslationY, (float) targetTranslationY);
-                if (animatorListener != null) {
-                    animator.addListener(animatorListener);
-                }
-                animator.setDuration(300);
-                animator.start();
-
-            } else if (bottomSheetState == BottomSheetBehavior.STATE_HIDDEN) {
-                double targetBottomSheetHeightPx = 0;
-                double targetTranslationY = bottomSheetFragmentContainer.getHeight();
-                double initialTranslationY = bottomSheetFragmentContainer.getTranslationY();
-
-                ObjectAnimator animator = ObjectAnimator.ofFloat(bottomSheetFragmentContainer, "translationY", (float) initialTranslationY, (float) targetTranslationY);
-                animator.addListener(new Animator.AnimatorListener() {
-
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        ViewGroup.LayoutParams bottomSheetLayout = bottomSheetFragmentContainer.getLayoutParams();
-                        bottomSheetLayout.height = (int) targetBottomSheetHeightPx;
-                        bottomSheetFragmentContainer.setLayoutParams(bottomSheetLayout);
-                        bottomSheetFragmentContainer.setTranslationY(0);
-                    }
-
-                    @Override
-                    public void onAnimationStart(Animator animation) {
-                        // Noop
-                    }
-
-                    @Override
-                    public void onAnimationCancel(Animator animation) {
-                        // Noop
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animator animation) {
-                        // Noop
-                    }
-                });
-                animator.start();
-            }
+            AppWebViewBottomSheetAnimator.handleBottomSheetStateChange(
+                    bottomSheetFragmentContainer,
+                    sourceWebViewViewModel.getFocusedAnnotation().getValue(),
+                    getResources(),
+                    bottomSheetState,
+                    (_e, webEvent) -> appWebViewFragment.postWebEvent(webEvent)
+            );
         });
 
         appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
 
-        sourceWebViewFragment = SourceWebView.newInstance(sourceWebViewUri, true);
+        sourceWebViewFragment = SourceWebView.newInstance(sourceWebViewUri, null);
         sourceWebViewFragment.setOnDoneCallback((_e, result) -> this.handleCreateFromSourceDone(result));
 
-        appWebViewFragment = AppWebView.newInstance(appWebViewUri);
+        appWebViewFragment = AppWebView.newInstance(appWebViewUri, null);
         getSupportFragmentManager()
                 .beginTransaction()
                 .setReorderingAllowed(true)
@@ -292,7 +155,7 @@ public class ShareTargetHandler extends AppCompatActivity {
             ViewGroup splash = findViewById(R.id.share_target_handler_splash);
             splash.setVisibility(hasFinishedInitializing ? View.INVISIBLE : View.VISIBLE);
         });
-        appWebViewFragment = AppWebView.newInstance(appWebViewUri);
+        appWebViewFragment = AppWebView.newInstance(appWebViewUri, null);
         getSupportFragmentManager()
                 .beginTransaction()
                 .setReorderingAllowed(true)

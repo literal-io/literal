@@ -3,14 +3,6 @@ package io.literal.ui.fragment;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
-
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,6 +10,13 @@ import android.view.ViewGroup;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebViewClient;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.mobile.client.results.Tokens;
 
@@ -36,22 +35,98 @@ import io.literal.viewmodel.AuthenticationViewModel;
 
 public class AppWebView extends Fragment {
     private static final String PARAM_INITIAL_URL = "PARAM_INITIAL_URL";
+    private static final String PARAM_APP_WEB_VIEW_MODEL_KEY = "PARAM_APP_WEB_VIEW_MODEL_KEY";
 
     private final FileActivityResultCallback fileActivityResultCallback = new FileActivityResultCallback();
 
     private String paramInitialUrl;
+    private String paramAppWebViewModelKey;
+
     private ActivityResultLauncher<String> getFileContent;
     private AppWebViewViewModel appWebViewViewModel;
     private AuthenticationViewModel authenticationViewModel;
     private io.literal.ui.view.AppWebView appWebView;
+    private final WebEvent.Callback webEventCallback = new WebEvent.Callback() {
+
+        private void handleSignIn(io.literal.ui.view.AppWebView view) {
+            authenticationViewModel.signInGoogle(getActivity(), (e, _void) -> {
+                if (e != null) {
+                    Log.d("AppWebView", "handleSignIn", e);
+                    return;
+                }
+                Tokens tokens = authenticationViewModel.getTokens().getValue();
+                JSONObject result = new JSONObject();
+                try {
+                    result.put("idToken", tokens.getIdToken().getTokenString());
+                    result.put("refreshToken", tokens.getRefreshToken().getTokenString());
+                    result.put("accessToken", tokens.getAccessToken().getTokenString());
+
+                    getActivity().runOnUiThread(() -> {
+                        view.postWebEvent(
+                                new WebEvent(WebEvent.TYPE_AUTH_SIGN_IN_RESULT, UUID.randomUUID().toString(), result)
+                        );
+                    });
+                } catch (Exception jsonException) {
+                    Log.d("AppWebView", "handleSignIn", jsonException);
+                }
+            });
+        }
+
+        private void handleGetTokens(io.literal.ui.view.AppWebView view) {
+            Tokens tokens = authenticationViewModel.getTokens().getValue();
+            JSONObject result = new JSONObject();
+            try {
+                result.put("idToken", tokens.getIdToken().getTokenString());
+                result.put("refreshToken", tokens.getRefreshToken().getTokenString());
+                result.put("accessToken", tokens.getAccessToken().getTokenString());
+
+                view.postWebEvent(
+                        new WebEvent(WebEvent.TYPE_AUTH_GET_TOKENS_RESULT, UUID.randomUUID().toString(), result)
+                );
+            } catch (Exception e) {
+                Log.d("AppWebView", "handleGetTokens", e);
+            }
+        }
+
+        private void handleGetUserInfo(io.literal.ui.view.AppWebView view) {
+            try {
+                JSONObject result = new JSONObject();
+                result.put("username", authenticationViewModel.getUsername().getValue());
+                result.put("id", authenticationViewModel.getIdentityId().getValue());
+                Map<String, String> userAttributes = authenticationViewModel.getUserAttributes().getValue();
+                result.put("attributes", userAttributes != null ? new JSONObject(userAttributes) : null);
+                appWebView.postWebEvent(
+                        new WebEvent(WebEvent.TYPE_AUTH_GET_USER_INFO_RESULT, UUID.randomUUID().toString(), result)
+                );
+            } catch (Exception e) {
+                Log.d("AppWebView", "handleGetUserInfo", e);
+            }
+        }
+
+        public void onWebEvent(io.literal.ui.view.AppWebView view, WebEvent event) {
+            appWebViewViewModel.dispatchReceivedWebEvent(event);
+            switch (event.getType()) {
+                case WebEvent.TYPE_AUTH_SIGN_IN:
+                    this.handleSignIn(view);
+                    return;
+                case WebEvent.TYPE_AUTH_GET_TOKENS:
+                    this.handleGetTokens(view);
+                    return;
+                case WebEvent.TYPE_AUTH_GET_USER_INFO:
+                    this.handleGetUserInfo(view);
+                    return;
+            }
+        }
+    };
 
     public AppWebView() {
     }
 
-    public static AppWebView newInstance(String initialUrl) {
+    public static AppWebView newInstance(String initialUrl, String appWebViewModelKey) {
         AppWebView fragment = new AppWebView();
         Bundle args = new Bundle();
         args.putString(PARAM_INITIAL_URL, initialUrl);
+        args.putString(PARAM_APP_WEB_VIEW_MODEL_KEY, appWebViewModelKey);
         fragment.setArguments(args);
         return fragment;
     }
@@ -61,6 +136,7 @@ public class AppWebView extends Fragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             paramInitialUrl = getArguments().getString(PARAM_INITIAL_URL);
+            paramAppWebViewModelKey = getArguments().getString(PARAM_APP_WEB_VIEW_MODEL_KEY);
         }
         getFileContent = registerForActivityResult(new ActivityResultContracts.GetContent(), fileActivityResultCallback);
     }
@@ -75,7 +151,10 @@ public class AppWebView extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        appWebViewViewModel = new ViewModelProvider(requireActivity()).get(AppWebViewViewModel.class);
+        appWebViewViewModel =
+                paramAppWebViewModelKey != null
+                        ? new ViewModelProvider(requireActivity()).get(paramAppWebViewModelKey, AppWebViewViewModel.class)
+                        : new ViewModelProvider(requireActivity()).get(AppWebViewViewModel.class);
         authenticationViewModel = new ViewModelProvider(requireActivity()).get(AuthenticationViewModel.class);
 
         appWebView = view.findViewById(R.id.app_web_view);
@@ -124,7 +203,9 @@ public class AppWebView extends Fragment {
         });
 
         appWebViewViewModel.getWebEvents().observe(requireActivity(), (webEvents) -> {
-            if (webEvents == null) { return; }
+            if (webEvents == null) {
+                return;
+            }
 
             webEvents.iterator().forEachRemaining((webEvent) -> {
                 appWebView.postWebEvent(webEvent);
@@ -151,77 +232,4 @@ public class AppWebView extends Fragment {
     public void postWebEvent(WebEvent webEvent) {
         this.appWebView.postWebEvent(webEvent);
     }
-
-    private final WebEvent.Callback webEventCallback = new WebEvent.Callback() {
-
-        private void handleSignIn(io.literal.ui.view.AppWebView view) {
-            authenticationViewModel.signInGoogle(getActivity(), (e, _void) -> {
-                if (e != null) {
-                    Log.d("AppWebView", "handleSignIn", e);
-                    return;
-                }
-                Tokens tokens = authenticationViewModel.getTokens().getValue();
-                JSONObject result = new JSONObject();
-                try {
-                    result.put("idToken", tokens.getIdToken().getTokenString());
-                    result.put("refreshToken", tokens.getRefreshToken().getTokenString());
-                    result.put("accessToken", tokens.getAccessToken().getTokenString());
-
-                    getActivity().runOnUiThread(() -> {
-                        view.postWebEvent(
-                                new WebEvent(WebEvent.TYPE_AUTH_SIGN_IN_RESULT, UUID.randomUUID().toString(), result)
-                        );
-                    });
-                } catch (Exception jsonException) {
-                    Log.d("AppWebView", "handleSignIn", jsonException);
-                }
-            });
-        }
-
-        private void handleGetTokens(io.literal.ui.view.AppWebView view) {
-            Tokens tokens = authenticationViewModel.getTokens().getValue();
-            JSONObject result = new JSONObject();
-            try {
-                result.put("idToken", tokens.getIdToken().getTokenString());
-                result.put("refreshToken", tokens.getRefreshToken().getTokenString());
-                result.put("accessToken", tokens.getAccessToken().getTokenString());
-
-                view.postWebEvent(
-                        new WebEvent(WebEvent.TYPE_AUTH_GET_TOKENS_RESULT, UUID.randomUUID().toString(), result)
-                );
-            } catch (Exception e) {
-                Log.d("AppWebView", "handleGetTokens", e);
-            }
-        }
-
-        private void handleGetUserInfo(io.literal.ui.view.AppWebView view) {
-            try {
-                JSONObject result = new JSONObject();
-                result.put("username", authenticationViewModel.getUsername().getValue());
-                result.put("id", authenticationViewModel.getIdentityId().getValue());
-                Map<String, String > userAttributes = authenticationViewModel.getUserAttributes().getValue();
-                result.put("attributes", userAttributes != null ? new JSONObject(userAttributes) : null);
-                appWebView.postWebEvent(
-                        new WebEvent(WebEvent.TYPE_AUTH_GET_USER_INFO_RESULT, UUID.randomUUID().toString(), result)
-                );
-            } catch (Exception e) {
-                Log.d("AppWebView", "handleGetUserInfo", e);
-            }
-        }
-
-        public void onWebEvent(io.literal.ui.view.AppWebView view, WebEvent event) {
-            appWebViewViewModel.dispatchReceivedWebEvent(event);
-            switch (event.getType()) {
-                case WebEvent.TYPE_AUTH_SIGN_IN:
-                    this.handleSignIn(view);
-                    return;
-                case WebEvent.TYPE_AUTH_GET_TOKENS:
-                    this.handleGetTokens(view);
-                    return;
-                case WebEvent.TYPE_AUTH_GET_USER_INFO:
-                    this.handleGetUserInfo(view);
-                    return;
-            }
-        }
-    };
 }
