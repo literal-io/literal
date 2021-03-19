@@ -80,6 +80,8 @@ public class SourceWebView extends Fragment {
      **/
     private boolean isEditingAnnotation;
 
+    private boolean shouldClearHistoryOnPageFinished;
+
     private SourceWebViewViewModel sourceWebViewViewModel;
     private AuthenticationViewModel authenticationViewModel;
     private AppWebViewViewModel appWebViewViewModel;
@@ -159,6 +161,10 @@ public class SourceWebView extends Fragment {
                 if (!sourceWebViewViewModel.getHasInjectedAnnotationRendererScript().getValue()) {
                     sourceWebViewViewModel.setHasInjectedAnnotationRendererScript(true);
                     webView.evaluateJavascript(getAnnotationRendererScript(), _v -> { /** noop **/});
+                }
+
+                if (shouldClearHistoryOnPageFinished) {
+                    view.clearHistory();
                 }
             }
         });
@@ -615,6 +621,7 @@ public class SourceWebView extends Fragment {
                 Log.d("SourceWebView", "Unable to parse URL", e);
             }
             webView.loadUrl(sourceUrl);
+            shouldClearHistoryOnPageFinished = true;
         }
     }
 
@@ -773,6 +780,8 @@ public class SourceWebView extends Fragment {
             }
         }
     }
+
+    public io.literal.ui.view.SourceWebView getWebView() { return webView; }
 
     /**
      * Message channel is established and the desired page is loaded

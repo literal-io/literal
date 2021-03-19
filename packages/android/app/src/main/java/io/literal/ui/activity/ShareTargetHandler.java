@@ -342,6 +342,14 @@ public class ShareTargetHandler extends AppCompatActivity {
     }
 
     @Override
+    public void onBackPressed() {
+        if (sourceWebViewFragment.getWebView().handleBackPressed()) {
+            return;
+        }
+        super.onBackPressed();
+    }
+
+    @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         if (appWebViewFragment != null) {

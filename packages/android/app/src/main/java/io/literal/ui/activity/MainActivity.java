@@ -44,22 +44,18 @@ import io.literal.viewmodel.SourceWebViewViewModel;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME = "MAIN_ACTIVITY_APP_WEB_VIEW_PRIMARY_FRAGMENT";
+    private static final String APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME = "MAIN_ACTIVITY_APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT";
+    private static final String SOURCE_WEB_VIEW_FRAGMENT_NAME = "MAIN_ACTIVITY_SOURCE_WEB_VIEW_FRAGMENT";
     private AppWebViewViewModel appWebViewModelPrimary;
     private AppWebViewViewModel appWebViewViewModelBottomSheet;
     private SourceWebViewViewModel sourceWebViewViewModelBottomSheet;
     private AuthenticationViewModel authenticationViewModel;
-
     private AppWebView appWebViewPrimaryFragment;
+    private final ActivityResultLauncher<Intent> createAnnotationFromSourceLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> MainActivity.this.handleCreateAnnotationFromSourceResult(result));
     private SourceWebView sourceWebViewBottomSheetFragment;
     private AppWebView appWebViewBottomSheetFragment;
     private BottomSheetBehavior<FrameLayout> sourceWebViewBottomSheetBehavior;
-
-
-    private final ActivityResultLauncher<Intent> createAnnotationFromSourceLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> MainActivity.this.handleCreateAnnotationFromSourceResult(result));
-
-    private static final String APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME = "MAIN_ACTIVITY_APP_WEB_VIEW_PRIMARY_FRAGMENT";
-    private static final String APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME = "MAIN_ACTIVITY_APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT";
-    private static final String SOURCE_WEB_VIEW_FRAGMENT_NAME = "MAIN_ACTIVITY_SOURCE_WEB_VIEW_FRAGMENT";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -171,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
             sourceWebViewBottomSheetFragment = SourceWebView.newInstance(
                     null,
                     APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME,
-                    R.drawable.done_white
+                    R.drawable.arrow_drop_down_white
             );
             appWebViewBottomSheetFragment = AppWebView.newInstance(
                     WebRoutes.creatorsIdWebview(authenticationViewModel.getUsername().getValue()),
@@ -284,6 +280,22 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == AuthClient.CUSTOM_TABS_ACTIVITY_CODE) {
             AWSMobileClient.getInstance().handleAuthResponse(data);
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (sourceWebViewBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED ||
+                sourceWebViewBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
+            if (sourceWebViewBottomSheetFragment.getWebView().handleBackPressed()) {
+                return;
+            }
+            sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+            return;
+        }
+        if (appWebViewPrimaryFragment.getWebView().handleBackPressed()) {
+            return;
+        }
+        super.onBackPressed();
     }
 
     private class SourceWebViewBottomSheetCallback extends BottomSheetBehavior.BottomSheetCallback {

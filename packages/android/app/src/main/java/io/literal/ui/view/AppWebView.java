@@ -111,15 +111,13 @@ public class AppWebView extends NestedScrollingChildWebView {
         }
     }
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if ((keyCode == KeyEvent.KEYCODE_BACK) && this.canGoBack()) {
-            Log.i(Constants.LOG_TAG, "can go back");
+    public boolean handleBackPressed() {
+        if (this.canGoBack()) {
             this.goBack();
             return true;
         }
 
-        if ((keyCode == KeyEvent.KEYCODE_BACK) && baseHistory != null && baseHistory.peek() != null) {
+        if (baseHistory != null && baseHistory.peek() != null) {
             String prev = baseHistory.poll();
             try {
                 if (WebViewFeature.isFeatureSupported(WebViewFeature.POST_WEB_MESSAGE)) {
@@ -142,8 +140,10 @@ public class AppWebView extends NestedScrollingChildWebView {
             }
             return true;
         }
-        return super.onKeyDown(keyCode, event);
+
+        return false;
     }
+
 
     private class JavascriptInterface {
         @android.webkit.JavascriptInterface

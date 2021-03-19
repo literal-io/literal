@@ -248,6 +248,15 @@ public class SourceWebView extends NestedScrollingChildWebView {
         this.onDestroyTextSelectionMenu = onDestroyTextSelectionMenu;
     }
 
+    public boolean handleBackPressed() {
+        if (this.canGoBack()) {
+            this.goBack();
+            return true;
+        }
+
+        return false;
+    }
+
     public static class EditAnnotationActionModeCallback extends ActionMode.Callback2 {
         Rect annotationBoundingBox;
         Callback<Void, Void> onEditAnnotation;

@@ -229,6 +229,8 @@ public class AppWebView extends Fragment {
         }
     }
 
+
+    public io.literal.ui.view.AppWebView getWebView() { return this.appWebView; }
     public void postWebEvent(WebEvent webEvent) {
         this.appWebView.postWebEvent(webEvent);
     }
