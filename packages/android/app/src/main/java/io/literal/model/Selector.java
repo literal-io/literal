@@ -43,9 +43,9 @@ public class Selector {
             return XPathSelector.fromJson(json);
         } else if (type.equals(Type.TEXT_POSITION_SELECTOR.name())) {
             return TextPositionSelector.fromJson(json);
-        } else {
-            throw new JSONException("fromJson not implemented.");
         }
+
+        return null;
     }
 
 }

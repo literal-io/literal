@@ -50,6 +50,12 @@ let makeExternalTarget =
   "type": type_,
 };
 
+let makeSpecificTarget = (~source, ~selector, ~id) => {
+  "id": id,
+  "source": source,
+  "selector": selector,
+};
+
 let makeFromTarget = target =>
   switch (target) {
   | `TextualTarget(target) =>

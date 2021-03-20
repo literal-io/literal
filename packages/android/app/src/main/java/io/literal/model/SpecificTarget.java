@@ -22,26 +22,39 @@ public class SpecificTarget extends Target {
     private final String id;
     private final Target source;
     private final Selector[] selector;
+    private final State[] state;
 
-    public SpecificTarget(String id, @NotNull Target source, @NotNull Selector[] selector) {
+    public SpecificTarget(String id, @NotNull Target source, Selector[] selector, State[] state) {
         super(Type.SPECIFIC_TARGET);
 
         this.id = id == null || id.equals("") ? UUID.randomUUID().toString() : id;
         this.source = source;
         this.selector = selector;
+        this.state = state;
     }
 
     public static SpecificTarget fromJson(JSONObject json) throws JSONException {
         return new SpecificTarget(
                 json.optString("id"),
                 Target.fromJson(json.getJSONObject("source")),
-                JsonArrayUtil.parseJsonObjectArray(
+                !json.isNull("selector")
+                        ? JsonArrayUtil.parseJsonObjectArray(
                         json.getJSONArray("selector"),
                         new Selector[0],
                         Selector::fromJson
                 )
+                        : null,
+                !json.isNull("state")
+                        ? JsonArrayUtil.parseJsonObjectArray(
+                        json.getJSONArray("state"),
+                        new State[0],
+                        State::fromJson
+                )
+                        : null
         );
-    };
+    }
+
+    ;
 
     public String getId() {
         return id;
@@ -55,15 +68,30 @@ public class SpecificTarget extends Target {
         return selector;
     }
 
+    public State[] getState() {
+        return state;
+    }
+
     @Override
     public JSONObject toJson() throws JSONException {
         JSONObject output = new JSONObject();
         output.put("id", this.id);
         output.put("source", this.source.toJson());
-        output.put("selector", JsonArrayUtil.stringifyObjectArray(
-                this.selector,
-                Selector::toJson
-        ));
+        output.put("selector",
+                this.selector != null
+                        ? JsonArrayUtil.stringifyObjectArray(
+                        this.selector,
+                        Selector::toJson
+                )
+                        : null
+        );
+        output.put("state", this.state != null
+                        ? JsonArrayUtil.stringifyObjectArray(
+                this.state,
+                State::toJson
+                )
+                        : null
+        );
         output.put("type", SpecificResourceType.SPECIFIC_RESOURCE.name());
 
         return output;
@@ -76,7 +104,14 @@ public class SpecificTarget extends Target {
                         .id(this.id)
                         .source(this.source.toAnnotationTargetInput())
                         .selector(
-                                Stream.of(this.selector).map(Selector::toSelectorInput).collect(Collectors.toList())
+                                this.selector != null
+                                        ? Stream.of(this.selector).map(Selector::toSelectorInput).collect(Collectors.toList())
+                                        : null
+                        )
+                        .state(
+                                this.state != null
+                                        ? Stream.of(this.state).map(State::toStateInput).collect(Collectors.toList())
+                                        : null
                         )
                         .type(SpecificResourceType.SPECIFIC_RESOURCE)
                         .build()

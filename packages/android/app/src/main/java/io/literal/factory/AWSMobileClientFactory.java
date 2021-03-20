@@ -32,6 +32,7 @@ public class AWSMobileClientFactory {
 
     public static volatile TransferUtility transferUtility;
     public static volatile AmplifyEnvironment amplifyEnvironment;
+    private static volatile AmazonS3Client amazonS3Client;
 
     static CountDownLatch initializationLatch = new CountDownLatch(1);
 
@@ -70,6 +71,13 @@ public class AWSMobileClientFactory {
 
     public static AmplifyEnvironment getAmplifyEnvironment() { return amplifyEnvironment; }
 
+    public static AmazonS3Client getAmazonS3Client() {
+        if (amazonS3Client == null) {
+            amazonS3Client = new AmazonS3Client(AWSMobileClient.getInstance());
+        }
+        return amazonS3Client;
+    }
+
     public static TransferUtility getTransferUtility(Context context) {
         if (transferUtility == null) {
             AWSMobileClient mobileClient = AWSMobileClient.getInstance();
@@ -77,7 +85,7 @@ public class AWSMobileClientFactory {
                     .builder()
                     .context(context)
                     .awsConfiguration(mobileClient.getConfiguration())
-                    .s3Client(new AmazonS3Client(mobileClient))
+                    .s3Client(getAmazonS3Client())
                     .build();
         }
         return transferUtility;

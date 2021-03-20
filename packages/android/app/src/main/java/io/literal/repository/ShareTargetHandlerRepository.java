@@ -219,78 +219,58 @@ public class ShareTargetHandlerRepository {
 
         listener.onAnnotationUri(uri);
 
-        JSONObject s3TransferUtilityJson = AppSyncClientFactory
-                .getConfiguration(context)
-                .optJsonObject("S3TransferUtility");
-        String bucket = s3TransferUtilityJson.optString("Bucket");
-        String region = s3TransferUtilityJson.optString("Region");
-
-
         String filePath = "screenshots/" + screenshotId;
         File file = ContentResolverLib.toFile(context, imageUri, filePath);
 
-        TransferUtility transferUtility = AWSMobileClientFactory.getTransferUtility(context);
-        TransferObserver transferObserver = transferUtility.upload(
-                bucket,
-                "private/" + creatorIdentityId + "/screenshots/" + screenshotId,
-                file
-        );
-        transferObserver.setTransferListener(new TransferListener() {
-            @Override
-            public void onStateChanged(int id, TransferState state) {
-                if (TransferState.COMPLETED != state) {
-                    return;
-                }
-                String uploadURI = "s3://" + transferObserver.getBucket() + "/" + transferObserver.getKey();
-                CreateAnnotationFromExternalTargetMutation createAnnotationMutation = CreateAnnotationFromExternalTargetMutation
-                        .builder()
-                        .input(
-                                CreateAnnotationFromExternalTargetInput
-                                        .builder()
-                                        .creatorUsername(creatorUsername)
-                                        .annotationId(annotationId)
-                                        .externalTarget(
-                                                ExternalTargetInput
-                                                        .builder()
-                                                        .format(Format.TEXT_PLAIN)
-                                                        .language(Language.EN_US)
-                                                        .processingLanguage(Language.EN_US)
-                                                        .type(ResourceType.IMAGE)
-                                                        .id(uploadURI)
-                                                        .build()
-                                        )
-                                        .build()
-                        )
-                        .build();
-                AppSyncClientFactory.getInstance(context)
-                        .mutate(createAnnotationMutation)
-                        .enqueue(new GraphQLCall.Callback<CreateAnnotationFromExternalTargetMutation.Data>() {
-                            @Override
-                            public void onResponse(@Nonnull Response<CreateAnnotationFromExternalTargetMutation.Data> annotationResponse) {
-                                if (annotationResponse.hasErrors()) {
-                                    listener.onGraphQLError(annotationResponse.errors());
-                                    return;
+        StorageRepository.upload(
+                context,
+                StorageRepository.getPrivatePath(creatorIdentityId, "screenshots/" + screenshotId),
+                file,
+                (e, uploadURI) -> {
+                    if (e != null) {
+                        listener.onError(e);
+                        return;
+                    }
+
+                    CreateAnnotationFromExternalTargetMutation createAnnotationMutation = CreateAnnotationFromExternalTargetMutation
+                            .builder()
+                            .input(
+                                    CreateAnnotationFromExternalTargetInput
+                                            .builder()
+                                            .creatorUsername(creatorUsername)
+                                            .annotationId(annotationId)
+                                            .externalTarget(
+                                                    ExternalTargetInput
+                                                            .builder()
+                                                            .format(Format.TEXT_PLAIN)
+                                                            .language(Language.EN_US)
+                                                            .processingLanguage(Language.EN_US)
+                                                            .type(ResourceType.IMAGE)
+                                                            .id(uploadURI.toString())
+                                                            .build()
+                                            )
+                                            .build()
+                            )
+                            .build();
+                    AppSyncClientFactory.getInstance(context)
+                            .mutate(createAnnotationMutation)
+                            .enqueue(new GraphQLCall.Callback<CreateAnnotationFromExternalTargetMutation.Data>() {
+                                @Override
+                                public void onResponse(@Nonnull Response<CreateAnnotationFromExternalTargetMutation.Data> annotationResponse) {
+                                    if (annotationResponse.hasErrors()) {
+                                        listener.onGraphQLError(annotationResponse.errors());
+                                        return;
+                                    }
+                                    listener.onAnnotationCreated(annotationResponse.data());
                                 }
-                                listener.onAnnotationCreated(annotationResponse.data());
-                            }
 
-                            @Override
-                            public void onFailure(@Nonnull ApolloException e) {
-                                listener.onError(e);
-                            }
-                        });
-            }
-
-            @Override
-            public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-                /** noop **/
-            }
-
-            @Override
-            public void onError(int id, Exception e) {
-                listener.onError(e);
-            }
-        });
+                                @Override
+                                public void onFailure(@Nonnull ApolloException e) {
+                                    listener.onError(e);
+                                }
+                            });
+                }
+        );
     }
 
     public static void displayAnnotationCreatedNotification(String annotationId, Context context) {

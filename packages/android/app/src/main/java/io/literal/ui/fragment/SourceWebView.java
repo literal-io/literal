@@ -15,6 +15,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.ValueCallback;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -25,6 +26,8 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.amazonaws.services.s3.AmazonS3URI;
+import com.google.android.gms.auth.api.signin.internal.Storage;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
@@ -32,26 +35,36 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
 import io.literal.R;
+import io.literal.factory.AWSMobileClientFactory;
 import io.literal.lib.Callback;
+import io.literal.lib.DateUtil;
 import io.literal.lib.DomainMetadata;
 import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.model.Annotation;
 import io.literal.model.ExternalTarget;
 import io.literal.model.SpecificTarget;
+import io.literal.model.State;
 import io.literal.model.Target;
 import io.literal.model.TextualTarget;
+import io.literal.model.TimeState;
 import io.literal.repository.AnnotationRepository;
+import io.literal.repository.ArchiveRepository;
 import io.literal.repository.NotificationRepository;
 import io.literal.repository.ShareTargetHandlerRepository;
+import io.literal.repository.StorageRepository;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
@@ -158,6 +171,8 @@ public class SourceWebView extends Fragment {
 
             @Override
             public void onPageFinished(WebView view, String url) {
+
+                Log.i("SourceWebView", "onPageFinished: " + url);
                 if (!sourceWebViewViewModel.getHasInjectedAnnotationRendererScript().getValue()) {
                     sourceWebViewViewModel.setHasInjectedAnnotationRendererScript(true);
                     webView.evaluateJavascript(getAnnotationRendererScript(), _v -> { /** noop **/});
@@ -367,6 +382,70 @@ public class SourceWebView extends Fragment {
             Annotation annotation = sourceWebViewViewModel.createAnnotation(value, creatorUsername);
             sourceWebViewViewModel.setFocusedAnnotation(annotation);
             appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
+            Callback<Exception, AmazonS3URI> onArchiveUploaded = (e, amazonS3URI) -> {
+                if (e != null) {
+                    Log.d("SourceWebView", "onArchiveUploaded error", e);
+                }
+                Log.i("SourceWebView", "onArchiveUploaded: " + amazonS3URI.toString());
+                TimeState timeState = new TimeState(
+                        new String[]{amazonS3URI.toString()},
+                        new String[]{DateUtil.toISO8601UTC(new Date())}
+                );
+                Optional<Annotation> update = sourceWebViewViewModel.getAnnotations().getValue()
+                        .stream()
+                        .filter((a) -> a.getId().equals(annotation.getId()))
+                        .findFirst()
+                        .map(annotationToUpdate -> {
+                            Target[] target = annotationToUpdate.getTarget();
+                            for (int i = 0; i < target.length; i++) {
+                                if (target[i].getType().equals(Target.Type.SPECIFIC_TARGET)) {
+                                    SpecificTarget specificTarget = (SpecificTarget) target[i];
+                                    target[i] = new SpecificTarget(
+                                            specificTarget.getId(),
+                                            specificTarget.getSource(),
+                                            specificTarget.getSelector(),
+                                            new State[]{timeState}
+                                    );
+                                    break;
+                                }
+                            }
+
+                            return new Annotation(
+                                    annotationToUpdate.getBody(),
+                                    target,
+                                    annotationToUpdate.getMotivation(),
+                                    annotationToUpdate.getCreated(),
+                                    annotationToUpdate.getModified(),
+                                    annotationToUpdate.getId()
+                            );
+                        });
+
+                if (!update.isPresent()) {
+                    Log.d("SourceWebView", "Expected annotation update, but found none.");
+                    return;
+                }
+
+                try {
+                    Log.i("SourceWebView", "Updated annotation: " + update.get().toJson());
+                } catch (JSONException jsonException) {
+                    Log.d("SourceWebView", "JSONException", jsonException);
+                }
+
+                sourceWebViewViewModel.updateAnnotation(update.get());
+            };
+
+            webView.saveWebArchive(
+                    ArchiveRepository.getLocalDir(getContext()).getAbsolutePath(),
+                    true,
+                    (filePath) -> {
+                        ArchiveRepository.upload(
+                                getContext(),
+                                new File(filePath),
+                                authenticationViewModel.getIdentityId().getValue(),
+                                onArchiveUploaded
+                        );
+                    }
+            );
         });
     }
 
@@ -465,7 +544,8 @@ public class SourceWebView extends Fragment {
                         SpecificTarget updatedSpecificTarget = new SpecificTarget(
                                 ((SpecificTarget) existingTarget.get()).getId(),
                                 existingSpecificTarget.getSource(),
-                                existingSpecificTarget.getSelector()
+                                existingSpecificTarget.getSelector(),
+                                existingSpecificTarget.getState()
                         );
                         updatedTarget.add(updatedSpecificTarget);
                         patchAnnotationOperationInputs.add(updatedSpecificTarget.toPatchAnnotationOperationInputSet());

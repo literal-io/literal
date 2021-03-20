@@ -1,3 +1,29 @@
+let make = (~rangeSelector, ~textPositionSelector, ~xPathSelector, ()) => {
+  "rangeSelector": rangeSelector,
+  "textPositionSelector": textPositionSelector,
+  "xPathSelector": xPathSelector,
+};
+
+let makeRangeSelectorInput = (~startSelector, ~endSelector, ~refinedBy=?, ()) => {
+  "startSelector": startSelector,
+  "endSelector": endSelector,
+  "refinedBy": refinedBy,
+  "type": "RANGE_SELECTOR",
+};
+
+let makeXPathSelectorInput = (~value, ~refinedBy, ()) => {
+  "value": value,
+  "refinedBy": refinedBy,
+  "type": "XPATH_SELECTOR",
+};
+
+let makeTextPositionSelectorInput = (~start, ~end_, ~refinedBy, ()) => {
+  "start": start,
+  "end": end_,
+  "refinedBy": refinedBy,
+  "type": "TEXT_POSITION_SELECTOR",
+};
+
 let toCache = {
   let rec rangeSelectorInputToCache = s =>
     Js.Dict.fromList([
