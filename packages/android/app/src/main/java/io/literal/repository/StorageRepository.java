@@ -8,6 +8,7 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.amazonaws.services.s3.AmazonS3URI;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 
 import org.json.JSONObject;
 
@@ -25,17 +26,24 @@ public class StorageRepository {
         return "private/" + creatorIdentityId + "/" + path;
     }
 
-    public static String getBucket(Context context) {
+    public static String getBucketName(Context context) {
         JSONObject s3TransferUtilityJson = AppSyncClientFactory
                 .getConfiguration(context)
                 .optJsonObject("S3TransferUtility");
         return s3TransferUtilityJson.optString("Bucket");
     }
 
-    public static void upload(Context context, String key, File inputFile, Callback<Exception, AmazonS3URI> onUploadComplete) {
+    public static String getBucketRegion(Context context) {
+        JSONObject s3TransferUtilityJson = AppSyncClientFactory
+                .getConfiguration(context)
+                .optJsonObject("S3TransferUtility");
+        return s3TransferUtilityJson.optString("Region");
+    }
+
+    public static void upload(Context context, String key, File inputFile, ObjectMetadata metadata, Callback<Exception, AmazonS3URI> onUploadComplete) {
         TransferUtility transferUtility = AWSMobileClientFactory.getTransferUtility(context);
 
-        TransferObserver transferObserver = transferUtility.upload(key, inputFile);
+        TransferObserver transferObserver = transferUtility.upload(key, inputFile, metadata);
         transferObserver.setTransferListener(new TransferListener() {
             @Override
             public void onStateChanged(int id, TransferState state) {
@@ -58,7 +66,7 @@ public class StorageRepository {
         });
     }
 
-    private static void download(Context context, String key, File outputFile, Callback<Exception, File> onDownloadComplete) {
+    public static void download(Context context, String key, File outputFile, Callback<Exception, File> onDownloadComplete) {
         TransferObserver transferObserver = AWSMobileClientFactory.getTransferUtility(context)
                 .download(key, outputFile);
         transferObserver.setTransferListener(new TransferListener() {

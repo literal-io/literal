@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
@@ -15,7 +16,6 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.ValueCallback;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -27,7 +27,6 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.services.s3.AmazonS3URI;
-import com.google.android.gms.auth.api.signin.internal.Storage;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
@@ -38,17 +37,15 @@ import org.json.JSONObject;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
 import io.literal.R;
-import io.literal.factory.AWSMobileClientFactory;
 import io.literal.lib.Callback;
+import io.literal.lib.Callback2;
 import io.literal.lib.DateUtil;
 import io.literal.lib.DomainMetadata;
 import io.literal.lib.JsonArrayUtil;
@@ -64,7 +61,7 @@ import io.literal.repository.AnnotationRepository;
 import io.literal.repository.ArchiveRepository;
 import io.literal.repository.NotificationRepository;
 import io.literal.repository.ShareTargetHandlerRepository;
-import io.literal.repository.StorageRepository;
+import io.literal.ui.MainApplication;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
@@ -160,9 +157,12 @@ public class SourceWebView extends Fragment {
         webView.setExternalWebViewClient(new WebViewClient() {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
+                Optional<DomainMetadata> domainMetadata = Optional.ofNullable(sourceWebViewViewModel.getDomainMetadata().getValue());
                 try {
-                    sourceWebViewViewModel.setDomainMetadata(new URL(url), domainMetadata != null ? domainMetadata.getFavicon() : null);
+                    sourceWebViewViewModel.setDomainMetadata(
+                            new URL(url),
+                            domainMetadata.map(DomainMetadata::getFavicon).orElse(null)
+                    );
                 } catch (MalformedURLException ex) {
                     Log.d("SourceWebView", "Unable to execute setDomainMetadata:", ex);
                 }
@@ -171,8 +171,6 @@ public class SourceWebView extends Fragment {
 
             @Override
             public void onPageFinished(WebView view, String url) {
-
-                Log.i("SourceWebView", "onPageFinished: " + url);
                 if (!sourceWebViewViewModel.getHasInjectedAnnotationRendererScript().getValue()) {
                     sourceWebViewViewModel.setHasInjectedAnnotationRendererScript(true);
                     webView.evaluateJavascript(getAnnotationRendererScript(), _v -> { /** noop **/});
@@ -435,9 +433,10 @@ public class SourceWebView extends Fragment {
             };
 
             webView.saveWebArchive(
-                    ArchiveRepository.getLocalDir(getContext()).getAbsolutePath(),
-                    true,
+                    ArchiveRepository.getLocalDir(getContext()).getAbsolutePath() + "/" + UUID.randomUUID().toString() + ".mhtml",
+                    false,
                     (filePath) -> {
+                        Log.i("SourceWebView", "filePath: " + filePath);
                         ArchiveRepository.upload(
                                 getContext(),
                                 new File(filePath),
@@ -649,60 +648,108 @@ public class SourceWebView extends Fragment {
 
     public void handleViewTargetForAnnotation(Annotation annotation, String targetId) {
 
-        Optional<Target> targetOption = Arrays.stream(annotation.getTarget()).filter((t) -> {
-            if (t.getType().equals(Target.Type.EXTERNAL_TARGET)) {
-                return ((ExternalTarget) t).getId().equals(targetId);
-            } else if (t.getType().equals(Target.Type.SPECIFIC_TARGET)) {
-                return ((SpecificTarget) t).getId().equals(targetId);
-            } else if (t.getType().equals(Target.Type.TEXTUAL_TARGET)) {
-                return ((TextualTarget) t).getId().equals(targetId);
+        Callback2<String, DomainMetadata> onTargetUrl = (e1, targetUrl, initialDomainMetadata) -> {
+            if (e1 != null) {
+                Log.d("SourceWebView", "handleViewTargetForAnnotation error", e1);
+                return;
             }
-            return false;
-        }).findFirst();
 
-        if (!targetOption.isPresent()) {
-            Log.d("SourceWebView", "Could not find target for annotation: " + annotation + ", target: " + targetId);
-            return;
-        }
-        Target target = targetOption.get();
+            Log.i("SourceWebView", "handleViewTargetForAnnotation: " + targetUrl);
 
-        String sourceUrl = null;
-        String currentWebViewUrl = webView.getUrl();
-        if (target.getType() == Target.Type.SPECIFIC_TARGET) {
-            Target source = ((SpecificTarget) target).getSource();
-            if (source.getType() == Target.Type.EXTERNAL_TARGET) {
-                sourceUrl = ((ExternalTarget) source).getId();
+            String currentWebViewUrl = webView.getUrl();
+            if (currentWebViewUrl == null || !currentWebViewUrl.equals(targetUrl)) {
+                sourceWebViewViewModel.setHasFinishedInitializing(false);
             }
-        } else if (target.getType() == Target.Type.EXTERNAL_TARGET) {
-            sourceUrl = ((ExternalTarget) target).getId();
-        }
-        if (sourceUrl == null) {
-            Log.d("SourceWebView", "handleViewTargetForAnnotation: Unable to parse sourceUrl from Target");
-            return;
-        }
 
-        if (currentWebViewUrl == null || !currentWebViewUrl.equals(sourceUrl)) {
-            sourceWebViewViewModel.setHasFinishedInitializing(false);
-        }
-
-        ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
-        if (annotations
-                .stream()
-                .noneMatch(committedAnnotation -> committedAnnotation.getId().equals(annotation.getId()))) {
-            sourceWebViewViewModel.addAnnotation(annotation);
-        }
-
-        sourceWebViewViewModel.setFocusedAnnotation(annotation);
-
-        if (currentWebViewUrl == null || !currentWebViewUrl.equals(sourceUrl)) {
-            try {
-                sourceWebViewViewModel.setDomainMetadata(new URL(sourceUrl), null);
-            } catch (MalformedURLException e) {
-                Log.d("SourceWebView", "Unable to parse URL", e);
+            ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
+            if (annotations
+                    .stream()
+                    .noneMatch(committedAnnotation -> committedAnnotation.getId().equals(annotation.getId()))) {
+                sourceWebViewViewModel.addAnnotation(annotation);
             }
-            webView.loadUrl(sourceUrl);
-            shouldClearHistoryOnPageFinished = true;
-        }
+
+            sourceWebViewViewModel.setFocusedAnnotation(annotation);
+
+            if (currentWebViewUrl == null || !currentWebViewUrl.equals(targetUrl)) {
+                sourceWebViewViewModel.setDomainMetadata(
+                        initialDomainMetadata.getUrl(),
+                        initialDomainMetadata.getFavicon()
+                );
+                webView.loadUrl(targetUrl);
+                shouldClearHistoryOnPageFinished = true;
+            }
+        };
+
+        Arrays.stream(annotation.getTarget())
+                .filter((t) -> {
+                    if (t.getType().equals(Target.Type.EXTERNAL_TARGET)) {
+                        return ((ExternalTarget) t).getId().equals(targetId);
+                    } else if (t.getType().equals(Target.Type.SPECIFIC_TARGET)) {
+                        return ((SpecificTarget) t).getId().equals(targetId);
+                    } else if (t.getType().equals(Target.Type.TEXTUAL_TARGET)) {
+                        return ((TextualTarget) t).getId().equals(targetId);
+                    }
+                    return false;
+                })
+                .findFirst()
+                .ifPresent((t) -> {
+                    if (t.getType() == Target.Type.SPECIFIC_TARGET) {
+
+                        String externalTargetUri = null;
+                        Target source = ((SpecificTarget) t).getSource();
+                        if (source.getType() == Target.Type.EXTERNAL_TARGET) {
+                            externalTargetUri = ((ExternalTarget) source).getId();
+                        }
+
+                        Optional<String> cachedURL = Arrays.stream(Optional.ofNullable(((SpecificTarget) t).getState()).orElse(new State[0]))
+                                .filter((s) -> s.getType().equals(State.Type.TIME_STATE))
+                                .findFirst()
+                                .flatMap((s) -> Arrays.stream(((TimeState) s).getCached()).filter(cachedUrl -> Uri.parse(cachedUrl).getScheme().equals("https")).findFirst());
+
+                        if (cachedURL.isPresent()) {
+
+                                String finalExternalTargetUri = externalTargetUri;
+                                authenticationViewModel.awaitInitialization(
+                                        ((MainApplication) getActivity().getApplication()).getThreadPoolExecutor(),
+                                        (e, aVoid) -> getActivity().runOnUiThread(() -> {
+                                            try {
+                                                onTargetUrl.invoke(
+                                                        null,
+                                                        cachedURL.get(),
+                                                        finalExternalTargetUri != null
+                                                                ? new DomainMetadata(new URL(finalExternalTargetUri), null)
+                                                                : null
+                                                );
+                                            } catch (MalformedURLException _e) {
+                                                onTargetUrl.invoke(null, cachedURL.get(), null);
+                                            }
+                                        })
+                                );
+                            return;
+                        }
+
+                        if (externalTargetUri != null) {
+                            try {
+                                onTargetUrl.invoke(null, externalTargetUri, new DomainMetadata(new URL(externalTargetUri), null));
+                            } catch (MalformedURLException e) {
+                                onTargetUrl.invoke(e, null, null);
+                            }
+                            return;
+                        }
+                    }
+
+                    if (t.getType() == Target.Type.EXTERNAL_TARGET) {
+                        String id = ((ExternalTarget) t).getId();
+                        try {
+                            onTargetUrl.invoke(null, id, new DomainMetadata(new URL(id), null));
+                        } catch (MalformedURLException e) {
+                            onTargetUrl.invoke(e, null, null);
+                        }
+                        return;
+                    }
+
+                    onTargetUrl.invoke(new Exception("Unable to derive targetURL from target: " + t), null, null);
+                });
     }
 
     private void dispatchFocusAnnotationWebEvent(Annotation focusedAnnotation) {
@@ -861,7 +908,9 @@ public class SourceWebView extends Fragment {
         }
     }
 
-    public io.literal.ui.view.SourceWebView getWebView() { return webView; }
+    public io.literal.ui.view.SourceWebView getWebView() {
+        return webView;
+    }
 
     /**
      * Message channel is established and the desired page is loaded

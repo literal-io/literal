@@ -189,6 +189,7 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
         );
       ();
     };
+
     let _ =
       Webview.(
         postMessage(
@@ -219,12 +220,17 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
 
   let targetWithExternalTarget =
     targetWithExternalTargetSelector(~annotation);
+  let targetId =
+    switch (targetWithExternalTarget) {
+    | Some((targetId, _)) => Some(targetId)
+    | _ => None
+    };
   let _ =
     React.useEffect2(
       () => {
         let _ =
-          switch (targetWithExternalTarget) {
-          | Some((targetId, _)) when isVisible =>
+          switch (targetId) {
+          | Some(targetId) when isVisible =>
             handleViewTargetForAnnotation(
               ~targetId,
               ~annotation,
@@ -235,7 +241,7 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
           };
         None;
       },
-      (targetWithExternalTarget, isVisible),
+      (targetId, isVisible),
     );
 
   let handleTagsChange = newTagsValue => {

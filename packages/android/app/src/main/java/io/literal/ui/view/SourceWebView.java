@@ -13,46 +13,41 @@ import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
-import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.view.MotionEventCompat;
-import androidx.core.view.NestedScrollingChild;
-import androidx.core.view.NestedScrollingChildHelper;
-import androidx.core.view.ViewCompat;
 import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebMessagePortCompat;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
 
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
+
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Attr;
 
-import java.text.AttributedCharacterIterator;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadPoolExecutor;
-
-import javax.xml.transform.Source;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.literal.BuildConfig;
 import io.literal.R;
+import io.literal.factory.AWSMobileClientFactory;
+import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.Callback;
 import io.literal.lib.Callback2;
-import io.literal.lib.Callback3;
 import io.literal.lib.ResultCallback;
 import io.literal.lib.WebEvent;
-import io.literal.lib.WebRoutes;
-import io.literal.model.Annotation;
-import io.literal.ui.MainApplication;
+import io.literal.repository.StorageRepository;
 
 public class SourceWebView extends NestedScrollingChildWebView {
 
@@ -85,7 +80,7 @@ public class SourceWebView extends NestedScrollingChildWebView {
         webSettings.setDomStorageEnabled(true);
         webSettings.setBuiltInZoomControls(true);
         webSettings.setDisplayZoomControls(false);
-        this.setWebViewClient(this.webViewClient);
+        this.setWebViewClient(new SourceWebViewClient(getContext()));
 
         this.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -119,7 +114,7 @@ public class SourceWebView extends NestedScrollingChildWebView {
             // Ensure web context is setup to begin the message channel handshake.
             if (this.onGetWebMessageChannelInitializerScript != null) {
                 String script = this.onGetWebMessageChannelInitializerScript.invoke(null, null);
-                this.evaluateJavascript(script, (value -> { /** noop **/ }));
+                this.evaluateJavascript(script, (value -> { /** noop **/}));
             }
 
             final WebMessagePortCompat[] channel = WebViewCompat.createWebMessageChannel(this);
@@ -187,7 +182,7 @@ public class SourceWebView extends NestedScrollingChildWebView {
             Rect initialAnnotationBoundingBox,
             Callback<Void, Void> onEditAnnotation,
             Callback<Void, Void> onDeleteAnnotation
-        ) {
+    ) {
         EditAnnotationActionModeCallback actionModeCallback = new EditAnnotationActionModeCallback(initialAnnotationBoundingBox, onEditAnnotation, onDeleteAnnotation);
         ActionMode actionMode = super.startActionMode(actionModeCallback, ActionMode.TYPE_FLOATING);
 
@@ -217,9 +212,11 @@ public class SourceWebView extends NestedScrollingChildWebView {
     public void setOnAnnotationCreated(Callback<Exception, View> onAnnotationCreated) {
         this.onAnnotationCreated = onAnnotationCreated;
     }
+
     public void setOnAnnotationCommitEdit(Callback<Exception, View> onAnnotationCommitEdit) {
         this.onAnnotationCommitEdit = onAnnotationCommitEdit;
     }
+
     public void setOnAnnotationCancelEdit(Callback<Exception, View> onAnnotationCancelEdit) {
         this.onAnnotationCancelEdit = onAnnotationCancelEdit;
     }
@@ -304,7 +301,7 @@ public class SourceWebView extends NestedScrollingChildWebView {
         }
 
         @Override
-        public void onGetContentRect (ActionMode mode, View view, Rect outRect){
+        public void onGetContentRect(ActionMode mode, View view, Rect outRect) {
             outRect.set(annotationBoundingBox);
         }
     }
@@ -368,9 +365,47 @@ public class SourceWebView extends NestedScrollingChildWebView {
         public void onGetContentRect(ActionMode mode, View view, Rect outRect) {
             originalCallback.onGetContentRect(mode, view, outRect);
         }
-    };
+    }
 
-    private final WebViewClient webViewClient = new WebViewClient() {
+    ;
+
+    private class SourceWebViewClient extends WebViewClient {
+
+        private final String storageHost;
+        private final String storageBucket;
+
+        public SourceWebViewClient(Context context) {
+            storageBucket = StorageRepository.getBucketName(context);
+            storageHost = storageBucket + ".s3." + StorageRepository.getBucketRegion(context) + ".amazonaws.com";
+        }
+
+        @Nullable
+        @Override
+        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+            if (request == null) {
+                return null;
+            }
+            String host = request.getUrl().getHost();
+            String path = request.getUrl().getPath().substring(1);
+            if (!request.getMethod().equals("GET") || host == null || !host.equals(storageHost) || path == null || !path.startsWith("private/")) {
+                return null;
+            }
+
+            S3Object object = AppSyncClientFactory.getS3Client(getContext()).getObject(storageBucket, path);
+            ObjectMetadata metadata = object.getObjectMetadata();
+            WebResourceResponse response = new WebResourceResponse(
+                    metadata.getContentType(),
+                    null,
+                    object.getObjectContent()
+            );
+
+            Map<String, String> responseHeaders = new HashMap<>();
+            responseHeaders.put("Cache-Control", metadata.getCacheControl());
+            responseHeaders.put("ETag", metadata.getETag());
+            response.setResponseHeaders(responseHeaders);
+            return response;
+        }
+
         @Override
         public void onPageFinished(android.webkit.WebView webview, String url) {
             initializeWebMessageChannel();
@@ -385,5 +420,5 @@ public class SourceWebView extends NestedScrollingChildWebView {
                 SourceWebView.this.externalWebViewClient.onPageStarted(webview, url, favicon);
             }
         }
-    };
+    }
 }

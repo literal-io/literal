@@ -93,6 +93,13 @@ module GetAnnotationFragment = [%graphql
               }
             }
           }
+          state {
+            ... on TimeState {
+              __typename
+              cached
+              sourceDate
+            }
+          }
         }
       }
     }
@@ -112,6 +119,12 @@ module PatchAnnotationMutation = [%graphql
 ];
 
 module Webview = {
+  let makeState =
+    fun
+    | `TimeState(t) =>
+      t->Lib_WebView_Model_State.makeTimeStateFromGraphQL->Js.Option.some
+    | `Nonexhaustive => None;
+
   let makeSpecificTargetSelector = {
     let makeXPathSelector =
       fun
@@ -151,6 +164,7 @@ module Webview = {
         | `SpecificTarget(t) =>
           Lib_WebView_Model_Target.makeSpecificTargetFromGraphQL(
             ~makeSelector=makeSpecificTargetSelector,
+            ~makeState,
             t,
           )
         | `TextualTarget(t) =>

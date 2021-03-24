@@ -33,9 +33,12 @@ type specificTarget = {
   id: string,
   source: t,
   selector:
-    array(
-      [@decco.codec Lib_WebView_Model_Selector.codec] Lib_WebView_Model_Selector.t,
+    option(
+      array(
+        [@decco.codec Lib_WebView_Model_Selector.codec] Lib_WebView_Model_Selector.t,
+      ),
     ),
+  state: option(array(Lib_WebView_Model_State.t)),
   [@decco.default "SpecificTarget"] [@decco.key "__typename"]
   typename: string,
 }
@@ -162,10 +165,11 @@ let makeExternalTargetFromGraphQL = externalTarget => {
   );
 };
 
-let makeSpecificTarget = (~id, ~source, ~selector, ()) => {
+let makeSpecificTarget = (~id, ~source, ~selector, ~state, ()) => {
   id,
   source,
   selector,
+  state,
   typename: "SpecificTarget",
 };
 
@@ -177,8 +181,16 @@ let t_encode = inst =>
   | NotImplemented_Passthrough(json) => json
   };
 
-let makeSpecificTargetFromGraphQL = (~makeSelector, specificTarget) => {
-  let selector = specificTarget##selector->Belt.Array.keepMap(makeSelector);
+let makeSpecificTargetFromGraphQL =
+    (~makeSelector, ~makeState, specificTarget) => {
+  let selector =
+    specificTarget##selector
+    ->Belt.Array.keepMap(makeSelector)
+    ->Js.Option.some;
+  let state =
+    specificTarget##state
+    ->Belt.Option.map(a => a->Belt.Array.keepMap(makeState));
+
   let externalTarget =
     switch (specificTarget##source) {
     | `ExternalTarget(target) => Some(makeExternalTargetFromGraphQL(target))
@@ -186,13 +198,14 @@ let makeSpecificTargetFromGraphQL = (~makeSelector, specificTarget) => {
     };
 
   switch (externalTarget) {
-  | Some(externalTarget) when Js.Array2.length(selector) > 0 =>
+  | Some(externalTarget) =>
     Some(
       SpecificTarget(
         makeSpecificTarget(
           ~id=specificTarget##specificTargetId,
           ~source=externalTarget,
           ~selector,
+          ~state,
           (),
         ),
       ),

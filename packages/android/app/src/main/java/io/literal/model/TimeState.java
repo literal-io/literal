@@ -22,6 +22,14 @@ public class TimeState extends State {
         this.sourceDate = sourceDate;
     }
 
+    public String[] getCached() {
+        return cached;
+    }
+
+    public String[] getSourceDate() {
+        return sourceDate;
+    }
+
     public static TimeState fromJson(JSONObject json) throws JSONException {
         return new TimeState(
                 JsonArrayUtil.parseJsonStringArray(json.getJSONArray("cached")),

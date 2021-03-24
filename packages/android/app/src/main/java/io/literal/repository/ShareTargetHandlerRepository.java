@@ -21,6 +21,7 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.apollographql.apollo.GraphQLCall;
 import com.apollographql.apollo.api.Error;
 import com.apollographql.apollo.api.Response;
@@ -221,11 +222,14 @@ public class ShareTargetHandlerRepository {
 
         String filePath = "screenshots/" + screenshotId;
         File file = ContentResolverLib.toFile(context, imageUri, filePath);
+        ObjectMetadata objectMetadata = new ObjectMetadata();
+        objectMetadata.setCacheControl("public, max-age=604800, immutable");
 
         StorageRepository.upload(
                 context,
                 StorageRepository.getPrivatePath(creatorIdentityId, "screenshots/" + screenshotId),
                 file,
+                objectMetadata,
                 (e, uploadURI) -> {
                     if (e != null) {
                         listener.onError(e);

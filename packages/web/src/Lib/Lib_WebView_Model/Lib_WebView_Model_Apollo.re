@@ -1,6 +1,18 @@
 let unsafeAsCache = [%raw
   {|
   function asCache(annotation) {
+
+    const stateAsCache = (state) => {
+      if (state.__typename === "TimeState") {
+        return {
+          ...state,
+          type_: state.type
+        }
+      }
+
+      return state
+    }
+
     const selectorAsCache = (selector) => {
       if (selector.__typename === "RangeSelector") {
         return {
@@ -24,6 +36,8 @@ let unsafeAsCache = [%raw
           type_: selector.type
         }
       }
+
+      return selector
     }
 
     const targetAsCache = (target) => {
@@ -31,7 +45,14 @@ let unsafeAsCache = [%raw
         return {
           ...target,
           specificTargetId: target.id,
-          selector: target.selector.map(selectorAsCache),
+          selector:
+            target.selector
+              ? target.selector.map(selectorAsCache)
+              : null,
+          state:
+            target.state
+              ? target.state.map(stateAsCache)
+              : null,
           source: targetAsCache(target.source)
         }
       } else if (target.__typename === "ExternalTarget") {
