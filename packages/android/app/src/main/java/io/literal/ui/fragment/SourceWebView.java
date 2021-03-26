@@ -1,6 +1,7 @@
 package io.literal.ui.fragment;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
@@ -59,8 +60,7 @@ import io.literal.model.TextualTarget;
 import io.literal.model.TimeState;
 import io.literal.repository.AnnotationRepository;
 import io.literal.repository.ArchiveRepository;
-import io.literal.repository.NotificationRepository;
-import io.literal.repository.ShareTargetHandlerRepository;
+import io.literal.service.AnnotationService;
 import io.literal.ui.MainApplication;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
@@ -147,7 +147,7 @@ public class SourceWebView extends Fragment {
             }
 
             DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
-            sourceWebViewViewModel.setDomainMetadata(domainMetadata != null ? domainMetadata.getUrl() : null, icon);
+            sourceWebViewViewModel.setDomainMetadata(DomainMetadata.updateFavicon(domainMetadata, icon));
         });
         webView.setOnGetWebMessageChannelInitializerScript((_e, _data) -> {
             sourceWebViewViewModel.setHasInjectedAnnotationRendererScript(true);
@@ -157,12 +157,12 @@ public class SourceWebView extends Fragment {
         webView.setExternalWebViewClient(new WebViewClient() {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                Optional<DomainMetadata> domainMetadata = Optional.ofNullable(sourceWebViewViewModel.getDomainMetadata().getValue());
                 try {
-                    sourceWebViewViewModel.setDomainMetadata(
-                            new URL(url),
-                            domainMetadata.map(DomainMetadata::getFavicon).orElse(null)
-                    );
+                    URL newUrl = new URL(url);
+                    DomainMetadata domainMetadata = Optional.ofNullable(sourceWebViewViewModel.getDomainMetadata().getValue())
+                            .map(inst -> DomainMetadata.updateUrl(inst, newUrl))
+                            .orElse(new DomainMetadata(newUrl, null));
+                    sourceWebViewViewModel.setDomainMetadata(domainMetadata);
                 } catch (MalformedURLException ex) {
                     Log.d("SourceWebView", "Unable to execute setDomainMetadata:", ex);
                 }
@@ -182,28 +182,23 @@ public class SourceWebView extends Fragment {
             }
         });
 
-        webView.setOnAnnotationCreated((e, _view) -> {
+        webView.setOnAnnotationCreated((e, actionMode) -> {
             if (e != null) {
                 Log.d("SourceWebView", "setOnAnnotationCreated callback error:", e);
                 return;
             }
-            this.handleAnnotationCreated();
+            this.handleAnnotationCreated(actionMode);
 
         });
-        webView.setOnAnnotationCancelEdit((e, _view) -> {
-            this.handleAnnotationCancelEdit();
+        webView.setOnAnnotationCancelEdit((e, actionMode) -> {
+            this.handleAnnotationCancelEdit(actionMode);
         });
-        webView.setOnAnnotationCommitEdit((e, _view) -> {
-            this.handleAnnotationCommitEdit();
+        webView.setOnAnnotationCommitEdit((e, actionMode) -> {
+            this.handleAnnotationCommitEdit(actionMode);
         });
         webView.setOnGetTextSelectionMenu((e, data) -> isEditingAnnotation
                 ? R.menu.source_webview_commit_edit_annotation_menu
                 : R.menu.source_webview_create_annotation_menu);
-        webView.setOnDestroyTextSelectionMenu((e, actionMode) -> {
-            if (isEditingAnnotation) {
-                this.handleAnnotationCancelEdit();
-            }
-        });
 
         sourceWebViewViewModel.getAnnotations().observe(getActivity(), (annotations) -> {
             if (this.webView == null) {
@@ -221,10 +216,9 @@ public class SourceWebView extends Fragment {
 
         sourceWebViewViewModel.getDomainMetadata().observe(getActivity(), (domainMetadata) -> {
             if (domainMetadata != null) {
-                toolbar.setTitle(domainMetadata.getUrl().getHost());
+                toolbar.setTitle(domainMetadata.getCannonicalUrl().getHost());
                 Bitmap favicon = domainMetadata.getFavicon();
                 if (favicon != null) {
-
                     toolbar.setLogo(new BitmapDrawable(getResources(), domainMetadata.getScaledFaviconWithBackground(getContext())));
                 }
             }
@@ -266,10 +260,14 @@ public class SourceWebView extends Fragment {
                     } catch (JSONException ex) {
                         Log.d("SourceWebView", "Unable to parse event data: " + event.getData(), ex);
                     }
+                    break;
                 case WebEvent.TYPE_ANNOTATION_RENDERER_INITIALIZED:
                     if (!sourceWebViewViewModel.getHasFinishedInitializing().getValue()) {
                         sourceWebViewViewModel.setHasFinishedInitializing(true);
                     }
+                    break;
+                case WebEvent.TYPE_SELECTION_CHANGE:
+                    this.handleSelectionChange(event.getData().optBoolean("isCollapsed", true));
                     break;
             }
         });
@@ -373,76 +371,40 @@ public class SourceWebView extends Fragment {
         return null;
     }
 
-    private void handleAnnotationCreated() {
+    private void handleAnnotationCreated(ActionMode mode) {
         String script = sourceWebViewViewModel.getGetAnnotationScript(getActivity().getAssets());
+
         webView.evaluateJavascript(script, value -> {
-            String creatorUsername = authenticationViewModel.getUsername().getValue();
-            Annotation annotation = sourceWebViewViewModel.createAnnotation(value, creatorUsername);
-            sourceWebViewViewModel.setFocusedAnnotation(annotation);
-            appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
-            Callback<Exception, AmazonS3URI> onArchiveUploaded = (e, amazonS3URI) -> {
-                if (e != null) {
-                    Log.d("SourceWebView", "onArchiveUploaded error", e);
-                }
-                Log.i("SourceWebView", "onArchiveUploaded: " + amazonS3URI.toString());
-                TimeState timeState = new TimeState(
-                        new String[]{amazonS3URI.toString()},
-                        new String[]{DateUtil.toISO8601UTC(new Date())}
-                );
-                Optional<Annotation> update = sourceWebViewViewModel.getAnnotations().getValue()
-                        .stream()
-                        .filter((a) -> a.getId().equals(annotation.getId()))
-                        .findFirst()
-                        .map(annotationToUpdate -> {
-                            Target[] target = annotationToUpdate.getTarget();
-                            for (int i = 0; i < target.length; i++) {
-                                if (target[i].getType().equals(Target.Type.SPECIFIC_TARGET)) {
-                                    SpecificTarget specificTarget = (SpecificTarget) target[i];
-                                    target[i] = new SpecificTarget(
-                                            specificTarget.getId(),
-                                            specificTarget.getSource(),
-                                            specificTarget.getSelector(),
-                                            new State[]{timeState}
-                                    );
-                                    break;
-                                }
-                            }
-
-                            return new Annotation(
-                                    annotationToUpdate.getBody(),
-                                    target,
-                                    annotationToUpdate.getMotivation(),
-                                    annotationToUpdate.getCreated(),
-                                    annotationToUpdate.getModified(),
-                                    annotationToUpdate.getId()
-                            );
-                        });
-
-                if (!update.isPresent()) {
-                    Log.d("SourceWebView", "Expected annotation update, but found none.");
-                    return;
-                }
-
-                try {
-                    Log.i("SourceWebView", "Updated annotation: " + update.get().toJson());
-                } catch (JSONException jsonException) {
-                    Log.d("SourceWebView", "JSONException", jsonException);
-                }
-
-                sourceWebViewViewModel.updateAnnotation(update.get());
-            };
-
+            mode.finish();
             webView.saveWebArchive(
                     ArchiveRepository.getLocalDir(getContext()).getAbsolutePath() + "/" + UUID.randomUUID().toString() + ".mhtml",
                     false,
                     (filePath) -> {
-                        Log.i("SourceWebView", "filePath: " + filePath);
-                        ArchiveRepository.upload(
-                                getContext(),
-                                new File(filePath),
-                                authenticationViewModel.getIdentityId().getValue(),
-                                onArchiveUploaded
+                        String creatorUsername = authenticationViewModel.getUsername().getValue();
+                        Annotation annotation = sourceWebViewViewModel.createAnnotation(value, creatorUsername, false);
+
+                        TimeState timeState = new TimeState(
+                                new String[]{"file://" + filePath},
+                                new String[]{DateUtil.toISO8601UTC(new Date())}
                         );
+
+                        Target[] target = annotation.getTarget();
+                        for (int i = 0; i < target.length; i++) {
+                            if (target[i].getType().equals(Target.Type.SPECIFIC_TARGET)) {
+                                SpecificTarget specificTarget = (SpecificTarget) target[i];
+                                target[i] = new SpecificTarget(
+                                        specificTarget.getId(),
+                                        specificTarget.getSource(),
+                                        specificTarget.getSelector(),
+                                        new State[]{timeState}
+                                );
+                                break;
+                            }
+                        }
+
+                        sourceWebViewViewModel.createAnnotation(annotation);
+                        sourceWebViewViewModel.setFocusedAnnotation(annotation);
+                        appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
                     }
             );
         });
@@ -493,28 +455,37 @@ public class SourceWebView extends Fragment {
         }
     }
 
-    private void handleAnnotationCancelEdit() {
+    private void handleAnnotationCancelEdit(ActionMode mode) {
+        if (mode != null) {
+            mode.finish();
+        }
         this.handleRenderAnnotations(
                 sourceWebViewViewModel.getAnnotations().getValue(),
                 sourceWebViewViewModel.getFocusedAnnotation().getValue()
         );
         Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
         if (focusedAnnotation != null) {
-            webView.postWebEvent(new WebEvent(
-                    WebEvent.TYPE_BLUR_ANNOTATION,
-                    UUID.randomUUID().toString(),
-                    new JSONObject()
-            ));
+            try {
+                JSONObject blurAnnotationData = new JSONObject();
+                blurAnnotationData.put("annotationId", focusedAnnotation.getId());
+                webView.postWebEvent(new WebEvent(
+                        WebEvent.TYPE_BLUR_ANNOTATION,
+                        UUID.randomUUID().toString(),
+                        blurAnnotationData
+                ));
+            } catch (JSONException ex) {
+                Log.d("handleAnnotationCancelEdit", "Unable to post BLUR_ANNOTATION", ex);
+            }
             sourceWebViewViewModel.setFocusedAnnotation(null);
         }
         if (editAnnotationActionMode != null) {
             webView.finishEditAnnotationActionMode(editAnnotationActionMode);
             editAnnotationActionMode = null;
-            isEditingAnnotation = false;
         }
+        isEditingAnnotation = false;
     }
 
-    private void handleAnnotationCommitEdit() {
+    private void handleAnnotationCommitEdit(ActionMode mode) {
         String script = sourceWebViewViewModel.getGetAnnotationScript(getActivity().getAssets());
         Annotation annotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
         if (annotation == null) {
@@ -523,6 +494,7 @@ public class SourceWebView extends Fragment {
         }
 
         webView.evaluateJavascript(script, value -> {
+            mode.finish();
             try {
                 Annotation parsedAnnotation = Annotation.fromJson(new JSONObject(value));
 
@@ -591,33 +563,36 @@ public class SourceWebView extends Fragment {
                     Log.d("SourceWebView", "Expected username, but found none");
                     return;
                 }
-                PatchAnnotationInput input = PatchAnnotationInput.builder()
-                        .creatorUsername(username)
-                        .id(updatedAnnotation.getId())
-                        .operations(patchAnnotationOperationInputs).build();
-                AnnotationRepository.patchAnnotationMutation(
-                        getContext(),
-                        input,
-                        (e, data) -> {
-                            if (e != null) {
-                                Log.d("SourceWebView", "Unable to handleAnnotationCommit", e);
-                                return;
+
+                if (!sourceWebViewViewModel.getCreatedAnnotationIds().contains(updatedAnnotation.getId())) {
+                    PatchAnnotationInput input = PatchAnnotationInput.builder()
+                            .creatorUsername(username)
+                            .id(updatedAnnotation.getId())
+                            .operations(patchAnnotationOperationInputs).build();
+                    AnnotationRepository.patchAnnotationMutation(
+                            getContext(),
+                            input,
+                            (e, data) -> {
+                                if (e != null) {
+                                    Log.d("SourceWebView", "Unable to handleAnnotationCommit", e);
+                                    return;
+                                }
+                                try {
+                                    JSONObject setCacheAnnotationData = new JSONObject();
+                                    setCacheAnnotationData.put("annotation", updatedAnnotation.toJson());
+                                    getActivity().runOnUiThread(() -> appWebViewViewModel.dispatchWebEvent(
+                                            new WebEvent(
+                                                    WebEvent.TYPE_SET_CACHE_ANNOTATION,
+                                                    UUID.randomUUID().toString(),
+                                                    setCacheAnnotationData
+                                            )
+                                    ));
+                                } catch (JSONException ex) {
+                                    Log.d("SourceWebView", "Unable to serialize annotation: " + annotation, ex);
+                                }
                             }
-                            try {
-                                JSONObject setCacheAnnotationData = new JSONObject();
-                                setCacheAnnotationData.put("annotation", updatedAnnotation.toJson());
-                                getActivity().runOnUiThread(() -> appWebViewViewModel.dispatchWebEvent(
-                                        new WebEvent(
-                                                WebEvent.TYPE_SET_CACHE_ANNOTATION,
-                                                UUID.randomUUID().toString(),
-                                                setCacheAnnotationData
-                                        )
-                                ));
-                            } catch (JSONException ex) {
-                                Log.d("SourceWebView", "Unable to serialize annotation: " + annotation, ex);
-                            }
-                        }
-                );
+                    );
+                }
                 boolean updated = sourceWebViewViewModel.updateAnnotation(updatedAnnotation);
                 if (!updated) {
                     Log.d("SourceWebView", "Failed to update viewmodel for annotation");
@@ -629,21 +604,32 @@ public class SourceWebView extends Fragment {
                 if (editAnnotationActionMode != null) {
                     webView.finishEditAnnotationActionMode(editAnnotationActionMode);
                     editAnnotationActionMode = null;
-                    isEditingAnnotation = false;
                 }
+                isEditingAnnotation = false;
 
                 Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
                 if (focusedAnnotation != null) {
-                    webView.postWebEvent(new WebEvent(
-                            WebEvent.TYPE_BLUR_ANNOTATION,
-                            UUID.randomUUID().toString(),
-                            new JSONObject()
-                    ));
+                    try {
+                        JSONObject blurAnnotationData = new JSONObject();
+                        blurAnnotationData.put("annotationId", focusedAnnotation.getId());
+                        webView.postWebEvent(new WebEvent(
+                                WebEvent.TYPE_BLUR_ANNOTATION,
+                                UUID.randomUUID().toString(),
+                                blurAnnotationData
+                        ));
+                    } catch (JSONException ex) {
+                        Log.d("handleAnnotationCommitEdit", "Unable to post BLUR_ANNOTATION", ex);
+                    }
                     sourceWebViewViewModel.setFocusedAnnotation(null);
                 }
             }
         });
+    }
 
+    private void handleSelectionChange(boolean isCollapsed) {
+        if (isEditingAnnotation && isCollapsed) {
+            this.handleAnnotationCancelEdit(null);
+        }
     }
 
     public void handleViewTargetForAnnotation(Annotation annotation, String targetId) {
@@ -653,8 +639,6 @@ public class SourceWebView extends Fragment {
                 Log.d("SourceWebView", "handleViewTargetForAnnotation error", e1);
                 return;
             }
-
-            Log.i("SourceWebView", "handleViewTargetForAnnotation: " + targetUrl);
 
             String currentWebViewUrl = webView.getUrl();
             if (currentWebViewUrl == null || !currentWebViewUrl.equals(targetUrl)) {
@@ -671,10 +655,7 @@ public class SourceWebView extends Fragment {
             sourceWebViewViewModel.setFocusedAnnotation(annotation);
 
             if (currentWebViewUrl == null || !currentWebViewUrl.equals(targetUrl)) {
-                sourceWebViewViewModel.setDomainMetadata(
-                        initialDomainMetadata.getUrl(),
-                        initialDomainMetadata.getFavicon()
-                );
+                sourceWebViewViewModel.setDomainMetadata(initialDomainMetadata);
                 webView.loadUrl(targetUrl);
                 shouldClearHistoryOnPageFinished = true;
             }
@@ -707,24 +688,26 @@ public class SourceWebView extends Fragment {
                                 .flatMap((s) -> Arrays.stream(((TimeState) s).getCached()).filter(cachedUrl -> Uri.parse(cachedUrl).getScheme().equals("https")).findFirst());
 
                         if (cachedURL.isPresent()) {
-
-                                String finalExternalTargetUri = externalTargetUri;
-                                authenticationViewModel.awaitInitialization(
-                                        ((MainApplication) getActivity().getApplication()).getThreadPoolExecutor(),
-                                        (e, aVoid) -> getActivity().runOnUiThread(() -> {
-                                            try {
-                                                onTargetUrl.invoke(
-                                                        null,
-                                                        cachedURL.get(),
-                                                        finalExternalTargetUri != null
-                                                                ? new DomainMetadata(new URL(finalExternalTargetUri), null)
-                                                                : null
-                                                );
-                                            } catch (MalformedURLException _e) {
-                                                onTargetUrl.invoke(null, cachedURL.get(), null);
-                                            }
-                                        })
-                                );
+                            String finalExternalTargetUri = externalTargetUri;
+                            authenticationViewModel.awaitInitialization(
+                                    ((MainApplication) getActivity().getApplication()).getThreadPoolExecutor(),
+                                    (e, aVoid) -> getActivity().runOnUiThread(() -> {
+                                        try {
+                                            onTargetUrl.invoke(
+                                                    null,
+                                                    cachedURL.get(),
+                                                    finalExternalTargetUri != null
+                                                            ? new DomainMetadata(
+                                                            new URL(cachedURL.get()),
+                                                            new URL(finalExternalTargetUri),
+                                                            null)
+                                                            : null
+                                            );
+                                        } catch (MalformedURLException _e) {
+                                            onTargetUrl.invoke(null, cachedURL.get(), null);
+                                        }
+                                    })
+                            );
                             return;
                         }
 
@@ -841,32 +824,34 @@ public class SourceWebView extends Fragment {
             return;
         }
 
-        AnnotationRepository.deleteAnnotationMutation(
-                getContext(),
-                DeleteAnnotationInput.builder()
-                        .creatorUsername(authenticationViewModel.getUsername().getValue())
-                        .id(annotationId)
-                        .build(),
-                (e, _data) -> {
-                    if (e != null) {
-                        Log.d("SourceWebView", "Unable to handleAnnotationDelete", e);
-                        return;
+        if (!sourceWebViewViewModel.getCreatedAnnotationIds().contains(annotationId)) {
+            AnnotationRepository.deleteAnnotationMutation(
+                    getContext(),
+                    DeleteAnnotationInput.builder()
+                            .creatorUsername(authenticationViewModel.getUsername().getValue())
+                            .id(annotationId)
+                            .build(),
+                    (e, _data) -> {
+                        if (e != null) {
+                            Log.d("SourceWebView", "Unable to handleAnnotationDelete", e);
+                            return;
+                        }
+                        try {
+                            JSONObject deleteCacheAnnotationData = new JSONObject();
+                            deleteCacheAnnotationData.put("annotation", annotation.toJson());
+                            getActivity().runOnUiThread(() -> appWebViewViewModel.dispatchWebEvent(
+                                    new WebEvent(
+                                            WebEvent.TYPE_DELETE_CACHE_ANNOTATION,
+                                            UUID.randomUUID().toString(),
+                                            deleteCacheAnnotationData
+                                    )
+                            ));
+                        } catch (JSONException ex) {
+                            Log.d("SourceWebView", "Unable to serialize annotation: " + annotation, ex);
+                        }
                     }
-                    try {
-                        JSONObject deleteCacheAnnotationData = new JSONObject();
-                        deleteCacheAnnotationData.put("annotation", annotation.toJson());
-                        getActivity().runOnUiThread(() -> appWebViewViewModel.dispatchWebEvent(
-                                new WebEvent(
-                                        WebEvent.TYPE_DELETE_CACHE_ANNOTATION,
-                                        UUID.randomUUID().toString(),
-                                        deleteCacheAnnotationData
-                                )
-                        ));
-                    } catch (JSONException ex) {
-                        Log.d("SourceWebView", "Unable to serialize annotation: " + annotation, ex);
-                    }
-                }
-        );
+            );
+        }
     }
 
     public void setOnToolbarPrimaryActionCallback(Callback<Void, Annotation[]> onToolbarPrimaryActionCallback) {
@@ -877,29 +862,36 @@ public class SourceWebView extends Fragment {
         ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
         ArrayList<String> createdAnnotationIds = sourceWebViewViewModel.getCreatedAnnotationIds();
         Annotation[] createdAnnotations = new Annotation[0];
-        if (createdAnnotationIds != null && annotations != null && createdAnnotationIds.size() > 0) {
-            createdAnnotations = annotations.stream().filter((annotation) -> createdAnnotationIds.contains(annotation.getId())).toArray(Annotation[]::new);
 
-            ShareTargetHandlerRepository.createAnnotations(getContext(), createdAnnotations, (e, data) -> {
-                if (e != null) {
-                    Log.d("SourceWebView", "handleDone", e);
+        if (createdAnnotationIds != null && annotations != null && createdAnnotationIds.size() > 0) {
+            try {
+                createdAnnotations = annotations.stream().filter((annotation) -> createdAnnotationIds.contains(annotation.getId())).toArray(Annotation[]::new);
+                Intent serviceIntent = new Intent(getActivity(), AnnotationService.class);
+                serviceIntent.setAction(AnnotationService.ACTION_CREATE_ANNOTATIONS);
+                serviceIntent.putExtra(
+                        AnnotationService.EXTRA_ANNOTATIONS,
+                        JsonArrayUtil.stringifyObjectArray(createdAnnotations, Annotation::toJson).toString()
+                );
+
+                DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
+                if (onToolbarPrimaryActionCallback == null && domainMetadata != null) {
+                    serviceIntent.putExtra(
+                        AnnotationService.EXTRA_DOMAIN_METADATA,
+                        domainMetadata.toJson(getContext()).toString()
+                    );
                 }
-            });
+                getActivity().startService(serviceIntent);
+            } catch (JSONException ex) {
+                Log.d("handleToolbarPrimaryAction", "Unable to start AnnotationService", ex);
+            }
         }
+
         if (onToolbarPrimaryActionCallback != null) {
             onToolbarPrimaryActionCallback.invoke(
                     null,
                     createdAnnotations
             );
         } else {
-            DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
-            if (domainMetadata != null) {
-                NotificationRepository.sourceCreatedNotification(
-                        getContext(),
-                        authenticationViewModel.getUsername().getValue(),
-                        domainMetadata
-                );
-            }
             Activity activity = getActivity();
             if (activity != null) {
                 activity.setResult(Activity.RESULT_CANCELED);

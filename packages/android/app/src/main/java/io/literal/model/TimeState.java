@@ -1,6 +1,7 @@
 package io.literal.model;
 
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -41,8 +42,8 @@ public class TimeState extends State {
         JSONObject result = new JSONObject();
 
         result.put("type", this.getType().name());
-        result.put("cached", this.cached);
-        result.put("sourceDate", this.sourceDate);
+        result.put("cached", new JSONArray(this.cached));
+        result.put("sourceDate", new JSONArray(this.sourceDate));
 
         return result;
     }

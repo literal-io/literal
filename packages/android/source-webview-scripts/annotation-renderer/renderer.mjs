@@ -57,6 +57,7 @@ export class Renderer {
   render(annotations) {
     this.highlighter.removeHighlights();
     storageSet("annotationRanges", {});
+
     return Promise.all(
       annotations
         .reduce((rangeSelectors, annotation) => {
@@ -92,18 +93,22 @@ export class Renderer {
           range.setStart(startNode, startTextPositionSelector.start);
           range.setEnd(endNode, endTextPositionSelector.end);
 
-          try {
-            this.highlighter.highlightRange(range, {
-              "annotation-id": annotationId,
-            });
-            storageSet("annotationRanges", {
-              ...storageGet("annotationRanges"),
-              [annotationId]: range,
-            });
-          } catch (e) {
-            console.error("[Literal] Unable to highlight range.", range, e);
-          }
+          return { range, annotationId };
         })
-    );
+    ).then((ranges) => {
+      ranges.forEach(({ range, annotationId }) => {
+        try {
+          this.highlighter.highlightRange(range, {
+            "annotation-id": annotationId,
+          });
+          storageSet("annotationRanges", {
+            ...storageGet("annotationRanges"),
+            [annotationId]: range,
+          });
+        } catch (e) {
+          console.error("[Literal] Unable to highlight range.", range, e);
+        }
+      });
+    });
   }
 }

@@ -7,6 +7,7 @@ import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.ActionMode;
@@ -36,7 +37,12 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.literal.BuildConfig;
@@ -51,14 +57,13 @@ import io.literal.repository.StorageRepository;
 
 public class SourceWebView extends NestedScrollingChildWebView {
 
-    private Callback<Exception, View> onAnnotationCreated;
-    private Callback<Exception, View> onAnnotationCommitEdit;
-    private Callback<Exception, View> onAnnotationCancelEdit;
+    private Callback<Exception, ActionMode> onAnnotationCreated;
+    private Callback<Exception, ActionMode> onAnnotationCommitEdit;
+    private Callback<Exception, ActionMode> onAnnotationCancelEdit;
     private Callback2<View, Bitmap> onReceivedIcon;
 
     private ResultCallback<String, Void> onGetWebMessageChannelInitializerScript;
     private ResultCallback<Integer, Void> onGetTextSelectionMenu;
-    private Callback<Void, ActionMode> onDestroyTextSelectionMenu;
 
     private Callback2<SourceWebView, WebEvent> webEventCallback;
     private WebViewClient externalWebViewClient;
@@ -148,11 +153,10 @@ public class SourceWebView extends NestedScrollingChildWebView {
 
     @Override
     public ActionMode startActionMode(ActionMode.Callback callback) {
-        if (onGetTextSelectionMenu != null && onDestroyTextSelectionMenu != null) {
+        if (onGetTextSelectionMenu != null) {
             ActionMode.Callback2 cb = new CreateAnnotationActionModeCallback(
                     (ActionMode.Callback2) callback,
-                    onGetTextSelectionMenu.invoke(null, null),
-                    onDestroyTextSelectionMenu
+                    onGetTextSelectionMenu.invoke(null, null)
             );
             return super.startActionMode(cb);
         }
@@ -168,8 +172,7 @@ public class SourceWebView extends NestedScrollingChildWebView {
             // Default Chrome text selection action mode, which we intercept to provide different menu options.
             ActionMode.Callback2 cb = new CreateAnnotationActionModeCallback(
                     (ActionMode.Callback2) callback,
-                    onGetTextSelectionMenu.invoke(null, null),
-                    onDestroyTextSelectionMenu
+                    onGetTextSelectionMenu.invoke(null, null)
             );
             ActionMode actionMode = super.startActionMode(cb, type);
             return actionMode;
@@ -209,15 +212,15 @@ public class SourceWebView extends NestedScrollingChildWebView {
         actionMode.finish();
     }
 
-    public void setOnAnnotationCreated(Callback<Exception, View> onAnnotationCreated) {
+    public void setOnAnnotationCreated(Callback<Exception, ActionMode> onAnnotationCreated) {
         this.onAnnotationCreated = onAnnotationCreated;
     }
 
-    public void setOnAnnotationCommitEdit(Callback<Exception, View> onAnnotationCommitEdit) {
+    public void setOnAnnotationCommitEdit(Callback<Exception, ActionMode> onAnnotationCommitEdit) {
         this.onAnnotationCommitEdit = onAnnotationCommitEdit;
     }
 
-    public void setOnAnnotationCancelEdit(Callback<Exception, View> onAnnotationCancelEdit) {
+    public void setOnAnnotationCancelEdit(Callback<Exception, ActionMode> onAnnotationCancelEdit) {
         this.onAnnotationCancelEdit = onAnnotationCancelEdit;
     }
 
@@ -239,10 +242,6 @@ public class SourceWebView extends NestedScrollingChildWebView {
 
     public void setOnGetTextSelectionMenu(ResultCallback<Integer, Void> onGetTextSelectionMenu) {
         this.onGetTextSelectionMenu = onGetTextSelectionMenu;
-    }
-
-    public void setOnDestroyTextSelectionMenu(Callback<Void, ActionMode> onDestroyTextSelectionMenu) {
-        this.onDestroyTextSelectionMenu = onDestroyTextSelectionMenu;
     }
 
     public boolean handleBackPressed() {
@@ -309,12 +308,10 @@ public class SourceWebView extends NestedScrollingChildWebView {
     private class CreateAnnotationActionModeCallback extends ActionMode.Callback2 {
 
         ActionMode.Callback2 originalCallback;
-        Callback<Void, ActionMode> onDestroyActionMode;
         int menu;
 
-        public CreateAnnotationActionModeCallback(ActionMode.Callback2 originalCallback, int menu, Callback<Void, ActionMode> onDestroyActionMode) {
+        public CreateAnnotationActionModeCallback(ActionMode.Callback2 originalCallback, int menu) {
             this.originalCallback = originalCallback;
-            this.onDestroyActionMode = onDestroyActionMode;
             this.menu = menu;
         }
 
@@ -335,21 +332,23 @@ public class SourceWebView extends NestedScrollingChildWebView {
             switch (item.getItemId()) {
                 case R.id.menu_item_annotate:
                     if (onAnnotationCreated != null) {
-                        onAnnotationCreated.invoke(null, SourceWebView.this);
+                        onAnnotationCreated.invoke(null, mode);
                     }
+
+                    // FIXME: call this after getting the selection from the webview
                     mode.finish();
                     return true;
                 case R.id.menu_item_commit_edit:
                     if (onAnnotationCommitEdit != null) {
-                        onAnnotationCommitEdit.invoke(null, SourceWebView.this);
+                        onAnnotationCommitEdit.invoke(null, mode);
                     }
-                    //mode.finish();
+                    mode.finish();
                     return true;
                 case R.id.menu_item_cancel_edit:
                     if (onAnnotationCancelEdit != null) {
-                        onAnnotationCancelEdit.invoke(null, SourceWebView.this);
+                        onAnnotationCancelEdit.invoke(null, mode);
                     }
-                    //mode.finish();
+                    mode.finish();
                     return true;
                 default:
                     return false;
@@ -358,16 +357,14 @@ public class SourceWebView extends NestedScrollingChildWebView {
 
         @Override
         public void onDestroyActionMode(ActionMode mode) {
-            this.onDestroyActionMode.invoke(null, mode);
+            this.originalCallback.onDestroyActionMode(mode);
         }
 
         @Override
         public void onGetContentRect(ActionMode mode, View view, Rect outRect) {
             originalCallback.onGetContentRect(mode, view, outRect);
         }
-    }
-
-    ;
+    };
 
     private class SourceWebViewClient extends WebViewClient {
 
@@ -391,19 +388,24 @@ public class SourceWebView extends NestedScrollingChildWebView {
                 return null;
             }
 
-            S3Object object = AppSyncClientFactory.getS3Client(getContext()).getObject(storageBucket, path);
-            ObjectMetadata metadata = object.getObjectMetadata();
-            WebResourceResponse response = new WebResourceResponse(
-                    metadata.getContentType(),
-                    null,
-                    object.getObjectContent()
-            );
+            try {
+                S3Object object = AppSyncClientFactory.getS3Client(getContext()).getObject(storageBucket, request.getUrl().getPath().substring(1));
+                ObjectMetadata metadata = object.getObjectMetadata();
+                WebResourceResponse response = new WebResourceResponse(
+                        metadata.getContentType(),
+                        null,
+                        object.getObjectContent()
+                );
 
-            Map<String, String> responseHeaders = new HashMap<>();
-            responseHeaders.put("Cache-Control", metadata.getCacheControl());
-            responseHeaders.put("ETag", metadata.getETag());
-            response.setResponseHeaders(responseHeaders);
-            return response;
+                Map<String, String> responseHeaders = new HashMap<>();
+                responseHeaders.put("Cache-Control", metadata.getCacheControl());
+                responseHeaders.put("ETag", metadata.getETag());
+                response.setResponseHeaders(responseHeaders);
+                return response;
+            } catch (Exception ex) {
+                Log.d("shouldInterceptRequest", "Failed to getObject: " + request.getUrl().getPath().substring(1), ex);
+                return null;
+            }
         }
 
         @Override

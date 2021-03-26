@@ -38,12 +38,14 @@ public class AWSMobileClientFactory {
 
     public static void initializeClient(Context context, final Callback<UserStateDetails> callback) {
 
-        if (initializationLatch.getCount() == 0) {
+        if (initializationLatch.getCount() == 0 && callback != null) {
             callback.onResult(AWSMobileClient.getInstance().currentUserState());
             return;
         }
 
-        context.startService(new Intent(context, TransferService.class));
+        try {
+            context.startService(new Intent(context, TransferService.class));
+        } catch (Exception ex) { /** May be in background, noop **/ }
         AWSMobileClient.getInstance().initialize(context, getConfiguration(context), new Callback<UserStateDetails>() {
             @Override
             public void onResult(UserStateDetails result) {
@@ -68,6 +70,8 @@ public class AWSMobileClientFactory {
         initializeClient(context, null);
         initializationLatch.await();
     }
+
+    public static CountDownLatch getInitializationLatch() { return initializationLatch; }
 
     public static AmplifyEnvironment getAmplifyEnvironment() { return amplifyEnvironment; }
 

@@ -6,6 +6,8 @@ import {
   get as storageGet,
   set as storageSet,
   initialize as storageInitialize,
+  KEY_SERVICE_HIGHLIGHTER,
+  KEY_SERVICE_ANNOTATION_FOCUS_MANAGER,
 } from "../shared/storage.mjs";
 
 const HIGHLIGHT_CLASS_NAME = "literal-highlight";
@@ -32,6 +34,7 @@ const renderer = new Renderer({
   annotationFocusManager,
 });
 
+
 const onDocumentReady = (cb) => {
   if (document.readyState === "complete") {
     cb();
@@ -44,14 +47,18 @@ const onDocumentReady = (cb) => {
 
 export default () =>
   onDocumentReady(async () => {
+
     storageInitialize();
+    storageSet(KEY_SERVICE_ANNOTATION_FOCUS_MANAGER, annotationFocusManager);
+    storageSet(KEY_SERVICE_HIGHLIGHTER, highlighter);
+
     if (storageGet("hasInitialized")) {
       console.log(
         "[Literal] Expeted uninitialized DOM, but found it already initialized: noop-ing."
       );
       return;
     }
-    storageSet("hasInitialized", true)
+    storageSet("hasInitialized", true);
 
     await renderer.render(ANNOTATIONS);
     renderer.onInitialAnnotationsRendered();

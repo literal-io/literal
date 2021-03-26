@@ -3,7 +3,7 @@ import {
   xPathRangeSelectorPredicate,
 } from "../shared/xpath.mjs";
 import { get as storageGet } from "../shared/storage.mjs";
-import { isElementInViewport } from "./util.mjs"
+import { isElementInViewport } from "./util.mjs";
 
 export class AnnotationFocusManager {
   constructor({ messenger, highlightClassName, highlighter }) {
@@ -21,6 +21,15 @@ export class AnnotationFocusManager {
         threshold: [0, 1],
       }
     );
+
+    document.addEventListener("selectionchange", () => {
+      this.messenger.postMessage({
+        type: "SELECTION_CHANGE",
+        data: {
+          isCollapsed: window.getSelection().isCollapsed,
+        },
+      });
+    });
 
     this.messenger.on("FOCUS_ANNOTATION", (message) => {
       this.handleEvent({ type: "FOCUS_ANNOTATION", data: message.data });
@@ -53,7 +62,17 @@ export class AnnotationFocusManager {
         disableNotify: true,
       });
     } else if (type === "BLUR_ANNOTATION") {
-      this._handleBlurAnnotation({ disableNotify: true });
+      if (!data.annotationId) {
+        console.error(
+          "[Literal] Received BLUR_ANNOTATION event without annotationId."
+        );
+        return;
+      }
+
+      this._handleBlurAnnotation({
+        disableNotify: true,
+        annotationId: data.annotationId,
+      });
     } else if (type === "EDIT_ANNOTATION") {
       if (!data.annotationId) {
         console.error(
@@ -255,7 +274,10 @@ export class AnnotationFocusManager {
       return null;
     }
 
-    if (scrollIntoView) {
+    if (
+      scrollIntoView &&
+      !isElementInViewport(this.focusedAnnotationElems[0])
+    ) {
       this.focusedAnnotationElems[0].scrollIntoView({
         behavior: "auto",
         block: "start",
@@ -264,7 +286,10 @@ export class AnnotationFocusManager {
     }
 
     this.focusedAnnotationElemIsVisible = new Map(
-      this.focusedAnnotationElems.map((elem) => [elem, isElementInViewport(elem)])
+      this.focusedAnnotationElems.map((elem) => [
+        elem,
+        isElementInViewport(elem),
+      ])
     );
 
     this.focusedAnnotationElems.forEach((elem) => {
@@ -294,12 +319,18 @@ export class AnnotationFocusManager {
     }
   }
 
-  _handleBlurAnnotation({ disableNotify }) {
+  _handleBlurAnnotation({ disableNotify, annotationId }) {
     if (!this.focusedAnnotationElems) {
       console.warn(
         `[Literal] Call to handleBlurAnnotation without a focused annotation.`
       );
       return;
+    }
+
+    if (annotationId && this.focusedAnnotationId !== annotationId) {
+      console.warn(
+        `[Literal] Call to handleBlurAnnotation with non-focused annotationId.`
+      );
     }
 
     this.focusedAnnotationElemIsVisible = null;

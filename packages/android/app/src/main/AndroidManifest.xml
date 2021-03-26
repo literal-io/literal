@@ -18,8 +18,12 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
-        <activity
-            android:name="com.amazonaws.mobileconnectors.cognitoauth.activities.CustomTabsRedirectActivity">
+        <service
+            android:name=".service.AnnotationService"
+            android:enabled="true"
+            android:exported="false"></service>
+
+        <activity android:name="com.amazonaws.mobileconnectors.cognitoauth.activities.CustomTabsRedirectActivity">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -33,16 +37,18 @@
             android:name=".ui.activity.ShareTargetHandler"
             android:configChanges="orientation|screenSize"
             android:windowSoftInputMode="adjustResize">
-            <intent-filter
-                android:label="Annotate">
+            <intent-filter android:label="Annotate">
                 <action android:name="android.intent.action.SEND" />
+
                 <category android:name="android.intent.category.DEFAULT" />
+
                 <data android:mimeType="image/*" />
             </intent-filter>
-            <intent-filter
-                android:label="Annotate">
+            <intent-filter android:label="Annotate">
                 <action android:name="android.intent.action.SEND" />
+
                 <category android:name="android.intent.category.DEFAULT" />
+
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
@@ -51,6 +57,7 @@
             android:configChanges="orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

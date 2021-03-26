@@ -63,8 +63,8 @@ public class SourceWebViewViewModel extends ViewModel {
         this.hasFinishedInitializing.setValue(hasFinishedInitializing);
     }
 
-    public void setDomainMetadata(URL url, Bitmap favicon) {
-        this.domainMetadata.setValue(new DomainMetadata(url, favicon));
+    public void setDomainMetadata(DomainMetadata domainMetadata) {
+        this.domainMetadata.setValue(domainMetadata);
     }
 
     public void setHasInjectedAnnotationRendererScript(boolean hasInjectedAnnotationRendererScript) {
@@ -141,7 +141,7 @@ public class SourceWebViewViewModel extends ViewModel {
         focusedAnnotation.setValue(annotation);
     }
 
-    public Annotation createAnnotation(String json, String creatorUsername) {
+    public Annotation createAnnotation(String json, String creatorUsername, boolean shouldAddAnnotation) {
         try {
             ArrayList<Annotation> newAnnotations = (ArrayList<Annotation>) annotations.getValue().clone();
             Annotation annotation = Annotation.fromJson(new JSONObject(json));
@@ -207,14 +207,23 @@ public class SourceWebViewViewModel extends ViewModel {
 
             }
 
-            newAnnotations.add(annotation);
-            annotations.setValue(newAnnotations);
-            createdAnnotationIds.add(annotation.getId());
+            if (shouldAddAnnotation) {
+                newAnnotations.add(annotation);
+                annotations.setValue(newAnnotations);
+                createdAnnotationIds.add(annotation.getId());
+            }
             return annotation;
         } catch (Exception e) {
             Log.d("SourceWebViewViewModel", "createAnnotation", e);
             return null;
         }
+    }
+
+    public void createAnnotation(Annotation annotation) {
+        ArrayList<Annotation> newAnnotations = (ArrayList<Annotation>) annotations.getValue().clone();
+        newAnnotations.add(annotation);
+        annotations.setValue(newAnnotations);
+        createdAnnotationIds.add(annotation.getId());
     }
 
     public void addAnnotation(Annotation annotation) {

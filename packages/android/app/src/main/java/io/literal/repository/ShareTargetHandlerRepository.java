@@ -166,44 +166,6 @@ public class ShareTargetHandlerRepository {
         }
     }
 
-    public static void createAnnotations(Context context, Annotation[] annotations, Callback<ApolloException, List<CreateAnnotationMutation.Data>> callback) {
-        ManyCallback<ApolloException, CreateAnnotationMutation.Data> manyCallback = new ManyCallback<>(annotations.length, callback);
-        AWSAppSyncClient appSyncClient = AppSyncClientFactory.getInstance(context);
-
-        for (int i = 0; i < annotations.length; i++) {
-            try {
-                Log.i("ShareTargetHandlerRepository", "creating annotation: " + annotations[i].toJson());
-            } catch (JSONException e) {
-                Log.d("ShareTargetHandlerRepository", "serialization error", e);
-            }
-            Callback<ApolloException, CreateAnnotationMutation.Data> innerCallback = manyCallback.getCallback(i);
-            appSyncClient
-                    .mutate(
-                        CreateAnnotationMutation.builder()
-                                .input(annotations[i].toCreateAnnotationInput())
-                                .build()
-
-                    )
-                    .enqueue(new GraphQLCall.Callback<CreateAnnotationMutation.Data>() {
-                        @Override
-                        public void onResponse(@Nonnull Response<CreateAnnotationMutation.Data> response) {
-                            if (response.hasErrors()) {
-                                response.errors().forEach((error -> {
-                                    Log.d("ShareTargetHandlerRepository", "createAnnotations error: " + error.message());
-                                }));
-                                innerCallback.invoke(new ApolloException("Server Error"), null);
-                            } else {
-                                innerCallback.invoke(null, response.data());
-                            }
-                        }
-                        @Override
-                        public void onFailure(@Nonnull ApolloException e) {
-                            innerCallback.invoke(e, null);
-                        }
-                    });
-        }
-    }
-
     public static void createAnnotationFromImage(Uri imageUri, Context context, AuthenticationViewModel authenticationViewModel, CreateListener<CreateAnnotationFromExternalTargetMutation.Data> listener) {
         String screenshotId = UUID.randomUUID().toString();
         String creatorUsername = authenticationViewModel.getUsername().getValue();
