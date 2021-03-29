@@ -3,16 +3,32 @@ module Data = {
   let make = (~annotation, ~onAnnotationChange, ~currentUser, ~onCollapse) => {
     let handleAnnotationChange = newAnnotation => {
       let _ = onAnnotationChange(newAnnotation);
+
+      let allBodiesHaveId =
+        newAnnotation.Lib_WebView_Model_Annotation.body
+        ->Belt.Option.getWithDefault([||])
+        ->Belt.Array.every(
+            fun
+            | TextualBody({id}) when Js.String2.startsWith(id, "https") =>
+              true
+            | TextualBody(_) => false
+            | _ => true,
+          );
+
       let _ =
-        Webview.(
-          postMessage(
-            WebEvent.make(
-              ~type_="EDIT_ANNOTATION_TAGS_RESULT",
-              ~data=Lib_WebView_Model_Annotation.encode(newAnnotation),
-              (),
-            ),
-          )
-        );
+        if (allBodiesHaveId) {
+          let _ =
+            Webview.(
+              postMessage(
+                WebEvent.make(
+                  ~type_="EDIT_ANNOTATION_TAGS_RESULT",
+                  ~data=Lib_WebView_Model_Annotation.encode(newAnnotation),
+                  (),
+                ),
+              )
+            );
+          ();
+        };
       ();
     };
 

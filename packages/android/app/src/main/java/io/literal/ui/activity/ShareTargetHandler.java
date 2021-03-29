@@ -133,6 +133,7 @@ public class ShareTargetHandler extends AppCompatActivity {
         sourceWebViewFragment = SourceWebView.newInstance(
                 sourceWebViewUri,
                 null,
+                null,
                 R.drawable.done_white
         );
         sourceWebViewFragment.setOnToolbarPrimaryActionCallback((_e, result) -> this.handleCreateFromSourceDone(result));

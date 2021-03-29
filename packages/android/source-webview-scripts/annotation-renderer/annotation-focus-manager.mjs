@@ -86,7 +86,7 @@ export class AnnotationFocusManager {
     }
   }
 
-  onAnnotationsRendered({ annotations, focusedAnnotationId }) {
+  onAnnotationsRendered({ annotations, focusedAnnotationId, initialRender }) {
     this.annotations = annotations;
 
     // focus on annotation click
@@ -116,6 +116,7 @@ export class AnnotationFocusManager {
         annotationId: focusedAnnotationId,
         disableNotify: true,
         scrollIntoView: true,
+        forceScrollIfAlreadyInView: initialRender,
       });
     }
 
@@ -216,13 +217,18 @@ export class AnnotationFocusManager {
     });
   }
 
-  _handleFocusAnnotation({ annotationId, disableNotify, scrollIntoView }) {
+  _handleFocusAnnotation({
+    annotationId,
+    disableNotify,
+    scrollIntoView,
+    forceScrollIfAlreadyInView,
+  }) {
     if (this.focusedAnnotationId === annotationId) {
       const isVisible = Array.from(
         this.focusedAnnotationElemIsVisible.values()
       ).some((isVisible) => isVisible);
 
-      if (scrollIntoView && !isVisible) {
+      if (scrollIntoView && (!isVisible || forceScrollIfAlreadyInView)) {
         this.focusedAnnotationElems[0].scrollIntoView({
           behavior: "auto",
           block: "start",
@@ -276,7 +282,8 @@ export class AnnotationFocusManager {
 
     if (
       scrollIntoView &&
-      !isElementInViewport(this.focusedAnnotationElems[0])
+      (!isElementInViewport(this.focusedAnnotationElems[0]) ||
+        forceScrollIfAlreadyInView)
     ) {
       this.focusedAnnotationElems[0].scrollIntoView({
         behavior: "auto",

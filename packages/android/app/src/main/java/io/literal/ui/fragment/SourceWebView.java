@@ -27,22 +27,29 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.amazonaws.services.s3.AmazonS3URI;
+import com.google.android.gms.auth.api.signin.internal.Storage;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
-import java.io.File;
+import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import io.literal.R;
 import io.literal.lib.Callback;
@@ -52,14 +59,17 @@ import io.literal.lib.DomainMetadata;
 import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.model.Annotation;
+import io.literal.model.Body;
 import io.literal.model.ExternalTarget;
 import io.literal.model.SpecificTarget;
 import io.literal.model.State;
 import io.literal.model.Target;
+import io.literal.model.TextualBody;
 import io.literal.model.TextualTarget;
 import io.literal.model.TimeState;
 import io.literal.repository.AnnotationRepository;
 import io.literal.repository.ArchiveRepository;
+import io.literal.repository.StorageRepository;
 import io.literal.service.AnnotationService;
 import io.literal.ui.MainApplication;
 import io.literal.viewmodel.AppWebViewViewModel;
@@ -72,17 +82,23 @@ import type.PatchAnnotationOperationInput;
 public class SourceWebView extends Fragment {
 
     private static final String PARAM_INITIAL_URL = "PARAM_INITIAL_URL";
-    private static final String PARAM_APP_WEB_VIEW_MODEL_KEY = "PARAM_APP_WEB_VIEW_MODEL_KEY";
+    private static final String PARAM_BOTTOM_SHEET_APP_WEB_VIEW_VIEW_MODEL_KEY = "PARAM_BOTTOM_SHEET_APP_WEB_VIEW_VIEW_MODEL_KEY";
     private static final String PARAM_TOOLBAR_PRIMARY_ACTION_ICON_RESOURCE_ID = "PARAM_PRIMARY_TOOLBAR_ACTION_ICON_RESOURCE_ID";
+    private static final String PARAM_PRIMARY_APP_WEB_VIEW_VIEW_MODEL_KEY = "PARAM_PRIMARY_APP_WEB_VIEW_VIEW_MODEL_KEY";
 
     private String paramInitialUrl;
-    private String paramAppWebViewModelKey;
+    private String paramPrimaryAppWebViewViewModelKey;
+    private String paramBottomSheetAppWebViewViewModelKey;
     private int paramToolbarPrimaryActionResourceId;
 
     private io.literal.ui.view.SourceWebView webView;
     private Toolbar toolbar;
     private AppBarLayout appBarLayout;
+
+    /** Triggered when the primary action in the toolbar tapped. **/
     private Callback<Void, Annotation[]> onToolbarPrimaryActionCallback;
+    /** Triggered when ShareTargetHandler should be opened to URL **/
+    private Callback<Void, URL> onCreateAnnotationFromSource;
 
     private ActionMode editAnnotationActionMode;
     /**
@@ -94,13 +110,15 @@ public class SourceWebView extends Fragment {
 
     private SourceWebViewViewModel sourceWebViewViewModel;
     private AuthenticationViewModel authenticationViewModel;
-    private AppWebViewViewModel appWebViewViewModel;
+    private AppWebViewViewModel bottomSheetAppWebViewViewModel;
+    private AppWebViewViewModel primaryAppWebViewViewModel;
 
-    public static SourceWebView newInstance(String initialUrl, String appWebViewModelKey, int toolbarPrimaryActionResourceId) {
+    public static SourceWebView newInstance(@NotNull String initialUrl, String bottomSheetAppWebViewViewModelKey, String primaryAppWebViewViewModelKey, @NotNull int toolbarPrimaryActionResourceId) {
         SourceWebView fragment = new SourceWebView();
         Bundle args = new Bundle();
         args.putString(PARAM_INITIAL_URL, initialUrl);
-        args.putString(PARAM_APP_WEB_VIEW_MODEL_KEY, appWebViewModelKey);
+        args.putString(PARAM_BOTTOM_SHEET_APP_WEB_VIEW_VIEW_MODEL_KEY, bottomSheetAppWebViewViewModelKey);
+        args.putString(PARAM_PRIMARY_APP_WEB_VIEW_VIEW_MODEL_KEY, primaryAppWebViewViewModelKey);
         args.putInt(PARAM_TOOLBAR_PRIMARY_ACTION_ICON_RESOURCE_ID, toolbarPrimaryActionResourceId);
         fragment.setArguments(args);
         return fragment;
@@ -111,7 +129,8 @@ public class SourceWebView extends Fragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             paramInitialUrl = getArguments().getString(PARAM_INITIAL_URL);
-            paramAppWebViewModelKey = getArguments().getString(PARAM_APP_WEB_VIEW_MODEL_KEY);
+            paramBottomSheetAppWebViewViewModelKey = getArguments().getString(PARAM_BOTTOM_SHEET_APP_WEB_VIEW_VIEW_MODEL_KEY);
+            paramPrimaryAppWebViewViewModelKey = getArguments().getString(PARAM_PRIMARY_APP_WEB_VIEW_VIEW_MODEL_KEY);
             paramToolbarPrimaryActionResourceId = getArguments().getInt(PARAM_TOOLBAR_PRIMARY_ACTION_ICON_RESOURCE_ID);
         }
     }
@@ -130,10 +149,13 @@ public class SourceWebView extends Fragment {
 
         sourceWebViewViewModel = new ViewModelProvider(requireActivity()).get(SourceWebViewViewModel.class);
         authenticationViewModel = new ViewModelProvider(requireActivity()).get(AuthenticationViewModel.class);
-        appWebViewViewModel =
-                paramAppWebViewModelKey != null
-                        ? new ViewModelProvider(requireActivity()).get(paramAppWebViewModelKey, AppWebViewViewModel.class)
+        bottomSheetAppWebViewViewModel =
+                paramBottomSheetAppWebViewViewModelKey != null
+                        ? new ViewModelProvider(requireActivity()).get(paramBottomSheetAppWebViewViewModelKey, AppWebViewViewModel.class)
                         : new ViewModelProvider(requireActivity()).get(AppWebViewViewModel.class);
+        if (paramPrimaryAppWebViewViewModelKey != null) {
+            primaryAppWebViewViewModel = new ViewModelProvider(requireActivity()).get(paramPrimaryAppWebViewViewModelKey, AppWebViewViewModel.class);
+        }
 
         toolbar = view.findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
@@ -272,7 +294,7 @@ public class SourceWebView extends Fragment {
             }
         });
 
-        appWebViewViewModel.getReceivedWebEvents().observe(requireActivity(), (webEvents) -> {
+        bottomSheetAppWebViewViewModel.getReceivedWebEvents().observe(requireActivity(), (webEvents) -> {
             if (webEvents == null) {
                 return;
             }
@@ -290,10 +312,7 @@ public class SourceWebView extends Fragment {
                     case WebEvent.TYPE_EDIT_ANNOTATION_TAGS_RESULT:
                         try {
                             Annotation newAnnotation = Annotation.fromJson(webEvent.getData());
-                            boolean updated = sourceWebViewViewModel.updateAnnotation(newAnnotation);
-                            if (!updated) {
-                                Log.d("SourceWebView", "Unable to update annotation: " + webEvent.getData());
-                            }
+                            this.handleAnnotationTextualBodyChange(newAnnotation);
                         } catch (JSONException e) {
                             Log.d("SourceWebView", "Unable to handle EDIT_ANNOTATION_TAGS_RESULT", e);
                         }
@@ -301,10 +320,10 @@ public class SourceWebView extends Fragment {
                 }
             });
 
-            appWebViewViewModel.clearReceivedWebEvents();
+            bottomSheetAppWebViewViewModel.clearReceivedWebEvents();
         });
 
-        appWebViewViewModel.getBottomSheetState().observe(requireActivity(), (bottomSheetState) -> {
+        bottomSheetAppWebViewViewModel.getBottomSheetState().observe(requireActivity(), (bottomSheetState) -> {
             switch (bottomSheetState) {
                 case BottomSheetBehavior.STATE_COLLAPSED:
                     appBarLayout.setExpanded(true);
@@ -342,12 +361,12 @@ public class SourceWebView extends Fragment {
         }
         switch (state) {
             case "COLLAPSED_ANNOTATION_TAGS":
-                appWebViewViewModel.setBottomSheetState(
+                bottomSheetAppWebViewViewModel.setBottomSheetState(
                         sourceWebViewViewModel.getFocusedAnnotation().getValue() != null ? BottomSheetBehavior.STATE_COLLAPSED : BottomSheetBehavior.STATE_HIDDEN
                 );
                 break;
             case "EDIT_ANNOTATION_TAGS":
-                appWebViewViewModel.setBottomSheetState(
+                bottomSheetAppWebViewViewModel.setBottomSheetState(
                         sourceWebViewViewModel.getFocusedAnnotation().getValue() != null ? BottomSheetBehavior.STATE_EXPANDED : BottomSheetBehavior.STATE_HIDDEN
                 );
                 break;
@@ -372,8 +391,23 @@ public class SourceWebView extends Fragment {
     }
 
     private void handleAnnotationCreated(ActionMode mode) {
-        String script = sourceWebViewViewModel.getGetAnnotationScript(getActivity().getAssets());
+        try {
+            /**
+             * If we're trying to create a new annotation from an archived source, open the cannonical
+             * source instead and prompt the annotation to be created there. There's definitely a better
+             * UX for this.
+             */
+            if (StorageRepository.isStorageUrl(getContext(), new URL(webView.getUrl()))
+                    && this.sourceWebViewViewModel.getDomainMetadata().getValue().getCannonicalUrl() != null
+                    && this.onCreateAnnotationFromSource != null) {
+                this.onCreateAnnotationFromSource.invoke(null, this.sourceWebViewViewModel.getDomainMetadata().getValue().getCannonicalUrl());
+                return;
+            }
+        } catch (MalformedURLException e) {
+            Log.d("handleAnnotationCreated", "Unable to parse webView URL", e);
+        }
 
+        String script = sourceWebViewViewModel.getGetAnnotationScript(getActivity().getAssets());
         webView.evaluateJavascript(script, value -> {
             mode.finish();
             webView.saveWebArchive(
@@ -404,7 +438,7 @@ public class SourceWebView extends Fragment {
 
                         sourceWebViewViewModel.createAnnotation(annotation);
                         sourceWebViewViewModel.setFocusedAnnotation(annotation);
-                        appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
+                        bottomSheetAppWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
                     }
             );
         });
@@ -428,7 +462,7 @@ public class SourceWebView extends Fragment {
             sourceWebViewViewModel.setFocusedAnnotation(unwrappedAnnotation);
         }
 
-        appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+        bottomSheetAppWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
 
         if (editAnnotationActionMode != null) {
             webView.finishEditAnnotationActionMode(editAnnotationActionMode);
@@ -577,19 +611,6 @@ public class SourceWebView extends Fragment {
                                     Log.d("SourceWebView", "Unable to handleAnnotationCommit", e);
                                     return;
                                 }
-                                try {
-                                    JSONObject setCacheAnnotationData = new JSONObject();
-                                    setCacheAnnotationData.put("annotation", updatedAnnotation.toJson());
-                                    getActivity().runOnUiThread(() -> appWebViewViewModel.dispatchWebEvent(
-                                            new WebEvent(
-                                                    WebEvent.TYPE_SET_CACHE_ANNOTATION,
-                                                    UUID.randomUUID().toString(),
-                                                    setCacheAnnotationData
-                                            )
-                                    ));
-                                } catch (JSONException ex) {
-                                    Log.d("SourceWebView", "Unable to serialize annotation: " + annotation, ex);
-                                }
                             }
                     );
                 }
@@ -598,6 +619,21 @@ public class SourceWebView extends Fragment {
                     Log.d("SourceWebView", "Failed to update viewmodel for annotation");
                 }
 
+                if (primaryAppWebViewViewModel != null) {
+                    try {
+                        JSONObject setCacheAnnotationData = new JSONObject();
+                        setCacheAnnotationData.put("annotation", updatedAnnotation.toJson());
+                        getActivity().runOnUiThread(() -> primaryAppWebViewViewModel.dispatchWebEvent(
+                                new WebEvent(
+                                        WebEvent.TYPE_SET_CACHE_ANNOTATION,
+                                        UUID.randomUUID().toString(),
+                                        setCacheAnnotationData
+                                )
+                        ));
+                    } catch (JSONException ex) {
+                        Log.d("SourceWebView", "Unable to serialize annotation: " + annotation, ex);
+                    }
+                }
             } catch (JSONException e) {
                 Log.d("SourceWebView", "Unable to parse annotation: " + value, e);
             } finally {
@@ -626,6 +662,79 @@ public class SourceWebView extends Fragment {
         });
     }
 
+    private void handleAnnotationTextualBodyChange(Annotation newAnnotation) {
+        if (!sourceWebViewViewModel.getCreatedAnnotationIds().contains(newAnnotation.getId())) {
+            Annotation annotation = sourceWebViewViewModel.getAnnotations().getValue().stream()
+                    .filter(a -> a.getId().equals(newAnnotation.getId()))
+                    .findFirst()
+                    .get();
+            List<TextualBody> body = Arrays.stream(Optional.ofNullable(annotation.getBody()).orElse(new Body[0]))
+                .filter(b -> b.getType().equals(Body.Type.TEXTUAL_BODY))
+                .map(b -> ((TextualBody) b))
+                .collect(Collectors.toList());
+            List<TextualBody> newBody = Arrays.stream(Optional.ofNullable(newAnnotation.getBody()).orElse(new Body[0]))
+                .filter(b -> b.getType().equals(Body.Type.TEXTUAL_BODY))
+                .map(b -> ((TextualBody) b))
+                .collect(Collectors.toList());
+
+            HashSet<String> bodyIds = body.stream().map(TextualBody::getId).collect(Collectors.toCollection((Supplier<HashSet<String>>) HashSet::new));
+            HashSet<String> newBodyIds = newBody.stream().map(TextualBody::getId).collect(Collectors.toCollection((Supplier<HashSet<String>>) HashSet::new));
+
+            HashSet<String> removedBodyIds = (HashSet<String>) bodyIds.clone();
+            removedBodyIds.removeAll(newBodyIds);
+            HashSet<String> addedBodyIds = (HashSet<String>) newBodyIds.clone();
+            addedBodyIds.removeAll(bodyIds);
+
+            ArrayList<PatchAnnotationOperationInput> operations = new ArrayList<>();
+            operations.addAll(
+                removedBodyIds.stream()
+                        .map(id -> body.stream().filter(b -> b.getId().equals(id)).findFirst().get().toPatchAnnotationOperationInputRemove())
+                        .collect(Collectors.toList())
+            );
+            operations.addAll(
+                addedBodyIds.stream()
+                        .map(id -> newBody.stream().filter(b -> b.getId().equals(id)).findFirst().get().toPatchAnnotationOperationInputAdd())
+                        .collect(Collectors.toList())
+            );
+
+            AnnotationRepository.patchAnnotationMutation(
+                    getContext(),
+                    PatchAnnotationInput.builder()
+                            .creatorUsername(authenticationViewModel.getUsername().getValue())
+                            .id(newAnnotation.getId())
+                            .operations(operations)
+                            .build(),
+                    (e, data) -> {
+                        if (e != null) {
+                            Log.d("handleAnnotationTextualBodyChange", "Unable to patchAnnotationMutation", e);
+                            return;
+                        }
+                    }
+            );
+
+            if (primaryAppWebViewViewModel != null) {
+                try {
+                    JSONObject setCacheAnnotationData = new JSONObject();
+                    setCacheAnnotationData.put("annotation", newAnnotation.toJson());
+                    getActivity().runOnUiThread(() -> primaryAppWebViewViewModel.dispatchWebEvent(
+                            new WebEvent(
+                                    WebEvent.TYPE_SET_CACHE_ANNOTATION,
+                                    UUID.randomUUID().toString(),
+                                    setCacheAnnotationData
+                            )
+                    ));
+                } catch (JSONException ex) {
+                    Log.d("SourceWebView", "Unable to serialize annotation: " + newAnnotation, ex);
+                }
+            }
+        }
+
+        boolean updated = sourceWebViewViewModel.updateAnnotation(newAnnotation);
+        if (!updated) {
+            Log.d("SourceWebView", "Failed to update viewmodel for annotation");
+        }
+    }
+
     private void handleSelectionChange(boolean isCollapsed) {
         if (isEditingAnnotation && isCollapsed) {
             this.handleAnnotationCancelEdit(null);
@@ -643,6 +752,9 @@ public class SourceWebView extends Fragment {
             String currentWebViewUrl = webView.getUrl();
             if (currentWebViewUrl == null || !currentWebViewUrl.equals(targetUrl)) {
                 sourceWebViewViewModel.setHasFinishedInitializing(false);
+                sourceWebViewViewModel.setHasInjectedAnnotationRendererScript(false);
+                sourceWebViewViewModel.setAnnotations(new ArrayList<>());
+                sourceWebViewViewModel.setCreatedAnnotationIds(new ArrayList<>());
             }
 
             ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
@@ -774,7 +886,7 @@ public class SourceWebView extends Fragment {
     }
 
     public void handleAnnotationBlur() {
-        appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
+        bottomSheetAppWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
         sourceWebViewViewModel.setFocusedAnnotation(null);
         if (editAnnotationActionMode != null) {
             webView.finishEditAnnotationActionMode(editAnnotationActionMode);
@@ -839,7 +951,7 @@ public class SourceWebView extends Fragment {
                         try {
                             JSONObject deleteCacheAnnotationData = new JSONObject();
                             deleteCacheAnnotationData.put("annotation", annotation.toJson());
-                            getActivity().runOnUiThread(() -> appWebViewViewModel.dispatchWebEvent(
+                            getActivity().runOnUiThread(() -> bottomSheetAppWebViewViewModel.dispatchWebEvent(
                                     new WebEvent(
                                             WebEvent.TYPE_DELETE_CACHE_ANNOTATION,
                                             UUID.randomUUID().toString(),
@@ -876,8 +988,8 @@ public class SourceWebView extends Fragment {
                 DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
                 if (onToolbarPrimaryActionCallback == null && domainMetadata != null) {
                     serviceIntent.putExtra(
-                        AnnotationService.EXTRA_DOMAIN_METADATA,
-                        domainMetadata.toJson(getContext()).toString()
+                            AnnotationService.EXTRA_DOMAIN_METADATA,
+                            domainMetadata.toJson(getContext()).toString()
                     );
                 }
                 getActivity().startService(serviceIntent);
@@ -936,5 +1048,9 @@ public class SourceWebView extends Fragment {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    public void setOnCreateAnnotationFromSource(Callback<Void, URL> onCreateAnnotationFromSource) {
+        this.onCreateAnnotationFromSource = onCreateAnnotationFromSource;
     }
 }

@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private SourceWebViewViewModel sourceWebViewViewModelBottomSheet;
     private AuthenticationViewModel authenticationViewModel;
     private AppWebView appWebViewPrimaryFragment;
-    private final ActivityResultLauncher<Intent> createAnnotationFromSourceLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> MainActivity.this.handleCreateAnnotationFromSourceResult(result));
+    private final ActivityResultLauncher<Intent> createAnnotationFromSourceLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), MainActivity.this::handleCreateAnnotationFromSourceResult);
     private SourceWebView sourceWebViewBottomSheetFragment;
     private AppWebView appWebViewBottomSheetFragment;
     private BottomSheetBehavior<FrameLayout> sourceWebViewBottomSheetBehavior;
@@ -127,12 +127,13 @@ public class MainActivity extends AppCompatActivity {
                                 sourceWebViewBottomSheetFragment.handleViewTargetForAnnotation(annotation, targetId);
                                 if (displayBottomSheet) {
                                     sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                                    appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
                                 }
                             } catch (JSONException e) {
                                 Log.d("MainActivity", "Unable to handle event: " + webEvent.toString(), e);
                             }
                         } else if (webEvent.getType().equals(WebEvent.TYPE_CREATE_ANNOTATION_FROM_SOURCE)) {
-                            this.handleCreateAnnotationFromSource();
+                            this.handleCreateAnnotationFromSource(null);
                         }
                     });
                     appWebViewModelPrimary.clearReceivedWebEvents();
@@ -167,6 +168,7 @@ public class MainActivity extends AppCompatActivity {
             sourceWebViewBottomSheetFragment = SourceWebView.newInstance(
                     null,
                     APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME,
+                    APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME,
                     R.drawable.arrow_drop_down_white
             );
             appWebViewBottomSheetFragment = AppWebView.newInstance(
@@ -188,6 +190,9 @@ public class MainActivity extends AppCompatActivity {
         sourceWebViewBottomSheetFragment.setOnToolbarPrimaryActionCallback((_e, createdAnnotations) -> {
             this.handleSourceWebViewBottomSheetHidden(createdAnnotations);
         });
+        sourceWebViewBottomSheetFragment.setOnCreateAnnotationFromSource((_e, sourceUrl) -> {
+            this.handleCreateAnnotationFromSource(sourceUrl.toString());
+        });
 
         getSupportFragmentManager()
                 .beginTransaction()
@@ -199,11 +204,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void handleCreateAnnotationFromSource() {
+    private void handleCreateAnnotationFromSource(String sourceUrl) {
         Intent intent = new Intent(this, ShareTargetHandler.class);
         intent.setAction(Intent.ACTION_SEND);
         intent.setType("text/plain");
-        intent.putExtra(Intent.EXTRA_TEXT, "https://google.com");
+        intent.putExtra(Intent.EXTRA_TEXT, sourceUrl != null ? sourceUrl : "https://google.com");
 
         createAnnotationFromSourceLauncher.launch(intent);
     }
@@ -238,6 +243,8 @@ public class MainActivity extends AppCompatActivity {
     private void handleCreateAnnotationFromSourceResult(ActivityResult result) {
         Intent data = result.getData();
         if (result.getResultCode() == ShareTargetHandler.RESULT_OK && data != null) {
+            sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+            appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
             String json = data.getStringExtra(ShareTargetHandler.RESULT_EXTRA_ANNOTATIONS);
             try {
                 JSONObject addCacheAnnotationsData = new JSONObject();

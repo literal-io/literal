@@ -1,10 +1,8 @@
 exception InvalidState(string);
-
 exception ApolloEmptyData;
-
 exception PromiseError(Js.Promise.error);
-
 exception AuthenticationRequired;
+exception DeccoDecodeError(Decco.decodeError);
 
 let report = exn => {
   let (error, errorContext) =
@@ -42,6 +40,22 @@ let report = exn => {
     | AuthenticationRequired => (
         "AuthenticationRequired"->Externals_Error.make->Js.Option.some,
         None,
+      )
+    | DeccoDecodeError({path, message, value}) => (
+        "DeccoDecodeError"->Externals_Error.make->Js.Option.some,
+        Some(
+          Sentry.makeExceptionContext(
+            ~extra=
+              Js.Json.object_(
+                Js.Dict.fromList([
+                  ("path", path->Js.Json.string),
+                  ("message", message->Js.Json.string),
+                  ("value", value),
+                ]),
+              ),
+            (),
+          ),
+        ),
       )
     };
 

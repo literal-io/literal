@@ -1,7 +1,6 @@
 package io.literal.viewmodel;
 
 import android.content.res.AssetManager;
-import android.graphics.Bitmap;
 import android.util.Log;
 
 import androidx.lifecycle.MutableLiveData;
@@ -12,8 +11,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -41,19 +38,16 @@ public class SourceWebViewViewModel extends ViewModel {
     private static final String GET_ANNOTATION_SCRIPT_NAME = "SourceWebViewGetAnnotation.js";
     private static final String ANNOTATION_RENDERER_SCRIPT_NAME = "SourceWebViewAnnotationRenderer.js";
     private static final String GET_ANNOTATION_BOUNDING_BOX_SCRIPT_NAME = "SourceWebViewGetAnnotationBoundingBox.js";
-
-    private String getAnnotationScript = null;
-    private String annotationRendererScript = null;
-    private String getAnnotationBoundingBoxScript = null;
-
     private final MutableLiveData<Boolean> hasFinishedInitializing = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> hasInjectedAnnotationRendererScript = new MutableLiveData<>(false);
     private final MutableLiveData<ArrayList<Annotation>> annotations = new MutableLiveData<>(new ArrayList<>());
-    private final ArrayList<String> createdAnnotationIds = new ArrayList<>();
-
+    private ArrayList<String> createdAnnotationIds = new ArrayList<>();
     private final MutableLiveData<DomainMetadata> domainMetadata = new MutableLiveData<>(null);
     private final MutableLiveData<Annotation> focusedAnnotation = new MutableLiveData<>(null);
     private final MutableLiveData<ArrayDeque<WebEvent>> webEvents = new MutableLiveData<>(null);
+    private String getAnnotationScript = null;
+    private String annotationRendererScript = null;
+    private String getAnnotationBoundingBoxScript = null;
 
     public MutableLiveData<Boolean> getHasFinishedInitializing() {
         return hasFinishedInitializing;
@@ -63,16 +57,12 @@ public class SourceWebViewViewModel extends ViewModel {
         this.hasFinishedInitializing.setValue(hasFinishedInitializing);
     }
 
-    public void setDomainMetadata(DomainMetadata domainMetadata) {
-        this.domainMetadata.setValue(domainMetadata);
+    public MutableLiveData<Boolean> getHasInjectedAnnotationRendererScript() {
+        return hasInjectedAnnotationRendererScript;
     }
 
     public void setHasInjectedAnnotationRendererScript(boolean hasInjectedAnnotationRendererScript) {
         this.hasInjectedAnnotationRendererScript.setValue(hasInjectedAnnotationRendererScript);
-    }
-
-    public MutableLiveData<Boolean> getHasInjectedAnnotationRendererScript() {
-        return hasInjectedAnnotationRendererScript;
     }
 
     public String getGetAnnotationScript(AssetManager assetManager) {
@@ -129,16 +119,32 @@ public class SourceWebViewViewModel extends ViewModel {
     public MutableLiveData<ArrayList<Annotation>> getAnnotations() {
         return annotations;
     }
+    public void setAnnotations(ArrayList<Annotation> annotations) {
+        this.annotations.setValue(annotations);
+    }
+
     public MutableLiveData<DomainMetadata> getDomainMetadata() {
         return domainMetadata;
     }
+
+    public void setDomainMetadata(DomainMetadata domainMetadata) {
+        this.domainMetadata.setValue(domainMetadata);
+    }
+
     public MutableLiveData<Annotation> getFocusedAnnotation() {
         return focusedAnnotation;
     }
-    public ArrayList<String> getCreatedAnnotationIds() { return createdAnnotationIds; }
 
     public void setFocusedAnnotation(Annotation annotation) {
         focusedAnnotation.setValue(annotation);
+    }
+
+    public ArrayList<String> getCreatedAnnotationIds() {
+        return createdAnnotationIds;
+    }
+
+    public void setCreatedAnnotationIds(ArrayList<String> createdAnnotationIds) {
+        this.createdAnnotationIds = createdAnnotationIds;
     }
 
     public Annotation createAnnotation(String json, String creatorUsername, boolean shouldAddAnnotation) {

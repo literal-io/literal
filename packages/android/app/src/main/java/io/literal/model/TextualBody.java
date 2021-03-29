@@ -2,6 +2,8 @@ package io.literal.model;
 
 import android.util.Log;
 
+import androidx.annotation.Nullable;
+
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -13,7 +15,11 @@ import java.util.stream.Collectors;
 
 import io.literal.lib.Crypto;
 import io.literal.lib.JsonArrayUtil;
+import type.AnnotationAddOperationInput;
 import type.AnnotationBodyInput;
+import type.AnnotationRemoveOperationInput;
+import type.AnnotationWhereInput;
+import type.PatchAnnotationOperationInput;
 import type.TextualBodyInput;
 import type.TextualBodyType;
 
@@ -112,5 +118,41 @@ public class TextualBody extends Body {
                                 .build()
                 )
                 .build();
+    }
+
+    public PatchAnnotationOperationInput toPatchAnnotationOperationInputRemove() {
+        return PatchAnnotationOperationInput.builder()
+                .remove(
+                        AnnotationRemoveOperationInput.builder()
+                                .body(true)
+                                .where(
+                                        AnnotationWhereInput.builder()
+                                                .id(id)
+                                                .build()
+                                )
+                                .build()
+                )
+                .build();
+    }
+
+    public PatchAnnotationOperationInput toPatchAnnotationOperationInputAdd() {
+        return PatchAnnotationOperationInput.builder()
+                .add(
+                        AnnotationAddOperationInput.builder()
+                                .body(
+                                        this.toAnnotationBodyInput()
+                                )
+                                .build()
+                )
+                .build();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+        if (obj.getClass() != this.getClass()) {
+            return false;
+        }
+
+        return ((TextualBody) obj).getId().equals(id);
     }
 }

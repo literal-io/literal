@@ -61,7 +61,9 @@ module Data = {
         ->Belt.Option.flatMap(json =>
             switch (Lib_WebView_Model_Annotation.decode(json)) {
             | Ok(r) => Some(r)
-            | Error(e) => None
+            | Error(e) =>
+              let _ = Error.(report(DeccoDecodeError(e)));
+              None;
             }
           )
         ->Belt.Option.forEach(annotation =>
@@ -90,11 +92,51 @@ module Data = {
       ();
     };
 
+    let handleAddCacheAnnotations = ev => {
+      let annotations =
+        ev
+        ->Belt.Option.flatMap(Js.Json.decodeObject)
+        ->Belt.Option.flatMap(d => d->Js.Dict.get("annotations"))
+        ->Belt.Option.flatMap(Js.Json.decodeString)
+        ->Belt.Option.map(a =>
+            try(a->Js.Json.parseExn) {
+            | _ => Js.Json.null
+            }
+          )
+        ->Belt.Option.flatMap(Js.Json.decodeArray)
+        ->Belt.Option.map(json => {
+            json->Belt.Array.keepMap(json =>
+              switch (Lib_WebView_Model_Annotation.decode(json)) {
+              | Ok(r) => Some(r)
+              | Error(e) =>
+                Js.log2("Error decoding annotation", e);
+                None;
+              }
+            )
+          })
+        ->Belt.Option.getWithDefault([||]);
+
+      if (Js.Array2.length(annotations) > 0) {
+        let _ =
+          Lib_WebView_Model_Apollo.addManyToCache(~annotations, ~currentUser);
+        Routes.CreatorsIdAnnotationCollectionsId.(
+          Next.Router.replaceWithAs(
+            staticPath,
+            path(
+              ~creatorUsername=currentUser.username,
+              ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
+            ),
+          )
+        );
+      };
+    };
+
     let _ =
       React.useEffect0(() => {
         let eventHandlers = [|
           ("SET_CACHE_ANNOTATION", handleSetCacheAnnotation),
           ("DELETE_CACHE_ANNOTATION", handleDeleteCacheAnnotation),
+          ("ADD_CACHE_ANNOTATIONS", handleAddCacheAnnotations),
         |];
 
         let _ =

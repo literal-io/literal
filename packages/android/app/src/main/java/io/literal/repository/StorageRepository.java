@@ -22,22 +22,40 @@ import io.literal.lib.Callback;
 
 public class StorageRepository {
 
+    private static String bucketName;
+    private static String bucketRegion;
+    private static String storageHost;
+
     public static String getPrivatePath(String creatorIdentityId, String path) {
         return "private/" + creatorIdentityId + "/" + path;
     }
 
     public static String getBucketName(Context context) {
-        JSONObject s3TransferUtilityJson = AppSyncClientFactory
-                .getConfiguration(context)
-                .optJsonObject("S3TransferUtility");
-        return s3TransferUtilityJson.optString("Bucket");
+        if (bucketName == null) {
+            JSONObject s3TransferUtilityJson = AppSyncClientFactory
+                    .getConfiguration(context)
+                    .optJsonObject("S3TransferUtility");
+            bucketName = s3TransferUtilityJson.optString("Bucket");
+        }
+        return bucketName;
     }
 
     public static String getBucketRegion(Context context) {
-        JSONObject s3TransferUtilityJson = AppSyncClientFactory
-                .getConfiguration(context)
-                .optJsonObject("S3TransferUtility");
-        return s3TransferUtilityJson.optString("Region");
+        if (bucketRegion == null) {
+            JSONObject s3TransferUtilityJson = AppSyncClientFactory
+                    .getConfiguration(context)
+                    .optJsonObject("S3TransferUtility");
+            bucketRegion = s3TransferUtilityJson.optString("Region");
+        }
+        return bucketRegion;
+    }
+
+    public static boolean isStorageUrl(Context context, URL url) {
+        if (storageHost == null) {
+            storageHost = getBucketName(context) + ".s3." + getBucketRegion(context) + ".amazonaws.com";
+        }
+
+        return url.getHost().equals(storageHost);
     }
 
     public static void upload(Context context, String key, File inputFile, ObjectMetadata metadata, Callback<Exception, AmazonS3URI> onUploadComplete) {

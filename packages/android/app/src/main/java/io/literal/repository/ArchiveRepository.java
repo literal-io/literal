@@ -8,10 +8,12 @@ import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 
 import java.io.File;
+import java.net.URL;
 
 import io.literal.lib.Callback;
 
 public class ArchiveRepository {
+    private static String storageHost;
 
     public static File getLocalDir(Context context) {
         File archiveDir = new File(context.getCacheDir(), "archives");

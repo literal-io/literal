@@ -65,6 +65,7 @@ export default () =>
     annotationFocusManager.onAnnotationsRendered({
       annotations: ANNOTATIONS,
       focusedAnnotationId: FOCUSED_ANNOTATION_ID,
+      initialRender: true
     });
 
     messenger.postMessage({
