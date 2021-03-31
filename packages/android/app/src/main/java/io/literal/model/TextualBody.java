@@ -1,5 +1,6 @@
 package io.literal.model;
 
+import android.system.ErrnoException;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 
 import io.literal.lib.Crypto;
 import io.literal.lib.JsonArrayUtil;
+import io.literal.repository.ErrorRepository;
 import type.AnnotationAddOperationInput;
 import type.AnnotationBodyInput;
 import type.AnnotationRemoveOperationInput;
@@ -42,7 +44,7 @@ public class TextualBody extends Body {
             try {
                 idWithDefault = Crypto.sha256Hex(value);
             } catch (NoSuchAlgorithmException ex) {
-                Log.d("TextualBody", "Unable to create default id", ex);
+                ErrorRepository.captureException(ex);
             }
         }
 

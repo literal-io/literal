@@ -31,6 +31,7 @@ import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
 import io.literal.repository.AuthenticationRepository;
+import io.literal.repository.ErrorRepository;
 import io.literal.repository.NotificationRepository;
 import io.literal.repository.ShareTargetHandlerRepository;
 import io.literal.repository.ToastRepository;
@@ -42,7 +43,7 @@ import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
 
-public class ShareTargetHandler extends AppCompatActivity {
+public class ShareTargetHandler extends SentryActivity {
     private static final String APP_WEB_VIEW_FRAGMENT_NAME = "APP_WEB_VIEW_FRAGMENT";
     private static final String SOURCE_WEB_VIEW_FRAGMENT_NAME = "SOURCE_WEB_VIEW_FRAGMENT";
 
@@ -194,7 +195,7 @@ public class ShareTargetHandler extends AppCompatActivity {
             try {
                 resultAnnotationsJson = JsonArrayUtil.stringifyObjectArray(annotations, Annotation::toJson).toString();
             } catch (JSONException e) {
-                Log.d("ShareTargetHandler", "handleCreateFromSourceDone: Unable to serialize result annotations", e);
+                ErrorRepository.captureException(e);
             }
             Intent intent = new Intent();
             intent.putExtra(RESULT_EXTRA_ANNOTATIONS, resultAnnotationsJson);
@@ -235,7 +236,6 @@ public class ShareTargetHandler extends AppCompatActivity {
                         public void onAnnotationCreated(CreateAnnotationMutation.Data data) {
                             if (data == null) {
                                 // Error is handled in WebView
-                                Log.d("handleSendFromText", "CreateAnnotationMutation.Data is null");
                                 return;
                             }
 
@@ -262,12 +262,12 @@ public class ShareTargetHandler extends AppCompatActivity {
 
                         @Override
                         public void onError(Exception e1) {
-                            Log.d("ShareTargetHandlerGraphQLService", "onError", e1);
+                            ErrorRepository.captureException(e1);
                         }
 
                         @Override
                         public void onGraphQLError(List<Error> errors) {
-                            errors.forEach(error -> Log.d("ShareTargetHandlerGraphQLService", "onGraphQLError - " + error.message()));
+                            errors.forEach(error -> ErrorRepository.captureException(new Exception(error.message())));
                         }
                     });
                 })
@@ -321,12 +321,12 @@ public class ShareTargetHandler extends AppCompatActivity {
 
                         @Override
                         public void onError(Exception e1) {
-                            Log.d("ShareTargetHandlerGraphQLService", "onError", e1);
+                            ErrorRepository.captureException(e1);
                         }
 
                         @Override
                         public void onGraphQLError(List<Error> errors) {
-                            errors.forEach(error -> Log.d("ShareTargetHandlerGraphQLService", "onGraphQLError - " + error.message()));
+                            errors.forEach(error -> ErrorRepository.captureException(new Exception(error.message())));
                         }
                     });
                 })

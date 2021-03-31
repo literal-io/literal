@@ -33,6 +33,7 @@ import io.literal.model.Target;
 import io.literal.model.TextDirection;
 import io.literal.model.TextualBody;
 import io.literal.model.TextualTarget;
+import io.literal.repository.ErrorRepository;
 
 public class SourceWebViewViewModel extends ViewModel {
     private static final String GET_ANNOTATION_SCRIPT_NAME = "SourceWebViewGetAnnotation.js";
@@ -71,7 +72,7 @@ public class SourceWebViewViewModel extends ViewModel {
                 getAnnotationScript =
                         IOUtils.toString(assetManager.open(GET_ANNOTATION_SCRIPT_NAME), StandardCharsets.UTF_8);
             } catch (IOException e) {
-                Log.d("SourceWebViewViewModel", "getGetSelectorScript", e);
+                ErrorRepository.captureException(e);
             }
         }
         return getAnnotationScript;
@@ -83,7 +84,7 @@ public class SourceWebViewViewModel extends ViewModel {
                 annotationRendererScript =
                         IOUtils.toString(assetManager.open(ANNOTATION_RENDERER_SCRIPT_NAME), StandardCharsets.UTF_8);
             } catch (IOException e) {
-                Log.d("SourceWebViewViewModel", "getHighlightAnnotationTargetScript", e);
+                ErrorRepository.captureException(e);
             }
         }
 
@@ -105,7 +106,7 @@ public class SourceWebViewViewModel extends ViewModel {
             try {
                 getAnnotationBoundingBoxScript = IOUtils.toString(assetManager.open(GET_ANNOTATION_BOUNDING_BOX_SCRIPT_NAME), StandardCharsets.UTF_8);
             } catch (IOException e) {
-                Log.d("SourceWebViewViewModel", "getAnnotationBoundingBoxScript", e);
+                ErrorRepository.captureException(e);
             }
         }
         String stringifiedParamAnnotation = JSONObject.quote(paramAnnotation.toString());
@@ -220,7 +221,7 @@ public class SourceWebViewViewModel extends ViewModel {
             }
             return annotation;
         } catch (Exception e) {
-            Log.d("SourceWebViewViewModel", "createAnnotation", e);
+            ErrorRepository.captureException(e);
             return null;
         }
     }

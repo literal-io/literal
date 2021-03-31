@@ -7,6 +7,7 @@ import com.amazonaws.amplify.generated.graphql.PatchAnnotationMutation;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import io.literal.repository.ErrorRepository;
 import kotlin.annotation.AnnotationTarget;
 import type.AnnotationTargetInput;
 import type.PatchAnnotationOperationInput;
@@ -33,17 +34,17 @@ public class Target {
     }
 
     public AnnotationTargetInput toAnnotationTargetInput() {
-        Log.d("Target", "Attempted to call toAnnotationTargetInput, but not implemented.");
+        ErrorRepository.captureException(new Exception("Attempted to call toAnnotationTargetInput, but not implemented."));
         return null;
     }
 
     public PatchAnnotationOperationInput toPatchAnnotationOperationInputAdd() {
-        Log.d("Target", "Attempted to call toPatchAnnotationOperationInputAdd, but not implemented.");
+        ErrorRepository.captureException(new Exception("Attempted to call toPatchAnnotationOperationInputAdd, but not implemented."));
         return null;
     }
 
     public PatchAnnotationOperationInput toPatchAnnotationOperationInputSet() {
-        Log.d("Target", "Attempted to call toPatchAnnotationOperationInputSet, but not implemented.");
+        ErrorRepository.captureException(new Exception("Attempted to call toPatchAnnotationOperationInputSet, but not implemented."));
         return null;
     }
 

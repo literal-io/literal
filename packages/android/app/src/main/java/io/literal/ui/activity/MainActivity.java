@@ -37,6 +37,7 @@ import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
+import io.literal.repository.ErrorRepository;
 import io.literal.repository.ToastRepository;
 import io.literal.service.AnnotationService;
 import io.literal.ui.MainApplication;
@@ -46,8 +47,9 @@ import io.literal.ui.fragment.SourceWebView;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
+import io.sentry.Sentry;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends SentryActivity {
 
     private static final String APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME = "MAIN_ACTIVITY_APP_WEB_VIEW_PRIMARY_FRAGMENT";
     private static final String APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME = "MAIN_ACTIVITY_APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT";
@@ -65,6 +67,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Sentry.captureMessage("testing sdk setup");
+
         setContentView(R.layout.activity_main);
 
         this.initializeViewModel();
@@ -145,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
                                         targetId,
                                         (e, d) -> {
                                             if (e != null) {
-                                                Log.d("handleViewTargetForAnnotation", "error", e);
+                                                ErrorRepository.captureException(e);
                                                 return;
                                             }
 
@@ -156,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
                                         }
                                 );
                             } catch (JSONException e) {
-                                Log.d("MainActivity", "Unable to handle event: " + webEvent.toString(), e);
+                                ErrorRepository.captureException(e, webEvent.toString());
                             }
                         } else if (webEvent.getType().equals(WebEvent.TYPE_CREATE_ANNOTATION_FROM_SOURCE)) {
                             this.handleCreateAnnotationFromSource(null);
@@ -262,7 +266,7 @@ public class MainActivity extends AppCompatActivity {
                 ToastRepository.show(this, R.string.toast_annotations_created, ToastRepository.STYLE_DARK_ACCENT);
             }
         } catch (JSONException e) {
-            Log.d("MainActivity", "Unable to dispatch ADD_CACHE_ANNOTATIONS", e);
+            ErrorRepository.captureException(e);
         }
     }
 
@@ -292,7 +296,7 @@ public class MainActivity extends AppCompatActivity {
                     ToastRepository.show(this, R.string.toast_annotations_created, ToastRepository.STYLE_DARK_ACCENT);
                 }
             } catch (JSONException e) {
-                Log.d("MainActivity", "Unable to dispatch ADD_CACHE_ANNOTATIONS", e);
+                ErrorRepository.captureException(e);
             }
         }
     }
@@ -345,7 +349,7 @@ public class MainActivity extends AppCompatActivity {
                             addCacheAnnotationsData
                     ));
                 } catch (JSONException ex) {
-                    Log.d("annotationCreatedBroadcastReceiver", "Unable to dispatch ADD_CACHE_ANNOTATIONS", ex);
+                    ErrorRepository.captureException(ex);
                 }
             }
         }

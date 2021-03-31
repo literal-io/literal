@@ -6,6 +6,7 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import io.literal.repository.ErrorRepository;
 import type.AnnotationTargetInput;
 import type.SelectorInput;
 
@@ -31,7 +32,7 @@ public class Selector {
     };
 
     public SelectorInput toSelectorInput() {
-        Log.d("Selector", "Attempted to call toSelectorInput, but not implemented.");
+        ErrorRepository.captureException(new Exception("Attempted to call toSelectorInput, but not implemented."));
         return null;
     }
 

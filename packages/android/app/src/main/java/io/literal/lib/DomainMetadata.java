@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.UUID;
 
 import io.literal.R;
+import io.literal.repository.ErrorRepository;
 
 public class DomainMetadata {
 
@@ -108,7 +109,7 @@ public class DomainMetadata {
 
             return output;
         } catch (JSONException | IOException ex) {
-            Log.d("toJson", "Unable to serialize toJSON", ex);
+            ErrorRepository.captureException(ex);
             return null;
         }
     }
@@ -126,7 +127,7 @@ public class DomainMetadata {
                     favicon
             );
         } catch (JSONException | MalformedURLException ex) {
-            Log.d("fromJson", "Unable to create DomainMetadata", ex);
+            ErrorRepository.captureException(ex, json.toString());
             return null;
         }
     }

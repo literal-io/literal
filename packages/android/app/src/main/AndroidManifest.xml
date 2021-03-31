@@ -18,10 +18,13 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
+
+        <meta-data android:name="io.sentry.dsn" android:value="https://4b7de58ab7cf43fc853992c3df32ce18@o455440.ingest.sentry.io/5700950" />
+
         <service
             android:name=".service.AnnotationService"
             android:enabled="true"
-            android:exported="false"></service>
+            android:exported="false" />
 
         <activity android:name="com.amazonaws.mobileconnectors.cognitoauth.activities.CustomTabsRedirectActivity">
             <intent-filter>

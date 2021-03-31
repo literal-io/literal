@@ -20,6 +20,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import io.literal.factory.AWSMobileClientFactory;
 import io.literal.repository.AuthenticationRepository;
+import io.literal.repository.ErrorRepository;
 
 public class AuthenticationViewModel extends ViewModel {
 
@@ -42,21 +43,20 @@ public class AuthenticationViewModel extends ViewModel {
             try {
                 tokens.setValue(AuthenticationRepository.getTokens());
             } catch (Exception e) {
-                Log.d("AuthenticationViewModel", "getTokens", e);
+                ErrorRepository.captureException(e);
             }
         }
         return tokens;
     }
 
     public MutableLiveData<Map<String, String>> getUserAttributes() {
-        Log.d("AuthenticationViewModel", "userStateDetails: " + userStateDetails.getValue().getUserState());
         if (this.isSignedOut()) {
             userAttributes.setValue(null);
         } else if (userAttributes.getValue() == null) {
             try {
                 userAttributes.setValue(AuthenticationRepository.getUserAttributes());
             } catch (Exception e) {
-                Log.d("AuthenticationViewModel", "getUserInfo", e);
+                ErrorRepository.captureException(e);
             }
         }
 
@@ -94,12 +94,11 @@ public class AuthenticationViewModel extends ViewModel {
 
             @Override
             public void onError(Exception e) {
-                Log.d("AuthenticationViewModel", "initialize", e);
+                ErrorRepository.captureException(e);
             }
         });
 
         AWSMobileClient.getInstance().addUserStateListener((userState) -> {
-            Log.i("AuthenticationViewModel", "userState update: " + userState.getUserState());
             userStateDetails.postValue(userState);
         });
     }
@@ -128,7 +127,7 @@ public class AuthenticationViewModel extends ViewModel {
         try {
             hasInitializedLatch.await();
         } catch (InterruptedException e) {
-            Log.d("AuthenticationViewModel", "awaitInitialization", e);
+            ErrorRepository.captureException(e);
         }
     }
 

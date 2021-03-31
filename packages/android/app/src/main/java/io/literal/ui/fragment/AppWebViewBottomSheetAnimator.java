@@ -20,6 +20,7 @@ import java.util.UUID;
 import io.literal.lib.Callback;
 import io.literal.lib.WebEvent;
 import io.literal.model.Annotation;
+import io.literal.repository.ErrorRepository;
 
 public class AppWebViewBottomSheetAnimator {
     public static void handleBottomSheetStateChange(
@@ -54,7 +55,7 @@ public class AppWebViewBottomSheetAnimator {
                 );
                 dispatchWebEvent.invoke(null, webEvent);
             } catch (JSONException ex) {
-                Log.d("ShareTargetHandler", "Unable to serialize annotation", ex);
+                ErrorRepository.captureException(ex);
             }
 
             ObjectAnimator animator = ObjectAnimator.ofFloat(bottomSheetFragmentContainer, "translationY", (float) initialTranslationY, (float) targetTranslationY);
@@ -113,7 +114,7 @@ public class AppWebViewBottomSheetAnimator {
                 );
                 dispatchWebEvent.invoke(null, webEvent);
             } catch (JSONException ex) {
-                Log.d("ShareTargetHandler", "Unable to serialize annotation", ex);
+                ErrorRepository.captureException(ex);
             }
 
             ObjectAnimator animator = ObjectAnimator.ofFloat(bottomSheetFragmentContainer, "translationY", (float) initialTranslationY, (float) targetTranslationY);

@@ -34,7 +34,7 @@ public class AnnotationRepository {
                     public void onResponse(@Nonnull Response<PatchAnnotationMutation.Data> response) {
                         if (response.hasErrors()) {
                             response.errors().forEach((error -> {
-                                Log.d("PatchAnnotationMutationRepository", "patchAnnotationMutation error: " + error.message());
+                                ErrorRepository.captureException(new Exception(error.message()));
                             }));
                             callback.invoke(new ApolloException("Server Error"), null);
                         } else {
@@ -56,9 +56,7 @@ public class AnnotationRepository {
                     @Override
                     public void onResponse(@Nonnull Response<DeleteAnnotationMutation.Data> response) {
                         if (response.hasErrors()) {
-                            response.errors().forEach((error -> {
-                                Log.d("AnnotationRepository", "deleteAnnotationMutation error: " + error.message());
-                            }));
+                            response.errors().forEach((error -> ErrorRepository.captureException(new Exception(error.message()))));
                             callback.invoke(new ApolloException("Server Error"), null);
                         } else {
                             callback.invoke(null, response.data());
@@ -80,9 +78,7 @@ public class AnnotationRepository {
                     @Override
                     public void onResponse(@Nonnull Response<GetAnnotationQuery.Data> response) {
                         if (response.hasErrors()) {
-                            response.errors().forEach((error -> {
-                                Log.d("GetAnnotation", "getAnnotation error: " + error.message());
-                            }));
+                            response.errors().forEach((error -> ErrorRepository.captureException(new Exception(error.message()))));
                             callback.invoke(new ApolloException("Server Error"), null);
                         } else {
                             callback.invoke(null, response.data());
@@ -102,11 +98,6 @@ public class AnnotationRepository {
         AWSAppSyncClient appSyncClient = AppSyncClientFactory.getInstance(context);
 
         for (int i = 0; i < annotations.length; i++) {
-            try {
-                Log.i("ShareTargetHandlerRepository", "creating annotation: " + annotations[i].toJson());
-            } catch (JSONException e) {
-                Log.d("ShareTargetHandlerRepository", "serialization error", e);
-            }
             Callback<ApolloException, CreateAnnotationMutation.Data> innerCallback = manyCallback.getCallback(i);
             appSyncClient
                     .mutate(
@@ -119,9 +110,7 @@ public class AnnotationRepository {
                         @Override
                         public void onResponse(@Nonnull Response<CreateAnnotationMutation.Data> response) {
                             if (response.hasErrors()) {
-                                response.errors().forEach((error -> {
-                                    Log.d("ShareTargetHandlerRepository", "createAnnotations error: " + error.message());
-                                }));
+                                response.errors().forEach((error -> ErrorRepository.captureException(new Exception(error.message()))));
                                 innerCallback.invoke(new ApolloException("Server Error"), null);
                             } else {
                                 innerCallback.invoke(null, response.data());

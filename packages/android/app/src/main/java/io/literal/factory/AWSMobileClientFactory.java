@@ -22,6 +22,7 @@ import java.util.concurrent.CountDownLatch;
 
 import io.literal.R;
 import io.literal.lib.Constants;
+import io.literal.repository.ErrorRepository;
 
 public class AWSMobileClientFactory {
 
@@ -145,7 +146,7 @@ public class AWSMobileClientFactory {
                 amplifyEnvironment = AmplifyEnvironment.PRODUCTION;
             }
         } catch (JSONException ex) {
-            Log.d(Constants.LOG_TAG, "Unable to parse AWSConfiguration", ex);
+            ErrorRepository.captureException(ex);
             return new AWSConfiguration(configuration);
         }
 

@@ -7,10 +7,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import io.literal.lib.Crypto;
 import io.literal.lib.JsonArrayUtil;
+import io.literal.repository.ErrorRepository;
 import type.AnnotationAddOperationInput;
 import type.AnnotationSetOperationInput;
 import type.AnnotationTargetInput;
@@ -84,8 +86,8 @@ public class ExternalTarget extends Target {
         String hashId = null;
         try {
             hashId = Crypto.sha256Hex(this.id);
-        } catch (Exception e) {
-            Log.d("ExternalTarget", "Unable to hash id", e);
+        } catch (NoSuchAlgorithmException e) {
+            ErrorRepository.captureException(e);
         }
 
         return AnnotationTargetInput.builder().externalTarget(

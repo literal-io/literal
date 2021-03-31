@@ -27,6 +27,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.amazonaws.services.kms.model.EnableKeyRotationRequest;
 import com.google.android.gms.auth.api.signin.internal.Storage;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
@@ -69,6 +70,7 @@ import io.literal.model.TextualTarget;
 import io.literal.model.TimeState;
 import io.literal.repository.AnnotationRepository;
 import io.literal.repository.ArchiveRepository;
+import io.literal.repository.ErrorRepository;
 import io.literal.repository.StorageRepository;
 import io.literal.service.AnnotationService;
 import io.literal.ui.MainApplication;
@@ -165,7 +167,7 @@ public class SourceWebView extends Fragment {
         webView = view.findViewById(R.id.source_web_view);
         webView.setOnReceivedIcon((e, webView, icon) -> {
             if (e != null) {
-                Log.d("SourceWebView", "setOnReceivedIcon callback error:", e);
+                ErrorRepository.captureException(e);
             }
 
             DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
@@ -186,7 +188,7 @@ public class SourceWebView extends Fragment {
                             .orElse(new DomainMetadata(newUrl, null));
                     sourceWebViewViewModel.setDomainMetadata(domainMetadata);
                 } catch (MalformedURLException ex) {
-                    Log.d("SourceWebView", "Unable to execute setDomainMetadata:", ex);
+                    ErrorRepository.captureException(ex);
                 }
                 sourceWebViewViewModel.setHasInjectedAnnotationRendererScript(false);
             }
@@ -206,7 +208,7 @@ public class SourceWebView extends Fragment {
 
         webView.setOnAnnotationCreated((e, actionMode) -> {
             if (e != null) {
-                Log.d("SourceWebView", "setOnAnnotationCreated callback error:", e);
+                ErrorRepository.captureException(e);
                 return;
             }
             this.handleAnnotationCreated(actionMode);
@@ -224,7 +226,7 @@ public class SourceWebView extends Fragment {
 
         sourceWebViewViewModel.getAnnotations().observe(getActivity(), (annotations) -> {
             if (this.webView == null) {
-                Log.d("SourceWebView", "Expected webView, but found none.");
+                ErrorRepository.captureException(new Exception("Expected webView, but found none."));
                 return;
             }
 
@@ -260,7 +262,7 @@ public class SourceWebView extends Fragment {
 
                         handleAnnotationFocus(annotationId, annotationBoundingBox);
                     } catch (JSONException ex) {
-                        Log.d("SourceWebView", "Unable to parse FOCUS_ANNOTATION data: " + event.getData(), e);
+                        ErrorRepository.captureException(ex, event.getData().toString());
                     }
                     break;
                 case WebEvent.TYPE_BLUR_ANNOTATION:
@@ -280,7 +282,7 @@ public class SourceWebView extends Fragment {
                         webView.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, (float) boundingBox.left, (float) boundingBox.top, 0));
                         webView.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, (float) boundingBox.left, (float) boundingBox.top, 0));
                     } catch (JSONException ex) {
-                        Log.d("SourceWebView", "Unable to parse event data: " + event.getData(), ex);
+                        ErrorRepository.captureException(ex, event.getData().toString());
                     }
                     break;
                 case WebEvent.TYPE_ANNOTATION_RENDERER_INITIALIZED:
@@ -306,7 +308,7 @@ public class SourceWebView extends Fragment {
                             String state = webEvent.getData().getString("state");
                             this.handleSetBottomSheetState(state);
                         } catch (JSONException e) {
-                            Log.d("SourceWebView", "Unable to handle SET_VIEW_STATE", e);
+                            ErrorRepository.captureException(e);
                         }
                         return;
                     case WebEvent.TYPE_EDIT_ANNOTATION_TAGS_RESULT:
@@ -314,7 +316,7 @@ public class SourceWebView extends Fragment {
                             Annotation newAnnotation = Annotation.fromJson(webEvent.getData());
                             this.handleAnnotationTextualBodyChange(newAnnotation);
                         } catch (JSONException e) {
-                            Log.d("SourceWebView", "Unable to handle EDIT_ANNOTATION_TAGS_RESULT", e);
+                            ErrorRepository.captureException(e);
                         }
                         return;
                 }
@@ -385,7 +387,7 @@ public class SourceWebView extends Fragment {
                     focusedAnnotation != null ? focusedAnnotation.getId() : ""
             );
         } catch (JSONException ex) {
-            Log.d("SourceWebView", "Unable to highlightAnnotationTargets", ex);
+            ErrorRepository.captureException(ex);
         }
         return null;
     }
@@ -404,7 +406,7 @@ public class SourceWebView extends Fragment {
                 return;
             }
         } catch (MalformedURLException e) {
-            Log.d("handleAnnotationCreated", "Unable to parse webView URL", e);
+            ErrorRepository.captureException(e);
         }
 
         String script = sourceWebViewViewModel.getGetAnnotationScript(getActivity().getAssets());
@@ -453,7 +455,8 @@ public class SourceWebView extends Fragment {
                 .findFirst();
 
         if (!annotation.isPresent()) {
-            Log.d("SourceWebView", "handleAnnotationClicked unable to find annotationId");
+            ErrorRepository.captureException(new Exception("handleAnnotationClicked unable to find annotationId"));
+            return;
         }
         Annotation unwrappedAnnotation = annotation.get();
 
@@ -485,7 +488,7 @@ public class SourceWebView extends Fragment {
                     }
             );
         } catch (JSONException e) {
-            Log.d("SourceWebView", "Unable to stringify annotation: " + annotation.get(), e);
+            ErrorRepository.captureException(e);
         }
     }
 
@@ -508,7 +511,7 @@ public class SourceWebView extends Fragment {
                         blurAnnotationData
                 ));
             } catch (JSONException ex) {
-                Log.d("handleAnnotationCancelEdit", "Unable to post BLUR_ANNOTATION", ex);
+                ErrorRepository.captureException(ex);
             }
             sourceWebViewViewModel.setFocusedAnnotation(null);
         }
@@ -523,7 +526,7 @@ public class SourceWebView extends Fragment {
         String script = sourceWebViewViewModel.getGetAnnotationScript(getActivity().getAssets());
         Annotation annotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
         if (annotation == null) {
-            Log.d("SourceWebView", "Expected focusedAnnotation, but found null.");
+            ErrorRepository.captureException(new Exception("Expected focusedAnnotation, but found null."));
             return;
         }
 
@@ -594,7 +597,7 @@ public class SourceWebView extends Fragment {
                 );
                 String username = authenticationViewModel.getUsername().getValue();
                 if (username == null) {
-                    Log.d("SourceWebView", "Expected username, but found none");
+                    ErrorRepository.captureException(new Exception("Expected username, but found none"));
                     return;
                 }
 
@@ -608,7 +611,7 @@ public class SourceWebView extends Fragment {
                             input,
                             (e, data) -> {
                                 if (e != null) {
-                                    Log.d("SourceWebView", "Unable to handleAnnotationCommit", e);
+                                    ErrorRepository.captureException(e);
                                     return;
                                 }
                             }
@@ -616,7 +619,7 @@ public class SourceWebView extends Fragment {
                 }
                 boolean updated = sourceWebViewViewModel.updateAnnotation(updatedAnnotation);
                 if (!updated) {
-                    Log.d("SourceWebView", "Failed to update viewmodel for annotation");
+                    ErrorRepository.captureException(new Exception("Failed to update viewmodel for annotation"));
                 }
 
                 if (primaryAppWebViewViewModel != null) {
@@ -631,11 +634,11 @@ public class SourceWebView extends Fragment {
                                 )
                         ));
                     } catch (JSONException ex) {
-                        Log.d("SourceWebView", "Unable to serialize annotation: " + annotation, ex);
+                        ErrorRepository.captureException(ex);
                     }
                 }
             } catch (JSONException e) {
-                Log.d("SourceWebView", "Unable to parse annotation: " + value, e);
+                ErrorRepository.captureException(e);
             } finally {
                 if (editAnnotationActionMode != null) {
                     webView.finishEditAnnotationActionMode(editAnnotationActionMode);
@@ -654,7 +657,7 @@ public class SourceWebView extends Fragment {
                                 blurAnnotationData
                         ));
                     } catch (JSONException ex) {
-                        Log.d("handleAnnotationCommitEdit", "Unable to post BLUR_ANNOTATION", ex);
+                        ErrorRepository.captureException(ex);
                     }
                     sourceWebViewViewModel.setFocusedAnnotation(null);
                 }
@@ -706,7 +709,7 @@ public class SourceWebView extends Fragment {
                             .build(),
                     (e, data) -> {
                         if (e != null) {
-                            Log.d("handleAnnotationTextualBodyChange", "Unable to patchAnnotationMutation", e);
+                            ErrorRepository.captureException(e);
                             return;
                         }
                     }
@@ -724,14 +727,14 @@ public class SourceWebView extends Fragment {
                             )
                     ));
                 } catch (JSONException ex) {
-                    Log.d("SourceWebView", "Unable to serialize annotation: " + newAnnotation, ex);
+                    ErrorRepository.captureException(ex);
                 }
             }
         }
 
         boolean updated = sourceWebViewViewModel.updateAnnotation(newAnnotation);
         if (!updated) {
-            Log.d("SourceWebView", "Failed to update viewmodel for annotation");
+            ErrorRepository.captureException(new Exception("Failed to update viewmodel for annotation"));
         }
     }
 
@@ -859,14 +862,14 @@ public class SourceWebView extends Fragment {
                         focusAnnotationData
                 ));
             } catch (JSONException ex) {
-                Log.d("SourceWebView", "Unable to dispatchFocusAnnotationWebEvent", ex);
+                ErrorRepository.captureException(ex);
             }
         }
     }
 
     private void handleRenderAnnotations(ArrayList<Annotation> annotations, Annotation focusedAnnotation) {
         if (!this.isWebviewInitialized()) {
-            Log.d("SourceWebView", "handleRenderAnnotations: expected webview to be initialized, nooping.");
+            ErrorRepository.captureException(new Exception("handleRenderAnnotations: expected webview to be initialized, nooping."));
             return;
         }
 
@@ -882,7 +885,7 @@ public class SourceWebView extends Fragment {
                     renderAnnotationsData
             ));
         } catch (JSONException ex) {
-            Log.d("SourceWebView", "handleRenderAnnotations: Unable to dispatch RENDER_ANNOTATIONS.", ex);
+            ErrorRepository.captureException(ex);
         }
     }
 
@@ -912,14 +915,14 @@ public class SourceWebView extends Fragment {
                     editAnnotationData
             ));
         } catch (JSONException ex) {
-            Log.d("SourceWebView", "Unable to dispatch editAnnotation event", ex);
+            ErrorRepository.captureException(ex);
         }
     }
 
     private void handleAnnotationDelete(String annotationId) {
         Annotation annotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
         if (annotation == null) {
-            Log.d("SourceWebView", "handleAnnotationDelete expected focusedAnnotation, but found null.");
+            ErrorRepository.captureException(new Exception("handleAnnotationDelete expected focusedAnnotation, but found null."));
             return;
         }
 
@@ -933,7 +936,7 @@ public class SourceWebView extends Fragment {
 
         boolean updated = sourceWebViewViewModel.removeAnnotation(annotationId);
         if (!updated) {
-            Log.d("SourceWebView", "handleAnnotationDelete: Unable to find annotation for id " + annotationId);
+            ErrorRepository.captureException(new Exception("handleAnnotationDelete: Unable to find annotation for id " + annotationId));
             return;
         }
 
@@ -946,7 +949,7 @@ public class SourceWebView extends Fragment {
                             .build(),
                     (e, _data) -> {
                         if (e != null) {
-                            Log.d("SourceWebView", "Unable to handleAnnotationDelete", e);
+                            ErrorRepository.captureException(e);
                             return;
                         }
                         try {
@@ -960,7 +963,7 @@ public class SourceWebView extends Fragment {
                                     )
                             ));
                         } catch (JSONException ex) {
-                            Log.d("SourceWebView", "Unable to serialize annotation: " + annotation, ex);
+                            ErrorRepository.captureException(ex);
                         }
                     }
             );
@@ -995,7 +998,7 @@ public class SourceWebView extends Fragment {
                 }
                 getActivity().startService(serviceIntent);
             } catch (JSONException ex) {
-                Log.d("handleToolbarPrimaryAction", "Unable to start AnnotationService", ex);
+                ErrorRepository.captureException(ex);
             }
         }
 

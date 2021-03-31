@@ -19,7 +19,9 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.mobile.client.results.Tokens;
+import com.apollographql.apollo.json.JsonDataException;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -30,6 +32,7 @@ import io.literal.R;
 import io.literal.lib.ContentResolverLib;
 import io.literal.lib.FileActivityResultCallback;
 import io.literal.lib.WebEvent;
+import io.literal.repository.ErrorRepository;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 
@@ -51,7 +54,7 @@ public class AppWebView extends Fragment {
         private void handleSignIn(io.literal.ui.view.AppWebView view) {
             authenticationViewModel.signInGoogle(getActivity(), (e, _void) -> {
                 if (e != null) {
-                    Log.d("AppWebView", "handleSignIn", e);
+                    ErrorRepository.captureException(e);
                     return;
                 }
                 Tokens tokens = authenticationViewModel.getTokens().getValue();
@@ -67,7 +70,7 @@ public class AppWebView extends Fragment {
                         );
                     });
                 } catch (Exception jsonException) {
-                    Log.d("AppWebView", "handleSignIn", jsonException);
+                    ErrorRepository.captureException(jsonException);
                 }
             });
         }
@@ -83,8 +86,8 @@ public class AppWebView extends Fragment {
                 view.postWebEvent(
                         new WebEvent(WebEvent.TYPE_AUTH_GET_TOKENS_RESULT, UUID.randomUUID().toString(), result)
                 );
-            } catch (Exception e) {
-                Log.d("AppWebView", "handleGetTokens", e);
+            } catch (JSONException e) {
+                ErrorRepository.captureException(e);
             }
         }
 
@@ -98,8 +101,8 @@ public class AppWebView extends Fragment {
                 appWebView.postWebEvent(
                         new WebEvent(WebEvent.TYPE_AUTH_GET_USER_INFO_RESULT, UUID.randomUUID().toString(), result)
                 );
-            } catch (Exception e) {
-                Log.d("AppWebView", "handleGetUserInfo", e);
+            } catch (JSONException e) {
+                ErrorRepository.captureException(e);
             }
         }
 

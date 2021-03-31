@@ -24,8 +24,8 @@ android {
     buildToolsVersion "29.0.3"
 
     compileOptions {
-        sourceCompatibility 1.8
-        targetCompatibility 1.8
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     defaultConfig {
@@ -86,6 +86,8 @@ dependencies {
 
     implementation "commons-io:commons-io:2.6"
     implementation 'com.google.android.gms:play-services-auth:19.0.0'
+
+    implementation 'io.sentry:sentry-android:4.3.0'
 
     //
     // AWS

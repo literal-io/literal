@@ -5,6 +5,7 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import io.literal.repository.ErrorRepository;
 import type.StateInput;
 
 public class State {
@@ -23,7 +24,7 @@ public class State {
     }
 
     public StateInput toStateInput() {
-        Log.d("State", "Attempted to call toAnnotationTarget, but not implemented.");
+        ErrorRepository.captureException(new Exception("Attempted to call toAnnotationTarget, but not implemented."));
         return null;
     }
 

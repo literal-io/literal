@@ -53,6 +53,7 @@ import io.literal.lib.Callback;
 import io.literal.lib.Callback2;
 import io.literal.lib.ResultCallback;
 import io.literal.lib.WebEvent;
+import io.literal.repository.ErrorRepository;
 import io.literal.repository.StorageRepository;
 
 public class SourceWebView extends NestedScrollingChildWebView {
@@ -200,7 +201,7 @@ public class SourceWebView extends NestedScrollingChildWebView {
                 actionModeCallback.setAnnotationBoundingBox(new Rect(left, top, right, bottom));
                 actionMode.invalidateContentRect();
             } catch (JSONException ex) {
-                Log.d("SourceWebView", "Unable to parse bounding box: " + value, ex);
+                ErrorRepository.captureException(ex);
             }
         }));
 
@@ -403,7 +404,7 @@ public class SourceWebView extends NestedScrollingChildWebView {
                 response.setResponseHeaders(responseHeaders);
                 return response;
             } catch (Exception ex) {
-                Log.d("shouldInterceptRequest", "Failed to getObject: " + request.getUrl().getPath().substring(1), ex);
+                ErrorRepository.captureException(ex, request.getUrl().getPath().substring(1));
                 return null;
             }
         }

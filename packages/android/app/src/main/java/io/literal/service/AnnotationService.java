@@ -36,6 +36,7 @@ import io.literal.model.TimeState;
 import io.literal.repository.AnnotationRepository;
 import io.literal.repository.ArchiveRepository;
 import io.literal.repository.AuthenticationRepository;
+import io.literal.repository.ErrorRepository;
 import io.literal.repository.NotificationRepository;
 import io.literal.ui.MainApplication;
 
@@ -59,7 +60,12 @@ public class AnnotationService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        Callback<Exception, Void> onFinish = (e, _d) -> stopSelfResult(startId);
+        Callback<Exception, Void> onFinish = (e, _d) -> {
+            if (e != null) {
+                ErrorRepository.captureException(e);
+            }
+            stopSelfResult(startId);
+        };
 
         if (intent.getAction().equals(ACTION_CREATE_ANNOTATIONS)) {
             String extraAnnotation = intent.getStringExtra(EXTRA_ANNOTATIONS);
@@ -73,10 +79,8 @@ public class AnnotationService extends Service {
                             onFinish
                     );
                 } catch (JSONException ex) {
-                    Log.d("onStartCommand", "EXTRA_ANNOTATION is not a JSONObject: " + intent.getStringExtra(extraAnnotation), ex);
                     onFinish.invoke(ex, null);
                 } catch (InterruptedException ex) {
-                    Log.d("onStartCommand", "AWSMobileClient failed to initialize", ex);
                     onFinish.invoke(ex, null);
                 }
             });
@@ -90,16 +94,18 @@ public class AnnotationService extends Service {
     private void handleCreateAnnotation(Annotation[] annotations, DomainMetadata domainMetadata, Callback<Exception, Void> onFinish) {
 
         Callback<Exception, Void> onFinishWithNotification = (e, _v) -> {
-            try {
-                Intent intent = new Intent();
-                intent.setAction(ACTION_BROADCAST_CREATED_ANNOTATIONS);
-                intent.putExtra(
-                        EXTRA_ANNOTATIONS,
-                        JsonArrayUtil.stringifyObjectArray(annotations, Annotation::toJson).toString()
-                );
-                LocalBroadcastManager.getInstance(getBaseContext()).sendBroadcast(intent);
-            } catch (JSONException ex) {
-                Log.d("handleCreateAnnotations", "onFinishWithNotification unable to broadcast CREATED_ANNOTATIONS", ex);
+            if (e != null) {
+                try {
+                    Intent intent = new Intent();
+                    intent.setAction(ACTION_BROADCAST_CREATED_ANNOTATIONS);
+                    intent.putExtra(
+                            EXTRA_ANNOTATIONS,
+                            JsonArrayUtil.stringifyObjectArray(annotations, Annotation::toJson).toString()
+                    );
+                    LocalBroadcastManager.getInstance(getBaseContext()).sendBroadcast(intent);
+                } catch (JSONException ex) {
+                    ErrorRepository.captureException(ex);
+                }
             }
 
             if (e == null && domainMetadata != null) {
@@ -135,18 +141,12 @@ public class AnnotationService extends Service {
         }
 
         if (archivesToUpload.size() == 0) {
-            AnnotationRepository.createAnnotations(getBaseContext(), annotations, (ex, result) -> {
-                if (ex != null) {
-                    Log.d("handleCreateAnnotations", "Unable to create annotations", ex);
-                }
-                onFinishWithNotification.invoke(null, null);
-            });
+            AnnotationRepository.createAnnotations(getBaseContext(), annotations, (ex, result) -> onFinishWithNotification.invoke(ex, null));
             return;
         }
 
         ManyCallback<Exception, AmazonS3URI> manyCallback = new ManyCallback<>(archivesToUpload.size(), (e, amazonS3URIs) -> {
             if (e != null) {
-                Log.d("handleCreateAnnotations", "Unable to create annotations", e);
                 onFinishWithNotification.invoke(e, null);
                 return;
             }
@@ -159,16 +159,15 @@ public class AnnotationService extends Service {
                 try {
                     boolean deleted = new File(new URI(localFilePath)).delete();
                     if (!deleted) {
-                        Log.d("handleCreateAnnotations", "Unable to delete file: " + localFilePath);
+                        ErrorRepository.captureException(new Exception("Unable to delete file: " + localFilePath));
                     }
                 } catch (URISyntaxException ex) {
-                    Log.d("handleCreateAnnotations", "Unable to parse local file path", ex);
+                    ErrorRepository.captureException(ex);
                 }
             }
 
             AnnotationRepository.createAnnotations(getBaseContext(), annotations, (ex, result) -> {
                 if (ex != null) {
-                    Log.d("handleCreateAnnotations", "Unable to create annotations", ex);
                     onFinishWithNotification.invoke(ex, null);
                     return;
                 }

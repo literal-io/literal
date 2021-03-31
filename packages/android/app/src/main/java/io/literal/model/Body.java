@@ -1,10 +1,9 @@
 package io.literal.model;
 
-import android.util.Log;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import io.literal.repository.ErrorRepository;
 import type.AnnotationBodyInput;
 
 public class Body {
@@ -27,7 +26,7 @@ public class Body {
     };
 
     public AnnotationBodyInput toAnnotationBodyInput() {
-        Log.d("Body", "Attempted to call toAnnotationBodyInput, but not implemented.");
+        ErrorRepository.captureException(new Exception("Attempted to call toAnnotationBodyInput, but not implemented."));
         return null;
     }
 
