@@ -3,6 +3,7 @@ exception ApolloEmptyData;
 exception PromiseError(Js.Promise.error);
 exception AuthenticationRequired;
 exception DeccoDecodeError(Decco.decodeError);
+exception GenericErrorWithExtra((string, Js.Json.t));
 
 let report = exn => {
   let (error, errorContext) =
@@ -40,6 +41,10 @@ let report = exn => {
     | AuthenticationRequired => (
         "AuthenticationRequired"->Externals_Error.make->Js.Option.some,
         None,
+      )
+    | GenericErrorWithExtra((message, extra)) => (
+        message->Externals_Error.make->Js.Option.some,
+        Some(Sentry.makeExceptionContext(~extra, ())),
       )
     | DeccoDecodeError({path, message, value}) => (
         "DeccoDecodeError"->Externals_Error.make->Js.Option.some,

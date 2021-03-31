@@ -4,7 +4,7 @@ let make = (~externalTarget=?, ~textualTarget=?, ~specificTarget=?, ()) => {
   "specificTarget": specificTarget,
 };
 
-let makeTextualTarget =
+let makeTextualTargetInput =
     (
       ~id,
       ~value,
@@ -26,7 +26,7 @@ let makeTextualTarget =
   "rights": rights,
 };
 
-let makeExternalTarget =
+let makeExternalTargetInput =
     (
       ~id,
       ~hashId,
@@ -50,10 +50,28 @@ let makeExternalTarget =
   "type": type_,
 };
 
-let makeSpecificTarget = (~source, ~selector, ~id) => {
+let makeSpecificTargetInput =
+    (
+      ~source,
+      ~selector,
+      ~id,
+      ~state=?,
+      ~purpose=?,
+      ~styleClass=?,
+      ~renderedVia=?,
+      ~scope=?,
+      ~type_=?,
+      (),
+    ) => {
   "id": id,
   "source": source,
   "selector": selector,
+  "state": state,
+  "purpose": purpose,
+  "styleClass": styleClass,
+  "renderedVia": renderedVia,
+  "scope": scope,
+  "type": type_,
 };
 
 let makeFromTarget = target =>
@@ -61,7 +79,7 @@ let makeFromTarget = target =>
   | `TextualTarget(target) =>
     make(
       ~textualTarget=
-        makeTextualTarget(
+        makeTextualTargetInput(
           ~id=target##textualTargetId,
           ~format=?target##format,
           ~processingLanguage=?target##processingLanguage,
@@ -79,51 +97,7 @@ let makeFromTarget = target =>
   | _ => Js.Promise.resolve(None)
   };
 
-/**
- * FIXME: toTarget below requires this to keep the **input** annotation target input type polymorphic (i.e.
- * Lib_GraphQL_PatchAnnotationMutation.updateCache annotation), as unwrapped seems to constrain to just the
- * specified fields. Perhaps something with polymorphic variants being constrained on the first set of fields?
- */
-external opaqueType:
-  {
-    ..
-    "__typename": string,
-    "textualTargetId": string,
-    "format": option(Lib_GraphQL_Format.t),
-    "processingLanguage": option(Lib_GraphQL_Language.t),
-    "language": option(Lib_GraphQL_Language.t),
-    "textDirection": option(Lib_GraphQL_TextDirection.t),
-    "accessibility": option(array(string)),
-    "rights": option(array(string)),
-    "value": string,
-  } =>
-  Js.t('b) =
-  "%identity";
-
-let toTarget = targetInput =>
-  switch (
-    targetInput##textualTarget,
-    targetInput##externalTarget,
-    targetInput##specificTarget,
-  ) {
-  | (Some(textualTarget), None, None) =>
-    Some(
-      `TextualTarget(
-        opaqueType({
-          "__typename": "TextualTarget",
-          "textualTargetId": textualTarget##id,
-          "format": textualTarget##format,
-          "processingLanguage": textualTarget##processingLanguage,
-          "language": textualTarget##language,
-          "textDirection": textualTarget##textDirection,
-          "accessibility": textualTarget##accessibility,
-          "rights": textualTarget##rights,
-          "value": textualTarget##value,
-        }),
-      ),
-    )
-  | _ => None
-  };
+let makeId = (~annotationId) => annotationId ++ "/targets/" ++ Uuid.makeV4();
 
 external unsafeAsDict: Js.t('a) => Js.Dict.t('b) = "%identity";
 
@@ -255,6 +229,16 @@ let toCache = {
         t##selector
         ->Belt.Array.keepMap(Lib_GraphQL_SelectorInput.toCache)
         ->Js.Json.array,
+      ),
+      (
+        "state",
+        t##state
+        ->Belt.Option.map(s =>
+            s
+            ->Belt.Array.keepMap(Lib_GraphQL_StateInput.toCache)
+            ->Js.Json.array
+          )
+        ->Belt.Option.getWithDefault(Js.Json.null),
       ),
     ])
     ->Js.Json.object_

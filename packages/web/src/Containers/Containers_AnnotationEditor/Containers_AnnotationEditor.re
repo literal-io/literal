@@ -367,8 +367,11 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
                     ~target=
                       Lib_GraphQL_AnnotationTargetInput.make(
                         ~textualTarget=
-                          Lib_GraphQL_AnnotationTargetInput.makeTextualTarget(
-                            ~id=Uuid.makeV4(),
+                          Lib_GraphQL_AnnotationTargetInput.makeTextualTargetInput(
+                            ~id=
+                              Lib_GraphQL_AnnotationTargetInput.makeId(
+                                ~annotationId=annotation##id,
+                              ),
                             ~format=`TEXT_PLAIN,
                             ~language=`EN_US,
                             ~processingLanguage=`EN_US,

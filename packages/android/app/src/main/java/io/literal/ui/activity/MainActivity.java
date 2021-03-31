@@ -1,6 +1,9 @@
 package io.literal.ui.activity;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobileconnectors.cognitoauth.AuthClient;
@@ -34,6 +38,7 @@ import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
 import io.literal.repository.ToastRepository;
+import io.literal.service.AnnotationService;
 import io.literal.ui.MainApplication;
 import io.literal.ui.fragment.AppWebView;
 import io.literal.ui.fragment.AppWebViewBottomSheetAnimator;
@@ -91,6 +96,17 @@ public class MainActivity extends AppCompatActivity {
         } else {
             this.commitFragments(savedInstanceState, null);
         }
+
+        LocalBroadcastManager.getInstance(getBaseContext()).registerReceiver(
+                annotationCreatedBroadcastReceiver,
+                new IntentFilter(AnnotationService.ACTION_BROADCAST_CREATED_ANNOTATIONS)
+        );
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        LocalBroadcastManager.getInstance(getBaseContext()).unregisterReceiver(annotationCreatedBroadcastReceiver);
     }
 
     private void initializeViewModel() {
@@ -124,11 +140,21 @@ public class MainActivity extends AppCompatActivity {
                                 Annotation annotation = Annotation.fromJson(data.getJSONObject("annotation"));
                                 boolean displayBottomSheet = data.getBoolean("displayBottomSheet");
 
-                                sourceWebViewBottomSheetFragment.handleViewTargetForAnnotation(annotation, targetId);
-                                if (displayBottomSheet) {
-                                    sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
-                                    appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
-                                }
+                                sourceWebViewBottomSheetFragment.handleViewTargetForAnnotation(
+                                        annotation,
+                                        targetId,
+                                        (e, d) -> {
+                                            if (e != null) {
+                                                Log.d("handleViewTargetForAnnotation", "error", e);
+                                                return;
+                                            }
+
+                                            if (displayBottomSheet) {
+                                                sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                                                appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+                                            }
+                                        }
+                                );
                             } catch (JSONException e) {
                                 Log.d("MainActivity", "Unable to handle event: " + webEvent.toString(), e);
                             }
@@ -187,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }));
 
-        sourceWebViewBottomSheetFragment.setOnToolbarPrimaryActionCallback((_e, createdAnnotations) -> {
+        sourceWebViewBottomSheetFragment.setOnToolbarPrimaryActionCallback((_e, createdAnnotations, domainMetadata) -> {
             this.handleSourceWebViewBottomSheetHidden(createdAnnotations);
         });
         sourceWebViewBottomSheetFragment.setOnCreateAnnotationFromSource((_e, sourceUrl) -> {
@@ -304,6 +330,26 @@ public class MainActivity extends AppCompatActivity {
         }
         super.onBackPressed();
     }
+
+    private final BroadcastReceiver annotationCreatedBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String annotationsJSON = intent.getStringExtra(AnnotationService.EXTRA_ANNOTATIONS);
+            if (appWebViewPrimaryFragment != null && annotationsJSON != null) {
+                try {
+                    JSONObject addCacheAnnotationsData = new JSONObject();
+                    addCacheAnnotationsData.put("annotations", annotationsJSON);
+                    appWebViewPrimaryFragment.postWebEvent(new WebEvent(
+                            WebEvent.TYPE_ADD_CACHE_ANNOTATIONS,
+                            UUID.randomUUID().toString(),
+                            addCacheAnnotationsData
+                    ));
+                } catch (JSONException ex) {
+                    Log.d("annotationCreatedBroadcastReceiver", "Unable to dispatch ADD_CACHE_ANNOTATIONS", ex);
+                }
+            }
+        }
+    };
 
     private class SourceWebViewBottomSheetCallback extends BottomSheetBehavior.BottomSheetCallback {
 

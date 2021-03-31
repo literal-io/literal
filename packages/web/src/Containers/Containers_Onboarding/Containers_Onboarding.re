@@ -35,113 +35,9 @@ let make = (~currentUser, ~onAnnotationIdChange) => {
   let _ =
     React.useEffect0(() => {
       /** enforce desired ordering of onboarding highlights via createdAt timestamps */
-      let baseTs = Js.Date.make();
+
       let createAnnotationInputs =
-        onboardingNotes
-        ->Belt.Array.reverse
-        ->Belt.Array.mapWithIndex((idx, (text, tags)) => {
-            let _ = baseTs->Js.Date.setMilliseconds(float_of_int(idx));
-            let ts = baseTs->Js.Date.toISOString;
-            let tagsWithIdsP =
-              tags
-              ->Belt.Option.getWithDefault([||])
-              ->Belt.Array.map(tag =>
-                  Lib_GraphQL.AnnotationCollection.makeId(
-                    ~creatorUsername=
-                      AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-                    ~label=tag,
-                  )
-                  |> Js.Promise.then_(id =>
-                       Js.Promise.resolve(
-                         Containers_AnnotationEditor_Tag.{
-                           id: Some(id),
-                           text: tag,
-                           href: None,
-                         },
-                       )
-                     )
-                )
-              ->Belt.Array.concat([|
-                  Js.Promise.resolve(
-                    Containers_AnnotationEditor_Tag.{
-                      id:
-                        Some(
-                          Lib_GraphQL.AnnotationCollection.(
-                            makeIdFromComponent(
-                              ~creatorUsername=
-                                currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-                              ~annotationCollectionIdComponent=recentAnnotationCollectionIdComponent,
-                              (),
-                            )
-                          ),
-                        ),
-                      text: "recent",
-                      href: None,
-                    },
-                  ),
-                |])
-              ->Js.Promise.all;
-
-            let annotationIdP =
-              Lib_GraphQL.Annotation.makeId(
-                ~creatorUsername=
-                  AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-                ~textualTargetValue=text,
-              );
-
-            Js.Promise.all2((annotationIdP, tagsWithIdsP))
-            |> Js.Promise.then_(((annotationId, tagsWithIds)) =>
-                 Lib_GraphQL_CreateAnnotationMutation.Input.make(
-                   ~context=[|Lib_GraphQL.Annotation.defaultContext|],
-                   ~id=annotationId,
-                   ~body=
-                     tagsWithIds->Belt.Array.map(
-                       (Containers_AnnotationEditor_Tag.{text, id}) =>
-                       Lib_GraphQL_AnnotationBodyInput.(
-                         makeBody(
-                           ~textualBody=
-                             makeTextualBody(
-                               ~id=id->Belt.Option.getExn,
-                               ~value=text,
-                               ~purpose=[|`TAGGING|],
-                               ~format=`TEXT_PLAIN,
-                               ~textDirection=`LTR,
-                               ~language=`EN_US,
-                               ~processingLanguage=`EN_US,
-                               (),
-                             ),
-                           (),
-                         )
-                       )
-                     ),
-                   ~created=ts->Js.Json.string,
-                   ~modified=ts->Js.Json.string,
-                   ~generated=ts->Js.Json.string,
-                   ~motivation=[|`HIGHLIGHTING|],
-                   ~creatorUsername=
-                     AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-                   ~target=[|
-                     Lib_GraphQL_AnnotationTargetInput.(
-                       make(
-                         ~textualTarget=
-                           makeTextualTarget(
-                             ~id=Uuid.makeV4(),
-                             ~value=text,
-                             ~textDirection=`LTR,
-                             ~processingLanguage=`EN_US,
-                             ~language=`EN_US,
-                             ~format=`TEXT_PLAIN,
-                             (),
-                           ),
-                         (),
-                       )
-                     ),
-                   |],
-                   (),
-                 )
-                 ->Js.Promise.resolve
-               );
-          });
+        Containers_Onboarding_GraphQL.makeOnboardingAnnotations(~currentUser);
 
       let createAgentInput = {
         let username = AwsAmplify.Auth.CurrentUserInfo.(currentUser->username);
@@ -184,7 +80,7 @@ let make = (~currentUser, ~onAnnotationIdChange) => {
              let _ =
                Lib_GraphQL_CreateAnnotationMutation.Apollo.updateCacheMany(
                  ~currentUser,
-                 ~inputs=createAnnotationInputs,
+                 ~inputs=createAnnotationInputs->Belt.Array.reverse,
                  ~createAnnotationCollection=true,
                  (),
                );

@@ -198,6 +198,13 @@ public class ShareTargetHandlerRepository {
                         return;
                     }
 
+                    String hashId = null;
+                    try {
+                        hashId = Crypto.sha256Hex(uploadURI.toString());
+                    } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
+                        Log.d("CreateAnnotationFromImage", "Unable to create hashId", noSuchAlgorithmException);
+                    }
+
                     CreateAnnotationFromExternalTargetMutation createAnnotationMutation = CreateAnnotationFromExternalTargetMutation
                             .builder()
                             .input(
@@ -213,6 +220,7 @@ public class ShareTargetHandlerRepository {
                                                             .processingLanguage(Language.EN_US)
                                                             .type(ResourceType.IMAGE)
                                                             .id(uploadURI.toString())
+                                                            .hashId(hashId)
                                                             .build()
                                             )
                                             .build()

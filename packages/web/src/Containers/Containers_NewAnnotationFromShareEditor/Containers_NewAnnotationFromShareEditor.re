@@ -89,7 +89,6 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       ->Belt.Option.flatMap(target =>
           switch (target) {
           | `TextualTarget(target) =>
-            let copy = Js.Obj.assign(Js.Obj.empty(), target);
             Lib_GraphQL_PatchAnnotationMutation.Input.(
               makeOperation(
                 ~set=
@@ -98,7 +97,15 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
                     ~target=
                       Lib_GraphQL_AnnotationTargetInput.make(
                         ~textualTarget=
-                          Js.Obj.assign(copy, {"value": textValue}),
+                          Lib_GraphQL_AnnotationTargetInput.makeTextualTargetInput(
+                            ~value=textValue,
+                            ~id=target##textualTargetId,
+                            ~format=?target##format,
+                            ~processingLanguage=?target##processingLanguage,
+                            ~accessibility=?target##accessibility,
+                            ~rights=?target##rights,
+                            (),
+                          ),
                         (),
                       ),
                     (),
@@ -106,7 +113,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
                 (),
               )
             )
-            ->Js.Option.some;
+            ->Js.Option.some
           | _ => None
           }
         )
@@ -118,8 +125,11 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
                   ~target=
                     Lib_GraphQL_AnnotationTargetInput.make(
                       ~textualTarget=
-                        Lib_GraphQL_AnnotationTargetInput.makeTextualTarget(
-                          ~id=Uuid.makeV4(),
+                        Lib_GraphQL_AnnotationTargetInput.makeTextualTargetInput(
+                          ~id=
+                            Lib_GraphQL_AnnotationTargetInput.makeId(
+                              ~annotationId=annotation##id,
+                            ),
                           ~format=`TEXT_PLAIN,
                           ~language=`EN_US,
                           ~processingLanguage=`EN_US,

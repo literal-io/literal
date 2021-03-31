@@ -78,40 +78,6 @@ module Input = {
       ),
     ])
     ->Js.Json.object_;
-
-  let toAnnotation = input => {
-    "__typename": "Annotation",
-    "id": input##id,
-    "created":
-      input##created
-      ->Belt.Option.getWithDefault(
-          Js.Date.make()->Js.Date.toISOString->Js.Json.string,
-        )
-      ->Js.Option.some,
-    "modified":
-      input##modified
-      ->Belt.Option.getWithDefault(
-          Js.Date.make()->Js.Date.toISOString->Js.Json.string,
-        )
-      ->Js.Option.some,
-    "creatorUsername": input##creatorUsername,
-    "context": input##context,
-    "generated": input##generated,
-    "audience": input##audience,
-    "canonical": input##canonical,
-    "stylesheet": input##stylesheet,
-    "via": input##via,
-    "motivation": input##motivation,
-    "annotationGeneratorId": input##annotationGeneratorId,
-    "target":
-      input##target
-      ->Belt.Array.keepMap(Lib_GraphQL_AnnotationTargetInput.toTarget),
-    "body":
-      input##body
-      ->Belt.Option.map(body =>
-          body->Belt.Array.keepMap(Lib_GraphQL_AnnotationBodyInput.toBody)
-        ),
-  };
 };
 
 module Apollo = {

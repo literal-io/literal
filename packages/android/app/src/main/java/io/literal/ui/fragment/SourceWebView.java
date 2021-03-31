@@ -96,7 +96,7 @@ public class SourceWebView extends Fragment {
     private AppBarLayout appBarLayout;
 
     /** Triggered when the primary action in the toolbar tapped. **/
-    private Callback<Void, Annotation[]> onToolbarPrimaryActionCallback;
+    private Callback2<Annotation[], DomainMetadata> onToolbarPrimaryActionCallback;
     /** Triggered when ShareTargetHandler should be opened to URL **/
     private Callback<Void, URL> onCreateAnnotationFromSource;
 
@@ -741,11 +741,11 @@ public class SourceWebView extends Fragment {
         }
     }
 
-    public void handleViewTargetForAnnotation(Annotation annotation, String targetId) {
+    public void handleViewTargetForAnnotation(Annotation annotation, String targetId, Callback<Exception, Void> onComplete) {
 
         Callback2<String, DomainMetadata> onTargetUrl = (e1, targetUrl, initialDomainMetadata) -> {
             if (e1 != null) {
-                Log.d("SourceWebView", "handleViewTargetForAnnotation error", e1);
+                onComplete.invoke(e1, null);
                 return;
             }
 
@@ -771,6 +771,7 @@ public class SourceWebView extends Fragment {
                 webView.loadUrl(targetUrl);
                 shouldClearHistoryOnPageFinished = true;
             }
+            onComplete.invoke(null, null);
         };
 
         Arrays.stream(annotation.getTarget())
@@ -966,12 +967,13 @@ public class SourceWebView extends Fragment {
         }
     }
 
-    public void setOnToolbarPrimaryActionCallback(Callback<Void, Annotation[]> onToolbarPrimaryActionCallback) {
+    public void setOnToolbarPrimaryActionCallback(Callback2<Annotation[], DomainMetadata> onToolbarPrimaryActionCallback) {
         this.onToolbarPrimaryActionCallback = onToolbarPrimaryActionCallback;
     }
 
     private void handleToolbarPrimaryAction() {
         ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
+        DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
         ArrayList<String> createdAnnotationIds = sourceWebViewViewModel.getCreatedAnnotationIds();
         Annotation[] createdAnnotations = new Annotation[0];
 
@@ -985,7 +987,6 @@ public class SourceWebView extends Fragment {
                         JsonArrayUtil.stringifyObjectArray(createdAnnotations, Annotation::toJson).toString()
                 );
 
-                DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
                 if (onToolbarPrimaryActionCallback == null && domainMetadata != null) {
                     serviceIntent.putExtra(
                             AnnotationService.EXTRA_DOMAIN_METADATA,
@@ -1001,7 +1002,8 @@ public class SourceWebView extends Fragment {
         if (onToolbarPrimaryActionCallback != null) {
             onToolbarPrimaryActionCallback.invoke(
                     null,
-                    createdAnnotations
+                    createdAnnotations,
+                    domainMetadata
             );
         } else {
             Activity activity = getActivity();

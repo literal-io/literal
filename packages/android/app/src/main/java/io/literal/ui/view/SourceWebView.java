@@ -384,7 +384,7 @@ public class SourceWebView extends NestedScrollingChildWebView {
             }
             String host = request.getUrl().getHost();
             String path = request.getUrl().getPath().substring(1);
-            if (!request.getMethod().equals("GET") || host == null || !host.equals(storageHost) || path == null || !path.startsWith("private/")) {
+            if (!request.getMethod().equals("GET") || host == null || !host.equals(storageHost) || path == null) {
                 return null;
             }
 

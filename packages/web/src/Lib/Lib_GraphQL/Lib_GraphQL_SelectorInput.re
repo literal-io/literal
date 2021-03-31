@@ -1,28 +1,46 @@
-let make = (~rangeSelector, ~textPositionSelector, ~xPathSelector, ()) => {
+let make =
+    (
+      ~rangeSelector=?,
+      ~textPositionSelector=?,
+      ~xPathSelector=?,
+      ~cssSelector=?,
+      ~textQuoteSelector=?,
+      ~dataPositionSelector=?,
+      ~svgSelector=?,
+      ~fragmentSelector=?,
+      (),
+    ) => {
   "rangeSelector": rangeSelector,
   "textPositionSelector": textPositionSelector,
   "xPathSelector": xPathSelector,
+  "cssSelector": cssSelector,
+  "textQuoteSelector": textQuoteSelector,
+  "dataPositionSelector": dataPositionSelector,
+  "svgSelector": svgSelector,
+  "fragmentSelector": fragmentSelector,
 };
 
 let makeRangeSelectorInput = (~startSelector, ~endSelector, ~refinedBy=?, ()) => {
   "startSelector": startSelector,
   "endSelector": endSelector,
   "refinedBy": refinedBy,
-  "type": "RANGE_SELECTOR",
+  "type": `RANGE_SELECTOR,
 };
 
-let makeXPathSelectorInput = (~value, ~refinedBy, ()) => {
+let makeXPathSelectorInput = (~value, ~refinedBy=?, ()) => {
   "value": value,
   "refinedBy": refinedBy,
-  "type": "XPATH_SELECTOR",
+  "type": `XPATH_SELECTOR,
 };
 
-let makeTextPositionSelectorInput = (~start, ~end_, ~refinedBy, ()) => {
+let makeTextPositionSelectorInput = (~start, ~end_, ~refinedBy=?, ()) => {
   "start": start,
   "end": end_,
   "refinedBy": refinedBy,
-  "type": "TEXT_POSITION_SELECTOR",
+  "type": `TEXT_POSITION_SELECTOR,
 };
+
+let getEnd = [%raw {| function(input) { return input.end } |}];
 
 let toCache = {
   let rec rangeSelectorInputToCache = s =>
@@ -61,7 +79,7 @@ let toCache = {
 
   and textPositionSelectorInputToCache = s =>
     Js.Dict.fromList([
-      ("end_", s##end_->float_of_int->Js.Json.number),
+      ("end_", getEnd(s)->float_of_int->Js.Json.number),
       ("start", s##start->float_of_int->Js.Json.number),
       ("__typename", "TextPositionSelector"->Js.Json.string),
       ("type_", "TEXT_POSITION_SELECTOR"->Js.Json.string),

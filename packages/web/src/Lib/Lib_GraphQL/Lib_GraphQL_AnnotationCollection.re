@@ -123,6 +123,11 @@ module Apollo = {
           {"__typename": "", "annotation": annotation}
         )
       ->Belt.Array.concat(items)
+      ->Ramda.uniqBy(d =>
+          d##annotation
+          ->Js.Json.decodeObject
+          ->Belt.Option.flatMap(a => a->Js.Dict.get("id"))
+        )
       ->Js.Option.some;
 
     updateCacheAnnotationCollectionItems(

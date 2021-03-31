@@ -25,10 +25,12 @@ import java.util.List;
 
 import io.literal.R;
 import io.literal.lib.Constants;
+import io.literal.lib.DomainMetadata;
 import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
+import io.literal.repository.AuthenticationRepository;
 import io.literal.repository.NotificationRepository;
 import io.literal.repository.ShareTargetHandlerRepository;
 import io.literal.repository.ToastRepository;
@@ -136,7 +138,7 @@ public class ShareTargetHandler extends AppCompatActivity {
                 null,
                 R.drawable.done_white
         );
-        sourceWebViewFragment.setOnToolbarPrimaryActionCallback((_e, result) -> this.handleCreateFromSourceDone(result));
+        sourceWebViewFragment.setOnToolbarPrimaryActionCallback((_e, annotations, domainMetadata) -> this.handleCreateFromSourceDone(annotations, domainMetadata));
 
         appWebViewFragment = AppWebView.newInstance(appWebViewUri, null);
         getSupportFragmentManager()
@@ -186,7 +188,7 @@ public class ShareTargetHandler extends AppCompatActivity {
         );
     }
 
-    private void handleCreateFromSourceDone(Annotation[] annotations) {
+    private void handleCreateFromSourceDone(Annotation[] annotations, DomainMetadata domainMetadata) {
         if (annotations != null && annotations.length > 0) {
             String resultAnnotationsJson = "";
             try {
@@ -197,6 +199,15 @@ public class ShareTargetHandler extends AppCompatActivity {
             Intent intent = new Intent();
             intent.putExtra(RESULT_EXTRA_ANNOTATIONS, resultAnnotationsJson);
             setResult(RESULT_OK, intent);
+
+            if (domainMetadata != null) {
+                NotificationRepository.sourceCreatedNotification(
+                        getBaseContext(),
+                        AuthenticationRepository.getUsername(),
+                        domainMetadata
+                );
+            }
+
         } else {
             setResult(RESULT_CANCELED);
         }

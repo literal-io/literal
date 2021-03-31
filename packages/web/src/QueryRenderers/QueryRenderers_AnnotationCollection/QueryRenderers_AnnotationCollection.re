@@ -119,6 +119,7 @@ module Data = {
       if (Js.Array2.length(annotations) > 0) {
         let _ =
           Lib_WebView_Model_Apollo.addManyToCache(~annotations, ~currentUser);
+
         Routes.CreatorsIdAnnotationCollectionsId.(
           Next.Router.replaceWithAs(
             staticPath,

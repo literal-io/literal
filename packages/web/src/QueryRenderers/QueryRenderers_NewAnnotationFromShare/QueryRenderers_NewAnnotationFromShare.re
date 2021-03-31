@@ -224,7 +224,7 @@ module FromFileUrl = {
                               )
                               ->Js.Option.some,
                             ~externalTarget=
-                              Lib_GraphQL_AnnotationTargetInput.makeExternalTarget(
+                              Lib_GraphQL_AnnotationTargetInput.makeExternalTargetInput(
                                 ~id=s3Url,
                                 ~format=`TEXT_PLAIN,
                                 ~language=`EN_US,

@@ -7,6 +7,8 @@ import android.os.IBinder;
 import android.util.Log;
 import android.util.Pair;
 
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import com.amazonaws.services.s3.AmazonS3URI;
 
 import org.json.JSONArray;
@@ -14,6 +16,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -39,6 +42,8 @@ import io.literal.ui.MainApplication;
 public class AnnotationService extends Service {
 
     public static String ACTION_CREATE_ANNOTATIONS = "ACTION_CREATE_ANNOTATIONS";
+    public static String ACTION_BROADCAST_CREATED_ANNOTATIONS = "ACTION_BROADCAST_CREATED_ANNOTATIONS";
+
     public static String EXTRA_ANNOTATIONS = "EXTRA_ANNOTATIONS";
     public static String EXTRA_DOMAIN_METADATA = "EXTRA_DOMAIN_METADATA";
 
@@ -85,6 +90,18 @@ public class AnnotationService extends Service {
     private void handleCreateAnnotation(Annotation[] annotations, DomainMetadata domainMetadata, Callback<Exception, Void> onFinish) {
 
         Callback<Exception, Void> onFinishWithNotification = (e, _v) -> {
+            try {
+                Intent intent = new Intent();
+                intent.setAction(ACTION_BROADCAST_CREATED_ANNOTATIONS);
+                intent.putExtra(
+                        EXTRA_ANNOTATIONS,
+                        JsonArrayUtil.stringifyObjectArray(annotations, Annotation::toJson).toString()
+                );
+                LocalBroadcastManager.getInstance(getBaseContext()).sendBroadcast(intent);
+            } catch (JSONException ex) {
+                Log.d("handleCreateAnnotations", "onFinishWithNotification unable to broadcast CREATED_ANNOTATIONS", ex);
+            }
+
             if (e == null && domainMetadata != null) {
                 NotificationRepository.sourceCreatedNotification(
                         getBaseContext(),
@@ -136,7 +153,17 @@ public class AnnotationService extends Service {
 
             for (int i = 0; i < amazonS3URIs.size(); i++) {
                 Pair<Integer, String[]> uploadedArchive = archivesToUpload.get(i);
+                String localFilePath = uploadedArchive.second[uploadedArchive.first];
                 uploadedArchive.second[uploadedArchive.first] = amazonS3URIs.get(i).toString();
+
+                try {
+                    boolean deleted = new File(new URI(localFilePath)).delete();
+                    if (!deleted) {
+                        Log.d("handleCreateAnnotations", "Unable to delete file: " + localFilePath);
+                    }
+                } catch (URISyntaxException ex) {
+                    Log.d("handleCreateAnnotations", "Unable to parse local file path", ex);
+                }
             }
 
             AnnotationRepository.createAnnotations(getBaseContext(), annotations, (ex, result) -> {

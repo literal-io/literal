@@ -89,13 +89,13 @@ let make = (~currentUser) => {
                  Lib_GraphQL_AnnotationTargetInput.(
                    make(
                      ~textualTarget=
-                       makeTextualTarget(
+                       makeTextualTargetInput(
                          ~format=`TEXT_PLAIN,
                          ~language=`EN_US,
                          ~processingLanguage=`EN_US,
                          ~textDirection=`LTR,
                          ~value=textValue,
-                         ~id=Uuid.makeV4(),
+                         ~id=makeId(~annotationId=id),
                          (),
                        ),
                      (),
