@@ -210,7 +210,40 @@ module Error = {
 
 module Empty = {
   [@react.component]
-  let make = () => React.string("Empty...");
+  let make = (~currentUser) =>
+    <div
+      className={Cn.fromList([
+        "w-full",
+        "h-full",
+        "bg-black",
+        "flex",
+        "flex-col",
+      ])}>
+      <Containers_AnnotationCollectionHeader hideDelete=true currentUser />
+      <div
+        className={Cn.fromList([
+          "flex",
+          "flex-col",
+          "justify-center",
+          "items-center",
+          "flex-1",
+        ])}>
+        <Svg
+          placeholderViewBox="0 0 24 24"
+          className={Cn.fromList([
+            "w-24",
+            "h-24",
+            "pointer-events-none",
+            "text-lightDisabled",
+            "opacity-50",
+          ])}
+          icon=Svg.waves
+        />
+      </div>
+      <BottomAlert
+        text="You have no annotations. To get started, tap the \"+\" icon in the upper right corner."
+      />
+    </div>;
 };
 
 [@react.component]
@@ -348,12 +381,15 @@ let make =
                 );
               (annotationCollection, annotations);
             })
-        )
+        ),
+      data##getAgent,
     ) {
-    | None when loading => <Loading />
-    | None when isRecentAnnotationCollection =>
+    | (None, _) when loading => <Loading />
+    | (None, None) when isRecentAnnotationCollection =>
       <Containers_Onboarding currentUser onAnnotationIdChange />
-    | None =>
+    | (None, Some(_)) when isRecentAnnotationCollection =>
+      <Empty currentUser />
+    | (None, _) =>
       <Redirect
         staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath
         path={Routes.CreatorsIdAnnotationCollectionsId.path(
@@ -362,11 +398,15 @@ let make =
         )}>
         <Loading />
       </Redirect>
-    | Some((_, annotations))
+    | (Some((_, annotations)), None)
         when
           isRecentAnnotationCollection && Js.Array2.length(annotations) == 0 =>
       <Containers_Onboarding currentUser onAnnotationIdChange />
-    | Some((_, annotations)) when Js.Array2.length(annotations) == 0 =>
+    | (Some((_, annotations)), Some(_))
+        when
+          isRecentAnnotationCollection && Js.Array2.length(annotations) == 0 =>
+      <Empty currentUser />
+    | (Some((_, annotations)), _) when Js.Array2.length(annotations) == 0 =>
       <Redirect
         staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath
         path={Routes.CreatorsIdAnnotationCollectionsId.path(
@@ -375,7 +415,7 @@ let make =
         )}>
         <Loading />
       </Redirect>
-    | Some((annotationCollection, annotations)) =>
+    | (Some((annotationCollection, annotations)), _) =>
       <Data
         onAnnotationIdChange
         onFetchMore=handleFetchMore

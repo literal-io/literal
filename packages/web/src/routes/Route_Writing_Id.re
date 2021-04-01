@@ -16,79 +16,88 @@ module Data = {
 
 [@react.component]
 let default = (~html, ~title, ~subtitle) =>
-  <div
-    className={Cn.fromList([
-      "w-full",
-      "h-full",
-      "overflow-y-auto",
-      "bg-backgroundGray",
-    ])}>
+  <>
+    <Head>
+      {Head.makeMeta(~title=title ++ " / Literal", ~description=subtitle, ())}
+    </Head>
     <div
       className={Cn.fromList([
-        "p-8",
-        "bg-black",
-        "max-w-lg",
-        "m-auto",
         "w-full",
-        "min-h-full",
+        "h-full",
+        "overflow-y-auto",
+        "bg-backgroundGray",
       ])}>
-      <header
+      <div
         className={Cn.fromList([
-          "mb-12",
-          "flex",
-          "flex-row",
-          "justify-between",
-          "items-center",
+          "p-8",
+          "bg-black",
+          "max-w-lg",
+          "m-auto",
+          "w-full",
+          "min-h-full",
         ])}>
-        <h1
+        <header
           className={Cn.fromList([
-            "font-serif",
-            "text-lightPrimary",
-            "text-xl",
+            "mb-12",
+            "flex",
+            "flex-row",
+            "justify-between",
+            "items-center",
           ])}>
-          {React.string("Writing")}
-        </h1>
-        <Next.Link _as={Routes.Index.path()} href=Routes.Index.staticPath>
-          <a>
-            <Svg
-              icon=Svg.logo
-              placeholderViewBox="0 0 24 24"
-              className={Cn.fromList([
-                "pointer-events-none",
-                "w-12",
-                "h-12",
-                "block",
-              ])}
-            />
-          </a>
-        </Next.Link>
-      </header>
-      <main>
-        <h1
-          className={Cn.fromList(["font-serif", "text-lightPrimary", "text-2xl"])}>
-          {React.string(title)}
-        </h1>
-        <p
-          className={Cn.fromList([
-            "font-sans",
-            "text-lightSecondary",
-            "text-base",
-          ])}>
-          {React.string(subtitle)}
-        </p>
-        <hr
-          className={Cn.fromList([
-            "border-t",
-            "border-dotted",
-            "border-lightDisabled",
-            "mb-14",
-            "mt-6"
-          ])}
-        />
-        <article> <Markdown html /> </article>
-      </main>
+          <h1
+            className={Cn.fromList([
+              "font-serif",
+              "text-lightPrimary",
+              "text-xl",
+            ])}>
+            {React.string("Writing")}
+          </h1>
+          <Next.Link _as={Routes.Index.path()} href=Routes.Index.staticPath>
+            <a>
+              <Svg
+                icon=Svg.logo
+                placeholderViewBox="0 0 24 24"
+                className={Cn.fromList([
+                  "pointer-events-none",
+                  "w-12",
+                  "h-12",
+                  "block",
+                ])}
+              />
+            </a>
+          </Next.Link>
+        </header>
+        <main>
+          <h1
+            className={Cn.fromList([
+              "font-serif",
+              "text-lightPrimary",
+              "text-2xl",
+            ])}>
+            {React.string(title)}
+          </h1>
+          <p
+            className={Cn.fromList([
+              "font-sans",
+              "text-lightSecondary",
+              "text-base",
+            ])}>
+            {React.string(subtitle)}
+          </p>
+          <hr
+            className={Cn.fromList([
+              "border-t",
+              "border-dotted",
+              "border-lightDisabled",
+              "mb-14",
+              "mt-6",
+            ])}
+          />
+          <article> <Markdown html /> </article>
+        </main>
+      </div>
     </div>
-  </div>;
+  </>;
 
 let getStaticProps =
     (ctx: Next.getStaticPropsContext(param))

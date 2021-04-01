@@ -1,13 +1,13 @@
 import "../app.css";
-import "@fontsource/roboto-mono/latin.css"
-import "@fontsource/domine/latin.css"
+import "@fontsource/roboto-mono/latin.css";
+import "@fontsource/domine/latin.css";
 
-import Head from "next/head";
 import Router from "next/router";
 
 import AuthenticationProvider from "../Providers/Providers_Authentication.js";
 import ApolloProvider from "../Providers/Providers_Apollo.js";
-import ErrorBoundary from "../components/ErrorBoundary/ErrorBoundary.js"
+import ErrorBoundary from "../components/ErrorBoundary/ErrorBoundary.js";
+import Head from "../components/Head.js";
 import { page, track } from "../services/Service_Analytics.js";
 
 import * as React from "react";
@@ -38,22 +38,15 @@ export default function App({
   }
 
   React.useEffect(() => {
-    window.requestIdleCallback(() => { 
+    const idleCallback = window.requestIdleCallback || window.setImmediate;
+    idleCallback(() => {
       track(page({ route, asPath, query }));
-    })
+    });
   }, [asPath, route, query]);
 
   return (
     <>
-      <Head>
-        <title>Literal</title>
-        <meta
-          key="viewport"
-          name="viewport"
-          content="initial-scale=1.0, width=device-width"
-        />
-        <link rel="icon" type="image/png" href="/favicon-32.png" />
-      </Head>
+      <Head.make />
       <AuthenticationProvider.make>
         <ErrorBoundary.make>
           <ApolloProvider.make

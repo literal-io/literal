@@ -334,11 +334,7 @@ module Footer = {
       description: "Get the mobile application.",
       href: googlePlayStoreUrl,
     },
-    {
-      title: "Writing",
-      description: "View the blog.",
-      href: "/writing",
-    },
+    {title: "Writing", description: "View the blog.", href: "/writing"},
     {
       title: "Contact",
       description: "Reach out to tell us what you think, ask a question, or just say hello.",
@@ -414,55 +410,58 @@ module Footer = {
 
 [@react.component]
 let default = () => {
-  <div
-    style={style(~backgroundColor="rgb(229, 229, 229)", ())}
-    className={cn([
-      "w-full",
-      "h-full",
-      "overflow-y-scroll",
-      "flex",
-      "flex-col",
-    ])}>
-    <div className={cn(["p-8", "bg-black", "max-w-lg", "m-auto", "w-full"])}>
-      <Header />
-      <hr
-        className={Cn.fromList([
-          "border-t",
-          "border-dotted",
-          "border-lightDisabled",
-          "mb-16",
-        ])}
-      />
-      <HowItWorks />
-      <hr
-        className={Cn.fromList([
-          "border-t",
-          "border-dotted",
-          "border-lightDisabled",
-          "mb-16",
-        ])}
-      />
-      <WhyLiteral />
-      <hr
-        className={Cn.fromList([
-          "border-t",
-          "border-dotted",
-          "border-lightDisabled",
-          "mb-16",
-        ])}
-      />
-      <Features />
-      <hr
-        className={Cn.fromList([
-          "border-t",
-          "border-dotted",
-          "border-lightDisabled",
-          "mb-16",
-        ])}
-      />
-      <Footer />
+  <>
+    <div
+      style={style(~backgroundColor="rgb(229, 229, 229)", ())}
+      className={cn([
+        "w-full",
+        "h-full",
+        "overflow-y-scroll",
+        "flex",
+        "flex-col",
+      ])}>
+      <div
+        className={cn(["p-8", "bg-black", "max-w-lg", "m-auto", "w-full"])}>
+        <Header />
+        <hr
+          className={Cn.fromList([
+            "border-t",
+            "border-dotted",
+            "border-lightDisabled",
+            "mb-16",
+          ])}
+        />
+        <HowItWorks />
+        <hr
+          className={Cn.fromList([
+            "border-t",
+            "border-dotted",
+            "border-lightDisabled",
+            "mb-16",
+          ])}
+        />
+        <WhyLiteral />
+        <hr
+          className={Cn.fromList([
+            "border-t",
+            "border-dotted",
+            "border-lightDisabled",
+            "mb-16",
+          ])}
+        />
+        <Features />
+        <hr
+          className={Cn.fromList([
+            "border-t",
+            "border-dotted",
+            "border-lightDisabled",
+            "mb-16",
+          ])}
+        />
+        <Footer />
+      </div>
     </div>
-  </div>;
+  </>;
 };
 
 let page = "index.js";
