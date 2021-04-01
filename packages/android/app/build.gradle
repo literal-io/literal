@@ -20,7 +20,7 @@ android {
             keyPassword signingProperties['RELEASE_KEY_PASSWORD']
         }
     }
-    compileSdkVersion 29
+    compileSdkVersion 30
     buildToolsVersion "29.0.3"
 
     compileOptions {
@@ -30,8 +30,8 @@ android {
 
     defaultConfig {
         applicationId "io.literal"
-        minSdkVersion 24
-        targetSdkVersion 29
+        minSdkVersion 26
+        targetSdkVersion 30
         versionCode 7
         versionName "1.0.0"
 
