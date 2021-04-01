@@ -103,12 +103,21 @@ module Apollo = {
         let onCreateAnnotationCollection =
           createAnnotationCollection
             ? () =>
-                QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.makeCache(
-                  ~label=textualBody##value,
-                  ~annotations=[|cacheAnnotation|],
-                )
-                ->Js.Option.some
-            : (() => None);
+                Lib_GraphQL_Agent.(readCache(makeId(~currentUser)))
+                ->Belt.Option.map(Js.Promise.resolve)
+                ->Belt.Option.getWithDefault(
+                    Lib_GraphQL_Agent.makeCache(~currentUser),
+                  )
+                |> Js.Promise.then_(agent =>
+                     QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.makeCache(
+                       ~label=textualBody##value,
+                       ~annotations=[|cacheAnnotation|],
+                       ~agent,
+                     )
+                     ->Js.Option.some
+                     ->Js.Promise.resolve
+                   )
+            : (() => Js.Promise.resolve(None));
 
         Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationToCollection(
           ~annotation=cacheAnnotation,
@@ -172,14 +181,23 @@ module Apollo = {
         let onCreateAnnotationCollection =
           createAnnotationCollection
             ? () =>
-                Js.Dict.get(textualBodyById, annotationCollectionId)
-                ->Belt.Option.map(textualBody =>
-                    QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.makeCache(
-                      ~label=textualBody##value,
-                      ~annotations,
-                    )
+                Lib_GraphQL_Agent.(readCache(makeId(~currentUser)))
+                ->Belt.Option.map(Js.Promise.resolve)
+                ->Belt.Option.getWithDefault(
+                    Lib_GraphQL_Agent.makeCache(~currentUser),
                   )
-            : (() => None);
+                |> Js.Promise.then_(agent =>
+                     Js.Dict.get(textualBodyById, annotationCollectionId)
+                     ->Belt.Option.map(textualBody =>
+                         QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.makeCache(
+                           ~label=textualBody##value,
+                           ~annotations,
+                           ~agent,
+                         )
+                       )
+                     ->Js.Promise.resolve
+                   )
+            : (() => Js.Promise.resolve(None));
 
         Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationsToCollection(
           ~annotations,

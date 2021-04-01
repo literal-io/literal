@@ -20,34 +20,45 @@ module Apollo = {
         ~client=Providers_Apollo.client,
         (),
       )
-      ->Belt.Option.flatMap(data => {
-          switch (data##getAnnotationCollection->Js.Null.toOption) {
-          | Some(getAnnotationCollection) =>
-            let newItems =
-              getAnnotationCollection##first
-              ->Js.Null.toOption
-              ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
-              ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
-              ->Belt.Option.getWithDefault([||])
-              ->onUpdateItems;
+      ->Belt.Option.forEach(data => {
+          let newData =
+            switch (data##getAnnotationCollection->Js.Null.toOption) {
+            | Some(getAnnotationCollection) =>
+              let newItems =
+                getAnnotationCollection##first
+                ->Js.Null.toOption
+                ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+                ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
+                ->Belt.Option.getWithDefault([||])
+                ->onUpdateItems;
 
-            newItems->Belt.Option.map(newItems => {
-              GetAnnotationCollection.setAnnotationPageItems(
-                data,
-                Js.Null.return(newItems),
-              )
-            });
-          | None => onCreateAnnotationCollection()
-          }
-        })
-      ->Belt.Option.forEach(newData =>
-          GetAnnotationCollection.writeCache(
-            ~query=cacheQuery,
-            ~client=Providers_Apollo.client,
-            ~data=newData,
-            (),
-          )
-        );
+              newItems
+              ->Belt.Option.map(newItems => {
+                  GetAnnotationCollection.setAnnotationPageItems(
+                    data,
+                    Js.Null.return(newItems),
+                  )
+                })
+              ->Js.Promise.resolve;
+            | None => onCreateAnnotationCollection()
+            };
+
+          let _ =
+            newData
+            |> Js.Promise.then_(newData =>
+                 newData
+                 ->Belt.Option.forEach(newData =>
+                     GetAnnotationCollection.writeCache(
+                       ~query=cacheQuery,
+                       ~client=Providers_Apollo.client,
+                       ~data=newData,
+                       (),
+                     )
+                   )
+                 ->Js.Promise.resolve
+               );
+          ();
+        });
     ();
   };
 
@@ -78,7 +89,7 @@ module Apollo = {
             );
           newItems;
         });
-    let onCreateAnnotationCollection = () => None;
+    let onCreateAnnotationCollection = () => Js.Promise.resolve(None);
 
     updateCacheAnnotationCollectionItems(
       ~currentUser,
@@ -152,7 +163,7 @@ module Apollo = {
         )
       ->Js.Option.some;
 
-    let onCreateAnnotationCollection = () => None;
+    let onCreateAnnotationCollection = () => Js.Promise.resolve(None);
 
     updateCacheAnnotationCollectionItems(
       ~currentUser,

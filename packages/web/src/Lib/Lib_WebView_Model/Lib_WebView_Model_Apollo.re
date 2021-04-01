@@ -161,7 +161,7 @@ let addManyToCache = (~annotations, ~currentUser) => {
     )
   ->Js.Dict.entries
   ->Belt.Array.forEach(((annotationCollectionId, annotations)) => {
-      let onCreateAnnotationCollection = () => None;
+      let onCreateAnnotationCollection = () => Js.Promise.resolve(None);
       Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationsToCollection(
         ~annotations,
         ~annotationCollectionId,

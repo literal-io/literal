@@ -446,7 +446,7 @@ module Apollo = {
           Js.Date.(make()->toISOString)->Js.Json.string,
         );
 
-    let onCreateAnnotationCollection = () => None;
+    let onCreateAnnotationCollection = () => Js.Promise.resolve(None);
 
     let _ =
       getAnnotationCollectionOperations(

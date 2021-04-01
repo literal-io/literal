@@ -107,12 +107,7 @@ module GetAnnotationCollection = {
   type cache = {
     .
     "__typename": string,
-    "getAgent":
-      Js.Null.t({
-        .
-        "__typename": string,
-        "id": string,
-      }),
+    "getAgent": Js.Json.t,
     "getAnnotationCollection": Js.Null.t(cacheGetAnnotationCollection),
   };
 
@@ -264,8 +259,9 @@ module GetAnnotationCollection = {
     Ramda.mergeDeepLeft(newQuery, cacheQuery);
   };
 
-  let makeCache = (~label, ~annotations): cache => {
+  let makeCache = (~label, ~annotations, ~agent): cache => {
     "__typename": "Query",
+    "getAgent": agent,
     "getAnnotationCollection":
       Js.Null.return({
         "__typename": "AnnotationCollection",

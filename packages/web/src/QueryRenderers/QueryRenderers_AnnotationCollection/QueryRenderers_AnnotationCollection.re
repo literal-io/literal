@@ -194,7 +194,7 @@ module Data = {
 
 module Error = {
   [@react.component]
-  let make = (~error) => {
+  let make = (~error=?) => {
     let _ =
       React.useEffect1(
         () => {
@@ -427,7 +427,7 @@ let make =
     };
   | ({error: Some(error)}, _, _) => <Error error />
   | ({error: None, data: None, loading: false}, _, _) =>
-    /** FIXME: handle unexpected error **/ <Empty />
+    /** FIXME: handle unexpected error **/ <Error />
   | (_, _, Unauthenticated) =>
     <Redirect
       staticPath={Routes.Authenticate.path()}
