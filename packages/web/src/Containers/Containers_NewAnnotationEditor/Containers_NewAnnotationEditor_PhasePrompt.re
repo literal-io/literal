@@ -148,7 +148,7 @@ let make = (~onCreateFromText, ~onCreateFromFile, ~onCreateFromWeb) => {
       </div>
     </div>
     <BottomAlert
-      text="Use the sharesheet to import highlighted text, screenshots and web pages directly from the apps you use to read."
+      text="Use the sharesheet to import highlighted text, screenshots, and web pages directly from the apps you use to read."
     />
   </div>;
 };
