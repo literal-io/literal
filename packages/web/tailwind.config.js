@@ -44,15 +44,22 @@ module.exports = {
         square: "square",
       },
       backgroundColor: {
+        // white
         lightPrimary: "rgba(255, 255, 255, .92)",
         lightSecondary: "rgba(255, 255, 255, .72)",
         lightDisabled: "rgba(255, 255, 255, .50)",
+
+        // accent black
+        darkAccent: "#1A1A1A",
+
+        // used for fix width backgrounds
         backgroundGray: "rgb(229, 229, 229)",
       },
       borderColor: {
         lightPrimary: "rgba(255, 255, 255, .92)",
         lightSecondary: "rgba(255, 255, 255, .72)",
         lightDisabled: "rgba(255, 255, 255, .50)",
+
       },
       textColor: {
         lightPrimary: "rgba(255, 255, 255, .92)",

@@ -1,22 +1,26 @@
-open Containers_AnnotationEditor_GraphQL;
-
 let modifiedSelector = (~annotation) =>
   annotation##modified->Belt.Option.flatMap(Js.Json.decodeString);
 
-let textValueSelector = (~annotation) =>
+let textualTargetSelector =
+    (~annotation)
+    : option({.. "externalTargetCard_TextualTargetFragment": 'a}) =>
   annotation##target
   ->Belt.Array.getBy(target =>
       switch (target) {
       | `TextualTarget(_) => true
-      | `ExternalTarget(_) => false
+      | _ => false
       }
     )
   ->Belt.Option.flatMap(target =>
       switch (target) {
-      | `TextualTarget(target) => Some(target##value)
-      | `ExternalTarget(_) => None
+      | `TextualTarget(target) => Some(target)
+      | _ => None
       }
-    )
+    );
+
+let textValueSelector = (~annotation) =>
+  textualTargetSelector(~annotation)
+  ->Belt.Option.map(target => target##value)
   ->Belt.Option.getWithDefault("");
 
 let tagsValueSelector = (~currentUser, ~annotation) =>
@@ -26,24 +30,20 @@ let tagsValueSelector = (~currentUser, ~annotation) =>
         switch (body) {
         | `TextualBody(body) when Lib_GraphQL.Annotation.isBodyTag(body) =>
           let href =
-            body##id
-            ->Belt.Option.map(id =>
-                Lib_GraphQL.AnnotationCollection.(
-                  makeIdFromComponent(
-                    ~annotationCollectionIdComponent=idComponent(id),
-                    ~creatorUsername=
-                      currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-                    ~origin=
-                      Webapi.Dom.(window->Window.location->Location.origin),
-                    (),
-                  )
-                )
-              );
+            Lib_GraphQL.AnnotationCollection.(
+              makeIdFromComponent(
+                ~annotationCollectionIdComponent=idComponent(body##id),
+                ~creatorUsername=
+                  currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                ~origin=Webapi.Dom.(window->Window.location->Location.origin),
+                (),
+              )
+            );
           Some(
-            Containers_AnnotationEditor_Types.{
+            Containers_AnnotationEditor_Tag.{
               text: body##value,
-              id: body##id,
-              href,
+              id: Some(body##id),
+              href: Some(href),
             },
           );
         | `Nonexhaustive => None
@@ -66,12 +66,29 @@ let tagsValueSelector = (~currentUser, ~annotation) =>
       },
     |]);
 
+let targetWithExternalTargetSelector = (~annotation) =>
+  annotation##target
+  ->Belt.Array.keepMap(target =>
+      switch (target) {
+      | `SpecificTarget(specficTarget) =>
+        switch (specficTarget##source) {
+        | `ExternalTarget(externalTarget) =>
+          Some((specficTarget##specificTargetId, externalTarget))
+        | _ => None
+        }
+      | _ => None
+      }
+    )
+  ->Belt.Array.get(0);
+
 let handleSave =
   Lodash.debounce2(
     (.
       variables,
       updateAnnotationMutation:
-        ApolloHooks.Mutation.mutation(PatchAnnotationMutation.t),
+        ApolloHooks.Mutation.mutation(
+          Containers_AnnotationEditor_GraphQL.PatchAnnotationMutation.t,
+        ),
     ) => {
       let _ = updateAnnotationMutation(~variables, ());
       ();
@@ -102,9 +119,11 @@ module ModifiedValue = {
 };
 
 [@react.component]
-let make = (~annotationFragment as annotation, ~currentUser) => {
+let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
   let (patchAnnotationMutation, _s, _f) =
-    ApolloHooks.useMutation(PatchAnnotationMutation.definition);
+    ApolloHooks.useMutation(
+      Containers_AnnotationEditor_GraphQL.PatchAnnotationMutation.definition,
+    );
   let scrollContainerRef = React.useRef(Js.Nullable.null);
   let textInputRef = React.useRef(Js.Nullable.null);
   let previousAnnotation = React.useRef(annotation);
@@ -161,89 +180,138 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       (annotation, currentUser),
     );
 
-  let handleTagsChange = tagsValue => {
+  let handleViewTargetForAnnotation =
+      (~targetId, ~annotation, ~displayBottomSheet, ()) => {
+    if (displayBottomSheet) {
+      let _ =
+        Service_Analytics.(
+          track(Click({action: "open external target", label: None}))
+        );
+      ();
+    };
+
+    let _ =
+      Webview.(
+        postMessage(
+          WebEvent.make(
+            ~type_="VIEW_TARGET_FOR_ANNOTATION",
+            ~data=
+              Js.Json.object_(
+                Js.Dict.fromList([
+                  ("targetId", Js.Json.string(targetId)),
+                  (
+                    "annotation",
+                    annotation
+                    ->Containers_AnnotationEditor_GraphQL.Webview.makeAnnotation
+                    ->Lib_WebView_Model_Annotation.encode,
+                  ),
+                  (
+                    "displayBottomSheet",
+                    Js.Json.boolean(displayBottomSheet),
+                  ),
+                ]),
+              ),
+            (),
+          ),
+        )
+      );
+    ();
+  };
+
+  let targetWithExternalTarget =
+    targetWithExternalTargetSelector(~annotation);
+  let targetId =
+    switch (targetWithExternalTarget) {
+    | Some((targetId, _)) => Some(targetId)
+    | _ => None
+    };
+  let _ =
+    React.useEffect2(
+      () => {
+        let _ =
+          switch (targetId) {
+          | Some(targetId) when isVisible =>
+            handleViewTargetForAnnotation(
+              ~targetId,
+              ~annotation,
+              ~displayBottomSheet=false,
+              (),
+            )
+          | _ => ()
+          };
+        None;
+      },
+      (targetId, isVisible),
+    );
+
+  let handleTagsChange = newTagsValue => {
     let modifiedTs =
       Js.Date.(make()->toISOString)->Js.Json.string->Js.Option.some;
-    let _ = setTagsValue(_ => ModifiedValue.make(tagsValue));
-    let tagsWithIds =
+    let _ = setTagsValue(_ => ModifiedValue.make(newTagsValue));
+
+    let textualBodies =
       tagsValue
-      ->Belt.Array.map((tag: Containers_AnnotationEditor_Types.tag) => {
-          let id =
-            switch (tag.id) {
-            | Some(id) => Js.Promise.resolve(id)
-            | None =>
-              Lib_GraphQL.AnnotationCollection.makeId(
-                ~creatorUsername=
-                  AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-                ~label=tag.text,
-              )
-            };
-          id
-          |> Js.Promise.then_(id =>
-               Js.Promise.resolve({...tag, id: Some(id)})
-             );
-        })
+      ->Belt.Array.map(tag =>
+          tag
+          |> Containers_AnnotationEditor_Tag.ensureId(
+               ~creatorUsername=
+                 AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+             )
+          |> Js.Promise.then_(tag =>
+               tag
+               ->Containers_AnnotationEditor_Tag.asTextualBody
+               ->Js.Promise.resolve
+             )
+        )
+      ->Js.Promise.all;
+    let newTextualBodies =
+      newTagsValue
+      ->Belt.Array.map(tag =>
+          tag
+          |> Containers_AnnotationEditor_Tag.ensureId(
+               ~creatorUsername=
+                 AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+             )
+          |> Js.Promise.then_(tag =>
+               tag
+               ->Containers_AnnotationEditor_Tag.asTextualBody
+               ->Js.Promise.resolve
+             )
+        )
       ->Js.Promise.all;
 
     let _ =
-      tagsWithIds
-      |> Js.Promise.then_(tags => {
-           let updateBody =
-             tags->Belt.Array.map(
-               (tag: Containers_AnnotationEditor_Types.tag) =>
-               {
-                 "textualBody":
-                   Some({
-                     "id": tag.id,
-                     "value": tag.text,
-                     "purpose": Some([|`TAGGING|]),
-                     "rights": None,
-                     "accessibility": None,
-                     "format": Some(`TEXT_PLAIN),
-                     "textDirection": Some(`LTR),
-                     "language": Some(`EN_US),
-                     "processingLanguage": Some(`EN_US),
-                     "type": Some(`TEXTUAL_BODY),
-                   }),
-                 "externalBody": None,
-                 "choiceBody": None,
-                 "specificBody": None,
-               }
+      Js.Promise.all2((textualBodies, newTextualBodies))
+      |> Js.Promise.then_(((textualBodies, newTextualBodies)) => {
+           let input =
+             Lib_GraphQL_PatchAnnotationMutation.Input.(
+               make(
+                 ~id=annotation##id,
+                 ~creatorUsername=
+                   AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                 ~operations=
+                   Lib_GraphQL_PatchAnnotationMutation.Input.makeFromBodyDiff(
+                     ~oldBody=textualBodies->Belt.Array.keepMap(d => d),
+                     ~newBody=newTextualBodies->Belt.Array.keepMap(d => d),
+                   ),
+               )
              );
-           let input = {
-             "id": annotation##id,
-             "creatorUsername":
-               AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-             "operations": [|
-               {
-                 "set":
-                   Some({
-                     "body": Some(updateBody),
-                     "target": None,
-                     "modified": None,
-                   }),
-               },
-               {
-                 "set":
-                   Some({
-                     "body": None,
-                     "target": None,
-                     "modified": modifiedTs,
-                   }),
-               },
-             |],
-           };
-           let variables = PatchAnnotationMutation.makeVariables(~input, ());
-           let _ = handleSave(. variables, patchAnnotationMutation);
            let _ =
-             Containers_AnnotationEditor_Apollo.updateCache(
-               ~annotation,
-               ~tags,
+             handleSave(.
+               Containers_AnnotationEditor_GraphQL.PatchAnnotationMutation.makeVariables(
+                 ~input,
+                 (),
+               ),
+               patchAnnotationMutation,
+             );
+           let _ =
+             Lib_GraphQL_PatchAnnotationMutation.Apollo.updateCache(
                ~currentUser,
-               ~patchAnnotationMutationInput=input,
+               ~input,
              );
            Js.Promise.resolve();
          });
+
     ();
   };
 
@@ -251,83 +319,107 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
     let modifiedTs =
       Js.Date.(make()->toISOString)->Js.Json.string->Js.Option.some;
     let _ = setTextValue(_ => ModifiedValue.make(textValue));
-    let updateTargetInput = {
+
+    let updateTargetOperation = {
       let idx =
         annotation##target
         ->Belt.Array.getIndexBy(target =>
             switch (target) {
             | `TextualTarget(_) => true
-            | `ExternalTarget(_) => false
+            | _ => false
             }
           );
-      let updatedTextualTarget =
-        idx
-        ->Belt.Option.flatMap(idx => annotation##target->Belt.Array.get(idx))
-        ->Belt.Option.flatMap(target =>
+      idx
+      ->Belt.Option.flatMap(idx => annotation##target->Belt.Array.get(idx))
+      ->Belt.Option.map(target => {
+          let operation =
             switch (target) {
             | `TextualTarget(target) =>
               let copy = Js.Obj.assign(Js.Obj.empty(), target);
-              Some(
-                `TextualTarget(Js.Obj.assign(copy, {"value": textValue})),
-              );
-            | `ExternalTarget(_) => None
-            }
-          )
-        ->Belt.Option.getWithDefault(
-            `TextualTarget({
-              "__typename": "TextualTarget",
-              "textualTargetId": None,
-              "format": Some(`TEXT_PLAIN),
-              "language": Some(`EN_US),
-              "processingLanguage": Some(`EN_US),
-              "textDirection": Some(`LTR),
-              "accessibility": None,
-              "rights": None,
-              "value": textValue,
-            }),
-          );
+              `TextualTarget(Js.Obj.assign(copy, {"value": textValue}))
+              |> Lib_GraphQL_AnnotationTargetInput.makeFromTarget
+              |> Js.Promise.then_(targetInput =>
+                   targetInput
+                   ->Belt.Option.map(targetInput =>
+                       Lib_GraphQL_PatchAnnotationMutation.Input.(
+                         makeOperation(
+                           ~set=
+                             makeSet(
+                               ~where_=
+                                 makeWhere(~id=target##textualTargetId, ()),
+                               ~target=targetInput,
+                               (),
+                             ),
+                           (),
+                         )
+                       )
+                     )
+                   ->Js.Promise.resolve
+                 );
+            | _ => Js.Promise.resolve(None)
+            };
 
-      let updatedTarget = Belt.Array.copy(annotation##target);
-      let _ =
-        switch (idx) {
-        | Some(idx) =>
-          let _ = updatedTarget->Belt.Array.set(idx, updatedTextualTarget);
-          ();
-        | None =>
-          let _ = updatedTarget->Js.Array2.push(updatedTextualTarget);
-          ();
-        };
+          let makeAddOperation = () =>
+            Lib_GraphQL_PatchAnnotationMutation.Input.(
+              makeOperation(
+                ~add=
+                  makeAdd(
+                    ~target=
+                      Lib_GraphQL_AnnotationTargetInput.make(
+                        ~textualTarget=
+                          Lib_GraphQL_AnnotationTargetInput.makeTextualTargetInput(
+                            ~id=
+                              Lib_GraphQL_AnnotationTargetInput.makeId(
+                                ~annotationId=annotation##id,
+                              ),
+                            ~format=`TEXT_PLAIN,
+                            ~language=`EN_US,
+                            ~processingLanguage=`EN_US,
+                            ~textDirection=`LTR,
+                            ~value=textValue,
+                            (),
+                          ),
+                        (),
+                      ),
+                    (),
+                  ),
+                (),
+              )
+            );
 
-      updatedTarget->Belt.Array.map(
-        Lib_GraphQL.Annotation.targetInputFromTarget,
-      );
+          operation
+          |> Js.Promise.then_(operation =>
+               operation
+               ->Belt.Option.getWithDefault(makeAddOperation())
+               ->Js.Promise.resolve
+             );
+        });
     };
 
-    let variables =
-      PatchAnnotationMutation.makeVariables(
-        ~input={
-          "id": annotation##id,
-          "creatorUsername":
-            AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-          "operations": [|
-            {
-              "set":
-                Some({
-                  "body": None,
-                  "target": Some(updateTargetInput),
-                  "modified": None,
-                }),
-            },
-            {
-              "set":
-                Some({"body": None, "target": None, "modified": modifiedTs}),
-            },
-          |],
-        },
-        (),
-      );
-
-    let _ = handleSave(. variables, patchAnnotationMutation);
+    let _ =
+      updateTargetOperation->Belt.Option.forEach(updateTargetOperation => {
+        let _ =
+          updateTargetOperation
+          |> Js.Promise.then_(updateTargetOperation => {
+               let input =
+                 Lib_GraphQL_PatchAnnotationMutation.Input.make(
+                   ~id=annotation##id,
+                   ~creatorUsername=
+                     AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                   ~operations=[|updateTargetOperation|],
+                 );
+               let _ =
+                 handleSave(.
+                   Containers_AnnotationEditor_GraphQL.PatchAnnotationMutation.makeVariables(
+                     ~input,
+                     (),
+                   ),
+                   patchAnnotationMutation,
+                 );
+               Js.Promise.resolve();
+             });
+        ();
+      });
     ();
   };
 
@@ -393,14 +485,36 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       "flex-col",
       "overflow-y-auto",
     ])}>
-    <div className={Cn.fromList(["px-6", "py-16"])}>
-      <TextInput.Annotation
-        onTextChange=handleTextChange
-        onTagsChange=handleTagsChange
-        textValue
-        tagsValue
-        textInputRef
-      />
+    <div className={Cn.fromList(["px-4", "py-16"])}>
+      {switch (targetWithExternalTarget, textualTargetSelector(~annotation)) {
+       | (Some((targetId, externalTarget)), Some(textualTarget)) =>
+         <ExternalTargetCard
+           onClick={_ => {
+             handleViewTargetForAnnotation(
+               ~annotation,
+               ~targetId,
+               ~displayBottomSheet=true,
+               (),
+             )
+           }}
+           externalTargetFragment=
+             externalTarget##externalTargetCard_ExternalTargetFragment
+           textualTargetFragment=
+             textualTarget##externalTargetCard_TextualTargetFragment
+         />
+       | _ =>
+         <TextInput.Annotation
+           onChange=handleTextChange
+           value=textValue
+           textInputRef
+           inputClasses={MaterialUi.Input.Classes.make(
+             ~root=Cn.fromList(["p-4", "bg-darkAccent", "rounded-sm"]),
+             ~inputMultiline=Cn.fromList(["px-0"]),
+             (),
+           )}
+         />
+       }}
+      <TagsList value=tagsValue onChange=handleTagsChange />
     </div>
   </div>;
 };

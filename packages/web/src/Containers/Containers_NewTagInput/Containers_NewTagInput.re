@@ -37,91 +37,42 @@ module Data = {
           ~label=value,
         )
         |> Js.Promise.then_(id => {
-             let commitBodyInput = {
-               "textualBody":
-                 Some({
-                   "id": Some(id),
-                   "value": value,
-                   "purpose": Some([|`TAGGING|]),
-                   "rights": None,
-                   "accessibility": None,
-                   "format": Some(`TEXT_PLAIN),
-                   "textDirection": Some(`LTR),
-                   "language": Some(`EN_US),
-                   "processingLanguage": Some(`EN_US),
-                   "type": Some(`TEXTUAL_BODY),
-                 }),
-               "externalBody": None,
-               "choiceBody": None,
-               "specificBody": None,
-             };
-             let existingBodyInputs =
-               annotation##body
-               ->Belt.Option.getWithDefault([||])
-               ->Belt.Array.keepMap(body =>
-                   switch (body) {
-                   | `Nonexhaustive => None
-                   | `TextualBody(body) =>
-                     Some({
-                       "textualBody":
-                         Some({
-                           "id": body##id,
-                           "format": body##format,
-                           "processingLanguage": body##processingLanguage,
-                           "language": body##language,
-                           "textDirection": body##textDirection,
-                           "accessibility": body##accessibility,
-                           "rights": body##rights,
-                           "purpose": body##purpose,
-                           "value": body##value,
-                           "type": Some(`TEXTUAL_BODY),
-                         }),
-                       "externalBody": None,
-                       "choiceBody": None,
-                       "specificBody": None,
-                     })
-                   }
-                 );
-             let input = {
-               "id": annotation##id,
-               "creatorUsername":
-                 AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-               "operations": [|
-                 {
-                   "set":
-                     Some({
-                       "body":
-                         Some(
-                           Js.Array2.concat(
-                             [|commitBodyInput|],
-                             existingBodyInputs,
+             let operation =
+               Lib_GraphQL_PatchAnnotationMutation.Input.makeOperation(
+                 ~add=
+                   Lib_GraphQL_PatchAnnotationMutation.Input.makeAdd(
+                     ~body=
+                       Lib_GraphQL_AnnotationBodyInput.makeBody(
+                         ~textualBody=
+                           Lib_GraphQL_AnnotationBodyInput.makeTextualBody(
+                             ~id,
+                             ~value,
+                             ~purpose=[|`TAGGING|],
+                             ~format=`TEXT_PLAIN,
+                             ~textDirection=`LTR,
+                             ~language=`EN_US,
+                             ~processingLanguage=`EN_US,
+                             (),
                            ),
-                         ),
-                       "target": None,
-                       "modified": None,
-                     }),
-                 },
-                 {
-                   "set":
-                     Some({
-                       "body": None,
-                       "target": None,
-                       "modified":
-                         Js.Date.(make()->toISOString)
-                         ->Js.Json.string
-                         ->Js.Option.some,
-                     }),
-                 },
-               |],
-             };
+                         (),
+                       ),
+                     (),
+                   ),
+                 (),
+               );
+             let input =
+               Lib_GraphQL_PatchAnnotationMutation.Input.make(
+                 ~id=annotation##id,
+                 ~creatorUsername=
+                   AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                 ~operations=[|operation|],
+               );
              let variables =
                PatchAnnotationMutation.makeVariables(~input, ());
              let _ =
-               Containers_NewTagInput_Apollo.updateCache(
-                 ~annotation,
+               Lib_GraphQL_PatchAnnotationMutation.Apollo.updateCache(
                  ~currentUser,
-                 ~tag=commitBodyInput##textualBody->Belt.Option.getExn,
-                 ~patchAnnotationMutationInput=input,
+                 ~input,
                );
              let _ = setPendingValue(_ => "");
              patchAnnotationMutation(~variables, ());

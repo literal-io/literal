@@ -41,12 +41,30 @@ module GetAnnotationCollection = {
     "id": string,
     "body":
       Js.Null.t(
-        array({
+        array(
+          Js.Null.t({
+            .
+            "__typename": string,
+            "id": string,
+            "value": string,
+            "purpose": Js.Null.t(array(string)),
+            "format": Js.Null.t(string),
+            "language": Js.Null.t(string),
+            "processingLanguage": Js.Null.t(string),
+            "accessibility": Js.Null.t(array(string)),
+            "rights": Js.Null.t(array(string)),
+            "textDirection": Js.Null.t(string),
+          }),
+        ),
+      ),
+    "target":
+      array(
+        Js.Null.t({
           .
           "__typename": string,
-          "id": Js.Null.t(string),
-          "value": string,
-          "purpose": Js.Null.t(array(string)),
+          "value": Js.Null.t(string),
+          "textualTargetId": Js.Null.t(string),
+          "externalTargetId": Js.Null.t(string),
           "format": Js.Null.t(string),
           "language": Js.Null.t(string),
           "processingLanguage": Js.Null.t(string),
@@ -55,20 +73,6 @@ module GetAnnotationCollection = {
           "textDirection": Js.Null.t(string),
         }),
       ),
-    "target":
-      array({
-        .
-        "__typename": string,
-        "value": Js.Null.t(string),
-        "textualTargetId": Js.Null.t(string),
-        "externalTargetId": Js.Null.t(string),
-        "format": Js.Null.t(string),
-        "language": Js.Null.t(string),
-        "processingLanguage": Js.Null.t(string),
-        "accessibility": Js.Null.t(array(string)),
-        "rights": Js.Null.t(array(string)),
-        "textDirection": Js.Null.t(string),
-      }),
   };
 
   type cacheGetAnnotationCollection = {
@@ -89,7 +93,7 @@ module GetAnnotationCollection = {
                 array({
                   .
                   "__typename": string,
-                  "annotation": cacheAnnotation,
+                  "annotation": Js.Json.t,
                 }),
               ),
           }),
@@ -103,39 +107,18 @@ module GetAnnotationCollection = {
   type cache = {
     .
     "__typename": string,
-    "getAgent":
-      Js.Null.t({
-        .
-        "__typename": string,
-        "id": string,
-      }),
+    "getAgent": Js.Json.t,
     "getAnnotationCollection": Js.Null.t(cacheGetAnnotationCollection),
   };
 
   let parsedTextualBodyToCache = d => {
     "__typename": "TextualBody",
-    "id": d##id->Js.Null.fromOption,
+    "id": d##id,
     "value": d##value,
     "purpose":
       d##purpose
       ->Belt.Option.map(d =>
-          d->Belt.Array.map(d =>
-            switch (d) {
-            | `TAGGING => "TAGGING"
-            | `ACCESSING => "ACCESSING"
-            | `BOOKMARKING => "BOOKMARKING"
-            | `CLASSIFYING => "CLASSIFYING"
-            | `COMMENTING => "COMMENTING"
-            | `DESCRIBING => "DESCRIBING"
-            | `EDITING => "EDITING"
-            | `HIGHLIGHTING => "HIGHLIGHTING"
-            | `IDENTIFYING => "IDENTIFYING"
-            | `LINKING => "LINKING"
-            | `MODERATING => "MODERATING"
-            | `QUESTIONING => "QUESTIONING"
-            | `REPLYING => "REPLYING"
-            }
-          )
+          d->Belt.Array.map(Lib_GraphQL_Motivation.toString)
         )
       ->Js.Null.fromOption,
     "format":
@@ -143,36 +126,23 @@ module GetAnnotationCollection = {
       ->Belt.Option.map(d =>
           switch (d) {
           | `TEXT_PLAIN => "TEXT_PLAIN"
+          | `TEXT_HTML => "TEXT_HTML"
           }
         )
       ->Js.Null.fromOption,
     "language":
       d##language
-      ->Belt.Option.map(d =>
-          switch (d) {
-          | `EN_US => "EN_US"
-          }
-        )
+      ->Belt.Option.map(Lib_GraphQL_Language.toString)
       ->Js.Null.fromOption,
     "processingLanguage":
       d##processingLanguage
-      ->Belt.Option.map(d =>
-          switch (d) {
-          | `EN_US => "EN_US"
-          }
-        )
+      ->Belt.Option.map(Lib_GraphQL_Language.toString)
       ->Js.Null.fromOption,
     "accessibility": d##accessibility->Js.Null.fromOption,
     "rights": d##rights->Js.Null.fromOption,
     "textDirection":
       d##textDirection
-      ->Belt.Option.map(d =>
-          switch (d) {
-          | `LTR => "LTR"
-          | `RTL => "RTL"
-          | `AUTO => "AUTO"
-          }
-        )
+      ->Belt.Option.map(Lib_GraphQL_TextDirection.toString)
       ->Js.Null.fromOption,
   };
 
@@ -191,97 +161,42 @@ module GetAnnotationCollection = {
               | `Nonexhaustive => None
               }
             )
-          ->Belt.Array.map(parsedTextualBodyToCache)
+          ->Belt.Array.map(body =>
+              body->parsedTextualBodyToCache->Js.Null.return
+            )
         )
       ->Js.Null.fromOption,
     "target":
       annotation##target
       ->Belt.Array.map(d =>
           switch (d) {
-          | `TextualTarget(d) => {
+          | `TextualTarget(d) =>
+            {
               "__typename": "TextualTarget",
               "value": Js.Null.return(d##value),
-              "textualTargetId": d##textualTargetId->Js.Null.fromOption,
+              "textualTargetId": d##textualTargetId->Js.Null.return,
               "externalTargetId": Js.Null.empty,
               "format":
                 d##format
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `TEXT_PLAIN => "TEXT_PLAIN"
-                    }
-                  )
+                ->Belt.Option.map(Lib_GraphQL_Format.toString)
                 ->Js.Null.fromOption,
               "language":
                 d##language
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `EN_US => "EN_US"
-                    }
-                  )
+                ->Belt.Option.map(Lib_GraphQL_Language.toString)
                 ->Js.Null.fromOption,
               "processingLanguage":
                 d##processingLanguage
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `EN_US => "EN_US"
-                    }
-                  )
+                ->Belt.Option.map(Lib_GraphQL_Language.toString)
                 ->Js.Null.fromOption,
               "accessibility": d##accessibility->Js.Null.fromOption,
               "rights": d##rights->Js.Null.fromOption,
               "textDirection":
                 d##textDirection
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `LTR => "LTR"
-                    | `RTL => "RTL"
-                    | `AUTO => "AUTO"
-                    }
-                  )
+                ->Belt.Option.map(Lib_GraphQL_TextDirection.toString)
                 ->Js.Null.fromOption,
             }
-          | `ExternalTarget(d) => {
-              "__typename": "ExternalTarget",
-              "value": Js.Null.empty,
-              "textualTargetId": Js.Null.empty,
-              "externalTargetId": d##externalTargetId->Js.Null.return,
-              "format":
-                d##format
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `TEXT_PLAIN => "TEXT_PLAIN"
-                    }
-                  )
-                ->Js.Null.fromOption,
-              "language":
-                d##language
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `EN_US => "EN_US"
-                    }
-                  )
-                ->Js.Null.fromOption,
-              "processingLanguage":
-                d##processingLanguage
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `EN_US => "EN_US"
-                    }
-                  )
-                ->Js.Null.fromOption,
-              "accessibility": d##accessibility->Js.Null.fromOption,
-              "rights": d##rights->Js.Null.fromOption,
-              "textDirection":
-                d##textDirection
-                ->Belt.Option.map(d =>
-                    switch (d) {
-                    | `LTR => "LTR"
-                    | `RTL => "RTL"
-                    | `AUTO => "AUTO"
-                    }
-                  )
-                ->Js.Null.fromOption,
-            }
+            ->Js.Null.return
+          | _ => Js.Null.empty
           }
         ),
   };
@@ -299,7 +214,7 @@ module GetAnnotationCollection = {
           Js.Null.t(
             array({
               .
-              "annotation": cacheAnnotation,
+              "annotation": Js.Json.t,
               "__typename": string,
             }),
           ),
@@ -342,6 +257,31 @@ module GetAnnotationCollection = {
         Some({"first": Some({"items": Some({"nextToken": nextToken})})}),
     };
     Ramda.mergeDeepLeft(newQuery, cacheQuery);
+  };
+
+  let makeCache = (~label, ~annotations, ~agent): cache => {
+    "__typename": "Query",
+    "getAgent": agent,
+    "getAnnotationCollection":
+      Js.Null.return({
+        "__typename": "AnnotationCollection",
+        "label": label,
+        "first":
+          Js.Null.return({
+            "__typename": "AnnotationPage",
+            "items":
+              Js.Null.return({
+                "__typename": "ModelAnnotationPageItemConnection",
+                "nextToken": Js.Null.empty,
+                "items":
+                  annotations
+                  ->Belt.Array.map(a =>
+                      {"__typename": "AnnotationPageItem", "annotation": a}
+                    )
+                  ->Js.Null.return,
+              }),
+          }),
+      }),
   };
 
   /**

@@ -30,6 +30,7 @@ public class AppSyncClientFactory {
 
     private static volatile AWSConfiguration configuration;
     private static volatile AWSAppSyncClient client;
+    private static volatile AmazonS3Client s3Client;
     private static volatile S3ObjectManagerImplementation s3ObjectManager;
 
     public static AWSAppSyncClient getInstance(Context context) {
@@ -50,16 +51,13 @@ public class AppSyncClientFactory {
                             }
                     ).build())
                     .awsConfiguration(getConfiguration(context))
-                    .s3ObjectManager(getS3ObjectManager(context, getConfiguration(context)))
-                    .cognitoUserPoolsAuthProvider(new CognitoUserPoolsAuthProvider() {
-                        @Override
-                        public String getLatestAuthToken() {
-                            try {
-                                return AWSMobileClient.getInstance().getTokens().getIdToken().getTokenString();
-                            } catch (Exception e) {
-                                Log.e(Constants.LOG_TAG, e.getLocalizedMessage());
-                                return e.getLocalizedMessage();
-                            }
+                    .s3ObjectManager(getS3ObjectManager(context))
+                    .cognitoUserPoolsAuthProvider(() -> {
+                        try {
+                            return AWSMobileClient.getInstance().getTokens().getIdToken().getTokenString();
+                        } catch (Exception e) {
+                            Log.e(Constants.LOG_TAG, e.getLocalizedMessage());
+                            return e.getLocalizedMessage();
                         }
                     })
                     .build();
@@ -74,17 +72,20 @@ public class AppSyncClientFactory {
         return configuration;
     }
 
-    public static final S3ObjectManagerImplementation getS3ObjectManager(
-            final Context context,
-            final AWSConfiguration configuration
-    ) {
-        if (s3ObjectManager == null) {
-
+    public static final AmazonS3Client getS3Client(Context context) {
+        if (s3Client == null) {
+            AWSConfiguration configuration = getConfiguration(context);
+            s3Client = new AmazonS3Client(getCredentialsProvider(context, configuration));
             JSONObject s3TransferUtility = configuration.optJsonObject("S3TransferUtility");
             String region = s3TransferUtility.optString("Region");
-            AmazonS3Client s3Client = new AmazonS3Client(getCredentialsProvider(context, configuration));
             s3Client.setRegion(Region.getRegion(region));
-            s3ObjectManager = new S3ObjectManagerImplementation(s3Client);
+        }
+        return s3Client;
+    }
+
+    public static final S3ObjectManagerImplementation getS3ObjectManager(Context context) {
+        if (s3ObjectManager == null) {
+            s3ObjectManager = new S3ObjectManagerImplementation(getS3Client(context));
         }
         return s3ObjectManager;
     }

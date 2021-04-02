@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="source_web_view_favicon_size">18dp</dimen>
+    <dimen name="source_web_view_favicon_padding">4dp</dimen>
+
+</resources>

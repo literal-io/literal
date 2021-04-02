@@ -1,0 +1,187 @@
+# this is an auto generated file. This will be overwritten
+mutation CreateAnnotation($input: CreateAnnotationInput!) {
+  createAnnotation(input: $input) {
+    annotation {
+      id
+    }
+  }
+}
+
+mutation DeleteAnnotation($input: DeleteAnnotationInput!) {
+  deleteAnnotation(input: $input) {
+    annotation {
+      context
+      type
+      id
+      created
+      generated
+      modified
+      motivation
+      via
+      canonical
+      creatorUsername
+    }
+  }
+}
+mutation PatchAnnotation($input: PatchAnnotationInput!) {
+  patchAnnotation(input: $input) {
+    annotation {
+      context
+      type
+      id
+      created
+      generated
+      modified
+      motivation
+      via
+      canonical
+      creatorUsername
+    }
+  }
+}
+
+mutation CreateAnnotationFromExternalTarget(
+  $input: CreateAnnotationFromExternalTargetInput!
+) {
+  createAnnotationFromExternalTarget(input: $input) {
+    context
+    type
+    id
+    body {
+      ... on ExternalBody {
+        externalBodyId: id
+        format
+        language
+        processingLanguage
+        textDirection
+        accessibility
+        rights
+      }
+      ... on TextualBody {
+        textualBodyId: id
+        format
+        language
+        processingLanguage
+        textDirection
+        accessibility
+        purpose
+        rights
+        value
+      }
+      ... on ChoiceBody {
+        type
+      }
+      ... on SpecificBody {
+        specificBodyId: id
+        purpose
+        styleClass
+        scope
+      }
+    }
+    target {
+      ... on ExternalTarget {
+        externalTargetId: id
+        format
+        language
+        processingLanguage
+        textDirection
+        accessibility
+        rights
+      }
+      ... on TextualTarget {
+        textualTargetId: id
+        format
+        language
+        processingLanguage
+        textDirection
+        accessibility
+        rights
+        value
+      }
+    }
+    created
+    generator {
+      id
+      type
+      name
+      nickname
+      email_sha1
+      email
+      homepage
+      username
+      created
+      modified
+    }
+    generated
+    modified
+    audience {
+      id
+    }
+    motivation
+    via
+    canonical
+    stylesheet {
+      value
+    }
+    creator {
+      id
+      name
+      nickname
+      email_sha1
+      email
+      homepage
+      username
+      created
+      modified
+    }
+    creatorUsername
+  }
+}
+mutation CreateAgent(
+  $input: CreateAgentInput!
+  $condition: ModelAgentConditionInput
+) {
+  createAgent(input: $input, condition: $condition) {
+    id
+    name
+    nickname
+    email_sha1
+    email
+    homepage
+    username
+    created
+    modified
+  }
+}
+mutation UpdateAgent(
+  $input: UpdateAgentInput!
+  $condition: ModelAgentConditionInput
+) {
+  updateAgent(input: $input, condition: $condition) {
+    id
+    name
+    nickname
+    email_sha1
+    email
+    homepage
+    username
+    created
+    modified
+  }
+}
+mutation DeleteAgent(
+  $input: DeleteAgentInput!
+  $condition: ModelAgentConditionInput
+) {
+  deleteAgent(input: $input, condition: $condition) {
+    id
+    name
+    nickname
+    email_sha1
+    email
+    homepage
+    username
+    created
+    modified
+  }
+}

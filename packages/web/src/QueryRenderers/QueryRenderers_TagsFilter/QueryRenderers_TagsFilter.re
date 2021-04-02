@@ -46,7 +46,7 @@ let make = (~currentUser, ~pendingValue, ~tags, ~onTagResults, ~onTagClicked) =>
             | Some(_) => None
             | None =>
               Some(
-                Containers_AnnotationEditor_Types.{
+                Containers_AnnotationEditor_Tag.{
                   text: annotationCollection##label,
                   id: Some(annotationCollection##id),
                   href: None,

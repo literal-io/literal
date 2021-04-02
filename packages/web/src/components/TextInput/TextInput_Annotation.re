@@ -3,15 +3,14 @@ let styles = [%raw "require('./TextInput_Annotation.module.css')"];
 [@react.component]
 let make =
     (
-      ~onTextChange,
-      ~onTagsChange,
-      ~textValue,
-      ~tagsValue,
+      ~onChange,
+      ~value,
       ~disabled=?,
       ~autoFocus=?,
       ~placeholder=?,
       ~tagsInputRef=?,
       ~textInputRef=?,
+      ~inputClasses=?
     ) => {
   /** Reuse the ref prop if one was passed in, otherwise use our own **/
   let textInputRef = {
@@ -53,16 +52,14 @@ let make =
     ();
   };
 
-  <>
-    <TextInput_Basic
-      ref=textInputRef
-      onChange=onTextChange
-      value=textValue
-      ?placeholder
-      ?autoFocus
-      ?disabled
-      inputProps={"onKeyDown": handleTextKeyDown, "disableUnderline": false}
-    />
-    <TagsList value=tagsValue onChange=onTagsChange />
-  </>;
+  <TextInput_Basic
+    ref=textInputRef
+    onChange
+    value
+    ?placeholder
+    ?autoFocus
+    ?disabled
+    ?inputClasses
+    inputProps={"onKeyDown": handleTextKeyDown, "disableUnderline": false}
+  />;
 };

@@ -1,13 +1,51 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat">
+    <style name="AppTheme" parent="Theme.MaterialComponents">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+        <item name="actionMenuTextColor">@color/colorTextLightPrimary</item>
         <item name="android:windowBackground">@color/colorPrimary</item>
+        <item name="android:textColorPrimary">@color/colorTextLightPrimary</item>
+        <item name="android:textColorSecondary">@color/colorTextLightPrimary</item>
+        <item name="android:spotShadowAlpha">0.5</item>
+        <item name="fontFamily">@font/roboto_mono</item>
+        <item name="actionModeStyle">@style/ActionModeStyle</item>
+        <item name="popupMenuStyle">@style/ActionModeStyle</item>
     </style>
 
+    <style name="SourceWebViewTitleTextAppearance" parent="@style/Base.TextAppearance.AppCompat.Title">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/colorTextLightPrimary</item>
+        <item name="android:fontFamily">@font/roboto_mono_italic</item>
+    </style>
+
+    <style name="BottomSheetWithKeyboard" parent="@style/Widget.MaterialComponents.BottomSheet">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
+    </style>
+
+    <style name="ToastTextAppearance">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/colorTextLightPrimary</item>
+        <item name="android:fontFamily">@font/roboto_mono</item>
+    </style>
+
+    <style name="ActionMenuTextAppearance">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/colorTextLightPrimary</item>
+        <item name="android:fontFamily">@font/roboto_mono</item>
+    </style>
+
+    <style name="ActionModeStyle">
+        <item name="background">@color/colorPrimary</item>
+        <item name="titleTextStyle">@style/ActionMenuTextAppearance</item>
+        <item name="subtitleTextStyle">@style/ActionMenuTextAppearance</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/colorTextLightPrimary</item>
+        <item name="android:fontFamily">@font/roboto_mono</item>
+    </style>
 </resources>

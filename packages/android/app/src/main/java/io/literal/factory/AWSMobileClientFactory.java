@@ -22,6 +22,7 @@ import java.util.concurrent.CountDownLatch;
 
 import io.literal.R;
 import io.literal.lib.Constants;
+import io.literal.repository.ErrorRepository;
 
 public class AWSMobileClientFactory {
 
@@ -32,11 +33,20 @@ public class AWSMobileClientFactory {
 
     public static volatile TransferUtility transferUtility;
     public static volatile AmplifyEnvironment amplifyEnvironment;
+    private static volatile AmazonS3Client amazonS3Client;
 
     static CountDownLatch initializationLatch = new CountDownLatch(1);
 
     public static void initializeClient(Context context, final Callback<UserStateDetails> callback) {
-        context.startService(new Intent(context, TransferService.class));
+
+        if (initializationLatch.getCount() == 0 && callback != null) {
+            callback.onResult(AWSMobileClient.getInstance().currentUserState());
+            return;
+        }
+
+        try {
+            context.startService(new Intent(context, TransferService.class));
+        } catch (Exception ex) { /** May be in background, noop **/ }
         AWSMobileClient.getInstance().initialize(context, getConfiguration(context), new Callback<UserStateDetails>() {
             @Override
             public void onResult(UserStateDetails result) {
@@ -62,7 +72,16 @@ public class AWSMobileClientFactory {
         initializationLatch.await();
     }
 
+    public static CountDownLatch getInitializationLatch() { return initializationLatch; }
+
     public static AmplifyEnvironment getAmplifyEnvironment() { return amplifyEnvironment; }
+
+    public static AmazonS3Client getAmazonS3Client() {
+        if (amazonS3Client == null) {
+            amazonS3Client = new AmazonS3Client(AWSMobileClient.getInstance());
+        }
+        return amazonS3Client;
+    }
 
     public static TransferUtility getTransferUtility(Context context) {
         if (transferUtility == null) {
@@ -71,7 +90,7 @@ public class AWSMobileClientFactory {
                     .builder()
                     .context(context)
                     .awsConfiguration(mobileClient.getConfiguration())
-                    .s3Client(new AmazonS3Client(mobileClient))
+                    .s3Client(getAmazonS3Client())
                     .build();
         }
         return transferUtility;
@@ -127,7 +146,7 @@ public class AWSMobileClientFactory {
                 amplifyEnvironment = AmplifyEnvironment.PRODUCTION;
             }
         } catch (JSONException ex) {
-            Log.d(Constants.LOG_TAG, "Unable to parse AWSConfiguration", ex);
+            ErrorRepository.captureException(ex);
             return new AWSConfiguration(configuration);
         }
 

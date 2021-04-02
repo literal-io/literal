@@ -1,520 +1,374 @@
 package io.literal.ui.activity;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.ValueCallback;
-import android.webkit.WebChromeClient;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentContainerView;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.amplify.generated.graphql.CreateAnnotationFromExternalTargetMutation;
 import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
-import com.amazonaws.amplify.generated.graphql.GetAnnotationForNotificationQuery;
-import com.amazonaws.mobile.client.AWSMobileClient;
-import com.amazonaws.mobile.client.Callback;
-import com.amazonaws.mobile.client.UserStateDetails;
-import com.amazonaws.mobileconnectors.appsync.ClearCacheException;
-import com.amazonaws.mobileconnectors.appsync.ClearCacheOptions;
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
-import com.apollographql.apollo.GraphQLCall;
-import com.apollographql.apollo.api.Response;
-import com.apollographql.apollo.exception.ApolloException;
+import com.apollographql.apollo.api.Error;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
-import org.json.JSONObject;
+import org.json.JSONException;
 
-import java.io.File;
-import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
-import java.util.UUID;
-
-import javax.annotation.Nonnull;
+import java.util.List;
 
 import io.literal.R;
-import io.literal.factory.AWSMobileClientFactory;
-import io.literal.factory.AppSyncClientFactory;
-import io.literal.lib.AnnotationCollectionLib;
-import io.literal.lib.AnnotationLib;
 import io.literal.lib.Constants;
-import io.literal.lib.ContentResolverLib;
-import io.literal.lib.Crypto;
-import io.literal.lib.FileActivityResultCallback;
+import io.literal.lib.DomainMetadata;
+import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
-import io.literal.ui.view.WebView;
-import type.AnnotationBodyInput;
-import type.AnnotationTargetInput;
-import type.AnnotationType;
-import type.CreateAnnotationFromExternalTargetInput;
-import type.CreateAnnotationInput;
-import type.ExternalTargetInput;
-import type.Format;
-import type.Language;
-import type.Motivation;
-import type.ResourceType;
-import type.TextDirection;
-import type.TextualBodyInput;
-import type.TextualBodyType;
-import type.TextualTargetInput;
+import io.literal.model.Annotation;
+import io.literal.repository.AuthenticationRepository;
+import io.literal.repository.ErrorRepository;
+import io.literal.repository.NotificationRepository;
+import io.literal.repository.ShareTargetHandlerRepository;
+import io.literal.repository.ToastRepository;
+import io.literal.ui.MainApplication;
+import io.literal.ui.fragment.AppWebView;
+import io.literal.ui.fragment.AppWebViewBottomSheetAnimator;
+import io.literal.ui.fragment.SourceWebView;
+import io.literal.viewmodel.AppWebViewViewModel;
+import io.literal.viewmodel.AuthenticationViewModel;
+import io.literal.viewmodel.SourceWebViewViewModel;
 
-public class ShareTargetHandler extends AppCompatActivity {
+public class ShareTargetHandler extends SentryActivity {
+    private static final String APP_WEB_VIEW_FRAGMENT_NAME = "APP_WEB_VIEW_FRAGMENT";
+    private static final String SOURCE_WEB_VIEW_FRAGMENT_NAME = "SOURCE_WEB_VIEW_FRAGMENT";
 
-    private WebView webView;
-    private ViewGroup splash;
-    private ViewGroup layout;
-    private ActivityResultLauncher<String> getFileContent;
-    private FileActivityResultCallback fileActivityResultCallback = new FileActivityResultCallback();
+    public static final String RESULT_EXTRA_ANNOTATIONS = "RESULT_EXTRA_ANNOTATIONS";
+
+    private AppWebViewViewModel appWebViewViewModel;
+    private SourceWebViewViewModel sourceWebViewViewModel;
+    private AuthenticationViewModel authenticationViewModel;
+    private AppWebView appWebViewFragment;
+    private SourceWebView sourceWebViewFragment;
+    private FragmentContainerView bottomSheetFragmentContainer;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_share_target_handler);
 
-        webView = findViewById(R.id.webview);
-        webView.setVisibility(View.INVISIBLE);
-        splash = findViewById(R.id.splash);
-        layout = (ViewGroup) splash.getParent();
+        Intent intent = getIntent();
 
-        AWSMobileClientFactory.initializeClient(this, new Callback<UserStateDetails>() {
-            @Override
-            public void onResult(UserStateDetails result) {
-                switch (result.getUserState()) {
-                    case SIGNED_IN:
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                handleSignedIn(savedInstanceState);
-                            }
-                        });
-                        break;
-                    default:
-                        handleSignedOut();
-                }
-            }
+        authenticationViewModel = new ViewModelProvider(this).get(AuthenticationViewModel.class);
+        authenticationViewModel.initialize(this);
 
-            @Override
-            public void onError(Exception e) {
-                Log.e(Constants.LOG_TAG, "Unable to initializeClient: ", e);
-                handleSignedOut();
-            }
-        });
-
-        getFileContent = registerForActivityResult(new ActivityResultContracts.GetContent(), fileActivityResultCallback);
-        this.webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public boolean onShowFileChooser(android.webkit.WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
-                fileActivityResultCallback.setFilePathCallback(new ValueCallback<Uri[]>() {
-                    @Override
-                    public void onReceiveValue(Uri[] value) {
-                        Uri[] absoluteUrls = new Uri[value.length];
-                        for (int idx = 0; idx < value.length; idx++) {
-                            File file = ContentResolverLib.toFile(ShareTargetHandler.this, value[idx], UUID.randomUUID().toString());
-                            absoluteUrls[idx] = Uri.fromFile(file);
-                        }
-                        filePathCallback.onReceiveValue(absoluteUrls);
-                    }
-                });
-                getFileContent.launch("image/*");
-                return true;
-            }
-        });
-    }
-
-    private void handleSignedIn(Bundle savedInstanceState) {
-        webView.initialize(ShareTargetHandler.this);
-        webView.requestFocus();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel chan = new NotificationChannel(
-                    Constants.NOTIFICATION_CHANNEL_ANNOTATION_CREATED_ID,
-                    Constants.NOTIFICATION_CHANNEL_ANNOTATION_CREATED_NAME,
-                    NotificationManager.IMPORTANCE_LOW
-            );
-            chan.setDescription(Constants.NOTIFICATION_CHANNEL_ANNOTATION_CREATED_DESCRIPTION);
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(chan);
-            }
-        }
+        NotificationRepository.createNewAnnotationNotificationChannel(this);
+        NotificationRepository.createNewExternalTargetNotificationChannel(this);
 
         if (savedInstanceState == null) {
-            Intent intent = getIntent();
-            String action = intent.getAction();
-            String type = intent.getType();
-
-            // Start initializing the WebView while we're processing the share data.
-            webView.onWebEvent(new WebEvent.Callback(this, webView) {
-                @Override
-                public void onWebEvent(WebEvent event) {
-                    super.onWebEvent(event);
-                    switch (event.getType()) {
-                        case WebEvent.TYPE_ACTIVITY_FINISH:
-                            finish();
-                    }
-                }
-            });
-            webView.onPageFinished(new WebView.PageFinishedCallback() {
-                @Override
-                public void onPageFinished(android.webkit.WebView view, String Url) {
-                    view.setVisibility(View.VISIBLE);
-                    layout.removeView(splash);
-                }
-            });
-
-            if (Intent.ACTION_SEND.equals(action) && type != null && type.startsWith("image/")) {
-                handleSendImage(intent);
-            } else if (Intent.ACTION_SEND.equals(action) && type != null && type.equals("text/plain")) {
-                handleSendText(intent);
-            } else {
-                handleSendNotSupported();
+            this.handleIntent(intent);
+        } else {
+            Fragment fragment;
+            fragment = getSupportFragmentManager().getFragment(savedInstanceState, APP_WEB_VIEW_FRAGMENT_NAME);
+            if (fragment == null) {
+                fragment = getSupportFragmentManager().getFragment(savedInstanceState, SOURCE_WEB_VIEW_FRAGMENT_NAME);
+            }
+            if (fragment != null) {
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .setReorderingAllowed(true)
+                        .add(R.id.fragment_container, fragment)
+                        .commit();
             }
         }
     }
 
-    private void handleSignedOut() {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
-        this.startActivity(intent);
-        this.finish();
+    private void handleIntent(Intent intent) {
+        String action = intent.getAction();
+        String type = intent.getType();
+
+        if (Intent.ACTION_SEND.equals(action) && type != null && type.startsWith("image/")) {
+            handleCreateFromImage(intent);
+        } else if (Intent.ACTION_SEND.equals(action) && type != null && type.equals("text/plain")) {
+            String text = intent.getStringExtra(Intent.EXTRA_TEXT);
+            if (Patterns.WEB_URL.matcher(text).matches()) {
+                handleCreateFromSource(intent);
+            } else {
+                handleCreateFromText(intent);
+            }
+        } else {
+            handleSendNotSupported();
+        }
     }
 
-    private void handleSendText(Intent intent) {
 
+    private void installSourceWebView(String sourceWebViewUri, String appWebViewUri) {
+        sourceWebViewViewModel = new ViewModelProvider(this).get(SourceWebViewViewModel.class);
+        sourceWebViewViewModel.getHasFinishedInitializing().observe(this, hasFinishedInitializing -> {
+            ViewGroup splash = findViewById(R.id.share_target_handler_splash);
+            splash.setVisibility(hasFinishedInitializing ? View.INVISIBLE : View.VISIBLE);
+
+            if (hasFinishedInitializing) {
+                ToastRepository.show(this, R.string.toast_create_from_source);
+            }
+        });
+
+        bottomSheetFragmentContainer = findViewById(R.id.bottom_sheet_fragment_container);
+
+        // initialize view model for managing app web view bottom sheet
+        appWebViewViewModel = new ViewModelProvider(this).get(AppWebViewViewModel.class);
+        appWebViewViewModel.getBottomSheetState().observe(this, bottomSheetState -> {
+            AppWebViewBottomSheetAnimator.handleBottomSheetStateChange(
+                    bottomSheetFragmentContainer,
+                    sourceWebViewViewModel.getFocusedAnnotation().getValue(),
+                    getResources(),
+                    bottomSheetState,
+                    (_e, webEvent) -> appWebViewFragment.postWebEvent(webEvent)
+            );
+        });
+
+        appWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
+
+        sourceWebViewFragment = SourceWebView.newInstance(
+                sourceWebViewUri,
+                null,
+                null,
+                R.drawable.done_white
+        );
+        sourceWebViewFragment.setOnToolbarPrimaryActionCallback((_e, annotations, domainMetadata) -> this.handleCreateFromSourceDone(annotations, domainMetadata));
+
+        appWebViewFragment = AppWebView.newInstance(appWebViewUri, null);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .setReorderingAllowed(true)
+                .add(R.id.fragment_container, sourceWebViewFragment)
+                .add(R.id.bottom_sheet_fragment_container, appWebViewFragment)
+                .commit();
+    }
+
+    private void installAppWebView(String appWebViewUri) {
+        // Remove unused bottom sheet fragment container
+        ViewGroup layout = findViewById(R.id.layout);
+        View bottomSheetContainer = findViewById(R.id.bottom_sheet_fragment_container);
+        if (layout != null && bottomSheetContainer != null) {
+            layout.removeView(bottomSheetContainer);
+        }
+
+        appWebViewViewModel = new ViewModelProvider(this).get(AppWebViewViewModel.class);
+        appWebViewViewModel.getHasFinishedInitializing().observe(this, hasFinishedInitializing -> {
+            ViewGroup splash = findViewById(R.id.share_target_handler_splash);
+            splash.setVisibility(hasFinishedInitializing ? View.INVISIBLE : View.VISIBLE);
+        });
+        appWebViewFragment = AppWebView.newInstance(appWebViewUri, null);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .setReorderingAllowed(true)
+                .add(R.id.fragment_container, appWebViewFragment)
+                .commit();
+    }
+
+    private void handleCreateFromSource(Intent intent) {
+        authenticationViewModel.awaitInitialization(
+                ((MainApplication) getApplication()).getThreadPoolExecutor(),
+                (e, aVoid) -> runOnUiThread(() -> {
+                    if (authenticationViewModel.isSignedOut()) {
+                        handleSignedOut();
+                        return;
+                    }
+
+                    String sourceWebViewUri = intent.getStringExtra(Intent.EXTRA_TEXT);
+                    String appWebViewUri = WebRoutes.creatorsIdWebview(
+                            authenticationViewModel.getUsername().getValue()
+                    );
+                    installSourceWebView(sourceWebViewUri, appWebViewUri);
+                })
+        );
+    }
+
+    private void handleCreateFromSourceDone(Annotation[] annotations, DomainMetadata domainMetadata) {
+        if (annotations != null && annotations.length > 0) {
+            String resultAnnotationsJson = "";
+            try {
+                resultAnnotationsJson = JsonArrayUtil.stringifyObjectArray(annotations, Annotation::toJson).toString();
+            } catch (JSONException e) {
+                ErrorRepository.captureException(e);
+            }
+            Intent intent = new Intent();
+            intent.putExtra(RESULT_EXTRA_ANNOTATIONS, resultAnnotationsJson);
+            setResult(RESULT_OK, intent);
+
+            if (domainMetadata != null) {
+                NotificationRepository.sourceCreatedNotification(
+                        getBaseContext(),
+                        AuthenticationRepository.getUsername(),
+                        domainMetadata
+                );
+            }
+
+        } else {
+            setResult(RESULT_CANCELED);
+        }
+        finish();
+    }
+
+    private void handleCreateFromText(Intent intent) {
         String text = intent.getStringExtra(Intent.EXTRA_TEXT);
 
-        String creatorUsername = AWSMobileClient.getInstance().getUsername();
-        try {
-            String valueHash = Crypto.sha256Hex(text);
-            String annotationId = WebRoutes.creatorsIdAnnotationId(
-                    WebRoutes.getAPIHost(),
-                    creatorUsername,
-                    valueHash
-            );
-            String uri = WebRoutes.creatorsIdAnnotationsNewAnnotationId(
-                    creatorUsername,
-                    valueHash
-            );
-            webView.loadUrl(uri);
+        authenticationViewModel.awaitInitialization(
+                ((MainApplication) getApplication()).getThreadPoolExecutor(),
+                (e, aVoid) -> runOnUiThread(() -> {
+                    if (authenticationViewModel.isSignedOut()) {
+                        handleSignedOut();
+                        return;
+                    }
 
-            CreateAnnotationMutation createHighlightMutation = CreateAnnotationMutation
-                    .builder()
-                    .input(
-                            CreateAnnotationInput
-                                    .builder()
-                                    .context(Collections.singletonList("http://www.w3.org/ns/anno.jsonld"))
-                                    .type(Collections.singletonList(AnnotationType.ANNOTATION))
-                                    .id(annotationId)
-                                    .motivation(Collections.singletonList(Motivation.HIGHLIGHTING))
-                                    .creatorUsername(creatorUsername)
-                                    .body(
-                                            Collections.singletonList(
-                                                    AnnotationBodyInput
-                                                            .builder()
-                                                            .textualBody(
-                                                                    TextualBodyInput
-                                                                            .builder()
-                                                                            .id(AnnotationCollectionLib.makeId(
-                                                                                    creatorUsername,
-                                                                                    Constants.RECENT_ANNOTATION_COLLECTION_LABEL
-                                                                            ))
-                                                                            .value(Constants.RECENT_ANNOTATION_COLLECTION_LABEL)
-                                                                            .purpose(Collections.singletonList(Motivation.TAGGING))
-                                                                            .format(Format.TEXT_PLAIN)
-                                                                            .textDirection(TextDirection.LTR)
-                                                                            .language(Language.EN_US)
-                                                                            .type(TextualBodyType.TEXTUAL_BODY)
-                                                                            .build()
-                                                            )
-                                                            .build()
-                                            )
-                                    )
-                                    .target(Collections.singletonList(
-                                            AnnotationTargetInput
-                                                    .builder()
-                                                    .textualTarget(
-                                                            TextualTargetInput
-                                                                    .builder()
-                                                                    .format(Format.TEXT_PLAIN)
-                                                                    .language(Language.EN_US)
-                                                                    .processingLanguage(Language.EN_US)
-                                                                    .textDirection(TextDirection.LTR)
-                                                                    .value(text)
-                                                                    .build()
-                                                    )
-                                                    .build()
-                                    ))
-                                    .build()
-                    )
-                    .build();
-
-            AppSyncClientFactory.getInstance(this)
-                    .mutate(createHighlightMutation)
-                    .enqueue(new GraphQLCall.Callback<CreateAnnotationMutation.Data>() {
+                    ShareTargetHandlerRepository.createAnnotationFromText(text, ShareTargetHandler.this, authenticationViewModel, new ShareTargetHandlerRepository.CreateListener<CreateAnnotationMutation.Data>() {
                         @Override
-                        public void onResponse(@Nonnull Response<CreateAnnotationMutation.Data> highlightResponse) {
-                            if (highlightResponse.hasErrors()) {
-                                // Error is handled in WebView.
-                                Log.e(Constants.LOG_TAG, highlightResponse.errors().toString());
-                                return;
-                            }
+                        public void onAnnotationUri(String uri) {
+                            installAppWebView(uri);
+                        }
 
-
-                            final CreateAnnotationMutation.Data annotationData = highlightResponse.data();
-                            if (annotationData == null) {
+                        @Override
+                        public void onAnnotationCreated(CreateAnnotationMutation.Data data) {
+                            if (data == null) {
                                 // Error is handled in WebView
-                                Log.i(Constants.LOG_TAG, "highlightResult is null");
                                 return;
                             }
 
-                            webView.onWebEvent(new WebEvent.Callback(ShareTargetHandler.this, webView) {
-                                @Override
-                                public void onWebEvent(WebEvent event) {
-                                    super.onWebEvent(event);
-                                    switch (event.getType()) {
-                                        case WebEvent.TYPE_ACTIVITY_FINISH:
-                                            CreateAnnotationMutation.CreateAnnotation annotation = annotationData.createAnnotation();
+                            runOnUiThread(() -> {
+                                appWebViewViewModel.getReceivedWebEvents().observe(ShareTargetHandler.this, (webEvents) -> {
+                                    if (webEvents == null) {
+                                        return;
+                                    }
+
+                                    webEvents.iterator().forEachRemaining(webEvent -> {
+                                        if (webEvent.getType().equals(WebEvent.TYPE_ACTIVITY_FINISH)) {
+                                            CreateAnnotationMutation.CreateAnnotation annotation = data.createAnnotation();
                                             if (annotation != null) {
-                                                handleDisplayNotification(annotation.annotation().id());
+                                                ShareTargetHandlerRepository.displayAnnotationCreatedNotification(annotation.annotation().id(), ShareTargetHandler.this);
                                             }
                                             finish();
-                                    }
-                                }
+                                        }
+                                    });
+
+                                    appWebViewViewModel.clearReceivedWebEvents();
+                                });
                             });
                         }
 
                         @Override
-                        public void onFailure(@Nonnull ApolloException e) {
+                        public void onError(Exception e1) {
+                            ErrorRepository.captureException(e1);
+                        }
 
+                        @Override
+                        public void onGraphQLError(List<Error> errors) {
+                            errors.forEach(error -> ErrorRepository.captureException(new Exception(error.message())));
                         }
                     });
-        } catch (NoSuchAlgorithmException ex) {
-            Log.e(Constants.LOG_TAG, "No such algorithm", ex);
-            /** error is handled in webview **/
-        }
+                })
+        );
     }
 
-    private void handleSendImage(Intent intent) {
-
-        String screenshotId = UUID.randomUUID().toString();
-        String creatorUsername = AWSMobileClient.getInstance().getUsername();
-        String creatorIdentityId = AWSMobileClient.getInstance().getIdentityId();
-        String annotationId = WebRoutes.creatorsIdAnnotationId(
-                WebRoutes.getAPIHost(),
-                creatorUsername,
-                screenshotId
-        );
-        String uri = WebRoutes.creatorsIdAnnotationsNewAnnotationId(
-                creatorUsername,
-                screenshotId
-        );
-        webView.loadUrl(uri);
-
-        JSONObject s3TransferUtilityJson = AppSyncClientFactory
-                .getConfiguration(this)
-                .optJsonObject("S3TransferUtility");
-        String bucket = s3TransferUtilityJson.optString("Bucket");
-        String region = s3TransferUtilityJson.optString("Region");
-
+    private void handleCreateFromImage(Intent intent) {
         Uri imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
-        String filePath = "screenshots/" + screenshotId;
-        File file = ContentResolverLib.toFile(this, imageUri, filePath);
+        authenticationViewModel.awaitInitialization(
+                ((MainApplication) getApplication()).getThreadPoolExecutor(),
+                (e, aVoid) -> runOnUiThread(() -> {
+                    if (authenticationViewModel.isSignedOut()) {
+                        handleSignedOut();
+                        return;
+                    }
 
-        TransferUtility transferUtility = AWSMobileClientFactory.getTransferUtility(getApplicationContext());
-        TransferObserver transferObserver = transferUtility.upload(
-                bucket,
-                "private/" + creatorIdentityId + "/screenshots/" + screenshotId,
-                file
-        );
-        transferObserver.setTransferListener(new TransferListener() {
-            @Override
-            public void onStateChanged(int id, TransferState state) {
-                if (TransferState.COMPLETED != state) {
-                    return;
-                }
-                String uploadURI = "s3://" + transferObserver.getBucket() + "/" + transferObserver.getKey();
-                CreateAnnotationFromExternalTargetMutation createAnnotationMutation = CreateAnnotationFromExternalTargetMutation
-                        .builder()
-                        .input(
-                                CreateAnnotationFromExternalTargetInput
-                                        .builder()
-                                        .creatorUsername(creatorUsername)
-                                        .annotationId(annotationId)
-                                        .externalTarget(
-                                                ExternalTargetInput
-                                                        .builder()
-                                                        .format(Format.TEXT_PLAIN)
-                                                        .language(Language.EN_US)
-                                                        .processingLanguage(Language.EN_US)
-                                                        .type(ResourceType.IMAGE)
-                                                        .id(uploadURI)
-                                                        .build()
-                                        )
-                                        .build()
-                        )
-                        .build();
-                AppSyncClientFactory.getInstance(ShareTargetHandler.this)
-                        .mutate(createAnnotationMutation)
-                        .enqueue(new GraphQLCall.Callback<CreateAnnotationFromExternalTargetMutation.Data>() {
-                            @Override
-                            public void onResponse(@Nonnull Response<CreateAnnotationFromExternalTargetMutation.Data> annotationResponse) {
-                                if (annotationResponse.hasErrors()) {
-                                    // Error is handled in WebView.
-                                    Log.e(Constants.LOG_TAG, annotationResponse.errors().toString());
-                                    return;
-                                }
+                    ShareTargetHandlerRepository.createAnnotationFromImage(imageUri, ShareTargetHandler.this, authenticationViewModel, new ShareTargetHandlerRepository.CreateListener<CreateAnnotationFromExternalTargetMutation.Data>() {
+                        @Override
+                        public void onAnnotationUri(String uri) {
+                            installAppWebView(uri);
+                        }
 
-                                final CreateAnnotationFromExternalTargetMutation.Data annotationData = annotationResponse.data();
-                                if (annotationData == null) {
-                                    // Error is handled in WebView.
-                                    Log.i("Literal", "highlightResult is null");
-                                    return;
-                                }
-                                webView.onWebEvent(new WebEvent.Callback(ShareTargetHandler.this, webView) {
-                                    @Override
-                                    public void onWebEvent(WebEvent event) {
-                                        super.onWebEvent(event);
-                                        switch (event.getType()) {
-                                            case WebEvent.TYPE_ACTIVITY_FINISH:
-                                                CreateAnnotationFromExternalTargetMutation.CreateAnnotationFromExternalTarget annotation = annotationData.createAnnotationFromExternalTarget();
-                                                if (annotation != null) {
-                                                    handleDisplayNotification(annotation.id());
-                                                }
-                                                finish();
-                                        }
+                        @Override
+                        public void onAnnotationCreated(CreateAnnotationFromExternalTargetMutation.Data data) {
+                            if (data == null) {
+                                // Error is handled in WebView.CreateAnnotationMutation.Data
+                                Log.i("handleCreateFromImage", "CreateAnnotationMutation.Data is null");
+                                return;
+                            }
+
+                            runOnUiThread(() -> {
+                                appWebViewViewModel.getReceivedWebEvents().observe(ShareTargetHandler.this, (webEvents) -> {
+                                    if (webEvents == null) {
+                                        return;
                                     }
+
+                                    webEvents.iterator().forEachRemaining(webEvent -> {
+                                        if (webEvent.getType().equals(WebEvent.TYPE_ACTIVITY_FINISH)) {
+                                            CreateAnnotationFromExternalTargetMutation.CreateAnnotationFromExternalTarget annotation = data.createAnnotationFromExternalTarget();
+                                            if (annotation != null) {
+                                                ShareTargetHandlerRepository.displayAnnotationCreatedNotification(annotation.id(), ShareTargetHandler.this);
+                                            }
+                                            finish();
+                                        }
+                                    });
+
+                                    appWebViewViewModel.clearReceivedWebEvents();
                                 });
-                            }
+                            });
+                        }
 
-                            @Override
-                            public void onFailure(@Nonnull ApolloException e) {
-                                // Error is handled in WebView.
-                                Log.e(Constants.LOG_TAG, "ApolloException", e);
-                            }
-                        });
-            }
+                        @Override
+                        public void onError(Exception e1) {
+                            ErrorRepository.captureException(e1);
+                        }
 
-            @Override
-            public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-                /** noop **/
-            }
+                        @Override
+                        public void onGraphQLError(List<Error> errors) {
+                            errors.forEach(error -> ErrorRepository.captureException(new Exception(error.message())));
+                        }
+                    });
+                })
+        );
 
-            @Override
-            public void onError(int id, Exception ex) {
-                Log.e(Constants.LOG_TAG, "TransferUtility", ex);
-                /** error is handled in webview **/
-            }
-        });
     }
 
     private void handleSendNotSupported() {
         // TODO: implement fallback handling, e.g. display a "This does not look like a screenshot" UI
     }
 
-    private void handleDisplayNotification(String annotationId) {
-        try {
-            // NewHighlightFromShare may have deleted or changed the highlight.
-            AppSyncClientFactory.getInstance(this).clearCaches(ClearCacheOptions.builder().clearQueries().build());
-        } catch (ClearCacheException ex) {
-            Log.e(Constants.LOG_TAG, "Unable to clear cache: ", ex);
-        }
+    private void handleSignedOut() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setData(Uri.parse(WebRoutes.authenticate() + "?forResult=true"));
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
 
-        AppSyncClientFactory.getInstance(this)
-                .query(
-                        GetAnnotationForNotificationQuery
-                                .builder()
-                                .id(annotationId)
-                                .creatorUsername(AWSMobileClient.getInstance().getUsername())
-                                .build()
-                )
-                .enqueue(new GraphQLCall.Callback<GetAnnotationForNotificationQuery.Data>() {
-                    @Override
-                    public void onResponse(@Nonnull Response<GetAnnotationForNotificationQuery.Data> response) {
-                        if (response.hasErrors()) {
-                            Log.e(Constants.LOG_TAG, response.errors().toString());
-                            return;
-                        }
-                        GetAnnotationForNotificationQuery.Data data = response.data();
-                        if (data == null) {
-                            return;
-                        }
-                        GetAnnotationForNotificationQuery.GetAnnotation annotation = data.getAnnotation();
-                        if (annotation == null) {
-                            return;
-                        }
+        // We must set FLAG_ACTIVITY_NEW_TASK for MainActivity to spawn Amplify hosted authentication UI correctly. With the flag
+        // set, startActivityForResult no longer works, so we shuttle along an intent to fire when MainActivity is finished.
+        Intent manualResultIntent = new Intent(getIntent());
+        manualResultIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_TASK_ON_HOME | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        manualResultIntent.setClass(this, ShareTargetHandler.class);
+        intent.putExtra(Constants.INTENT_MANUAL_FOR_RESULT_DATA, manualResultIntent);
 
-                        Intent intent = new Intent(ShareTargetHandler.this, MainActivity.class);
-                        Uri annotationUri = Uri.parse(
-                                WebRoutes.creatorsIdAnnotationCollectionIdAnnotationId(
-                                        AWSMobileClient.getInstance().getUsername(),
-                                        Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT,
-                                        AnnotationLib.idComponentFromId(annotation.id())
-                                )
-                        );
-                        intent.setData(annotationUri);
-                        PendingIntent pendingIntent = PendingIntent.getActivity(ShareTargetHandler.this, 0, intent, 0);
-
-                        String textualTargetValue = null;
-                        for (GetAnnotationForNotificationQuery.Target target : annotation.target()) {
-                            GetAnnotationForNotificationQuery.AsTextualTarget textualTarget = target.asTextualTarget();
-                            if (textualTarget != null) {
-                                textualTargetValue = textualTarget.value();
-                                break;
-                            }
-                        }
-
-                        if (textualTargetValue != null) {
-                            NotificationCompat.Builder builder = new NotificationCompat.Builder(ShareTargetHandler.this, Constants.NOTIFICATION_CHANNEL_ANNOTATION_CREATED_ID)
-                                    .setSmallIcon(R.drawable.ic_stat_name)
-                                    .setColor(Color.BLACK)
-                                    .setContentTitle(Constants.NOTIFICATION_ANNOTATION_CREATED_TITLE)
-                                    .setStyle(
-                                            new NotificationCompat.BigTextStyle().bigText(textualTargetValue)
-                                    )
-                                    .setContentText(textualTargetValue)
-                                    .setPriority(NotificationCompat.PRIORITY_LOW)
-                                    .setContentIntent(pendingIntent)
-                                    .setAutoCancel(true);
-                            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(ShareTargetHandler.this);
-                            notificationManager.notify(annotation.id().hashCode(), builder.build());
-                        } else {
-                            Log.i(Constants.LOG_TAG, "Did not not notify AnnotationCreation: null textualTargetValue");
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(@Nonnull ApolloException e) {
-
-                    }
-                });
+        startActivity(intent);
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    public void onBackPressed() {
+        if (sourceWebViewFragment.getWebView().handleBackPressed()) {
+            return;
+        }
+        super.onBackPressed();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        if (this.webView != null) {
-            webView.saveState(outState);
+        if (appWebViewFragment != null) {
+            getSupportFragmentManager().putFragment(outState, APP_WEB_VIEW_FRAGMENT_NAME, appWebViewFragment);
         }
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        if (this.webView != null) {
-            this.webView.restoreState(savedInstanceState);
+        if (sourceWebViewFragment != null) {
+            getSupportFragmentManager().putFragment(outState, APP_WEB_VIEW_FRAGMENT_NAME, sourceWebViewFragment);
         }
     }
 }

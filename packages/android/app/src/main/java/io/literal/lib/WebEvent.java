@@ -1,39 +1,40 @@
 package io.literal.lib;
 
-import android.app.Activity;
-import android.content.Intent;
-import android.os.AsyncTask;
-import android.util.Log;
-
-import com.amazonaws.mobile.client.AWSMobileClient;
-import com.amazonaws.mobile.client.HostedUIOptions;
-import com.amazonaws.mobile.client.SignInUIOptions;
-import com.amazonaws.mobile.client.UserStateDetails;
-import com.amazonaws.mobile.client.UserStateListener;
-import com.amazonaws.mobile.client.results.Tokens;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.UUID;
-
-import io.literal.ui.activity.AuthenticationHandler;
-import io.literal.ui.activity.MainActivity;
-import io.literal.ui.view.WebView;
+import io.literal.ui.view.AppWebView;
 
 public class WebEvent {
 
+    // App WebView
     public static final String TYPE_ACTIVITY_FINISH = "ACTIVITY_FINISH";
     public static final String TYPE_ROUTER_REPLACE = "ROUTER_REPLACE";
-
     public static final String TYPE_AUTH_SIGN_IN = "AUTH_SIGN_IN";
     public static final String TYPE_AUTH_SIGN_IN_RESULT = "AUTH_SIGN_IN_RESULT";
-
     public static final String TYPE_AUTH_GET_TOKENS = "AUTH_GET_TOKENS";
     public static final String TYPE_AUTH_GET_TOKENS_RESULT = "AUTH_GET_TOKENS_RESULT";
-
     public static final String TYPE_AUTH_GET_USER_INFO = "AUTH_GET_USER_INFO";
     public static final String TYPE_AUTH_GET_USER_INFO_RESULT = "AUTH_GET_USER_INFO_RESULT";
+    public static final String TYPE_VIEW_TARGET_FOR_ANNOTATION = "VIEW_TARGET_FOR_ANNOTATION";
+    public static final String TYPE_SET_CACHE_ANNOTATION = "SET_CACHE_ANNOTATION";
+    public static final String TYPE_DELETE_CACHE_ANNOTATION = "DELETE_CACHE_ANNOTATION";
+    public static final String TYPE_CREATE_ANNOTATION_FROM_SOURCE = "CREATE_ANNOTATION_FROM_SOURCE";
+    public static final String TYPE_ADD_CACHE_ANNOTATIONS = "ADD_CACHE_ANNOTATIONS";
+
+    // Source WebView
+    public static final String TYPE_VIEW_STATE_EDIT_ANNOTATION_TAGS = "VIEW_STATE_EDIT_ANNOTATION_TAGS";
+    public static final String TYPE_EDIT_ANNOTATION_TAGS_RESULT = "EDIT_ANNOTATION_TAGS_RESULT";
+    public static final String TYPE_VIEW_STATE_COLLAPSED_ANNOTATION_TAGS = "VIEW_STATE_COLLAPSED_ANNOTATION_TAGS";
+    public static final String TYPE_SET_VIEW_STATE = "SET_VIEW_STATE";
+    public static final String TYPE_RENDER_ANNOTATIONS = "RENDER_ANNOTATIONS";
+    public static final String TYPE_CREATE_ANNOTATION = "CREATE_ANNOTATION";
+    public static final String TYPE_FOCUS_ANNOTATION = "FOCUS_ANNOTATION";
+    public static final String TYPE_BLUR_ANNOTATION = "BLUR_ANNOTATION";
+    public static final String TYPE_EDIT_ANNOTATION = "EDIT_ANNOTATION";
+    public static final String TYPE_SELECTION_CREATED = "SELECTION_CREATED";
+    public static final String TYPE_ANNOTATION_RENDERER_INITIALIZED = "ANNOTATION_RENDERER_INITIALIZED";
+    public static final String TYPE_SELECTION_CHANGE = "SELECTION_CHANGE";
 
     private String type;
     private String pid;
@@ -42,6 +43,7 @@ public class WebEvent {
     public WebEvent(JSONObject data) {
         this.type = data.optString("type");
         this.pid = data.optString("pid");
+        this.data = data.optJSONObject("data");
     }
 
     public WebEvent(String type, String pid, JSONObject data) {
@@ -65,125 +67,11 @@ public class WebEvent {
     public String getType() {
         return type;
     }
+    public JSONObject getData() {
+        return data;
+    }
 
-
-    public static class Callback {
-        private final Activity activity;
-        private final WebView webView;
-
-        public Callback(Activity activity, WebView webView) {
-            this.activity = activity;
-            this.webView = webView;
-        }
-
-        private void handleSignInGoogle() {
-            HostedUIOptions hostedUIOptions = HostedUIOptions.builder()
-                    .scopes("openid", "email", "phone", "profile", "aws.cognito.signin.user.admin")
-                    .identityProvider("Google")
-                    .build();
-            SignInUIOptions signInUIOptions = SignInUIOptions.builder()
-                    .hostedUIOptions(hostedUIOptions)
-                    .canCancel(false)
-                    .build();
-
-            AWSMobileClient.getInstance().showSignIn(activity, signInUIOptions, new com.amazonaws.mobile.client.Callback<UserStateDetails>() {
-                @Override
-                public void onResult(UserStateDetails result) {
-                    activity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Log.d(Constants.LOG_TAG, "handleSignInResult");
-                            try {
-                                Tokens tokens = AWSMobileClient.getInstance().getTokens();
-                                JSONObject result = new JSONObject();
-                                result.put("idToken", tokens.getIdToken().getTokenString());
-                                result.put("refreshToken", tokens.getRefreshToken().getTokenString());
-                                result.put("accessToken", tokens.getAccessToken().getTokenString());
-                                webView.postWebEvent(
-                                        new WebEvent(WebEvent.TYPE_AUTH_SIGN_IN_RESULT, UUID.randomUUID().toString(), result)
-                                );
-                            } catch (Exception e) {
-                                Log.e(Constants.LOG_TAG, "Unable to handleSignGoogle: ", e);
-                            }
-                            ;
-
-                        }
-                    });
-
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    Log.e(Constants.LOG_TAG, "onError: ", e);
-                }
-            });
-        }
-
-        public void onWebEvent(WebEvent event) {
-            switch (event.getType()) {
-                case WebEvent.TYPE_AUTH_SIGN_IN:
-                    this.handleSignInGoogle();
-                    return;
-                case WebEvent.TYPE_AUTH_GET_TOKENS:
-                    new GetTokensHandlerTask().execute();
-                    return;
-                case WebEvent.TYPE_AUTH_GET_USER_INFO:
-                    new GetUserInfoHandlerTask().execute();
-                    return;
-            }
-        }
-
-        private class GetTokensHandlerTask extends AsyncTask<Void, Void, JSONObject> {
-            @Override
-            protected JSONObject doInBackground(Void... voids) {
-                try {
-                    JSONObject result = new JSONObject();
-                    Tokens tokens = AWSMobileClient.getInstance().getTokens();
-                    result.put("idToken", tokens.getIdToken().getTokenString());
-                    result.put("refreshToken", tokens.getRefreshToken().getTokenString());
-                    result.put("accessToken", tokens.getAccessToken().getTokenString());
-                    return result;
-                } catch (Exception e) {
-                    Log.e(Constants.LOG_TAG, "Unable to handleGetTokens: ", e);
-                    Log.i(Constants.LOG_TAG, "Signing user out.");
-                    AWSMobileClient.getInstance().signOut();
-                    return null;
-                }
-            }
-
-            @Override
-            protected void onPostExecute(JSONObject result) {
-                webView.postWebEvent(
-                        new WebEvent(WebEvent.TYPE_AUTH_GET_TOKENS_RESULT, UUID.randomUUID().toString(), result)
-                );
-            }
-        }
-
-        private class GetUserInfoHandlerTask extends AsyncTask<Void, Void, JSONObject> {
-            @Override
-            protected JSONObject doInBackground(Void... voids) {
-                try {
-                    AWSMobileClient awsMobileClient = AWSMobileClient.getInstance();
-                    JSONObject result = new JSONObject();
-                    result.put("username", awsMobileClient.getUsername());
-                    result.put("attributes", new JSONObject(awsMobileClient.getUserAttributes()));
-                    result.put("id", awsMobileClient.getIdentityId());
-
-                    Log.i(Constants.LOG_TAG, "GetUserInfo: " + result.toString());
-                    return result;
-
-                } catch (Exception e) {
-                    Log.e(Constants.LOG_TAG, "Unable to handleGetUserInfo: ", e);
-                    return null;
-                }
-            }
-
-            @Override
-            protected void onPostExecute(JSONObject result) {
-                webView.postWebEvent(
-                        new WebEvent(WebEvent.TYPE_AUTH_GET_USER_INFO_RESULT, UUID.randomUUID().toString(), result)
-                );
-            }
-        }
+    public interface Callback {
+        public void onWebEvent(AppWebView view, WebEvent event);
     }
 }

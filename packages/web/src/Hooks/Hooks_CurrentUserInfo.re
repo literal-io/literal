@@ -9,7 +9,7 @@ let currentUserInfoWeb = () =>
 let currentUserInfoWebview = () =>
   Timer.thunkP(~label="AUTH_GET_USER_INFO", () =>
     Webview.(
-      postMessageForResult(WebEvent.make(~type_="AUTH_GET_USER_INFO"))
+      postMessageForResult(WebEvent.make(~type_="AUTH_GET_USER_INFO", ()))
     )
   )
   |> Js.Promise.then_(result => {

@@ -53,6 +53,105 @@ module Data = {
         [|activeAnnotation|],
       );
 
+    let handleSetCacheAnnotation = ev => {
+      let _ =
+        ev
+        ->Belt.Option.flatMap(Js.Json.decodeObject)
+        ->Belt.Option.flatMap(dict => Js.Dict.get(dict, "annotation"))
+        ->Belt.Option.flatMap(json =>
+            switch (Lib_WebView_Model_Annotation.decode(json)) {
+            | Ok(r) => Some(r)
+            | Error(e) =>
+              let _ = Error.(report(DeccoDecodeError(e)));
+              None;
+            }
+          )
+        ->Belt.Option.forEach(annotation =>
+            Lib_WebView_Model_Apollo.writeToCache(~annotation, ~currentUser)
+          );
+      ();
+    };
+
+    let handleDeleteCacheAnnotation = ev => {
+      let _ =
+        ev
+        ->Belt.Option.flatMap(ev => ev->Js.Json.decodeObject)
+        ->Belt.Option.flatMap(dict => Js.Dict.get(dict, "annotation"))
+        ->Belt.Option.flatMap(json =>
+            switch (Lib_WebView_Model_Annotation.decode(json)) {
+            | Ok(r) => Some(r)
+            | Error(e) => None
+            }
+          )
+        ->Belt.Option.forEach(annotation =>
+            Lib_WebView_Model_Apollo.deleteFromCache(
+              ~annotation,
+              ~currentUser,
+            )
+          );
+      ();
+    };
+
+    let handleAddCacheAnnotations = ev => {
+      let annotations =
+        ev
+        ->Belt.Option.flatMap(Js.Json.decodeObject)
+        ->Belt.Option.flatMap(d => d->Js.Dict.get("annotations"))
+        ->Belt.Option.flatMap(Js.Json.decodeString)
+        ->Belt.Option.map(a =>
+            try(a->Js.Json.parseExn) {
+            | _ => Js.Json.null
+            }
+          )
+        ->Belt.Option.flatMap(Js.Json.decodeArray)
+        ->Belt.Option.map(json => {
+            json->Belt.Array.keepMap(json =>
+              switch (Lib_WebView_Model_Annotation.decode(json)) {
+              | Ok(r) => Some(r)
+              | Error(e) =>
+                Js.log2("Error decoding annotation", e);
+                None;
+              }
+            )
+          })
+        ->Belt.Option.getWithDefault([||]);
+
+      if (Js.Array2.length(annotations) > 0) {
+        let _ =
+          Lib_WebView_Model_Apollo.addManyToCache(~annotations, ~currentUser);
+
+        Routes.CreatorsIdAnnotationCollectionsId.(
+          Next.Router.replaceWithAs(
+            staticPath,
+            path(
+              ~creatorUsername=currentUser.username,
+              ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
+            ),
+          )
+        );
+      };
+    };
+
+    let _ =
+      React.useEffect0(() => {
+        let eventHandlers = [|
+          ("SET_CACHE_ANNOTATION", handleSetCacheAnnotation),
+          ("DELETE_CACHE_ANNOTATION", handleDeleteCacheAnnotation),
+          ("ADD_CACHE_ANNOTATIONS", handleAddCacheAnnotations),
+        |];
+
+        let _ =
+          eventHandlers->Belt.Array.forEach(Webview.WebEventHandler.register);
+
+        Some(
+          () => {
+            eventHandlers->Belt.Array.forEach(((type_, _)) =>
+              Webview.WebEventHandler.unregister(type_)
+            )
+          },
+        );
+      });
+
     let handleIdxChange = idx => {
       setActiveIdx(_ => idx);
     };
@@ -78,6 +177,7 @@ module Data = {
            <ScrollSnapList.Item
              key={annotation##id} direction=ScrollSnapList.Horizontal>
              <Containers_AnnotationEditor
+               isVisible={annotation##id == activeAnnotation##id}
                annotationFragment={annotation##editorAnnotationFragment}
                currentUser
              />
@@ -94,7 +194,18 @@ module Data = {
 
 module Error = {
   [@react.component]
-  let make = () => React.string("Error...");
+  let make = (~error=?) => {
+    let _ =
+      React.useEffect1(
+        () => {
+          Js.log(error);
+          None;
+        },
+        [|error|],
+      );
+
+    <ErrorDisplay />;
+  };
 };
 
 module Empty = {
@@ -314,8 +425,7 @@ let make =
         annotations
       />
     };
-  | ({error: Some(_error)}, _, _) =>
-    /** FIXME: handle apollo error **/ <Error />
+  | ({error: Some(error)}, _, _) => <Error error />
   | ({error: None, data: None, loading: false}, _, _) =>
     /** FIXME: handle unexpected error **/ <Error />
   | (_, _, Unauthenticated) =>

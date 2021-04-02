@@ -3,7 +3,16 @@ let styles = [%raw "require('./TextInput_Tags.module.css')"];
 [@react.component]
 let make =
   React.forwardRef(
-    (~value, ~onValueChange, ~className=?, ~disabled=?, ~onValueCommit, ref_) => {
+    (
+      ~value,
+      ~onValueChange,
+      ~className=?,
+      ~disabled=?,
+      ~onValueCommit,
+      ~autoFocus=?,
+      ~placeholder=?,
+      ref_,
+    ) => {
     /** Reuse the ref prop if one was passed in, otherwise use our own **/
     let inputRef = {
       let ownRef = React.useRef(Js.Nullable.null);
@@ -42,6 +51,8 @@ let make =
 
     <MaterialUi.TextField
       ?disabled
+      ?autoFocus
+      ?placeholder
       value={MaterialUi.TextField.Value.string(value)}
       onChange=handleChange
       fullWidth=true
@@ -55,6 +66,7 @@ let make =
             "transition-colors",
             "duration-300",
             "ease-in-out",
+            "bg-darkAccent",
             isFocused ? "border-lightPrimary" : "border-lightDisabled",
             Cn.take(className),
           ]),

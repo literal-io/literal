@@ -1,30 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-    <io.literal.ui.view.WebView xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/webview"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentLeft="true"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:clipChildren="false">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:focusable="true" />
-    <RelativeLayout
-        android:id="@+id/splash"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true"
+        tools:context=".ui.activity.ShareTargetHandler">
+
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/fragment_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/bottom_sheet_fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentTop="true"
+        android:elevation="12dp"
+        android:background="@color/colorPrimary" />
+
+    <RelativeLayout
+        android:id="@+id/share_target_handler_splash"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:background="@color/colorPrimaryDark">
+
         <ImageView
             android:layout_width="142dp"
             android:layout_height="142dp"
             android:layout_centerInParent="true"
-            android:src="@drawable/ic_logo"/>
+            android:src="@drawable/ic_logo" />
     </RelativeLayout>
 </RelativeLayout>

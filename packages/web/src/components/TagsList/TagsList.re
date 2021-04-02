@@ -8,7 +8,7 @@ let make = (~value, ~onChange, ~disabled=?) => {
       ->Belt.Array.get(idx)
       ->Belt.Option.flatMap(tag =>
           newText->Belt.Option.map(text =>
-            Containers_AnnotationEditor_Types.{id: None, href: None, text}
+            Containers_AnnotationEditor_Tag.{id: None, href: None, text}
           )
         );
     let newValue = Belt.Array.copy(value);
@@ -23,22 +23,27 @@ let make = (~value, ~onChange, ~disabled=?) => {
           | None => [||]
           },
       );
+    Js.log4("handleChange", newText, idx, newValue);
     onChange(newValue);
   };
 
   let tags =
     value
-    ->Belt.Array.keep(({text}) => text != "recent")
     ->Belt.Array.mapWithIndex((idx, tag) =>
-        <li className={Cn.fromList(["mb-5"])} key={tag.text}>
-          <TagLinkAndInput
-            key={tag.text}
-            onChange={newText => handleChange(~newText, ~idx)}
-            text={tag.text}
-            href={tag.href}
-            ?disabled
-          />
-        </li>
+        if (tag.text
+            == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel) {
+          React.null;
+        } else {
+          <li className={Cn.fromList(["mb-5"])} key={tag.text}>
+            <TagLinkAndInput
+              key={tag.text}
+              onChange={newText => handleChange(~newText, ~idx)}
+              text={tag.text}
+              href={tag.href}
+              ?disabled
+            />
+          </li>;
+        }
       )
     ->React.array;
 

@@ -1,5 +1,62 @@
+module PromptIconButton = {
+  [@react.component]
+  let make = (~icon, ~label, ~className=?, ~onClick) => {
+    <MaterialUi.IconButton
+      size=`Medium
+      edge=MaterialUi.IconButton.Edge._false
+      onClick
+      _TouchRippleProps={
+        "classes": {
+          "child": Cn.fromList(["bg-white"]),
+          "rippleVisible": Cn.fromList(["opacity-75"]),
+        },
+      }
+      classes={MaterialUi.IconButton.Classes.make(
+        ~root=
+          Cn.fromList([
+            "p-10",
+            "border-b",
+            "border-lightSecondary",
+            "border-dotted",
+            "bg-darkAccent",
+            "rounded-sm",
+            Cn.take(className),
+          ]),
+        (),
+      )}>
+      <Svg
+        placeholderViewBox="0 0 24 24"
+        className={Cn.fromList(["w-16", "h-16", "pointer-events-none"])}
+        icon
+      />
+      <div
+        className={Cn.fromList([
+          "absolute",
+          "left-0",
+          "right-0",
+          "bottom-0",
+          "mb-2",
+          "flex",
+          "items-center",
+          "justify-center",
+        ])}>
+        <span
+          className={Cn.fromList([
+            "font-sans",
+            "text-xs",
+            "text-lightDisabled",
+            "uppercase",
+            "italic",
+          ])}>
+          {React.string(label)}
+        </span>
+      </div>
+    </MaterialUi.IconButton>;
+  };
+};
+
 [@react.component]
-let make = (~onCreateFromText, ~onCreateFromFile) => {
+let make = (~onCreateFromText, ~onCreateFromFile, ~onCreateFromWeb) => {
   let inputRef = React.useRef(Js.Nullable.null);
   let handleFileInputChange = ev => {
     let _ = ev->ReactEvent.Form.persist;
@@ -9,6 +66,22 @@ let make = (~onCreateFromText, ~onCreateFromFile) => {
         ? files->Belt.Array.getExn(0)->onCreateFromFile
         : Sentry.captureMessage("Expected files, but got none.");
     ();
+  };
+
+  let handleWebButtonClick = _ => {
+    let _ =
+      Service_Analytics.(
+        track(Click({action: "create from web", label: None}))
+      );
+    onCreateFromWeb();
+  };
+
+  let handleTextButtonClick = _ => {
+    let _ =
+      Service_Analytics.(
+        track(Click({action: "create from text", label: None}))
+      );
+    onCreateFromText();
   };
 
   let handleFileButtonClick = _ => {
@@ -36,69 +109,35 @@ let make = (~onCreateFromText, ~onCreateFromFile) => {
         "flex",
         "flex-row",
         "justify-center",
-        "items-start",
+        "items-center",
         "flex-auto",
-        "pt-20",
       ])}>
       <div
         className={Cn.fromList([
           "flex",
-          "flex-row",
-          "flex-auto",
+          "flex-col",
           "justify-center",
           "items-center",
           "pb-4",
           "mx-6",
-          "border-b",
-          "border-white-o50",
-          "border-dotted",
         ])}>
-        <MaterialUi.IconButton
-          size=`Medium
-          edge=MaterialUi.IconButton.Edge.start
-          onClick={_ => {
-            let _ =
-              Service_Analytics.(
-                track(Click({action: "create from text", label: None}))
-              );
-            onCreateFromText();
-          }}
-          _TouchRippleProps={
-            "classes": {
-              "child": Cn.fromList(["bg-white"]),
-              "rippleVisible": Cn.fromList(["opacity-75"]),
-            },
-          }
-          classes={MaterialUi.IconButton.Classes.make(
-            ~root=Cn.fromList(["mr-20", "p-8"]),
-            (),
-          )}>
-          <Svg
-            placeholderViewBox="0 0 24 24"
-            className={Cn.fromList(["w-16", "h-16", "pointer-events-none"])}
-            icon=Svg.textFields
-          />
-        </MaterialUi.IconButton>
-        <MaterialUi.IconButton
-          size=`Medium
-          edge=MaterialUi.IconButton.Edge.start
-          onClick={_ => handleFileButtonClick()}
-          _TouchRippleProps={
-            "classes": {
-              "child": Cn.fromList(["bg-white"]),
-              "rippleVisible": Cn.fromList(["opacity-75"]),
-            },
-          }
-          classes={MaterialUi.IconButton.Classes.make(
-            ~root=Cn.fromList(["p-8"]),
-            (),
-          )}>
-          <Svg
-            placeholderViewBox="0 0 24 24"
-            className={Cn.fromList(["w-16", "h-16", "pointer-events-none"])}
-            icon=Svg.textSnippet
-          />
-        </MaterialUi.IconButton>
+        <PromptIconButton
+          label="web"
+          icon=Svg.language
+          onClick=handleWebButtonClick
+          className={Cn.fromList(["mb-8"])}
+        />
+        <PromptIconButton
+          label="text"
+          icon=Svg.textFields
+          onClick=handleTextButtonClick
+          className={Cn.fromList(["mb-8"])}
+        />
+        <PromptIconButton
+          label="screenshot"
+          icon=Svg.textSnippet
+          onClick=handleFileButtonClick
+        />
         <input
           type_="file"
           accept="image/*"
@@ -109,7 +148,7 @@ let make = (~onCreateFromText, ~onCreateFromFile) => {
       </div>
     </div>
     <BottomAlert
-      text="Use the sharesheet to import highlighted text and screenshots directly from the apps you use to read."
+      text="Use the sharesheet to import highlighted text, screenshots, and web pages directly from the apps you use to read."
     />
   </div>;
 };

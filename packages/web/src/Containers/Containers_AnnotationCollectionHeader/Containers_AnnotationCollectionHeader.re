@@ -1,63 +1,6 @@
 open Containers_AnnotationCollectionHeader_GraphQL;
 open Styles;
 
-let handleUpdateCache = (~input, ~annotation) => {
-  let _ =
-    annotation##body
-    ->Belt.Option.getWithDefault([||])
-    ->Belt.Array.keepMap(body =>
-        switch (body) {
-        | `TextualBody(body) when Lib_GraphQL.Annotation.isBodyTag(body) =>
-          Some(body)
-        | _ => None
-        }
-      )
-    ->Belt.Array.forEach(tag => {
-        let cacheQuery =
-          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.Query.make(
-            ~creatorUsername=input##creatorUsername,
-            ~id=tag##id->Belt.Option.getExn,
-            (),
-          );
-        let data =
-          QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.readCache(
-            ~query=cacheQuery,
-            ~client=Providers_Apollo.client,
-            (),
-          );
-        let _ =
-          data
-          ->Belt.Option.flatMap(d =>
-              d##getAnnotationCollection->Js.Null.toOption
-            )
-          ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
-          ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
-          ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
-          ->Belt.Option.forEach(items => {
-              let newItems =
-                items
-                ->Belt.Array.keep(d => d##annotation##id != input##id)
-                ->Js.Null.return;
-              let newData =
-                QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.setAnnotationPageItems(
-                  data->Belt.Option.getExn,
-                  newItems,
-                );
-              let _ =
-                QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.writeCache(
-                  ~query=cacheQuery,
-                  ~client=Providers_Apollo.client,
-                  ~data=newData,
-                  (),
-                );
-              ();
-            });
-
-        ();
-      });
-  ();
-};
-
 [@react.component]
 let make =
     (
@@ -72,15 +15,20 @@ let make =
     );
 
   let handleDelete = (~annotation, ~currentUser) => {
-    let input = {
-      "creatorUsername":
-        AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-      "id": annotation##id,
-    };
+    let input =
+      Lib_GraphQL_DeleteAnnotationMutation.Input.make(
+        ~creatorUsername=
+          AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+        ~id=annotation##id,
+      );
     let variables = DeleteAnnotationMutation.makeVariables(~input, ());
 
     let _ = deleteAnnotationMutation(~variables, ());
-    let _ = handleUpdateCache(~input, ~annotation);
+    let _ =
+      Lib_GraphQL_DeleteAnnotationMutation.Apollo.updateCache(
+        ~annotation,
+        ~currentUser,
+      );
     ();
   };
 
@@ -158,7 +106,7 @@ let make =
         "justify-between",
         "items-center",
         "py-2",
-        "mx-6",
+        "mx-4",
         "flex",
         "flex-1",
       ])}>

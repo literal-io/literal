@@ -36,11 +36,23 @@ public class WebRoutes {
         return host + "/creators/" + creatorUsername + "/annotations/" + annotationIdComponent;
     }
 
+    public static String creatorsIdAnnotationsNew(
+            String creatorUsername
+    ) {
+        return getWebHost() + "/creators/" + creatorUsername + "/annotations/new";
+    }
+
     public static String creatorsIdAnnotationsNewAnnotationId(
             String creatorUsername,
             String annotationIdComponent
     ) {
         return getWebHost() + "/creators/" + creatorUsername + "/annotations/new?id=" + annotationIdComponent;
+    }
+
+    public static String creatorsIdAnnotationsNewFromMessageEvent(
+            String creatorUsername
+    ) {
+        return creatorsIdAnnotationsNew(creatorUsername) + "?fromMessageEvent=true";
     }
 
     public static String creatorsIdAnnotationId(
@@ -80,5 +92,9 @@ public class WebRoutes {
             String annotationIdComponent
     ) {
         return creatorsIdAnnotationCollectionIdAnnotationId(getWebHost(), creatorUsername, annotationCollectionIdComponent, annotationIdComponent) + "?annotationId=" + annotationIdComponent;
+    }
+
+    public static String creatorsIdWebview(String creatorUsername) {
+        return getWebHost() + "/creators/" + creatorUsername + "/webview";
     }
 }

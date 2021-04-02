@@ -20,6 +20,7 @@ app/beta-keystore.jks
 signing.properties
 
 
+app/src/main/assets/SourceWebView*
 build/
 dist/
 node_modules/

@@ -9,6 +9,7 @@ let make = (~text) =>
       "flex-row",
       "items-center",
       "p-6",
+      "bg-darkAccent",
     ])}>
     <p className={Cn.fromList(["text-lightSecondary", "mr-6", "text-xs"])}>
       {React.string(text)}
