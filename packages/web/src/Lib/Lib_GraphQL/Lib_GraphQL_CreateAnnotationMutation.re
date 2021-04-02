@@ -178,8 +178,20 @@ module Apollo = {
       )
     ->Js.Dict.entries
     ->Belt.Array.forEach(((annotationCollectionId, annotations)) => {
-        let onCreateAnnotationCollection =
+        let shouldCreateAnnotationCollection =
           createAnnotationCollection
+          || annotationCollectionId
+          == Lib_GraphQL.AnnotationCollection.(
+               makeIdFromComponent(
+                 ~creatorUsername=
+                   currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                 ~annotationCollectionIdComponent=recentAnnotationCollectionIdComponent,
+                 (),
+               )
+             );
+
+        let onCreateAnnotationCollection =
+          shouldCreateAnnotationCollection
             ? () =>
                 Lib_GraphQL_Agent.(readCache(makeId(~currentUser)))
                 ->Belt.Option.map(Js.Promise.resolve)
