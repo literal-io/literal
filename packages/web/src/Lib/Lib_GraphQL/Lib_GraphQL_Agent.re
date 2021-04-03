@@ -26,6 +26,7 @@ let makeCache = (~currentUser) => {
   |> Js.Promise.then_(hashedEmail =>
        Js.Json.object_(
          Js.Dict.fromList([
+           ("__typename", "Agent"->Js.Json.string),
            ("id", makeId(~currentUser)->Js.Json.string),
            ("email", [|email->Js.Json.string|]->Js.Json.array),
            ("email_sha1", [|hashedEmail->Js.Json.string|]->Js.Json.array),

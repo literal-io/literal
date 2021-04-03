@@ -13,6 +13,7 @@
 .externalNativeBuild
 .cxx
 app/release
+app/beta
 
 # Signing
 app/release-keystore.jks
