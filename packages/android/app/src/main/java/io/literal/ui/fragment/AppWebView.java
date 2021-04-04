@@ -37,8 +37,8 @@ import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 
 public class AppWebView extends Fragment {
-    private static final String PARAM_INITIAL_URL = "PARAM_INITIAL_URL";
-    private static final String PARAM_APP_WEB_VIEW_MODEL_KEY = "PARAM_APP_WEB_VIEW_MODEL_KEY";
+    public static final String PARAM_INITIAL_URL = "PARAM_INITIAL_URL";
+    public static final String PARAM_APP_WEB_VIEW_MODEL_KEY = "PARAM_APP_WEB_VIEW_MODEL_KEY";
 
     private final FileActivityResultCallback fileActivityResultCallback = new FileActivityResultCallback();
 

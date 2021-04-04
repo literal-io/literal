@@ -67,7 +67,6 @@ public class MainActivity extends SentryActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Sentry.captureMessage("testing sdk setup");
 
         setContentView(R.layout.activity_main);
 
@@ -116,6 +115,22 @@ public class MainActivity extends SentryActivity {
     private void initializeViewModel() {
         authenticationViewModel = new ViewModelProvider(this).get(AuthenticationViewModel.class);
         authenticationViewModel.initialize(this);
+        authenticationViewModel.getUsername().observe(this, username -> {
+            if (appWebViewBottomSheetFragment == null) {
+                return;
+            }
+
+            String paramInitialUrl = appWebViewBottomSheetFragment.getArguments().getString(AppWebView.PARAM_INITIAL_URL);
+            String newParamInitialUrl = WebRoutes.creatorsIdWebview(username);
+            if (!paramInitialUrl.equals(newParamInitialUrl)) {
+                appWebViewBottomSheetFragment = AppWebView.newInstance(newParamInitialUrl, APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME);
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .setReorderingAllowed(true)
+                        .replace(R.id.app_web_view_bottom_sheet_fragment_container, appWebViewBottomSheetFragment)
+                        .commit();
+            }
+        });
 
         appWebViewModelPrimary = new ViewModelProvider(this).get(APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME, AppWebViewViewModel.class);
         appWebViewModelPrimary.getHasFinishedInitializing().observe(this, hasFinishedInitializing -> {

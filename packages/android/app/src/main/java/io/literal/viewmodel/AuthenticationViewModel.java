@@ -149,9 +149,13 @@ public class AuthenticationViewModel extends ViewModel {
                     callback.invoke(e, null);
                     return;
                 }
+
                 this.userStateDetails.postValue(userStateDetails);
                 this.tokens.postValue(AuthenticationRepository.getTokens());
                 this.userAttributes.postValue(AuthenticationRepository.getUserAttributes());
+                this.identityId.postValue(AuthenticationRepository.getIdentityId());
+                this.username.postValue(AuthenticationRepository.getUsername());
+
                 callback.invoke(null, null);
             } catch (Exception getTokensException) {
                 callback.invoke(getTokensException, null);
