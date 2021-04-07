@@ -53,7 +53,7 @@ let make =
       )}>
       <Svg
         placeholderViewBox="0 0 24 24"
-        className={cn(["pointer-events-none", "opacity-50"])}
+        className={cn(["pointer-events-none", "opacity-75"])}
         style={ReactDOMRe.Style.make(~width="1.75rem", ~height="1.75rem", ())}
         icon=Svg.add
       />
@@ -86,7 +86,7 @@ let make =
       )}>
       <Svg
         placeholderViewBox="0 0 24 24"
-        className={cn(["pointer-events-none", "opacity-50"])}
+        className={cn(["pointer-events-none", "opacity-75"])}
         style={ReactDOMRe.Style.make(~width="1.75rem", ~height="1.75rem", ())}
         icon=Svg.delete
       />
