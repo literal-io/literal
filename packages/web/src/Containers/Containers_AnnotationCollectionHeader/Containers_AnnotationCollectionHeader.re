@@ -110,6 +110,7 @@ let make =
         "flex",
         "flex-1",
       ])}>
+      <AnnotationCollectionListPopover />
       <h1
         className={cn([
           "text-lightPrimary",
