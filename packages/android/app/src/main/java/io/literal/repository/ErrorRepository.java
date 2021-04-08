@@ -6,6 +6,7 @@ import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.UserState;
 import com.amazonaws.mobile.client.UserStateListener;
 
+import io.literal.BuildConfig;
 import io.literal.lib.Thunk;
 import io.sentry.Sentry;
 import io.sentry.protocol.User;
@@ -25,27 +26,34 @@ public class ErrorRepository {
     };
 
     public static Thunk initialize() {
+        if (BuildConfig.DEBUG) {
+            return () -> { /* noop */ };
+        }
         AWSMobileClient.getInstance().addUserStateListener(userStateListener);
         return () -> AWSMobileClient.getInstance().removeUserStateListener(userStateListener);
     }
 
     public static void captureException(Exception exception) {
-        Sentry.captureException(exception);
+        if (!BuildConfig.DEBUG) {
+            Sentry.captureException(exception);
+        }
         Log.d("ErrorRepository", "Capture Exception", exception);
     }
 
     public static void captureException(Exception exception, String message) {
-        Sentry.configureScope(scope -> {
-            scope.setContexts("message", message);
-        });
-        Sentry.captureException(exception);
-        Sentry.configureScope(scope -> {
-            scope.setContexts("message", (String) null);
-        });
+        if (!BuildConfig.DEBUG) {
+            Sentry.configureScope(scope -> {
+                scope.setContexts("message", message);
+            });
+            Sentry.captureException(exception);
+            Sentry.configureScope(scope -> {
+                scope.setContexts("message", (String) null);
+            });
+        }
         Log.d("ErrorRepository", message, exception);
     }
 
-    public static void setUser(User user) {
-        Sentry.setUser(user);
+    public static void captureWarning(Exception exception) {
+        Log.d("ErrorRepository", "warning", exception);
     }
 }

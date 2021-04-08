@@ -1,6 +1,10 @@
 package io.literal.repository;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.net.Uri;
 import android.util.Log;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
@@ -10,6 +14,7 @@ import com.amazonaws.mobile.client.SignInUIOptions;
 import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.mobile.client.results.Tokens;
 
+import java.util.List;
 import java.util.Map;
 
 public class AuthenticationRepository {
@@ -59,6 +64,24 @@ public class AuthenticationRepository {
     }
 
     public static void signInGoogle(Activity activity, Callback<UserStateDetails> callback) {
+        /*
+         * Resolve the browser to use. 1. Default. 2. Any app that can match intent. 3. com.android.chrome
+         * Note that this will cause an exception if com.android.chrome is used without being installed.
+         */
+        Intent browserIntent = new Intent("android.intent.action.VIEW", Uri.parse("https://literal.io"));
+        String browserPackage = activity.getPackageManager().queryIntentActivities(browserIntent, PackageManager.MATCH_DEFAULT_ONLY)
+                .stream()
+                .findFirst()
+                .map((info) -> info.activityInfo.packageName)
+                .orElseGet(() -> {
+                    browserIntent.setAction(Intent.CATEGORY_BROWSABLE);
+                    return activity.getPackageManager().queryIntentActivities(browserIntent, PackageManager.MATCH_ALL)
+                            .stream()
+                            .findFirst()
+                            .map((info -> info.activityInfo.packageName))
+                            .orElse("com.android.chrome");
+                });
+
         HostedUIOptions hostedUIOptions = HostedUIOptions.builder()
                 .scopes("openid", "email", "phone", "profile", "aws.cognito.signin.user.admin")
                 .identityProvider("Google")
@@ -66,6 +89,7 @@ public class AuthenticationRepository {
         SignInUIOptions signInUIOptions = SignInUIOptions.builder()
                 .hostedUIOptions(hostedUIOptions)
                 .canCancel(false)
+                .browserPackage(browserPackage)
                 .build();
 
         AWSMobileClient.getInstance().showSignIn(activity, signInUIOptions, new com.amazonaws.mobile.client.Callback<UserStateDetails>() {
