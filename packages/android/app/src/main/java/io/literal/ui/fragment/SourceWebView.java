@@ -869,7 +869,7 @@ public class SourceWebView extends Fragment {
 
     private void handleRenderAnnotations(ArrayList<Annotation> annotations, Annotation focusedAnnotation) {
         if (!this.isWebviewInitialized()) {
-            ErrorRepository.captureException(new Exception("handleRenderAnnotations: expected webview to be initialized, nooping."));
+            ErrorRepository.captureWarning(new Exception("handleRenderAnnotations: expected webview to be initialized, nooping."));
             return;
         }
 
