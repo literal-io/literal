@@ -1,5 +1,7 @@
 package io.literal.lib;
 
+import io.literal.repository.ErrorRepository;
+
 public class AnnotationCollectionLib {
     public static String makeId(String creatorUsername, String labelText) {
         try {
@@ -10,6 +12,7 @@ public class AnnotationCollectionLib {
                     idComponent
             );
         } catch (java.security.NoSuchAlgorithmException ex) {
+            ErrorRepository.captureException(ex);
             return null;
         }
     }

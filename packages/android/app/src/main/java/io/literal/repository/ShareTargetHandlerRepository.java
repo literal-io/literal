@@ -45,6 +45,7 @@ import io.literal.factory.AWSMobileClientFactory;
 import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.AnnotationCollectionLib;
 import io.literal.lib.AnnotationLib;
+import io.literal.lib.AnnotationTargetLib;
 import io.literal.lib.Callback;
 import io.literal.lib.Constants;
 import io.literal.lib.ContentResolverLib;
@@ -80,6 +81,22 @@ public class ShareTargetHandlerRepository {
 
     public static void createAnnotationFromText(String text, Context context, AuthenticationViewModel authenticationViewModel, CreateListener<CreateAnnotationMutation.Data> listener) {
         String creatorUsername = authenticationViewModel.getUsername().getValue();
+
+        if (creatorUsername == null) {
+            listener.onError(new Exception("Expected creatorUsername to be non-null. Are you logged in?"));
+            return;
+        }
+
+        String annotationCollectionId = AnnotationCollectionLib.makeId(
+                creatorUsername,
+                Constants.RECENT_ANNOTATION_COLLECTION_LABEL
+        );
+
+        if (annotationCollectionId == null) {
+            listener.onError(new Exception("Expected annotationCollectionId to be non-null"));
+            return;
+        }
+
         try {
             String valueHash = Crypto.sha256Hex(text);
             String annotationId = WebRoutes.creatorsIdAnnotationId(
@@ -110,10 +127,7 @@ public class ShareTargetHandlerRepository {
                                                             .textualBody(
                                                                     TextualBodyInput
                                                                             .builder()
-                                                                            .id(AnnotationCollectionLib.makeId(
-                                                                                    creatorUsername,
-                                                                                    Constants.RECENT_ANNOTATION_COLLECTION_LABEL
-                                                                            ))
+                                                                            .id(annotationCollectionId)
                                                                             .value(Constants.RECENT_ANNOTATION_COLLECTION_LABEL)
                                                                             .purpose(Collections.singletonList(Motivation.TAGGING))
                                                                             .format(Format.TEXT_PLAIN)
@@ -131,6 +145,7 @@ public class ShareTargetHandlerRepository {
                                                     .textualTarget(
                                                             TextualTargetInput
                                                                     .builder()
+                                                                    .id(AnnotationTargetLib.makeId(annotationId))
                                                                     .format(Format.TEXT_PLAIN)
                                                                     .language(Language.EN_US)
                                                                     .processingLanguage(Language.EN_US)
