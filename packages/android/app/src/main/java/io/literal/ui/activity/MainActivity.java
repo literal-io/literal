@@ -323,6 +323,7 @@ public class MainActivity extends SentryActivity {
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.putFragment(outState, APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME, appWebViewPrimaryFragment);
         fragmentManager.putFragment(outState, SOURCE_WEB_VIEW_FRAGMENT_NAME, sourceWebViewBottomSheetFragment);
+        fragmentManager.putFragment(outState, APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME, appWebViewBottomSheetFragment);
     }
 
     @Override
