@@ -1,5 +1,6 @@
 package io.literal.ui.fragment;
 
+import android.app.Activity;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -16,6 +17,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.mobile.client.results.Tokens;
@@ -33,6 +35,7 @@ import io.literal.lib.ContentResolverLib;
 import io.literal.lib.FileActivityResultCallback;
 import io.literal.lib.WebEvent;
 import io.literal.repository.ErrorRepository;
+import io.literal.ui.MainApplication;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 
@@ -92,18 +95,26 @@ public class AppWebView extends Fragment {
         }
 
         private void handleGetUserInfo(io.literal.ui.view.AppWebView view) {
-            try {
-                JSONObject result = new JSONObject();
-                result.put("username", authenticationViewModel.getUsername().getValue());
-                result.put("id", authenticationViewModel.getIdentityId().getValue());
-                Map<String, String> userAttributes = authenticationViewModel.getUserAttributes().getValue();
-                result.put("attributes", userAttributes != null ? new JSONObject(userAttributes) : null);
-                appWebView.postWebEvent(
-                        new WebEvent(WebEvent.TYPE_AUTH_GET_USER_INFO_RESULT, UUID.randomUUID().toString(), result)
-                );
-            } catch (JSONException e) {
-                ErrorRepository.captureException(e);
+            FragmentActivity activity = getActivity();
+            if (activity == null) {
+                return;
             }
+
+            ((MainApplication) activity.getApplication()).getThreadPoolExecutor().execute(() -> {
+                try {
+                    JSONObject result = new JSONObject();
+                    result.put("username", authenticationViewModel.getUsername().getValue());
+                    result.put("id", authenticationViewModel.getIdentityId().getValue());
+                    Map<String, String> userAttributes = authenticationViewModel.getUserAttributes().getValue();
+                    result.put("attributes", userAttributes != null ? new JSONObject(userAttributes) : null);
+                    activity.runOnUiThread(() -> view.postWebEvent(
+                            new WebEvent(WebEvent.TYPE_AUTH_GET_USER_INFO_RESULT, UUID.randomUUID().toString(), result)
+                    ));
+                } catch (JSONException e) {
+                    ErrorRepository.captureException(e);
+                }
+            });
+
         }
 
         public void onWebEvent(io.literal.ui.view.AppWebView view, WebEvent event) {

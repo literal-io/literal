@@ -38,10 +38,10 @@ public class AuthenticationViewModel extends ViewModel {
 
     public MutableLiveData<Tokens> getTokens() {
         if (this.isSignedOut()) {
-            tokens.setValue(null);
+            tokens.postValue(null);
         } if (tokens.getValue() == null) {
             try {
-                tokens.setValue(AuthenticationRepository.getTokens());
+                tokens.postValue(AuthenticationRepository.getTokens());
             } catch (Exception e) {
                 ErrorRepository.captureException(e);
             }
@@ -51,10 +51,10 @@ public class AuthenticationViewModel extends ViewModel {
 
     public MutableLiveData<Map<String, String>> getUserAttributes() {
         if (this.isSignedOut()) {
-            userAttributes.setValue(null);
+            userAttributes.postValue(null);
         } else if (userAttributes.getValue() == null) {
             try {
-                userAttributes.setValue(AuthenticationRepository.getUserAttributes());
+                userAttributes.postValue(AuthenticationRepository.getUserAttributes());
             } catch (Exception e) {
                 ErrorRepository.captureException(e);
             }
@@ -65,18 +65,18 @@ public class AuthenticationViewModel extends ViewModel {
 
     public MutableLiveData<String> getUsername() {
         if (this.isSignedOut()) {
-            username.setValue(null);
+            username.postValue(null);
         } else if (username.getValue() == null) {
-            username.setValue(AuthenticationRepository.getUsername());
+            username.postValue(AuthenticationRepository.getUsername());
         }
         return username;
     }
 
     public MutableLiveData<String> getIdentityId() {
         if (this.isSignedOut()) {
-            identityId.setValue(null);
+            identityId.postValue(null);
         } else if (identityId.getValue() == null) {
-            identityId.setValue(AuthenticationRepository.getUsername());
+            identityId.postValue(AuthenticationRepository.getUsername());
         }
         return identityId;
     }
@@ -98,9 +98,7 @@ public class AuthenticationViewModel extends ViewModel {
             }
         });
 
-        AWSMobileClient.getInstance().addUserStateListener((userState) -> {
-            userStateDetails.postValue(userState);
-        });
+        AWSMobileClient.getInstance().addUserStateListener(userStateDetails::postValue);
     }
 
     public boolean isSignedOut() {
