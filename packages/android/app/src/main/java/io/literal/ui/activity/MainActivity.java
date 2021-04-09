@@ -208,14 +208,19 @@ public class MainActivity extends SentryActivity {
             appWebViewPrimaryFragment = (AppWebView) getSupportFragmentManager().getFragment(savedInstanceState, APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME);
             appWebViewBottomSheetFragment = (AppWebView) getSupportFragmentManager().getFragment(savedInstanceState, APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME);
             sourceWebViewBottomSheetFragment = (SourceWebView) getSupportFragmentManager().getFragment(savedInstanceState, SOURCE_WEB_VIEW_FRAGMENT_NAME);
-        } else {
+        }
+        if (appWebViewPrimaryFragment == null) {
             appWebViewPrimaryFragment = AppWebView.newInstance(initialUrl, APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME);
+        }
+        if (sourceWebViewBottomSheetFragment == null) {
             sourceWebViewBottomSheetFragment = SourceWebView.newInstance(
                     null,
                     APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME,
                     APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME,
                     R.drawable.arrow_drop_down_white
             );
+        }
+        if (appWebViewBottomSheetFragment == null) {
             appWebViewBottomSheetFragment = AppWebView.newInstance(
                     WebRoutes.creatorsIdWebview(authenticationViewModel.getUsername().getValue()),
                     APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME
@@ -321,9 +326,15 @@ public class MainActivity extends SentryActivity {
         super.onSaveInstanceState(outState);
 
         FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.putFragment(outState, APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME, appWebViewPrimaryFragment);
-        fragmentManager.putFragment(outState, SOURCE_WEB_VIEW_FRAGMENT_NAME, sourceWebViewBottomSheetFragment);
-        fragmentManager.putFragment(outState, APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME, appWebViewBottomSheetFragment);
+        if (appWebViewPrimaryFragment != null) {
+            fragmentManager.putFragment(outState, APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME, appWebViewPrimaryFragment);
+        }
+        if (sourceWebViewBottomSheetFragment != null) {
+            fragmentManager.putFragment(outState, SOURCE_WEB_VIEW_FRAGMENT_NAME, sourceWebViewBottomSheetFragment);
+        }
+        if (appWebViewBottomSheetFragment != null) {
+            fragmentManager.putFragment(outState, APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME, appWebViewBottomSheetFragment);
+        }
     }
 
     @Override

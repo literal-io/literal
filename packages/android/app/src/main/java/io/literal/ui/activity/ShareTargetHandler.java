@@ -355,7 +355,7 @@ public class ShareTargetHandler extends SentryActivity {
 
     @Override
     public void onBackPressed() {
-        if (sourceWebViewFragment.getWebView().handleBackPressed()) {
+        if (sourceWebViewFragment != null && sourceWebViewFragment.getWebView().handleBackPressed()) {
             return;
         }
         super.onBackPressed();
