@@ -19,6 +19,7 @@ import java.util.Date;
 import io.literal.factory.AWSMobileClientFactory;
 import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.Callback;
+import io.literal.lib.Callback3;
 
 public class StorageRepository {
 
@@ -58,23 +59,31 @@ public class StorageRepository {
         return url.getHost().equals(storageHost);
     }
 
-    public static void upload(Context context, String key, File inputFile, ObjectMetadata metadata, Callback<Exception, AmazonS3URI> onUploadComplete) {
+    public static TransferObserver upload(
+            Context context,
+            String key,
+            File inputFile,
+            ObjectMetadata metadata,
+            Callback<Exception, AmazonS3URI> onUploadComplete,
+            Callback3<Integer, Long, Long> onUploadProgress
+    ) {
         TransferUtility transferUtility = AWSMobileClientFactory.getTransferUtility(context);
 
         TransferObserver transferObserver = transferUtility.upload(key, inputFile, metadata);
         transferObserver.setTransferListener(new TransferListener() {
             @Override
             public void onStateChanged(int id, TransferState state) {
-                if (TransferState.COMPLETED != state) {
-                    return;
+                if (TransferState.COMPLETED == state) {
+                    AmazonS3URI s3URI = new AmazonS3URI("s3://" + transferObserver.getBucket() + "/" + transferObserver.getKey());
+                    onUploadComplete.invoke(null, s3URI);
                 }
-                AmazonS3URI s3URI = new AmazonS3URI("s3://" + transferObserver.getBucket() + "/" + transferObserver.getKey());
-                onUploadComplete.invoke(null, s3URI);
             }
 
             @Override
             public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-                /** noop **/
+                if (onUploadProgress != null) {
+                    onUploadProgress.invoke(null, id, bytesCurrent, bytesTotal);
+                }
             }
 
             @Override
@@ -82,6 +91,8 @@ public class StorageRepository {
                 onUploadComplete.invoke(e, null);
             }
         });
+
+        return transferObserver;
     }
 
     public static void download(Context context, String key, File outputFile, Callback<Exception, File> onDownloadComplete) {

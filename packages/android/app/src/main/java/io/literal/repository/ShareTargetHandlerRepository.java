@@ -258,7 +258,8 @@ public class ShareTargetHandlerRepository {
                                     listener.onError(e);
                                 }
                             });
-                }
+                },
+                null
         );
     }
 

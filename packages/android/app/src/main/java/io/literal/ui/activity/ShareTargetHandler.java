@@ -46,7 +46,6 @@ import io.literal.viewmodel.SourceWebViewViewModel;
 public class ShareTargetHandler extends SentryActivity {
     private static final String APP_WEB_VIEW_FRAGMENT_NAME = "APP_WEB_VIEW_FRAGMENT";
     private static final String SOURCE_WEB_VIEW_FRAGMENT_NAME = "SOURCE_WEB_VIEW_FRAGMENT";
-
     public static final String RESULT_EXTRA_ANNOTATIONS = "RESULT_EXTRA_ANNOTATIONS";
 
     private AppWebViewViewModel appWebViewViewModel;
@@ -200,15 +199,6 @@ public class ShareTargetHandler extends SentryActivity {
             Intent intent = new Intent();
             intent.putExtra(RESULT_EXTRA_ANNOTATIONS, resultAnnotationsJson);
             setResult(RESULT_OK, intent);
-
-            if (domainMetadata != null) {
-                NotificationRepository.sourceCreatedNotification(
-                        getBaseContext(),
-                        AuthenticationRepository.getUsername(),
-                        domainMetadata
-                );
-            }
-
         } else {
             setResult(RESULT_CANCELED);
         }

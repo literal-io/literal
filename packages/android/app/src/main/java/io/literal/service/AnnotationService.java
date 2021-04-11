@@ -9,6 +9,7 @@ import android.util.Pair;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.services.s3.AmazonS3URI;
 
 import org.json.JSONArray;
@@ -21,10 +22,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Optional;
+import java.util.function.BinaryOperator;
 
 import io.literal.factory.AWSMobileClientFactory;
 import io.literal.lib.Callback;
+import io.literal.lib.Callback3;
 import io.literal.lib.DomainMetadata;
 import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.ManyCallback;
@@ -39,6 +43,7 @@ import io.literal.repository.AuthenticationRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.NotificationRepository;
 import io.literal.ui.MainApplication;
+import kotlin.jvm.functions.Function0;
 
 public class AnnotationService extends Service {
 
@@ -92,7 +97,6 @@ public class AnnotationService extends Service {
     }
 
     private void handleCreateAnnotation(Annotation[] annotations, DomainMetadata domainMetadata, Callback<Exception, Void> onFinish) {
-
         Callback<Exception, Void> onFinishWithNotification = (e, _v) -> {
             if (e != null) {
                 try {
@@ -109,7 +113,7 @@ public class AnnotationService extends Service {
             }
 
             if (e == null && domainMetadata != null) {
-                NotificationRepository.sourceCreatedNotification(
+                NotificationRepository.sourceCreatedNotificationComplete(
                         getBaseContext(),
                         AuthenticationRepository.getUsername(),
                         domainMetadata
@@ -175,21 +179,51 @@ public class AnnotationService extends Service {
             });
         });
 
+        HashMap<Integer, Pair<Long, Long>> uploadProgressById = new HashMap<>();
+        Function0<Void> onDisplayNotificationProgress = () -> {
+            if (domainMetadata == null) {
+                return null;
+            }
+
+            Pair<Long, Long> progress = uploadProgressById.values().stream()
+                    .reduce(new Pair<>(0L, 0L), (acc, item) -> new Pair<>(acc.first + item.first, acc.second + item.second));
+            int progressOutOf100 = progress.second.compareTo(0L) == 0 || progress.first.compareTo(0L) == 0
+                    ? 0
+                    : (int) (((double) progress.first / progress.second) * 100);
+
+            NotificationRepository.sourceCreatedNotificationStart(
+                    getBaseContext(),
+                    AuthenticationRepository.getUsername(),
+                    domainMetadata,
+                    new Pair<>(100, Math.max(progressOutOf100 - 5, 0)) // subtract 5 to fake mutation progress
+            );
+
+            return null;
+        };
+
+        Callback3<Integer, Long, Long> onUploadProgress = (e, id, bytesCurrent, bytesTotal) -> {
+            uploadProgressById.put(id, new Pair<>(bytesCurrent, bytesTotal));
+            onDisplayNotificationProgress.invoke();
+        };
+
         for (int i = 0; i < archivesToUpload.size(); i++) {
             Pair<Integer, String[]> archive = archivesToUpload.get(i);
             String filePath = archive.second[archive.first];
 
             try {
-                ArchiveRepository.upload(
+                TransferObserver transferObserver = ArchiveRepository.upload(
                         getBaseContext(),
                         new File(new URI(filePath)),
                         AuthenticationRepository.getIdentityId(),
-                        manyCallback.getCallback(i)
+                        manyCallback.getCallback(i),
+                        onUploadProgress
                 );
+                uploadProgressById.put(transferObserver.getId(), new Pair<>(transferObserver.getBytesTransferred(), transferObserver.getBytesTotal()));
             } catch (URISyntaxException ex) {
                 manyCallback.getCallback(i).invoke(ex, null);
             }
         }
+        onDisplayNotificationProgress.invoke();
     }
 
     @Override
