@@ -109,6 +109,7 @@ let make =
         "onBlur": handleBlur,
         "onFocus": handleFocus,
         "ref": inputRef->ReactDOMRe.Ref.domRef,
+        "enterKeyHint": Js.String2.length(value) > 0 ? "done" : "enter",
       }
     />;
   });
