@@ -123,7 +123,7 @@ public class ShareTargetHandler extends SentryActivity {
         appWebViewViewModel.getBottomSheetState().observe(this, bottomSheetState -> {
             AppWebViewBottomSheetAnimator.handleBottomSheetStateChange(
                     bottomSheetFragmentContainer,
-                    sourceWebViewViewModel.getFocusedAnnotation().getValue(),
+                    sourceWebViewViewModel.getFocusedAnnotation().orElse(null),
                     getResources(),
                     bottomSheetState,
                     (_e, webEvent) -> appWebViewFragment.postWebEvent(webEvent)

@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Optional;
 
 import io.literal.lib.AnnotationCollectionLib;
 import io.literal.lib.AnnotationLib;
@@ -44,7 +45,7 @@ public class SourceWebViewViewModel extends ViewModel {
     private final MutableLiveData<ArrayList<Annotation>> annotations = new MutableLiveData<>(new ArrayList<>());
     private ArrayList<String> createdAnnotationIds = new ArrayList<>();
     private final MutableLiveData<DomainMetadata> domainMetadata = new MutableLiveData<>(null);
-    private final MutableLiveData<Annotation> focusedAnnotation = new MutableLiveData<>(null);
+    private final MutableLiveData<String> focusedAnnotationId = new MutableLiveData<>(null);
     private final MutableLiveData<ArrayDeque<WebEvent>> webEvents = new MutableLiveData<>(null);
     private String getAnnotationScript = null;
     private String annotationRendererScript = null;
@@ -132,12 +133,22 @@ public class SourceWebViewViewModel extends ViewModel {
         this.domainMetadata.setValue(domainMetadata);
     }
 
-    public MutableLiveData<Annotation> getFocusedAnnotation() {
-        return focusedAnnotation;
+    public MutableLiveData<String> getFocusedAnnotationId() {
+        return focusedAnnotationId;
     }
 
-    public void setFocusedAnnotation(Annotation annotation) {
-        focusedAnnotation.setValue(annotation);
+    public Optional<Annotation> getFocusedAnnotation() {
+        if (focusedAnnotationId.getValue() == null) {
+            return Optional.empty();
+        }
+
+        return annotations.getValue().stream()
+                .filter(a -> a.getId().equals(focusedAnnotationId.getValue()))
+                .findFirst();
+    }
+
+    public void setFocusedAnnotationId(String annotationId) {
+        focusedAnnotationId.setValue(annotationId);
     }
 
     public ArrayList<String> getCreatedAnnotationIds() {
@@ -241,10 +252,6 @@ public class SourceWebViewViewModel extends ViewModel {
 
     public boolean updateAnnotation(Annotation annotation) {
         if (annotation.getId() != null) {
-            if (focusedAnnotation.getValue() != null && focusedAnnotation.getValue().getId().equals(annotation.getId())) {
-                focusedAnnotation.setValue(annotation);
-            }
-
             ArrayList<Annotation> newAnnotations = (ArrayList<Annotation>) annotations.getValue().clone();
             int idx = -1;
             for (int i = 0; i < newAnnotations.size(); i++) {

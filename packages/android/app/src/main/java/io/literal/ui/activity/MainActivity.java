@@ -195,7 +195,7 @@ public class MainActivity extends SentryActivity {
             }
             AppWebViewBottomSheetAnimator.handleBottomSheetStateChange(
                     findViewById(R.id.app_web_view_bottom_sheet_fragment_container),
-                    sourceWebViewViewModelBottomSheet.getFocusedAnnotation().getValue(),
+                    sourceWebViewViewModelBottomSheet.getFocusedAnnotation().orElse(null),
                     getResources(),
                     bottomSheetState,
                     (_e, webEvent) -> appWebViewBottomSheetFragment.postWebEvent(webEvent)
@@ -232,7 +232,7 @@ public class MainActivity extends SentryActivity {
         sourceWebViewBottomSheetBehavior = BottomSheetBehavior.from(bottomSheetBehaviorContainer);
         sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
         sourceWebViewBottomSheetBehavior.addBottomSheetCallback(new SourceWebViewBottomSheetCallback((_e, _d) -> {
-            if (sourceWebViewViewModelBottomSheet.getFocusedAnnotation().getValue() != null) {
+            if (sourceWebViewViewModelBottomSheet.getFocusedAnnotationId().getValue() != null) {
                 sourceWebViewBottomSheetFragment.handleAnnotationBlur();
             }
         }));
