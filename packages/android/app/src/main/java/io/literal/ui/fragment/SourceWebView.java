@@ -232,11 +232,11 @@ public class SourceWebView extends Fragment {
 
             this.handleRenderAnnotations(
                     annotations,
-                    sourceWebViewViewModel.getFocusedAnnotation().getValue()
+                    sourceWebViewViewModel.getFocusedAnnotationId().getValue()
             );
         });
 
-        sourceWebViewViewModel.getFocusedAnnotation().observe(getActivity(), this::dispatchFocusAnnotationWebEvent);
+        sourceWebViewViewModel.getFocusedAnnotationId().observe(getActivity(), this::dispatchFocusAnnotationWebEvent);
 
         sourceWebViewViewModel.getDomainMetadata().observe(getActivity(), (domainMetadata) -> {
             if (domainMetadata != null) {
@@ -266,7 +266,7 @@ public class SourceWebView extends Fragment {
                     }
                     break;
                 case WebEvent.TYPE_BLUR_ANNOTATION:
-                    if (sourceWebViewViewModel.getFocusedAnnotation().getValue() != null) {
+                    if (sourceWebViewViewModel.getFocusedAnnotation().isPresent()) {
                         handleAnnotationBlur();
                     }
                     break;
@@ -354,7 +354,6 @@ public class SourceWebView extends Fragment {
             webView.loadUrl(paramInitialUrl);
         }
     }
-
     private void handleSetBottomSheetState(String state) {
         if (editAnnotationActionMode != null) {
             webView.finishEditAnnotationActionMode(editAnnotationActionMode);
@@ -364,12 +363,12 @@ public class SourceWebView extends Fragment {
         switch (state) {
             case "COLLAPSED_ANNOTATION_TAGS":
                 bottomSheetAppWebViewViewModel.setBottomSheetState(
-                        sourceWebViewViewModel.getFocusedAnnotation().getValue() != null ? BottomSheetBehavior.STATE_COLLAPSED : BottomSheetBehavior.STATE_HIDDEN
+                        sourceWebViewViewModel.getFocusedAnnotationId().getValue() != null ? BottomSheetBehavior.STATE_COLLAPSED : BottomSheetBehavior.STATE_HIDDEN
                 );
                 break;
             case "EDIT_ANNOTATION_TAGS":
                 bottomSheetAppWebViewViewModel.setBottomSheetState(
-                        sourceWebViewViewModel.getFocusedAnnotation().getValue() != null ? BottomSheetBehavior.STATE_EXPANDED : BottomSheetBehavior.STATE_HIDDEN
+                        sourceWebViewViewModel.getFocusedAnnotationId().getValue() != null ? BottomSheetBehavior.STATE_EXPANDED : BottomSheetBehavior.STATE_HIDDEN
                 );
                 break;
         }
@@ -377,14 +376,14 @@ public class SourceWebView extends Fragment {
 
     private String getAnnotationRendererScript() {
         ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
-        Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+        String focusedAnnotationId = sourceWebViewViewModel.getFocusedAnnotationId().getValue();
 
         try {
             JSONArray paramAnnotations = JsonArrayUtil.stringifyObjectArray(annotations.toArray(new Annotation[0]), Annotation::toJson);
             return sourceWebViewViewModel.getAnnotationRendererScript(
                     getActivity().getAssets(),
                     paramAnnotations,
-                    focusedAnnotation != null ? focusedAnnotation.getId() : ""
+                    focusedAnnotationId != null ? focusedAnnotationId : ""
             );
         } catch (JSONException ex) {
             ErrorRepository.captureException(ex);
@@ -439,7 +438,7 @@ public class SourceWebView extends Fragment {
                         }
 
                         sourceWebViewViewModel.createAnnotation(annotation);
-                        sourceWebViewViewModel.setFocusedAnnotation(annotation);
+                        sourceWebViewViewModel.setFocusedAnnotationId(annotation.getId());
                         bottomSheetAppWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
                     }
             );
@@ -460,9 +459,9 @@ public class SourceWebView extends Fragment {
         }
         Annotation unwrappedAnnotation = annotation.get();
 
-        Annotation currentFocusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
-        if (currentFocusedAnnotation == null || !currentFocusedAnnotation.getId().equals(unwrappedAnnotation.getId())) {
-            sourceWebViewViewModel.setFocusedAnnotation(unwrappedAnnotation);
+        String currentFocusedAnnotationId = sourceWebViewViewModel.getFocusedAnnotationId().getValue();
+        if (currentFocusedAnnotationId == null || !currentFocusedAnnotationId.equals(unwrappedAnnotation.getId())) {
+            sourceWebViewViewModel.setFocusedAnnotationId(unwrappedAnnotation.getId());
         }
 
         bottomSheetAppWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
@@ -498,13 +497,13 @@ public class SourceWebView extends Fragment {
         }
         this.handleRenderAnnotations(
                 sourceWebViewViewModel.getAnnotations().getValue(),
-                sourceWebViewViewModel.getFocusedAnnotation().getValue()
+                sourceWebViewViewModel.getFocusedAnnotationId().getValue()
         );
-        Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
-        if (focusedAnnotation != null) {
+        String focusedAnnotationId = sourceWebViewViewModel.getFocusedAnnotationId().getValue();
+        if (focusedAnnotationId != null) {
             try {
                 JSONObject blurAnnotationData = new JSONObject();
-                blurAnnotationData.put("annotationId", focusedAnnotation.getId());
+                blurAnnotationData.put("annotationId", focusedAnnotationId);
                 webView.postWebEvent(new WebEvent(
                         WebEvent.TYPE_BLUR_ANNOTATION,
                         UUID.randomUUID().toString(),
@@ -513,7 +512,8 @@ public class SourceWebView extends Fragment {
             } catch (JSONException ex) {
                 ErrorRepository.captureException(ex);
             }
-            sourceWebViewViewModel.setFocusedAnnotation(null);
+            sourceWebViewViewModel.setFocusedAnnotationId(null);
+            bottomSheetAppWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
         }
         if (editAnnotationActionMode != null) {
             webView.finishEditAnnotationActionMode(editAnnotationActionMode);
@@ -524,7 +524,7 @@ public class SourceWebView extends Fragment {
 
     private void handleAnnotationCommitEdit(ActionMode mode) {
         String script = sourceWebViewViewModel.getGetAnnotationScript(getActivity().getAssets());
-        Annotation annotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+        Annotation annotation = sourceWebViewViewModel.getFocusedAnnotation().orElse(null);
         if (annotation == null) {
             ErrorRepository.captureException(new Exception("Expected focusedAnnotation, but found null."));
             return;
@@ -646,11 +646,11 @@ public class SourceWebView extends Fragment {
                 }
                 isEditingAnnotation = false;
 
-                Annotation focusedAnnotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
-                if (focusedAnnotation != null) {
+                String focusedAnnotationId = sourceWebViewViewModel.getFocusedAnnotationId().getValue();
+                if (focusedAnnotationId != null) {
                     try {
                         JSONObject blurAnnotationData = new JSONObject();
-                        blurAnnotationData.put("annotationId", focusedAnnotation.getId());
+                        blurAnnotationData.put("annotationId", focusedAnnotationId);
                         webView.postWebEvent(new WebEvent(
                                 WebEvent.TYPE_BLUR_ANNOTATION,
                                 UUID.randomUUID().toString(),
@@ -659,7 +659,8 @@ public class SourceWebView extends Fragment {
                     } catch (JSONException ex) {
                         ErrorRepository.captureException(ex);
                     }
-                    sourceWebViewViewModel.setFocusedAnnotation(null);
+                    sourceWebViewViewModel.setFocusedAnnotationId(null);
+                    bottomSheetAppWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
                 }
             }
         });
@@ -767,7 +768,7 @@ public class SourceWebView extends Fragment {
                 sourceWebViewViewModel.addAnnotation(annotation);
             }
 
-            sourceWebViewViewModel.setFocusedAnnotation(annotation);
+            sourceWebViewViewModel.setFocusedAnnotationId(annotation.getId());
 
             if (currentWebViewUrl == null || !currentWebViewUrl.equals(targetUrl)) {
                 sourceWebViewViewModel.setDomainMetadata(initialDomainMetadata);
@@ -851,11 +852,11 @@ public class SourceWebView extends Fragment {
                 });
     }
 
-    private void dispatchFocusAnnotationWebEvent(Annotation focusedAnnotation) {
-        if (focusedAnnotation != null && this.isWebviewInitialized()) {
+    private void dispatchFocusAnnotationWebEvent(String focusedAnnotationId) {
+        if (focusedAnnotationId != null && this.isWebviewInitialized()) {
             try {
                 JSONObject focusAnnotationData = new JSONObject();
-                focusAnnotationData.put("annotationId", focusedAnnotation.getId());
+                focusAnnotationData.put("annotationId", focusedAnnotationId);
                 webView.postWebEvent(new WebEvent(
                         WebEvent.TYPE_FOCUS_ANNOTATION,
                         UUID.randomUUID().toString(),
@@ -867,7 +868,7 @@ public class SourceWebView extends Fragment {
         }
     }
 
-    private void handleRenderAnnotations(ArrayList<Annotation> annotations, Annotation focusedAnnotation) {
+    private void handleRenderAnnotations(ArrayList<Annotation> annotations, String focusedAnnotationId) {
         if (!this.isWebviewInitialized()) {
             ErrorRepository.captureWarning(new Exception("handleRenderAnnotations: expected webview to be initialized, nooping."));
             return;
@@ -876,8 +877,8 @@ public class SourceWebView extends Fragment {
         try {
             JSONObject renderAnnotationsData = new JSONObject();
             renderAnnotationsData.put("annotations", JsonArrayUtil.stringifyObjectArray(annotations.toArray(new Annotation[0]), Annotation::toJson));
-            if (focusedAnnotation != null) {
-                renderAnnotationsData.put("focusedAnnotationId", focusedAnnotation.getId());
+            if (focusedAnnotationId != null) {
+                renderAnnotationsData.put("focusedAnnotationId", focusedAnnotationId);
             }
             webView.postWebEvent(new WebEvent(
                     WebEvent.TYPE_RENDER_ANNOTATIONS,
@@ -890,8 +891,12 @@ public class SourceWebView extends Fragment {
     }
 
     public void handleAnnotationBlur() {
+        if (bottomSheetAppWebViewViewModel.getBottomSheetState().getValue() == BottomSheetBehavior.STATE_EXPANDED) {
+            return;
+        }
+
         bottomSheetAppWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
-        sourceWebViewViewModel.setFocusedAnnotation(null);
+        sourceWebViewViewModel.setFocusedAnnotationId(null);
         if (editAnnotationActionMode != null) {
             webView.finishEditAnnotationActionMode(editAnnotationActionMode);
             editAnnotationActionMode = null;
@@ -920,13 +925,14 @@ public class SourceWebView extends Fragment {
     }
 
     private void handleAnnotationDelete(String annotationId) {
-        Annotation annotation = sourceWebViewViewModel.getFocusedAnnotation().getValue();
+        Annotation annotation = sourceWebViewViewModel.getFocusedAnnotation().orElse(null);
         if (annotation == null) {
             ErrorRepository.captureException(new Exception("handleAnnotationDelete expected focusedAnnotation, but found null."));
             return;
         }
 
-        sourceWebViewViewModel.setFocusedAnnotation(null);
+        sourceWebViewViewModel.setFocusedAnnotationId(null);
+        bottomSheetAppWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
 
         if (this.editAnnotationActionMode != null) {
             webView.finishEditAnnotationActionMode(editAnnotationActionMode);
