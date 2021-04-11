@@ -198,7 +198,7 @@ public class AppWebView extends Fragment {
                     public void onReceiveValue(Uri[] value) {
                         Uri[] absoluteUrls = new Uri[value.length];
                         for (int idx = 0; idx < value.length; idx++) {
-                            File file = ContentResolverLib.toFile(getActivity(), value[idx], UUID.randomUUID().toString());
+                            File file = value[idx] != null ? ContentResolverLib.toFile(getActivity(), value[idx], UUID.randomUUID().toString()) : null;
                             absoluteUrls[idx] = Uri.fromFile(file);
                         }
                         filePathCallback.onReceiveValue(absoluteUrls);

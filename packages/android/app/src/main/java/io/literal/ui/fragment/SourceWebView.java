@@ -989,13 +989,10 @@ public class SourceWebView extends Fragment {
                         AnnotationService.EXTRA_ANNOTATIONS,
                         JsonArrayUtil.stringifyObjectArray(createdAnnotations, Annotation::toJson).toString()
                 );
-
-                if (onToolbarPrimaryActionCallback == null && domainMetadata != null) {
-                    serviceIntent.putExtra(
-                            AnnotationService.EXTRA_DOMAIN_METADATA,
-                            domainMetadata.toJson(getContext()).toString()
-                    );
-                }
+                serviceIntent.putExtra(
+                        AnnotationService.EXTRA_DOMAIN_METADATA,
+                        domainMetadata.toJson(getContext()).toString()
+                );
                 getActivity().startService(serviceIntent);
             } catch (JSONException ex) {
                 ErrorRepository.captureException(ex);
