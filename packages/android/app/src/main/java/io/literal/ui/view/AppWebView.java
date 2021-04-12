@@ -108,10 +108,12 @@ public class AppWebView extends NestedScrollingChildWebView {
                             webEventCallback.onWebEvent(AppWebView.this, webEvent);
                         }
 
-                        JSONObject properties = new JSONObject();
-                        properties.put("target", "AppWebView");
-                        properties.put("event", json);
-                        AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_RECEIVED_WEB_EVENT, properties);
+                        if (!webEvent.getType().equals(WebEvent.TYPE_ANALYTICS_LOG_EVENT) && !webEvent.getType().equals(WebEvent.TYPE_ANALYTICS_SET_USER_ID)) {
+                            JSONObject properties = new JSONObject();
+                            properties.put("target", "AppWebView");
+                            properties.put("event", json);
+                            AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_RECEIVED_WEB_EVENT, properties);
+                        }
                     } catch (JSONException ex) {
                         Log.e("Literal", "Error in onMessage", ex);
                     }
