@@ -6,9 +6,10 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import io.literal.lib.Thunk;
+import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.ErrorRepository;
 
-public class SentryActivity extends AppCompatActivity {
+public class InstrumentedActivity extends AppCompatActivity {
 
     private Thunk errorRepositoryCleanup;
 
@@ -16,6 +17,7 @@ public class SentryActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         errorRepositoryCleanup = ErrorRepository.initialize();
+        AnalyticsRepository.initialize(getApplication());
     }
 
     @Override

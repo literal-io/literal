@@ -34,6 +34,7 @@ import io.literal.R;
 import io.literal.lib.ContentResolverLib;
 import io.literal.lib.FileActivityResultCallback;
 import io.literal.lib.WebEvent;
+import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.ui.MainApplication;
 import io.literal.viewmodel.AppWebViewViewModel;
@@ -53,7 +54,6 @@ public class AppWebView extends Fragment {
     private AuthenticationViewModel authenticationViewModel;
     private io.literal.ui.view.AppWebView appWebView;
     private final WebEvent.Callback webEventCallback = new WebEvent.Callback() {
-
         private void handleSignIn(io.literal.ui.view.AppWebView view) {
             authenticationViewModel.signInGoogle(getActivity(), (e, _void) -> {
                 if (e != null) {
@@ -128,6 +128,23 @@ public class AppWebView extends Fragment {
                     return;
                 case WebEvent.TYPE_AUTH_GET_USER_INFO:
                     this.handleGetUserInfo(view);
+                    return;
+                case WebEvent.TYPE_ANALYTICS_LOG_EVENT:
+                    try {
+                        String eventType = event.getData().getString("type");
+                        JSONObject eventProperties = event.getData().getJSONObject("properties");
+                        AnalyticsRepository.logEvent(eventType, eventProperties);
+                    } catch (JSONException e) {
+                        ErrorRepository.captureException(e);
+                    }
+                    return;
+                case WebEvent.TYPE_ANALYTICS_SET_USER_ID:
+                    try {
+                        String userId = event.getData().getString("userId");
+                        AnalyticsRepository.setUserId(userId);
+                    } catch (JSONException e) {
+                        ErrorRepository.captureException(e);
+                    }
                     return;
             }
         }

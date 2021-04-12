@@ -36,7 +36,7 @@ let make = (~children) => {
             Js.Dict.fromList([("username", username->Js.Json.string)]),
           );
         let _ = Sentry.setContext("user", userData);
-        let _ = Amplitude.(getInstance()->setUserId(username));
+        let _ = Service_Analytics.setUserId(username);
         ();
       | _ => ()
       };

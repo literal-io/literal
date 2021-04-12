@@ -21,6 +21,8 @@ public class WebEvent {
     public static final String TYPE_DELETE_CACHE_ANNOTATION = "DELETE_CACHE_ANNOTATION";
     public static final String TYPE_CREATE_ANNOTATION_FROM_SOURCE = "CREATE_ANNOTATION_FROM_SOURCE";
     public static final String TYPE_ADD_CACHE_ANNOTATIONS = "ADD_CACHE_ANNOTATIONS";
+    public static final String TYPE_ANALYTICS_LOG_EVENT = "ANALYTICS_LOG_EVENT";
+    public static final String TYPE_ANALYTICS_SET_USER_ID = "ANALYTICS_SET_USER_ID";
 
     // Source WebView
     public static final String TYPE_VIEW_STATE_EDIT_ANNOTATION_TAGS = "VIEW_STATE_EDIT_ANNOTATION_TAGS";

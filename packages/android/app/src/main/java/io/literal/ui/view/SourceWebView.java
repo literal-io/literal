@@ -53,6 +53,7 @@ import io.literal.lib.Callback;
 import io.literal.lib.Callback2;
 import io.literal.lib.ResultCallback;
 import io.literal.lib.WebEvent;
+import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.StorageRepository;
 
@@ -109,6 +110,14 @@ public class SourceWebView extends NestedScrollingChildWebView {
                     ),
                     Uri.parse("*")
             );
+            try {
+                JSONObject properties = new JSONObject();
+                properties.put("target", "SourceWebView");
+                properties.put("event", webEvent.toJSON());
+                AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_DISPATCHED_WEB_EVENT, properties);
+            } catch (JSONException e) {
+                ErrorRepository.captureException(e);
+            }
         }
     }
 
@@ -137,8 +146,13 @@ public class SourceWebView extends NestedScrollingChildWebView {
                         if (webEventCallback != null) {
                             webEventCallback.invoke(null, SourceWebView.this, webEvent);
                         }
+
+                        JSONObject properties = new JSONObject();
+                        properties.put("target", "SourceWebView");
+                        properties.put("event", json);
+                        AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_RECEIVED_WEB_EVENT, properties);
                     } catch (JSONException ex) {
-                        Log.e("Literal", "Error in onMessage", ex);
+                        ErrorRepository.captureException(ex);
                     }
                 }
             });

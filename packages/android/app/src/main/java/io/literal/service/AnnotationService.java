@@ -99,26 +99,35 @@ public class AnnotationService extends Service {
     private void handleCreateAnnotation(Annotation[] annotations, DomainMetadata domainMetadata, Callback<Exception, Void> onFinish) {
         Callback<Exception, Void> onFinishWithNotification = (e, _v) -> {
             if (e != null) {
-                try {
-                    Intent intent = new Intent();
-                    intent.setAction(ACTION_BROADCAST_CREATED_ANNOTATIONS);
-                    intent.putExtra(
-                            EXTRA_ANNOTATIONS,
-                            JsonArrayUtil.stringifyObjectArray(annotations, Annotation::toJson).toString()
-                    );
-                    LocalBroadcastManager.getInstance(getBaseContext()).sendBroadcast(intent);
-                } catch (JSONException ex) {
-                    ErrorRepository.captureException(ex);
-                }
+                NotificationRepository.sourceCreatedNotificationError(
+                        getBaseContext(),
+                        AuthenticationRepository.getUsername(),
+                        domainMetadata
+                );
+               onFinish.invoke(e, _v);
+               return;
             }
 
-            if (e == null && domainMetadata != null) {
+            try {
+                Intent intent = new Intent();
+                intent.setAction(ACTION_BROADCAST_CREATED_ANNOTATIONS);
+                intent.putExtra(
+                        EXTRA_ANNOTATIONS,
+                        JsonArrayUtil.stringifyObjectArray(annotations, Annotation::toJson).toString()
+                );
+                LocalBroadcastManager.getInstance(getBaseContext()).sendBroadcast(intent);
+            } catch (JSONException ex) {
+                ErrorRepository.captureException(ex);
+            }
+
+            if (domainMetadata != null) {
                 NotificationRepository.sourceCreatedNotificationComplete(
                         getBaseContext(),
                         AuthenticationRepository.getUsername(),
                         domainMetadata
                 );
             }
+
             onFinish.invoke(e, _v);
         };
 

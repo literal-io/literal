@@ -129,6 +129,30 @@ public class NotificationRepository {
         notificationManager.notify(targetDomainMetadata.getUrl().getHost().hashCode(), builder.build());
     }
 
+    public static void sourceCreatedNotificationError(Context context, String creatorUsername, @NotNull DomainMetadata targetDomainMetadata) {
+        Intent intent = new Intent(context, MainActivity.class);
+        Uri uri = Uri.parse(WebRoutes.creatorsIdAnnotationCollectionId(
+                creatorUsername,
+                Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT
+        ));
+        intent.setData(uri);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, context.getString(R.string.source_created_notification_channel_id))
+                .setSmallIcon(R.drawable.ic_stat_name)
+                .setColor(Color.BLACK)
+                .setContentTitle(context.getString(R.string.source_created_error_notification_title))
+                .setStyle(
+                        new NotificationCompat.BigTextStyle().bigText(context.getString(R.string.source_created_error_notification_description, targetDomainMetadata.getUrl().getHost()))
+                )
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true);
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
+
+        notificationManager.notify(targetDomainMetadata.getUrl().getHost().hashCode(), builder.build());
+    }
+
     public static void sourceCreatedNotificationStart(Context context, String creatorUsername, @NotNull DomainMetadata targetDomainMetadata, Pair<Integer, Integer> progress) {
         // FIXME: This should link to a source specific view, but none exists currently.
         Intent intent = new Intent(context, MainActivity.class);

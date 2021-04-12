@@ -9,7 +9,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentContainerView;
 import androidx.lifecycle.ViewModelProvider;
@@ -20,6 +19,7 @@ import com.apollographql.apollo.api.Error;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.List;
 
@@ -30,7 +30,7 @@ import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
-import io.literal.repository.AuthenticationRepository;
+import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.NotificationRepository;
 import io.literal.repository.ShareTargetHandlerRepository;
@@ -43,7 +43,7 @@ import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
 
-public class ShareTargetHandler extends SentryActivity {
+public class ShareTargetHandler extends InstrumentedActivity {
     private static final String APP_WEB_VIEW_FRAGMENT_NAME = "APP_WEB_VIEW_FRAGMENT";
     private static final String SOURCE_WEB_VIEW_FRAGMENT_NAME = "SOURCE_WEB_VIEW_FRAGMENT";
     public static final String RESULT_EXTRA_ANNOTATIONS = "RESULT_EXTRA_ANNOTATIONS";
@@ -101,6 +101,17 @@ public class ShareTargetHandler extends SentryActivity {
             }
         } else {
             handleSendNotSupported();
+        }
+
+        try {
+            JSONObject properties = new JSONObject();
+            properties.put("name", "ShareTargetHandler");
+            properties.put("action", action);
+            properties.put("type", type);
+            properties.put("extra", intent.getStringExtra(Intent.EXTRA_TEXT));
+            AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_ACTIVITY_START, properties);
+        } catch (JSONException e) {
+            ErrorRepository.captureException(e);
         }
     }
 

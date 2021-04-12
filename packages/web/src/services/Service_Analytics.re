@@ -47,7 +47,49 @@ let track = event => {
     | Error(p) => ("ERROR", error_encode(p))
     };
 
-  Constants.isBrowser
-    ? Amplitude.(getInstance()->logEventWithProperties(name, properties))
-    : Js.log3("amplitude event noop:", name, properties);
+  if (Constants.isBrowser) {
+    let data =
+      Js.Json.object_(
+        Js.Dict.fromList([
+          ("type", name->Js.Json.string),
+          ("properties", properties),
+        ]),
+      );
+    let dispatched =
+      Webview.(
+        postMessage(WebEvent.make(~type_="ANALYTICS_LOG_EVENT", ~data, ()))
+      );
+    let _ =
+      if (!dispatched) {
+        Amplitude.(getInstance()->logEventWithProperties(name, properties));
+      };
+    ();
+  } else {
+    Js.log3("amplitude event noop:", name, properties);
+  };
+};
+
+let setUserId = userId => {
+  if (Constants.isBrowser) {
+    let dispatched =
+      Webview.(
+        postMessage(
+          WebEvent.make(
+            ~type_="ANALYTICS_SET_USER_ID",
+            ~data=
+              Js.Json.object_(
+                Js.Dict.fromList([("userId", userId->Js.Json.string)]),
+              ),
+            (),
+          ),
+        )
+      );
+
+    let _ =
+      if (!dispatched) {
+        Amplitude.(getInstance()->setUserId(userId));
+      };
+    ();
+  };
+  ();
 };
