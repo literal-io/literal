@@ -29,6 +29,8 @@ import io.literal.BuildConfig;
 import io.literal.lib.Constants;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
+import io.literal.repository.AnalyticsRepository;
+import io.literal.repository.ErrorRepository;
 
 public class AppWebView extends NestedScrollingChildWebView {
 
@@ -66,6 +68,15 @@ public class AppWebView extends NestedScrollingChildWebView {
                     ),
                     Uri.parse(WebRoutes.getWebHost())
             );
+
+            try {
+                JSONObject properties = new JSONObject();
+                properties.put("target", "AppWebView");
+                properties.put("event", webEvent.toJSON());
+                AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_DISPATCHED_WEB_EVENT, properties);
+            } catch (JSONException e) {
+                ErrorRepository.captureException(e);
+            }
         }
     }
 
@@ -96,6 +107,11 @@ public class AppWebView extends NestedScrollingChildWebView {
                         if (webEventCallback != null) {
                             webEventCallback.onWebEvent(AppWebView.this, webEvent);
                         }
+
+                        JSONObject properties = new JSONObject();
+                        properties.put("target", "AppWebView");
+                        properties.put("event", json);
+                        AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_RECEIVED_WEB_EVENT, properties);
                     } catch (JSONException ex) {
                         Log.e("Literal", "Error in onMessage", ex);
                     }

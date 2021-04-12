@@ -24,4 +24,6 @@
     <string name="source_created_complete_notification_description"><i>%1$s</i> added to library.</string>
     <string name="source_created_start_notification_title">Creating Source</string>
     <string name="source_created_start_notification_description">Adding <i>%1$s</i> to library.</string>
+    <string name="source_created_error_notification_title">Error Creating Source</string>
+    <string name="source_created_error_notification_description">An error occurred while adding <i>%1$s</i> to your library. Please try to create your annotations again, and contact us if the issue persists.</string>
 </resources>

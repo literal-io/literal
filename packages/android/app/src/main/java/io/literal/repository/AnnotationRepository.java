@@ -9,10 +9,12 @@ import com.amazonaws.amplify.generated.graphql.GetAnnotationQuery;
 import com.amazonaws.amplify.generated.graphql.PatchAnnotationMutation;
 import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient;
 import com.apollographql.apollo.GraphQLCall;
+import com.apollographql.apollo.api.Operation;
 import com.apollographql.apollo.api.Response;
 import com.apollographql.apollo.exception.ApolloException;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.List;
 
@@ -22,11 +24,24 @@ import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.Callback;
 import io.literal.lib.ManyCallback;
 import io.literal.model.Annotation;
+import type.CreateAnnotationInput;
 import type.DeleteAnnotationInput;
 import type.PatchAnnotationInput;
 
 public class AnnotationRepository {
     public static void patchAnnotationMutation(Context context, PatchAnnotationInput input, Callback<ApolloException, PatchAnnotationMutation.Data> callback) {
+        try {
+            JSONObject properties = new JSONObject();
+            JSONObject operationVariables = new JSONObject();
+            operationVariables.put("id", input.id());
+            properties.put("operationName", "PatchAnnotation");
+            properties.put("operationVariables", operationVariables);
+
+            AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_GRAPH_QL_OPERATION, properties);
+        } catch (JSONException e) {
+            ErrorRepository.captureException(e);
+        }
+
         AppSyncClientFactory.getInstance(context)
                 .mutate(PatchAnnotationMutation.builder().input(input).build())
                 .enqueue(new GraphQLCall.Callback<PatchAnnotationMutation.Data>() {
@@ -50,6 +65,18 @@ public class AnnotationRepository {
     }
 
     public static void deleteAnnotationMutation(Context context, DeleteAnnotationInput input, Callback<ApolloException, DeleteAnnotationMutation.Data> callback) {
+        try {
+            JSONObject properties = new JSONObject();
+            JSONObject operationVariables = new JSONObject();
+            operationVariables.put("id", input.id());
+            properties.put("operationName", "DeleteAnnotation");
+            properties.put("operationVariables", operationVariables);
+
+            AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_GRAPH_QL_OPERATION, properties);
+        } catch (JSONException e) {
+            ErrorRepository.captureException(e);
+        }
+
         AppSyncClientFactory.getInstance(context)
                 .mutate(DeleteAnnotationMutation.builder().input(input).build())
                 .enqueue(new GraphQLCall.Callback<DeleteAnnotationMutation.Data>() {
@@ -99,12 +126,25 @@ public class AnnotationRepository {
 
         for (int i = 0; i < annotations.length; i++) {
             Callback<ApolloException, CreateAnnotationMutation.Data> innerCallback = manyCallback.getCallback(i);
+            CreateAnnotationInput input = annotations[i].toCreateAnnotationInput();
+
+            try {
+                JSONObject properties = new JSONObject();
+                JSONObject operationVariables = new JSONObject();
+                operationVariables.put("id", input.id());
+                properties.put("operationName", "CreateAnnotation");
+                properties.put("operationVariables", operationVariables);
+
+                AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_GRAPH_QL_OPERATION, properties);
+            } catch (JSONException e) {
+                ErrorRepository.captureException(e);
+            }
+
             appSyncClient
                     .mutate(
                             CreateAnnotationMutation.builder()
-                                    .input(annotations[i].toCreateAnnotationInput())
+                                    .input(input)
                                     .build()
-
                     )
                     .enqueue(new GraphQLCall.Callback<CreateAnnotationMutation.Data>() {
                         @Override
