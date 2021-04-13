@@ -9,22 +9,18 @@ import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.config.AWSConfiguration;
 import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient;
 import com.amazonaws.mobileconnectors.appsync.S3ObjectManagerImplementation;
-import com.amazonaws.mobileconnectors.appsync.sigv4.CognitoUserPoolsAuthProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3Client;
 
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
-import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import io.literal.lib.Constants;
 import io.literal.lib.WebRoutes;
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.Response;
 
 public class AppSyncClientFactory {
 
@@ -38,18 +34,20 @@ public class AppSyncClientFactory {
         if (client == null) {
             client = AWSAppSyncClient.builder()
                     .context(context)
-                    .okHttpClient(new OkHttpClient.Builder().addNetworkInterceptor(
-                            new Interceptor() {
-                                @NotNull
-                                @Override
-                                public Response intercept(@NotNull Chain chain) throws IOException {
+                    .okHttpClient(
+                        new OkHttpClient.Builder()
+                            .addNetworkInterceptor(
+                                chain -> {
                                     Request newRequest = chain.request().newBuilder()
                                             .addHeader("origin", WebRoutes.getAPIHost())
                                             .build();
                                     return chain.proceed(newRequest);
                                 }
-                            }
-                    ).build())
+                            )
+                            .readTimeout(30, TimeUnit.SECONDS)
+                            .writeTimeout(30, TimeUnit.SECONDS)
+                            .build()
+                    )
                     .awsConfiguration(getConfiguration(context))
                     .s3ObjectManager(getS3ObjectManager(context))
                     .cognitoUserPoolsAuthProvider(() -> {
