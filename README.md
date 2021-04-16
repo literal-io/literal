@@ -25,6 +25,10 @@ Literal is distributed as an Android application, with support for other platfor
 
 Releases are regularly published on [Github](https://github.com/literal-io/literal/releases) and [Google Play](https://play.google.com/store/apps/details?id=io.literal).
 
+## Architecture
+
+Literal is a client for the [W3C Web Annotation Data Model](https://www.w3.org/TR/annotation-model/), and uses this model for all data storage and transmission. A closed-source GraphQL API implementing this data model is used for data persistance, though in the future alternate APIs (including local-only APIs) may be supported. There are some application specific extensions to the model that are annotated appropriately, but the intent is to hew as close as possible to the original specification.
+
 ## Precepts
 
 ### Separate signal from noise.
