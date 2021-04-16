@@ -1,17 +1,29 @@
 # Literal
 
-Literal is a textual annotation management system.
-
-The act of annotation is only the beginning. Leverage your highlights to enhance your reading experience.
+Literal is a textual annotation management system. Capture ideas and phrases from text that you read. Build a digital garden of words.
 
 ## How It Works
 
 To add an annotation to Literal:
 
-1. Highlight Text. Literal supports annotations made within web browsers, PDF readers, and more.
-2. Import the Highlight. Share the highlight with Literal to import it. Use the selection toolbar to share the highlighted text directly, or share a screenshot of the highlight.
-3. Annotate the Highlight. Add context and thoughts by adding tags and notes.
-4. Explore. Browse annotations grouped by tags and reflect as ideas evolve in response to new annotations and new relationships between them.
+1. **Highlight Text.** Literal supports annotations made within web browsers, PDF readers, and more.
+2. **Import the Highlight.** Share the highlight with Literal to import it. For content types that Literal supports natively (e.g. Web), share the content to import and archive it, and annotate within the Source Viewer. For all other content types, use the selection toolbar to share the highlighted text directly, or share a screenshot of the highlight.
+3. **Annotate the Highlight.** Add context and thoughts by adding tags and notes.
+4. **Explore.** Browse annotations grouped by tags and reflect as ideas evolve in response to new annotations and new relationships between them.
+
+## Demo Videos
+
+- [Capture annotation from web](https://www.youtube.com/watch?v=nH1ukQY3Ia8)
+- [Capture annotation from Twitter](https://www.youtube.com/watch?v=s7hps6_4VTU)
+- [Capture annotation from PDF](https://www.youtube.com/watch?v=9NurlekUeZ8)
+
+## Status
+
+Literal is actively being used and is under active development. If you have ideas for features or encounter a bug, please open an issue.
+
+Literal is distributed as an Android application, with support for other platforms planned. To indicate your support for a platform add a reaction or comment on the issue for [adding iOS support](https://github.com/literal-io/literal/issues/81), [adding Web support](https://github.com/literal-io/literal/issues/82), [adding Web Extension support](https://github.com/literal-io/literal/issues/83), or by creating an issue for adding support to your platform of choice.
+
+Releases are regularly published on [Github](https://github.com/literal-io/literal/releases) and [Google Play](https://play.google.com/store/apps/details?id=io.literal).
 
 ## Precepts
 
