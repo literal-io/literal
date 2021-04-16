@@ -2,8 +2,47 @@ open Styles;
 
 let styles = [%raw "require('./Route_Index.module.css')"];
 
-let googlePlayStoreUrl = "https://play.google.com/store/apps/details?id=io.literal";
-let waitlistFormUrl = "https://docs.google.com/forms/d/1S6xFRp80nYYvPcz9oQYmiyOqLyXKHPZ0D2LofOxgWeo/edit";
+module ArrowListItem = {
+  [@react.component]
+  let make = (~href, ~label, ~action, ~className=?) => {
+    <Next.Link passHref=true href>
+      <a
+        onClick={_ => {
+          let _ =
+            Service_Analytics.(track(Click({action, label: Some(label)})));
+          ();
+        }}
+        className={cn([
+          "text-lightPrimary",
+          "text-lg",
+          "font-sans",
+          "flex",
+          "flex-row",
+          "items-center",
+          Cn.take(className),
+        ])}>
+        <Svg
+          icon=Svg.arrowRight
+          placeholderViewBox="0 0 32 32"
+          className={cn(["pointer-events-none", "w-8", "h-8"])}
+        />
+        <div>
+          <span
+            className={Cn.fromList([
+              "italic",
+              "border-b",
+              "border-dotted",
+              "border-lightPrimary",
+              "block",
+              "leading-none",
+            ])}>
+            {React.string(label)}
+          </span>
+        </div>
+      </a>
+    </Next.Link>;
+  };
+};
 
 module Header = {
   [@react.component]
@@ -33,46 +72,15 @@ module Header = {
           "mb-8",
         ])}>
         {React.string(
-           "The act of annotation is only the beginning. Leverage your highlights to enhance your reading experience.",
+           "Capture ideas and phrases from text that you read. Build a digital garden of words.",
          )}
       </p>
-      <a
-        onClick={_ => {
-          let _ =
-            Service_Analytics.(
-              track(Click({action: "start cta", label: Some("Start now")}))
-            );
-          ();
-        }}
-        href=googlePlayStoreUrl
-        className={cn([
-          "text-lightPrimary",
-          "text-lg",
-          "font-sans",
-          "flex",
-          "flex-row",
-          "mb-40",
-          "items-center",
-        ])}>
-        <Svg
-          icon=Svg.arrowRight
-          placeholderViewBox="0 0 32 32"
-          className={cn(["pointer-events-none", "w-8", "h-8"])}
-        />
-        <div>
-          <span
-            className={Cn.fromList([
-              "italic",
-              "border-b",
-              "border-dotted",
-              "border-lightPrimary",
-              "block",
-              "leading-none",
-            ])}>
-            {React.string("Start Now")}
-          </span>
-        </div>
-      </a>
+      <ArrowListItem
+        href="/start"
+        action="start cta"
+        label="Start Now"
+        className={Cn.fromList(["mb-40"])}
+      />
     </>;
 };
 
@@ -171,7 +179,8 @@ module HowItWorks = {
         className={Cn.fromList([
           "overflow-x-scroll",
           "flex",
-          "py-16",
+          "pt-16",
+          "pb-8",
           styles##scrollContainer,
         ])}
         style={
@@ -220,6 +229,40 @@ module HowItWorks = {
            )
          ->React.array}
       </ul>
+      <h3
+        className={Cn.fromList([
+          "font-sans",
+          "text-lightSecondary",
+          "mt-8",
+          "mb-8",
+        ])}>
+        {React.string(
+           "Short videos are available that demonstrate how to use Literal: ",
+         )}
+      </h3>
+      <ul className={Cn.fromList(["mb-16"])}>
+        <li className={Cn.fromList(["font-sans", "text-lightSecondary"])}>
+          <ArrowListItem
+            action="how to annotate the web"
+            label="How to annotate the Web"
+            href="https://www.youtube.com/watch?v=nH1ukQY3Ia8"
+          />
+        </li>
+        <li className={Cn.fromList(["font-sans", "text-lightSecondary"])}>
+          <ArrowListItem
+            action="how to annotate twitter"
+            label="How to annotate Twitter"
+            href="https://www.youtube.com/watch?v=s7hps6_4VTU"
+          />
+        </li>
+        <li className={Cn.fromList(["font-sans", "text-lightSecondary"])}>
+          <ArrowListItem
+            action="how to annotate pdf"
+            label="How to annotate PDF"
+            href="https://www.youtube.com/watch?v=9NurlekUeZ8"
+          />
+        </li>
+      </ul>
     </>;
 };
 
@@ -234,8 +277,8 @@ module Features = {
     {title: "Create highlight from text", available: true},
     {title: "Annotation tagging", available: true},
     {title: "First-class W3C Web Annotation support", available: true},
+    {title: "Annotation source viewer", available: true},
     {title: "iOS mobile app", available: false},
-    {title: "Annotation source viewer", available: false},
     {title: "Graph viewer", available: false},
     {title: "Browser extension", available: false},
     {title: "Annotation sharing and discovery", available: false},
@@ -332,7 +375,7 @@ module Footer = {
     {
       title: "Install",
       description: "Get the mobile application.",
-      href: googlePlayStoreUrl,
+      href: "/start",
     },
     {title: "Writing", description: "View the blog.", href: "/writing"},
     {
@@ -356,54 +399,55 @@ module Footer = {
   let make = () =>
     items
     ->Belt.Array.mapWithIndex((idx, {title, description, href}) =>
-        <a
-          className={Cn.fromList([
-            "block",
-            "border",
-            "border-dotted",
-            "border-lightDisabled",
-            "p-4",
-            Cn.on("mt-16", idx === 0),
-            Cn.on("mb-6", idx !== Belt.Array.length(items) - 1),
-          ])}
-          href>
-          <div
+        <Next.Link passHref=true href>
+          <a
             className={Cn.fromList([
-              "flex",
-              "flex-row",
-              "items-center",
-              "justify-between",
+              "block",
+              "border",
+              "border-dotted",
+              "border-lightDisabled",
+              "p-4",
+              Cn.on("mt-16", idx === 0),
+              Cn.on("mb-6", idx !== Belt.Array.length(items) - 1),
             ])}>
-            <div className={Cn.fromList(["flex", "flex-col"])}>
-              <h3
-                className={Cn.fromList([
-                  "font-serif",
-                  "text-lightPrimary",
-                  "mb-2",
-                ])}>
-                {React.string(title)}
-              </h3>
-              <p
-                className={Cn.fromList([
-                  "font-sans",
-                  "text-lightSecondary",
-                  "leading-tight",
-                ])}>
-                {React.string(description)}
-              </p>
+            <div
+              className={Cn.fromList([
+                "flex",
+                "flex-row",
+                "items-center",
+                "justify-between",
+              ])}>
+              <div className={Cn.fromList(["flex", "flex-col"])}>
+                <h3
+                  className={Cn.fromList([
+                    "font-serif",
+                    "text-lightPrimary",
+                    "mb-2",
+                  ])}>
+                  {React.string(title)}
+                </h3>
+                <p
+                  className={Cn.fromList([
+                    "font-sans",
+                    "text-lightSecondary",
+                    "leading-tight",
+                  ])}>
+                  {React.string(description)}
+                </p>
+              </div>
+              <Svg
+                icon=Svg.arrowRight
+                placeholderViewBox="0 0 48 48"
+                className={cn([
+                  "pointer-events-none",
+                  "w-12",
+                  "h-12",
+                  "opacity-75",
+                ])}
+              />
             </div>
-            <Svg
-              icon=Svg.arrowRight
-              placeholderViewBox="0 0 48 48"
-              className={cn([
-                "pointer-events-none",
-                "w-12",
-                "h-12",
-                "opacity-75",
-              ])}
-            />
-          </div>
-        </a>
+          </a>
+        </Next.Link>
       )
     ->React.array;
 };

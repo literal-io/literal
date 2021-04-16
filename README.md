@@ -13,13 +13,13 @@ To add an annotation to Literal:
 
 ## Demo Videos
 
-- [Capture annotation from web](https://www.youtube.com/watch?v=nH1ukQY3Ia8)
-- [Capture annotation from Twitter](https://www.youtube.com/watch?v=s7hps6_4VTU)
-- [Capture annotation from PDF](https://www.youtube.com/watch?v=9NurlekUeZ8)
+- [How to annotate the Web](https://www.youtube.com/watch?v=nH1ukQY3Ia8)
+- [How to annotate Twitter](https://www.youtube.com/watch?v=s7hps6_4VTU)
+- [How to annotate PDF](https://www.youtube.com/watch?v=9NurlekUeZ8)
 
 ## Status
 
-Literal is actively being used and is under active development. If you have ideas for features or encounter a bug, please open an issue.
+Literal is actively being used, but is also under active development. If you have ideas for features or encounter a bug, please open an issue.
 
 Literal is distributed as an Android application, with support for other platforms planned. To indicate your support for a platform add a reaction or comment on the issue for [adding iOS support](https://github.com/literal-io/literal/issues/81), [adding Web support](https://github.com/literal-io/literal/issues/82), [adding Web Extension support](https://github.com/literal-io/literal/issues/83), or by creating an issue for adding support to your platform of choice.
 
