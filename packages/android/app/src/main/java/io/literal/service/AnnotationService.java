@@ -97,11 +97,18 @@ public class AnnotationService extends Service {
     }
 
     private void handleCreateAnnotation(Annotation[] annotations, DomainMetadata domainMetadata, Callback<Exception, Void> onFinish) {
+        String username;
+        try {
+            username = AuthenticationRepository.getUsername();
+        } catch (Exception e) {
+            onFinish.invoke(e, null);
+            return;
+        }
         Callback<Exception, Void> onFinishWithNotification = (e, _v) -> {
             if (e != null) {
                 NotificationRepository.sourceCreatedNotificationError(
                         getBaseContext(),
-                        AuthenticationRepository.getUsername(),
+                        username,
                         domainMetadata
                 );
                onFinish.invoke(e, _v);
@@ -123,7 +130,7 @@ public class AnnotationService extends Service {
             if (domainMetadata != null) {
                 NotificationRepository.sourceCreatedNotificationComplete(
                         getBaseContext(),
-                        AuthenticationRepository.getUsername(),
+                        username,
                         domainMetadata
                 );
             }
@@ -202,7 +209,7 @@ public class AnnotationService extends Service {
 
             NotificationRepository.sourceCreatedNotificationStart(
                     getBaseContext(),
-                    AuthenticationRepository.getUsername(),
+                    username,
                     domainMetadata,
                     new Pair<>(100, Math.max(progressOutOf100 - 5, 0)) // subtract 5 to fake mutation progress
             );

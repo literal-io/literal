@@ -18,6 +18,8 @@ let language: string = [%raw "require('./language.svg')"];
 let waves: string = [%raw "require('./waves.svg')"];
 let android: string = [%raw "require('./android.svg')"];
 let apple: string = [%raw "require('./apple.svg')"];
+let errorOutline = [%raw "require('./error-outline.svg')"];
+let more = [%raw "require('./more.svg')"];
 
 type state = {
   isLoading: bool,

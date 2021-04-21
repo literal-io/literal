@@ -32,13 +32,30 @@ module WebEvent = {
     accessToken: string,
   };
 
+  module AuthSignInResult = {
+    [@decco]
+    type tokens = {
+      idToken: string,
+      refreshToken: string,
+      accessToken: string,
+    };
+
+    [@decco]
+    type t = {
+      tokens: option(tokens),
+      error: option(string),
+    };
+
+    let decode = t_decode;
+  };
+
   module AuthGetUserInfoResult = {
     [@decco]
     type attributes = {
       email: string,
       [@decco.key "email_verified"]
       emailVerified: string,
-      identities: string,
+      identities: option(string),
       sub: string,
     };
 
@@ -105,21 +122,21 @@ module WebEventHandler = {
     ();
   };
 
-  let handleSignInResult = (event: option(Js.Json.t)) => {
-    let _ =
-      event->Belt.Option.map(data => {
-        switch (WebEvent.authGetTokensResult_decode(data)) {
-        | Belt.Result.Ok(_) =>
-          HubEvent.publish(~event="AUTH_SIGN_IN_RESULT", ())
-        | _ => ()
-        }
-      });
-    ();
+  let handleGetTokensResult = (type_, event: option(Js.Json.t)) => {
+    event->Belt.Option.forEach(data => {
+      switch (WebEvent.authGetTokensResult_decode(data)) {
+      | Belt.Result.Ok(_) => HubEvent.publish(~event=type_, ())
+      | Belt.Result.Error(e) => Js.log2("handleGetTokensResult error", e)
+      }
+    });
   };
 
   let config = [|
     ("ROUTER_REPLACE", handleRouterReplace),
-    ("AUTH_SIGN_IN_RESULT", handleSignInResult),
+    (
+      "AUTH_SIGN_IN_GOOGLE_RESULT",
+      handleGetTokensResult("AUTH_SIGN_IN_GOOGLE_RESULT"),
+    ),
   |];
 
   let dispatch = (ev: WebEvent.t) => {

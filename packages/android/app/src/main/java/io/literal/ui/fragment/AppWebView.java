@@ -21,6 +21,9 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.mobile.client.results.Tokens;
+import com.amazonaws.services.cognitoidentityprovider.model.NotAuthorizedException;
+import com.amazonaws.services.cognitoidentityprovider.model.UserNotFoundException;
+import com.amazonaws.services.cognitoidentityprovider.model.UsernameExistsException;
 import com.apollographql.apollo.json.JsonDataException;
 
 import org.json.JSONException;
@@ -54,29 +57,100 @@ public class AppWebView extends Fragment {
     private AuthenticationViewModel authenticationViewModel;
     private io.literal.ui.view.AppWebView appWebView;
     private final WebEvent.Callback webEventCallback = new WebEvent.Callback() {
-        private void handleSignIn(io.literal.ui.view.AppWebView view) {
+
+        private JSONObject getTokens() {
+            Tokens tokens = authenticationViewModel.getTokens().getValue();
+            JSONObject result = new JSONObject();
+            try {
+                result.put("idToken", tokens.getIdToken().getTokenString());
+                result.put("refreshToken", tokens.getRefreshToken().getTokenString());
+                result.put("accessToken", tokens.getAccessToken().getTokenString());
+
+                return result;
+            } catch (Exception jsonException) {
+                ErrorRepository.captureException(jsonException);
+                return null;
+            }
+        }
+
+        private void handleSignUp(io.literal.ui.view.AppWebView view, String email, String password) {
+            authenticationViewModel.signUp(email, password, (e, _void) -> {
+                if (e != null) {
+                    ErrorRepository.captureException(e);
+                }
+
+                try {
+                    JSONObject result = new JSONObject();
+                    if (e == null) {
+                        result.put("tokens", getTokens());
+                    } else {
+                        String errorCode;
+                        if (e instanceof UsernameExistsException) {
+                            errorCode = "SIGN_UP_FAILED_USER_EXISTS";
+                        } else {
+                            errorCode = "SIGN_UP_FAILED";
+                        }
+                        result.put("error", errorCode);
+                    }
+
+                    getActivity().runOnUiThread(() -> {
+                        view.postWebEvent(
+                                new WebEvent(WebEvent.TYPE_AUTH_SIGN_UP_RESULT, UUID.randomUUID().toString(), result)
+                        );
+                    });
+                } catch (JSONException ex) {
+                    ErrorRepository.captureException(ex);
+                }
+            });
+        }
+
+        private void handleSignInGoogle(io.literal.ui.view.AppWebView view) {
             authenticationViewModel.signInGoogle(getActivity(), (e, _void) -> {
                 if (e != null) {
                     ErrorRepository.captureException(e);
                     return;
                 }
-                Tokens tokens = authenticationViewModel.getTokens().getValue();
-                JSONObject result = new JSONObject();
+
+                getActivity().runOnUiThread(() -> {
+                    view.postWebEvent(
+                            new WebEvent(WebEvent.TYPE_AUTH_SIGN_IN_GOOGLE_RESULT, UUID.randomUUID().toString(), getTokens())
+                    );
+                });
+            });
+        }
+        private void handleSignIn(io.literal.ui.view.AppWebView view, String email, String password) {
+            authenticationViewModel.signIn(email, password, (e, _void) -> {
+                if (e != null) {
+                    ErrorRepository.captureException(e);
+                }
+
                 try {
-                    result.put("idToken", tokens.getIdToken().getTokenString());
-                    result.put("refreshToken", tokens.getRefreshToken().getTokenString());
-                    result.put("accessToken", tokens.getAccessToken().getTokenString());
+                    JSONObject result = new JSONObject();
+                    if (e == null) {
+                        result.put("tokens", getTokens());
+                    } else {
+                        String errorCode;
+                        if (e instanceof UserNotFoundException) {
+                            errorCode = "SIGN_IN_FAILED_USER_NOT_FOUND";
+                        } else if (e instanceof NotAuthorizedException) {
+                            errorCode = "SIGN_IN_FAILED_NOT_AUTHORIZED";
+                        } else {
+                            errorCode = "SIGN_IN_FAILED";
+                        }
+                        result.put("error", errorCode);
+                    }
 
                     getActivity().runOnUiThread(() -> {
                         view.postWebEvent(
                                 new WebEvent(WebEvent.TYPE_AUTH_SIGN_IN_RESULT, UUID.randomUUID().toString(), result)
                         );
                     });
-                } catch (Exception jsonException) {
-                    ErrorRepository.captureException(jsonException);
+                } catch (JSONException ex) {
+                    ErrorRepository.captureException(ex);
                 }
             });
         }
+
 
         private void handleGetTokens(io.literal.ui.view.AppWebView view) {
             Tokens tokens = authenticationViewModel.getTokens().getValue();
@@ -107,6 +181,7 @@ public class AppWebView extends Fragment {
                     result.put("id", authenticationViewModel.getIdentityId().getValue());
                     Map<String, String> userAttributes = authenticationViewModel.getUserAttributes().getValue();
                     result.put("attributes", userAttributes != null ? new JSONObject(userAttributes) : null);
+                    Log.i("handleGetUserInfo", result.toString());
                     activity.runOnUiThread(() -> view.postWebEvent(
                             new WebEvent(WebEvent.TYPE_AUTH_GET_USER_INFO_RESULT, UUID.randomUUID().toString(), result)
                     ));
@@ -114,14 +189,31 @@ public class AppWebView extends Fragment {
                     ErrorRepository.captureException(e);
                 }
             });
-
         }
 
         public void onWebEvent(io.literal.ui.view.AppWebView view, WebEvent event) {
             appWebViewViewModel.dispatchReceivedWebEvent(event);
             switch (event.getType()) {
+                case WebEvent.TYPE_AUTH_SIGN_UP:
+                    try {
+                        String email = event.getData().getString("email");
+                        String password = event.getData().getString("password");
+                        this.handleSignUp(view, email, password);
+                    } catch (JSONException e) {
+                        ErrorRepository.captureException(e);
+                    }
+                    return;
                 case WebEvent.TYPE_AUTH_SIGN_IN:
-                    this.handleSignIn(view);
+                    try {
+                        String email = event.getData().getString("email");
+                        String password = event.getData().getString("password");
+                        this.handleSignIn(view, email, password);
+                    } catch (JSONException e) {
+                        ErrorRepository.captureException(e);
+                    }
+                    return;
+                case WebEvent.TYPE_AUTH_SIGN_IN_GOOGLE:
+                    this.handleSignInGoogle(view);
                     return;
                 case WebEvent.TYPE_AUTH_GET_TOKENS:
                     this.handleGetTokens(view);

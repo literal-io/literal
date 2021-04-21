@@ -1,0 +1,11 @@
+.underline:after {
+  border-bottom-color: rgba(255, 255, 255, .92) !important;
+}
+
+.underlineError {
+  border: none !important;
+}
+
+.underlineError:after {
+  border-bottom-color: #B00020 !important;
+}

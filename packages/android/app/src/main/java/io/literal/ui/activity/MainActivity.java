@@ -120,7 +120,10 @@ public class MainActivity extends InstrumentedActivity {
 
     private void initializeViewModel() {
         authenticationViewModel = new ViewModelProvider(this).get(AuthenticationViewModel.class);
-        authenticationViewModel.initialize(this);
+        authenticationViewModel.initialize(
+                ((MainApplication) getApplication()).getThreadPoolExecutor(),
+                this
+        );
         authenticationViewModel.getUsername().observe(this, username -> {
             if (appWebViewBottomSheetFragment == null) {
                 return;

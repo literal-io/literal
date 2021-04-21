@@ -63,7 +63,10 @@ public class ShareTargetHandler extends InstrumentedActivity {
         Intent intent = getIntent();
 
         authenticationViewModel = new ViewModelProvider(this).get(AuthenticationViewModel.class);
-        authenticationViewModel.initialize(this);
+        authenticationViewModel.initialize(
+                ((MainApplication) getApplication()).getThreadPoolExecutor(),
+                this
+        );
 
         NotificationRepository.createNewAnnotationNotificationChannel(this);
         NotificationRepository.createNewExternalTargetNotificationChannel(this);

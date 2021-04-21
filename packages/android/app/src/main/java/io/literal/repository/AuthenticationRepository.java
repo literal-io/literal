@@ -12,10 +12,16 @@ import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.HostedUIOptions;
 import com.amazonaws.mobile.client.SignInUIOptions;
 import com.amazonaws.mobile.client.UserStateDetails;
+import com.amazonaws.mobile.client.results.SignInResult;
+import com.amazonaws.mobile.client.results.SignUpResult;
 import com.amazonaws.mobile.client.results.Tokens;
 
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.literal.lib.Crypto;
 
 public class AuthenticationRepository {
 
@@ -41,9 +47,32 @@ public class AuthenticationRepository {
         return AWSMobileClient.getInstance().getUserAttributes();
     }
 
-    public static String getUsername() {
-        return AWSMobileClient.getInstance().getUsername();
+    public static String getUsername() throws Exception {
+        Map<String, String> userAttributes = AWSMobileClient.getInstance().getUserAttributes();
+        String username = AWSMobileClient.getInstance().getUsername();
+        if (username == null) {
+            return null;
+        }
+        return username.startsWith("Google") ? username : userAttributes.get("sub");
     }
+
+    public static void getUsername(Callback<String> callback) {
+        AWSMobileClient.getInstance().getUserAttributes(new com.amazonaws.mobile.client.Callback<Map<String, String>>() {
+            @Override
+            public void onResult(Map<String, String> result) {
+                String username = AWSMobileClient.getInstance().getUsername();
+                if (username == null) {
+                    callback.invoke(null, null);
+                }
+                callback.invoke(null, username.startsWith("Google") ? username : result.get("sub"));
+            }
+
+            @Override
+            public void onError(Exception e) {
+                callback.invoke(e, null);
+            }
+        });
+    ;}
 
     public static String getIdentityId() {
         return AWSMobileClient.getInstance().getIdentityId();
@@ -96,6 +125,65 @@ public class AuthenticationRepository {
             @Override
             public void onResult(UserStateDetails result) {
                 callback.invoke(null, result);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                callback.invoke(e, null);
+            }
+        });
+    }
+
+    public static void signIn(String email, String password, io.literal.lib.Callback<Exception, UserStateDetails> callback) {
+        AWSMobileClient.getInstance().signIn(email, password, null, new com.amazonaws.mobile.client.Callback<SignInResult>() {
+            @Override
+            public void onResult(SignInResult result) {
+                AWSMobileClient.getInstance().currentUserState(new com.amazonaws.mobile.client.Callback<UserStateDetails>() {
+                    @Override
+                    public void onResult(UserStateDetails result) {
+                        callback.invoke(null, result);
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        callback.invoke(e, null);
+                    }
+                });
+            }
+            @Override
+            public void onError(Exception e) {
+                callback.invoke(e, null);
+            }
+        });
+    }
+
+    public static void signUp(String email, String password, Callback<UserStateDetails> callback) {
+        final Map<String, String> attributes = new HashMap<>();
+        attributes.put("email", email);
+        AWSMobileClient.getInstance().signUp(email, password, attributes, null, new com.amazonaws.mobile.client.Callback<SignUpResult>() {
+            @Override
+            public void onResult(SignUpResult result) {
+                // User is auto confirmed
+                AWSMobileClient.getInstance().signIn(email, password, null, new com.amazonaws.mobile.client.Callback<SignInResult>() {
+                    @Override
+                    public void onResult(SignInResult result) {
+                        AWSMobileClient.getInstance().currentUserState(new com.amazonaws.mobile.client.Callback<UserStateDetails>() {
+                            @Override
+                            public void onResult(UserStateDetails result) {
+                                callback.invoke(null, result);
+                            }
+
+                            @Override
+                            public void onError(Exception e) {
+                                callback.invoke(e, null);
+                            }
+                        });
+                    }
+                    @Override
+                    public void onError(Exception e) {
+                        callback.invoke(e, null);
+                    }
+                });
             }
 
             @Override

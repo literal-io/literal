@@ -50,6 +50,10 @@ module WritingId = {
   let staticPath = "/writing/[id]";
 };
 
+module Register = {
+  let path = () => "/register";
+}
+
 module Authenticate = {
   let path = () => "/authenticate";
 };
