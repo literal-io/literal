@@ -24,12 +24,16 @@ let currentUserInfoWebview = () =>
                  attributes: {
                    email: userInfo.attributes.email,
                    emailVerified: userInfo.attributes.emailVerified === "true",
-                   identities: userInfo.attributes.identities,
+                   identities:
+                     userInfo.attributes.identities
+                     ->Belt.Option.getWithDefault(""),
                    sub: userInfo.attributes.sub,
                  },
                },
              )
-           | Belt.Result.Error(_) => None
+           | Belt.Result.Error(e) =>
+             let _ = Error.(report(DeccoDecodeError(e)));
+             None;
            }
          })
        ->Js.Promise.resolve
@@ -77,7 +81,9 @@ let use = () => {
 
       let handleWebviewEvent = (ev: AwsAmplify.Hub.event(Js.Json.t)) => {
         switch (ev.payload.event) {
-        | "AUTH_SIGN_IN_RESULT" =>
+        | "AUTH_SIGN_IN_GOOGLE_RESULT"
+        | "AUTH_SIGN_IN_RESULT"
+        | "AUTH_SIGN_UP_RESULT" =>
           let _ = checkAuthenticationState();
           ();
         | _ => ()

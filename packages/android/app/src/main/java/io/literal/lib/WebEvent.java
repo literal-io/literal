@@ -10,8 +10,12 @@ public class WebEvent {
     // App WebView
     public static final String TYPE_ACTIVITY_FINISH = "ACTIVITY_FINISH";
     public static final String TYPE_ROUTER_REPLACE = "ROUTER_REPLACE";
+    public static final String TYPE_AUTH_SIGN_UP = "AUTH_SIGN_UP";
+    public static final String TYPE_AUTH_SIGN_UP_RESULT = "AUTH_SIGN_UP_RESULT";
     public static final String TYPE_AUTH_SIGN_IN = "AUTH_SIGN_IN";
     public static final String TYPE_AUTH_SIGN_IN_RESULT = "AUTH_SIGN_IN_RESULT";
+    public static final String TYPE_AUTH_SIGN_IN_GOOGLE = "AUTH_SIGN_IN_GOOGLE";
+    public static final String TYPE_AUTH_SIGN_IN_GOOGLE_RESULT = "AUTH_SIGN_IN_GOOGLE_RESULT";
     public static final String TYPE_AUTH_GET_TOKENS = "AUTH_GET_TOKENS";
     public static final String TYPE_AUTH_GET_TOKENS_RESULT = "AUTH_GET_TOKENS_RESULT";
     public static final String TYPE_AUTH_GET_USER_INFO = "AUTH_GET_USER_INFO";
@@ -55,11 +59,17 @@ public class WebEvent {
     }
 
     public JSONObject toJSON() {
+        return this.toJSON(true);
+    }
+
+    public JSONObject toJSON(boolean includeData) {
         try {
             JSONObject val = new JSONObject();
             val.put("type", type);
             val.put("pid", pid);
-            val.put("data", data);
+            if (includeData) {
+                val.put("data", data);
+            }
             return val;
         } catch (JSONException ex) {
             return null;

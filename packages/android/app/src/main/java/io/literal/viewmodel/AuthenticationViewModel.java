@@ -67,7 +67,11 @@ public class AuthenticationViewModel extends ViewModel {
         if (this.isSignedOut()) {
             username.postValue(null);
         } else if (username.getValue() == null) {
-            username.postValue(AuthenticationRepository.getUsername());
+            try {
+                username.postValue(AuthenticationRepository.getUsername());
+            } catch (Exception e) {
+                ErrorRepository.captureException(e);
+            }
         }
         return username;
     }
@@ -76,27 +80,27 @@ public class AuthenticationViewModel extends ViewModel {
         if (this.isSignedOut()) {
             identityId.postValue(null);
         } else if (identityId.getValue() == null) {
-            identityId.postValue(AuthenticationRepository.getUsername());
+            identityId.postValue(AuthenticationRepository.getIdentityId());
         }
         return identityId;
     }
 
-    public void initialize(Activity activity) {
-        AWSMobileClientFactory.initializeClient(activity.getApplicationContext(), new Callback<UserStateDetails>() {
+    public void initialize(ThreadPoolExecutor executor, Activity activity) {
+        executor.execute(() -> AWSMobileClientFactory.initializeClient(activity.getApplicationContext(), new Callback<UserStateDetails>() {
             @Override
             public void onResult(UserStateDetails result) {
-                activity.runOnUiThread(() -> {
-                    userStateDetails.setValue(result);
-                    asyncInitializeValues();
-                    hasInitializedLatch.countDown();
-                });
+                userStateDetails.postValue(result);
+                if (result.getUserState().equals(UserState.SIGNED_IN)) {
+                    initializeValues();
+                }
+                hasInitializedLatch.countDown();
             }
 
             @Override
             public void onError(Exception e) {
                 ErrorRepository.captureException(e);
             }
-        });
+        }));
 
         AWSMobileClient.getInstance().addUserStateListener(userStateDetails::postValue);
     }
@@ -118,7 +122,20 @@ public class AuthenticationViewModel extends ViewModel {
             userAttributes.postValue(userInfoResult);
         });
         identityId.postValue(AuthenticationRepository.getIdentityId());
-        username.postValue(AuthenticationRepository.getUsername());
+        AuthenticationRepository.getUsername((e, usernameResult) -> {
+            username.postValue(usernameResult);
+        });
+    }
+
+    private void initializeValues() {
+        try {
+            this.tokens.postValue(AuthenticationRepository.getTokens());
+            this.userAttributes.postValue(AuthenticationRepository.getUserAttributes());
+            this.identityId.postValue(AuthenticationRepository.getIdentityId());
+            this.username.postValue(AuthenticationRepository.getUsername());
+        } catch (Exception e) {
+            ErrorRepository.captureException(e);
+        }
     }
 
     public void awaitInitialization() {
@@ -149,15 +166,44 @@ public class AuthenticationViewModel extends ViewModel {
                 }
 
                 this.userStateDetails.postValue(userStateDetails);
-                this.tokens.postValue(AuthenticationRepository.getTokens());
-                this.userAttributes.postValue(AuthenticationRepository.getUserAttributes());
-                this.identityId.postValue(AuthenticationRepository.getIdentityId());
-                this.username.postValue(AuthenticationRepository.getUsername());
+                initializeValues();
 
                 callback.invoke(null, null);
             } catch (Exception getTokensException) {
                 callback.invoke(getTokensException, null);
             }
+        });
+    }
+
+    public void signUp(String email, String password, AuthenticationRepository.Callback<Void> callback) {
+        AuthenticationRepository.signUp(email, password, (e, userStateDetails) -> {
+            try {
+                if (e != null) {
+                    callback.invoke(e, null);
+                    return;
+                }
+
+                this.userStateDetails.postValue(userStateDetails);
+                initializeValues();
+
+                callback.invoke(null, null);
+            } catch (Exception getTokensException) {
+                callback.invoke(getTokensException, null);
+            }
+        });
+    }
+
+    public void signIn(String email, String password, io.literal.lib.Callback<Exception, Void> callback) {
+        AuthenticationRepository.signIn(email, password, (e, userStateDetails) -> {
+            if (e != null) {
+                callback.invoke(e, null);
+                return;
+            }
+
+            this.userStateDetails.postValue(userStateDetails);
+            initializeValues();
+
+            callback.invoke(null, null);
         });
     }
 }
