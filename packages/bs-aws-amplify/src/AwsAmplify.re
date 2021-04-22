@@ -10,6 +10,14 @@ module Config = {
   };
 
   [@bs.deriving abstract]
+  type oauth = {
+    domain: string,
+    redirectSignIn: string,
+    responseType: string,
+    scope: array(string),
+  };
+
+  [@bs.deriving abstract]
   type t = {
     [@bs.as "aws_project_region"]
     projectRegion: string,
@@ -29,6 +37,7 @@ module Config = {
     userFilesS3BucketRegion: string,
     [@bs.as "aws_cloud_logic_custom"] [@bs.optional]
     cloudLogicCustom: array(cloudLogicCustom),
+    oauth,
   };
   let make = t;
 };
