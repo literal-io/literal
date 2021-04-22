@@ -1,5 +1,34 @@
 open Styles;
 
+let resetPasswordUrl =
+  AwsAmplify.Config.(
+    "https://"
+    ++ Constants.awsAmplifyConfig->oauthGet->domainGet
+    ++ "/forgotPassword?"
+    ++ Webapi.Url.URLSearchParams.(
+         makeWithArray([|
+           ("client_id", Constants.awsAmplifyConfig->userPoolsWebClientIdGet),
+           (
+             "response_type",
+             Constants.awsAmplifyConfig->oauthGet->responseTypeGet,
+           ),
+           (
+             "scope",
+             Constants.awsAmplifyConfig
+             ->oauthGet
+             ->scopeGet
+             ->Js.Array2.joinWith("+"),
+           ),
+           (
+             "redirect_uri",
+             Constants.awsAmplifyConfig->oauthGet->redirectSignInGet,
+           ),
+         |])
+         ->toString
+         ->Js.Global.decodeURIComponent
+       )
+  );
+
 [@react.component]
 let default = () => {
   let authentication = Hooks_CurrentUserInfo.use();
@@ -111,6 +140,33 @@ let default = () => {
           anchorReference=`AnchorEl
           _open=isMenuOpen
           onClose={(_, _) => {handleToggleIsMenuOpen()}}>
+          <MaterialUi.MenuItem
+            classes={MaterialUi.MenuItem.Classes.make(
+              ~root=
+                Cn.fromList(["font-sans", "flex", "flex-1", "items-stretch"]),
+              (),
+            )}>
+            <a
+              href=resetPasswordUrl
+              className={Cn.fromList(["flex", "flex-1", "items-center"])}>
+              {React.string("Reset Password")}
+            </a>
+          </MaterialUi.MenuItem>
+          <MaterialUi.MenuItem
+            classes={MaterialUi.MenuItem.Classes.make(
+              ~root=
+                Cn.fromList(["font-sans", "flex", "flex-1", "items-stretch"]),
+              (),
+            )}>
+            <Next.Link
+              href=Routes.PolicyId.staticPath
+              _as={Routes.PolicyId.path(~id="privacy")}
+              passHref=true>
+              <a className={Cn.fromList(["flex", "flex-1", "items-center"])}>
+                {React.string("Privacy Policy")}
+              </a>
+            </Next.Link>
+          </MaterialUi.MenuItem>
           <MaterialUi.MenuItem
             classes={MaterialUi.MenuItem.Classes.make(
               ~root=Cn.fromList(["font-sans"]),

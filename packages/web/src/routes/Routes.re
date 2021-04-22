@@ -58,6 +58,11 @@ module Authenticate = {
   let path = () => "/authenticate";
 };
 
+module PolicyId = {
+  let path = (~id) => "/policies/" ++ id;
+  let staticPath = "/policies/[id]";
+}
+
 module Index = {
   let path = () => "/";
   let staticPath = "/";
