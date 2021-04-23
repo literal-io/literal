@@ -9,5 +9,6 @@
         android:id="@+id/app_web_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:focusable="true" />
+        android:focusable="true"
+        android:theme="@style/AppWebViewTheme"/>
 </FrameLayout>
