@@ -53,6 +53,7 @@ import io.literal.lib.Crypto;
 import io.literal.lib.ManyCallback;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
+import io.literal.model.User;
 import io.literal.ui.activity.MainActivity;
 import io.literal.ui.activity.ShareTargetHandler;
 import io.literal.viewmodel.AuthenticationViewModel;
@@ -80,7 +81,7 @@ public class ShareTargetHandlerRepository {
     }
 
     public static void createAnnotationFromText(String text, Context context, AuthenticationViewModel authenticationViewModel, CreateListener<CreateAnnotationMutation.Data> listener) {
-        String creatorUsername = authenticationViewModel.getUsername().getValue();
+        String creatorUsername = authenticationViewModel.getUser().getValue().getUsername();
 
         if (creatorUsername == null) {
             listener.onError(new Exception("Expected creatorUsername to be non-null. Are you logged in?"));
@@ -183,8 +184,9 @@ public class ShareTargetHandlerRepository {
 
     public static void createAnnotationFromImage(Uri imageUri, Context context, AuthenticationViewModel authenticationViewModel, CreateListener<CreateAnnotationFromExternalTargetMutation.Data> listener) {
         String screenshotId = UUID.randomUUID().toString();
-        String creatorUsername = authenticationViewModel.getUsername().getValue();
-        String creatorIdentityId = authenticationViewModel.getIdentityId().getValue();
+        User user = authenticationViewModel.getUser().getValue();
+        String creatorUsername = user.getUsername();
+        String creatorIdentityId = user.getIdentityId();
         String annotationId = WebRoutes.creatorsIdAnnotationId(
                 WebRoutes.getAPIHost(),
                 creatorUsername,

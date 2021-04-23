@@ -1,181 +1,139 @@
 package io.literal.viewmodel;
 
 import android.app.Activity;
-import android.content.Context;
+import android.app.Application;
 import android.util.Log;
 
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.amazonaws.auth.AwsChunkedEncodingInputStream;
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.UserState;
 import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.mobile.client.UserStateListener;
+import com.amazonaws.mobile.client.results.Token;
 import com.amazonaws.mobile.client.results.Tokens;
+import com.amazonaws.mobileconnectors.cognitoauth.AuthClient;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import io.literal.factory.AWSMobileClientFactory;
+import io.literal.lib.ManyCallback;
+import io.literal.model.User;
 import io.literal.repository.AuthenticationRepository;
 import io.literal.repository.ErrorRepository;
 
 public class AuthenticationViewModel extends ViewModel {
 
+    private final MutableLiveData<User> user = new MutableLiveData<>(new User(UserState.UNKNOWN));
+    private final UserStateListener userStateListener = details -> handleUserStateDetails(details, (_e, _user) -> { /** noop **/ });
+    private ArrayList<io.literal.lib.Callback<Exception, User>> initializationCallbacks;
+    private boolean hasInitialized = false;
 
-    private final MutableLiveData<UserStateDetails> userStateDetails = new MutableLiveData<>(null);
-    private final MutableLiveData<Tokens> tokens = new MutableLiveData<>(null);
-    private final MutableLiveData<String> username = new MutableLiveData<>(null);
-    private final MutableLiveData<String> identityId = new MutableLiveData<>(null);
-    private final MutableLiveData<Map<String, String>> userAttributes = new MutableLiveData<>(null);
-    private final CountDownLatch hasInitializedLatch = new CountDownLatch(1);
-
-    public MutableLiveData<UserStateDetails> getUserStateDetails() {
-        return userStateDetails;
-    }
-
-    public MutableLiveData<Tokens> getTokens() {
-        if (this.isSignedOut()) {
-            tokens.postValue(null);
-        } if (tokens.getValue() == null) {
-            try {
-                tokens.postValue(AuthenticationRepository.getTokens());
-            } catch (Exception e) {
-                ErrorRepository.captureException(e);
-            }
-        }
-        return tokens;
-    }
-
-    public MutableLiveData<Map<String, String>> getUserAttributes() {
-        if (this.isSignedOut()) {
-            userAttributes.postValue(null);
-        } else if (userAttributes.getValue() == null) {
-            try {
-                userAttributes.postValue(AuthenticationRepository.getUserAttributes());
-            } catch (Exception e) {
-                ErrorRepository.captureException(e);
-            }
+    public void initialize(Activity activity, io.literal.lib.Callback<Exception, User> callback) {
+        if (hasInitialized) {
+            callback.invoke(null, getUser().getValue());
+            return;
         }
 
-        return userAttributes;
-    }
-
-    public MutableLiveData<String> getUsername() {
-        if (this.isSignedOut()) {
-            username.postValue(null);
-        } else if (username.getValue() == null) {
-            try {
-                username.postValue(AuthenticationRepository.getUsername());
-            } catch (Exception e) {
-                ErrorRepository.captureException(e);
-            }
+        if (initializationCallbacks != null) {
+            initializationCallbacks.add(callback);
+            return;
         }
-        return username;
-    }
 
-    public MutableLiveData<String> getIdentityId() {
-        if (this.isSignedOut()) {
-            identityId.postValue(null);
-        } else if (identityId.getValue() == null) {
-            identityId.postValue(AuthenticationRepository.getIdentityId());
-        }
-        return identityId;
-    }
-
-    public void initialize(ThreadPoolExecutor executor, Activity activity) {
-        executor.execute(() -> AWSMobileClientFactory.initializeClient(activity.getApplicationContext(), new Callback<UserStateDetails>() {
+        initializationCallbacks = new ArrayList<>();
+        initializationCallbacks.add(callback);
+        AWSMobileClientFactory.initializeClient(activity.getApplicationContext(), new Callback<UserStateDetails>() {
             @Override
             public void onResult(UserStateDetails result) {
-                userStateDetails.postValue(result);
-                if (result.getUserState().equals(UserState.SIGNED_IN)) {
-                    initializeValues();
-                }
-                hasInitializedLatch.countDown();
+                handleUserStateDetails(result, (e, user) -> {
+                    initializationCallbacks.forEach(cb -> cb.invoke(e, user));
+                    initializationCallbacks = null;
+                    hasInitialized = true;
+                    AWSMobileClient.getInstance().addUserStateListener(userStateListener);
+                });
             }
 
             @Override
             public void onError(Exception e) {
                 ErrorRepository.captureException(e);
-            }
-        }));
-
-        AWSMobileClient.getInstance().addUserStateListener(userStateDetails::postValue);
-    }
-
-    public boolean isSignedOut() {
-        if (userStateDetails.getValue() == null) {
-            return true;
-        }
-        return userStateDetails.getValue().getUserState() != UserState.SIGNED_IN;
-    }
-
-    private void asyncInitializeValues() {
-        tokens.postValue(null);
-        AuthenticationRepository.getTokens((e, tokensResult) -> {
-            tokens.postValue(tokensResult);
-        });
-        userAttributes.postValue(null);
-        AuthenticationRepository.getUserAttributes((e, userInfoResult) -> {
-            userAttributes.postValue(userInfoResult);
-        });
-        identityId.postValue(AuthenticationRepository.getIdentityId());
-        AuthenticationRepository.getUsername((e, usernameResult) -> {
-            username.postValue(usernameResult);
-        });
-    }
-
-    private void initializeValues() {
-        try {
-            this.tokens.postValue(AuthenticationRepository.getTokens());
-            this.userAttributes.postValue(AuthenticationRepository.getUserAttributes());
-            this.identityId.postValue(AuthenticationRepository.getIdentityId());
-            this.username.postValue(AuthenticationRepository.getUsername());
-        } catch (Exception e) {
-            ErrorRepository.captureException(e);
-        }
-    }
-
-    public void awaitInitialization() {
-        try {
-            hasInitializedLatch.await();
-        } catch (InterruptedException e) {
-            ErrorRepository.captureException(e);
-        }
-    }
-
-    public void awaitInitialization(ThreadPoolExecutor executor, io.literal.lib.Callback<InterruptedException, Void> callback) {
-        executor.execute(() -> {
-            try {
-                hasInitializedLatch.await();
-                callback.invoke(null, null);
-            } catch (InterruptedException e) {
-                callback.invoke(e, null);
+                initializationCallbacks.forEach(cb -> cb.invoke(e, null));
+                initializationCallbacks = null;
+                hasInitialized = true;
+                AWSMobileClient.getInstance().addUserStateListener(userStateListener);
             }
         });
     }
 
-    public void signInGoogle(Activity activity, AuthenticationRepository.Callback<Void> callback) {
+    private void handleUserStateDetails(UserStateDetails userStateDetails, io.literal.lib.Callback<Exception, User> callback) {
+        if (userStateDetails.getUserState().equals(UserState.SIGNED_IN)) {
+            String identityId = AuthenticationRepository.getIdentityId();
+            final String[] username = new String[1];
+            final Map<String, String>[] userAttributes = new Map[1];
+            final Tokens[] tokens = new Tokens[1];
+
+            ManyCallback<Exception, Boolean> manyCallback = new ManyCallback<>(3, (e, _void) -> {
+                String aliasedUsername = username[0] != null && userAttributes[0] != null
+                    ? username[0].startsWith("Google") ? username[0] : userAttributes[0].get("sub")
+                        : null;
+
+                User inst = new User(
+                        userStateDetails.getUserState(),
+                        tokens[0],
+                        aliasedUsername,
+                        identityId,
+                        userAttributes[0]
+                );
+                user.postValue(inst);
+                callback.invoke(e, inst);
+            });
+            AuthenticationRepository.getUsername((e, data) -> {
+                username[0] = data;
+                manyCallback.getCallback(0).invoke(null, true);
+            });
+            AuthenticationRepository.getUserAttributes((e, data) -> {
+                userAttributes[0] = data;
+                manyCallback.getCallback(1).invoke(null, true);
+            });
+            AuthenticationRepository.getTokens((e, data) -> {
+                tokens[0] = data;
+                manyCallback.getCallback(2).invoke(null, true);
+            });
+        } else {
+            User inst = new User(userStateDetails.getUserState());
+            user.postValue(inst);
+            callback.invoke(null, inst);
+        }
+    }
+
+    public MutableLiveData<User> getUser() {
+        return user;
+    }
+
+    public void signInGoogle(Activity activity, io.literal.lib.Callback<Exception, User> callback) {
+        AWSMobileClient.getInstance().removeUserStateListener(userStateListener);
         AuthenticationRepository.signInGoogle(activity, (e, userStateDetails) -> {
             try {
                 if (e != null) {
                     callback.invoke(e, null);
                     return;
                 }
-
-                this.userStateDetails.postValue(userStateDetails);
-                initializeValues();
-
-                callback.invoke(null, null);
+                handleUserStateDetails(userStateDetails, callback);
             } catch (Exception getTokensException) {
                 callback.invoke(getTokensException, null);
+            } finally {
+                AWSMobileClient.getInstance().addUserStateListener(userStateListener);
             }
         });
     }
 
-    public void signUp(String email, String password, AuthenticationRepository.Callback<Void> callback) {
+    public void signUp(String email, String password, io.literal.lib.Callback<Exception, User> callback) {
+        AWSMobileClient.getInstance().removeUserStateListener(userStateListener);
         AuthenticationRepository.signUp(email, password, (e, userStateDetails) -> {
             try {
                 if (e != null) {
@@ -183,27 +141,24 @@ public class AuthenticationViewModel extends ViewModel {
                     return;
                 }
 
-                this.userStateDetails.postValue(userStateDetails);
-                initializeValues();
-
-                callback.invoke(null, null);
+                handleUserStateDetails(userStateDetails, callback);
             } catch (Exception getTokensException) {
                 callback.invoke(getTokensException, null);
+            } finally {
+                AWSMobileClient.getInstance().addUserStateListener(userStateListener);
             }
         });
     }
 
-    public void signIn(String email, String password, io.literal.lib.Callback<Exception, Void> callback) {
+    public void signIn(String email, String password, io.literal.lib.Callback<Exception, User> callback) {
+        AWSMobileClient.getInstance().removeUserStateListener(userStateListener);
         AuthenticationRepository.signIn(email, password, (e, userStateDetails) -> {
             if (e != null) {
                 callback.invoke(e, null);
-                return;
+            } else {
+                handleUserStateDetails(userStateDetails, callback);
             }
-
-            this.userStateDetails.postValue(userStateDetails);
-            initializeValues();
-
-            callback.invoke(null, null);
+            AWSMobileClient.getInstance().addUserStateListener(userStateListener);
         });
     }
 }

@@ -415,7 +415,7 @@ public class SourceWebView extends Fragment {
                     ArchiveRepository.getLocalDir(getContext()).getAbsolutePath() + "/" + UUID.randomUUID().toString() + ".mhtml",
                     false,
                     (filePath) -> {
-                        String creatorUsername = authenticationViewModel.getUsername().getValue();
+                        String creatorUsername = authenticationViewModel.getUser().getValue().getUsername();
                         Annotation annotation = sourceWebViewViewModel.createAnnotation(value, creatorUsername, false);
 
                         TimeState timeState = new TimeState(
@@ -595,7 +595,7 @@ public class SourceWebView extends Fragment {
                         annotation.getModified(),
                         annotation.getId()
                 );
-                String username = authenticationViewModel.getUsername().getValue();
+                String username = authenticationViewModel.getUser().getValue().getUsername();
                 if (username == null) {
                     ErrorRepository.captureException(new Exception("Expected username, but found none"));
                     return;
@@ -704,7 +704,7 @@ public class SourceWebView extends Fragment {
             AnnotationRepository.patchAnnotationMutation(
                     getContext(),
                     PatchAnnotationInput.builder()
-                            .creatorUsername(authenticationViewModel.getUsername().getValue())
+                            .creatorUsername(authenticationViewModel.getUser().getValue().getUsername())
                             .id(newAnnotation.getId())
                             .operations(operations)
                             .build(),
@@ -806,25 +806,22 @@ public class SourceWebView extends Fragment {
 
                         if (cachedURL.isPresent()) {
                             String finalExternalTargetUri = externalTargetUri;
-                            authenticationViewModel.awaitInitialization(
-                                    ((MainApplication) getActivity().getApplication()).getThreadPoolExecutor(),
-                                    (e, aVoid) -> getActivity().runOnUiThread(() -> {
-                                        try {
-                                            onTargetUrl.invoke(
-                                                    null,
-                                                    cachedURL.get(),
-                                                    finalExternalTargetUri != null
-                                                            ? new DomainMetadata(
-                                                            new URL(cachedURL.get()),
-                                                            new URL(finalExternalTargetUri),
-                                                            null)
-                                                            : null
-                                            );
-                                        } catch (MalformedURLException _e) {
-                                            onTargetUrl.invoke(null, cachedURL.get(), null);
-                                        }
-                                    })
-                            );
+                            authenticationViewModel.initialize(getActivity(), (e, user) -> getActivity().runOnUiThread(() -> {
+                                try {
+                                    onTargetUrl.invoke(
+                                            null,
+                                            cachedURL.get(),
+                                            finalExternalTargetUri != null
+                                                    ? new DomainMetadata(
+                                                    new URL(cachedURL.get()),
+                                                    new URL(finalExternalTargetUri),
+                                                    null)
+                                                    : null
+                                    );
+                                } catch (MalformedURLException _e) {
+                                    onTargetUrl.invoke(null, cachedURL.get(), null);
+                                }
+                            }));
                             return;
                         }
 
@@ -950,7 +947,7 @@ public class SourceWebView extends Fragment {
             AnnotationRepository.deleteAnnotationMutation(
                     getContext(),
                     DeleteAnnotationInput.builder()
-                            .creatorUsername(authenticationViewModel.getUsername().getValue())
+                            .creatorUsername(authenticationViewModel.getUser().getValue().getUsername())
                             .id(annotationId)
                             .build(),
                     (e, _data) -> {
