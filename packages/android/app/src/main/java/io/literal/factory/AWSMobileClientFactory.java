@@ -61,16 +61,12 @@ public class AWSMobileClientFactory {
                 if (callback != null) {
                     callback.onError(e);
                 }
+                initializationLatch.countDown();
             }
         });
     }
 
     public static void initializeClient(Context context) { initializeClient(context, null); }
-
-    public static void initializeClientBlocking(Context context) throws InterruptedException {
-        initializeClient(context, null);
-        initializationLatch.await();
-    }
 
     public static CountDownLatch getInitializationLatch() { return initializationLatch; }
 

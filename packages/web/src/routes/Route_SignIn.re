@@ -58,7 +58,7 @@ let default = () => {
                  Webview.WebEvent.AuthSignInResult.decode,
                )
              ) {
-             | Some(Ok({error: None})) =>
+             | Some(Ok({error: None, tokens: Some(_)})) =>
                Webview.HubEvent.publish(~event="AUTH_SIGN_IN_RESULT", ())
              | Some(Ok({error: Some("SIGN_IN_FAILED_USER_NOT_FOUND")})) =>
                setIsAuthenticating(_ => false);
@@ -67,6 +67,7 @@ let default = () => {
                setIsAuthenticating(_ => false);
                setAuthenticationError(_ => Some(UserNotAuthorized));
              | Some(Ok({error: Some(_)}))
+             | Some(Ok({tokens: None}))
              | Some(Error(_))
              | None =>
                setIsAuthenticating(_ => false);

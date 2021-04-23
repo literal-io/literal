@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -19,6 +20,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
+import com.amazonaws.mobile.client.UserState;
 import com.amazonaws.mobileconnectors.cognitoauth.AuthClient;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
@@ -35,6 +37,7 @@ import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
+import io.literal.model.User;
 import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.ToastRepository;
@@ -57,47 +60,57 @@ public class MainActivity extends InstrumentedActivity {
     private SourceWebViewViewModel sourceWebViewViewModelBottomSheet;
     private AuthenticationViewModel authenticationViewModel;
     private AppWebView appWebViewPrimaryFragment;
-    private final ActivityResultLauncher<Intent> createAnnotationFromSourceLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), MainActivity.this::handleCreateAnnotationFromSourceResult);
+    private final BroadcastReceiver annotationCreatedBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String annotationsJSON = intent.getStringExtra(AnnotationService.EXTRA_ANNOTATIONS);
+            if (appWebViewPrimaryFragment != null && annotationsJSON != null) {
+                try {
+                    JSONObject addCacheAnnotationsData = new JSONObject();
+                    addCacheAnnotationsData.put("annotations", annotationsJSON);
+                    appWebViewPrimaryFragment.postWebEvent(new WebEvent(
+                            WebEvent.TYPE_ADD_CACHE_ANNOTATIONS,
+                            UUID.randomUUID().toString(),
+                            addCacheAnnotationsData
+                    ));
+                } catch (JSONException ex) {
+                    ErrorRepository.captureException(ex);
+                }
+            }
+        }
+    };
     private SourceWebView sourceWebViewBottomSheetFragment;
     private AppWebView appWebViewBottomSheetFragment;
     private BottomSheetBehavior<FrameLayout> sourceWebViewBottomSheetBehavior;
+    private final ActivityResultLauncher<Intent> createAnnotationFromSourceLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), MainActivity.this::handleCreateAnnotationFromSourceResult);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
-
-        this.initializeViewModel();
-
-        if (savedInstanceState == null) {
-            authenticationViewModel.awaitInitialization(
-                    ((MainApplication) getApplication()).getThreadPoolExecutor(),
-                    (e, aVoid) -> runOnUiThread(() -> {
-                        String initialUrl;
-                        String username = authenticationViewModel.getUsername().getValue();
-                        String defaultUrl =
-                                username != null
-                                        ? WebRoutes.creatorsIdAnnotationCollectionId(username, Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT)
-                                        : WebRoutes.authenticate();
-                        Intent intent = getIntent();
-                        if (intent != null) {
-                            Uri uri = intent.getData();
-                            if (uri != null) {
-                                initialUrl = uri.toString();
-                            } else {
-                                initialUrl = defaultUrl;
-                            }
-                        } else {
-                            initialUrl = defaultUrl;
-                        }
-                        this.commitFragments(null, initialUrl);
-                    })
-            );
-        } else {
-            this.commitFragments(savedInstanceState, null);
-        }
-
+        this.initializeViewModel((e, user) -> runOnUiThread(() -> {
+            if (savedInstanceState == null) {
+                String initialUrl;
+                String defaultUrl =
+                        !user.isSignedOut()
+                                ? WebRoutes.creatorsIdAnnotationCollectionId(user.getUsername(), Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT)
+                                : WebRoutes.authenticate();
+                Intent intent = getIntent();
+                if (intent != null) {
+                    Uri uri = intent.getData();
+                    if (uri != null) {
+                        initialUrl = uri.toString();
+                    } else {
+                        initialUrl = defaultUrl;
+                    }
+                } else {
+                    initialUrl = defaultUrl;
+                }
+                this.commitFragments(null, initialUrl, user);
+            } else {
+                this.commitFragments(savedInstanceState, null, user);
+            }
+        }));
         LocalBroadcastManager.getInstance(getBaseContext()).registerReceiver(
                 annotationCreatedBroadcastReceiver,
                 new IntentFilter(AnnotationService.ACTION_BROADCAST_CREATED_ANNOTATIONS)
@@ -118,19 +131,19 @@ public class MainActivity extends InstrumentedActivity {
         LocalBroadcastManager.getInstance(getBaseContext()).unregisterReceiver(annotationCreatedBroadcastReceiver);
     }
 
-    private void initializeViewModel() {
+    private void initializeViewModel(Callback<Exception, User> onAuthenticationViewModelInitialized) {
         authenticationViewModel = new ViewModelProvider(this).get(AuthenticationViewModel.class);
         authenticationViewModel.initialize(
-                ((MainApplication) getApplication()).getThreadPoolExecutor(),
-                this
+                this,
+                onAuthenticationViewModelInitialized
         );
-        authenticationViewModel.getUsername().observe(this, username -> {
+        authenticationViewModel.getUser().observe(this, user -> {
             if (appWebViewBottomSheetFragment == null) {
                 return;
             }
 
             String paramInitialUrl = appWebViewBottomSheetFragment.getArguments().getString(AppWebView.PARAM_INITIAL_URL);
-            String newParamInitialUrl = WebRoutes.creatorsIdWebview(username);
+            String newParamInitialUrl = WebRoutes.creatorsIdWebview(user.getUsername());
             if (!paramInitialUrl.equals(newParamInitialUrl)) {
                 appWebViewBottomSheetFragment = AppWebView.newInstance(newParamInitialUrl, APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME);
                 getSupportFragmentManager()
@@ -212,7 +225,7 @@ public class MainActivity extends InstrumentedActivity {
         });
     }
 
-    private void commitFragments(Bundle savedInstanceState, String initialUrl) {
+    private void commitFragments(Bundle savedInstanceState, String initialUrl, User user) {
         if (savedInstanceState != null) {
             appWebViewPrimaryFragment = (AppWebView) getSupportFragmentManager().getFragment(savedInstanceState, APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME);
             appWebViewBottomSheetFragment = (AppWebView) getSupportFragmentManager().getFragment(savedInstanceState, APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME);
@@ -231,7 +244,7 @@ public class MainActivity extends InstrumentedActivity {
         }
         if (appWebViewBottomSheetFragment == null) {
             appWebViewBottomSheetFragment = AppWebView.newInstance(
-                    WebRoutes.creatorsIdWebview(authenticationViewModel.getUsername().getValue()),
+                    WebRoutes.creatorsIdWebview(user.getUsername()),
                     APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME
             );
         }
@@ -261,7 +274,6 @@ public class MainActivity extends InstrumentedActivity {
                 .add(R.id.app_web_view_bottom_sheet_fragment_container, appWebViewBottomSheetFragment)
                 .commit();
     }
-
 
     private void handleCreateAnnotationFromSource(String sourceUrl) {
         Intent intent = new Intent(this, ShareTargetHandler.class);
@@ -370,26 +382,6 @@ public class MainActivity extends InstrumentedActivity {
         }
         super.onBackPressed();
     }
-
-    private final BroadcastReceiver annotationCreatedBroadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String annotationsJSON = intent.getStringExtra(AnnotationService.EXTRA_ANNOTATIONS);
-            if (appWebViewPrimaryFragment != null && annotationsJSON != null) {
-                try {
-                    JSONObject addCacheAnnotationsData = new JSONObject();
-                    addCacheAnnotationsData.put("annotations", annotationsJSON);
-                    appWebViewPrimaryFragment.postWebEvent(new WebEvent(
-                            WebEvent.TYPE_ADD_CACHE_ANNOTATIONS,
-                            UUID.randomUUID().toString(),
-                            addCacheAnnotationsData
-                    ));
-                } catch (JSONException ex) {
-                    ErrorRepository.captureException(ex);
-                }
-            }
-        }
-    };
 
     private class SourceWebViewBottomSheetCallback extends BottomSheetBehavior.BottomSheetCallback {
 

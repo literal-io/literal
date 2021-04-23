@@ -5,8 +5,10 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.os.NetworkOnMainThreadException;
 import android.util.Log;
 
+import com.amazonaws.auth.AwsChunkedEncodingInputStream;
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.HostedUIOptions;
@@ -25,35 +27,36 @@ import io.literal.lib.Crypto;
 
 public class AuthenticationRepository {
 
-    public static Tokens getTokens() throws Exception {
-        return AWSMobileClient.getInstance().getTokens();
-    }
-
     public static void getTokens(Callback<Tokens> callback) {
-        AWSMobileClient.getInstance().getTokens(new com.amazonaws.mobile.client.Callback<Tokens>() {
-            @Override
-            public void onResult(Tokens result) {
-                callback.invoke(null, result);
-            }
+        try {
+            AWSMobileClient.getInstance().getTokens(new com.amazonaws.mobile.client.Callback<Tokens>() {
+                @Override
+                public void onResult(Tokens result) {
+                    callback.invoke(null, result);
+                }
 
-            @Override
-            public void onError(Exception e) {
-                callback.invoke(e, null);
-            }
-        });
+                @Override
+                public void onError(Exception e) {
+                    callback.invoke(e, null);
+                }
+            });
+        } catch (Exception e) {
+            callback.invoke(e, null);
+        }
     }
 
-    public static Map<String, String> getUserAttributes() throws Exception {
-        return AWSMobileClient.getInstance().getUserAttributes();
-    }
-
-    public static String getUsername() throws Exception {
-        Map<String, String> userAttributes = AWSMobileClient.getInstance().getUserAttributes();
-        String username = AWSMobileClient.getInstance().getUsername();
-        if (username == null) {
+    public static String getUsername() {
+        try {
+            Map<String, String> userAttributes = AWSMobileClient.getInstance().getUserAttributes();
+            String username = AWSMobileClient.getInstance().getUsername();
+            if (username == null) {
+                return null;
+            }
+            return username.startsWith("Google") ? username : userAttributes.get("sub");
+        } catch (Exception e) {
+            ErrorRepository.captureException(e);
             return null;
         }
-        return username.startsWith("Google") ? username : userAttributes.get("sub");
     }
 
     public static void getUsername(Callback<String> callback) {
@@ -63,6 +66,7 @@ public class AuthenticationRepository {
                 String username = AWSMobileClient.getInstance().getUsername();
                 if (username == null) {
                     callback.invoke(null, null);
+                    return;
                 }
                 callback.invoke(null, username.startsWith("Google") ? username : result.get("sub"));
             }

@@ -37,6 +37,7 @@ import io.literal.R;
 import io.literal.lib.ContentResolverLib;
 import io.literal.lib.FileActivityResultCallback;
 import io.literal.lib.WebEvent;
+import io.literal.model.User;
 import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.ui.MainApplication;
@@ -58,8 +59,8 @@ public class AppWebView extends Fragment {
     private io.literal.ui.view.AppWebView appWebView;
     private final WebEvent.Callback webEventCallback = new WebEvent.Callback() {
 
-        private JSONObject getTokens() {
-            Tokens tokens = authenticationViewModel.getTokens().getValue();
+        private JSONObject getTokens(User user) {
+            Tokens tokens = user.getTokens();
             JSONObject result = new JSONObject();
             try {
                 result.put("idToken", tokens.getIdToken().getTokenString());
@@ -74,15 +75,15 @@ public class AppWebView extends Fragment {
         }
 
         private void handleSignUp(io.literal.ui.view.AppWebView view, String email, String password) {
-            authenticationViewModel.signUp(email, password, (e, _void) -> {
+            authenticationViewModel.signUp(email, password, (e, user) -> {
                 if (e != null) {
                     ErrorRepository.captureException(e);
                 }
 
                 try {
                     JSONObject result = new JSONObject();
-                    if (e == null) {
-                        result.put("tokens", getTokens());
+                    if (e == null && !user.isSignedOut()) {
+                        result.put("tokens", getTokens(user));
                     } else {
                         String errorCode;
                         if (e instanceof UsernameExistsException) {
@@ -105,7 +106,7 @@ public class AppWebView extends Fragment {
         }
 
         private void handleSignInGoogle(io.literal.ui.view.AppWebView view) {
-            authenticationViewModel.signInGoogle(getActivity(), (e, _void) -> {
+            authenticationViewModel.signInGoogle(getActivity(), (e, user) -> {
                 if (e != null) {
                     ErrorRepository.captureException(e);
                     return;
@@ -113,21 +114,21 @@ public class AppWebView extends Fragment {
 
                 getActivity().runOnUiThread(() -> {
                     view.postWebEvent(
-                            new WebEvent(WebEvent.TYPE_AUTH_SIGN_IN_GOOGLE_RESULT, UUID.randomUUID().toString(), getTokens())
+                            new WebEvent(WebEvent.TYPE_AUTH_SIGN_IN_GOOGLE_RESULT, UUID.randomUUID().toString(), getTokens(user))
                     );
                 });
             });
         }
         private void handleSignIn(io.literal.ui.view.AppWebView view, String email, String password) {
-            authenticationViewModel.signIn(email, password, (e, _void) -> {
+            authenticationViewModel.signIn(email, password, (e, user) -> {
                 if (e != null) {
                     ErrorRepository.captureException(e);
                 }
 
                 try {
                     JSONObject result = new JSONObject();
-                    if (e == null) {
-                        result.put("tokens", getTokens());
+                    if (e == null && !user.isSignedOut()) {
+                        result.put("tokens", getTokens(user));
                     } else {
                         String errorCode;
                         if (e instanceof UserNotFoundException) {
@@ -153,7 +154,8 @@ public class AppWebView extends Fragment {
 
 
         private void handleGetTokens(io.literal.ui.view.AppWebView view) {
-            Tokens tokens = authenticationViewModel.getTokens().getValue();
+            User user = authenticationViewModel.getUser().getValue();
+            Tokens tokens = user.getTokens();
             JSONObject result = new JSONObject();
             try {
                 result.put("idToken", tokens.getIdToken().getTokenString());
@@ -175,13 +177,13 @@ public class AppWebView extends Fragment {
             }
 
             ((MainApplication) activity.getApplication()).getThreadPoolExecutor().execute(() -> {
+                User user = authenticationViewModel.getUser().getValue();
                 try {
                     JSONObject result = new JSONObject();
-                    result.put("username", authenticationViewModel.getUsername().getValue());
-                    result.put("id", authenticationViewModel.getIdentityId().getValue());
-                    Map<String, String> userAttributes = authenticationViewModel.getUserAttributes().getValue();
+                    result.put("username", user.getUsername());
+                    result.put("id", user.getIdentityId());
+                    Map<String, String> userAttributes = user.getAttributes();
                     result.put("attributes", userAttributes != null ? new JSONObject(userAttributes) : null);
-                    Log.i("handleGetUserInfo", result.toString());
                     activity.runOnUiThread(() -> view.postWebEvent(
                             new WebEvent(WebEvent.TYPE_AUTH_GET_USER_INFO_RESULT, UUID.randomUUID().toString(), result)
                     ));
