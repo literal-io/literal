@@ -17,6 +17,12 @@
         <item name="popupMenuStyle">@style/ActionModeStyle</item>
     </style>
 
+    <style name="AppWebViewTheme" parent="AppTheme">
+        <item name="colorAccent">@color/colorTextLightPrimary</item>
+        <item name="actionModeStyle">@style/LightActionModeStyle</item>
+        <item name="popupMenuStyle">@style/LightActionModeStyle</item>
+    </style>
+
     <style name="SourceWebViewTitleTextAppearance" parent="@style/Base.TextAppearance.AppCompat.Title">
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/colorTextLightPrimary</item>
@@ -46,6 +52,21 @@
         <item name="subtitleTextStyle">@style/ActionMenuTextAppearance</item>
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/colorTextLightPrimary</item>
+        <item name="android:fontFamily">@font/roboto_mono</item>
+    </style>
+
+    <style name="LightActionMenuTextAppearance">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/colorPrimaryDark</item>
+        <item name="android:fontFamily">@font/roboto_mono</item>
+    </style>
+
+    <style name="LightActionModeStyle">
+        <item name="background">@color/colorTextLightPrimary</item>
+        <item name="titleTextStyle">@style/LightActionMenuTextAppearance</item>
+        <item name="subtitleTextStyle">@style/LightActionMenuTextAppearance</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/colorPrimaryDark</item>
         <item name="android:fontFamily">@font/roboto_mono</item>
     </style>
 </resources>
