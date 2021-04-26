@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import io.literal.factory.AWSMobileClientFactory;
+import io.literal.lib.Box;
 import io.literal.lib.ManyCallback;
 import io.literal.model.User;
 import io.literal.repository.AuthenticationRepository;
@@ -71,13 +72,37 @@ public class AuthenticationViewModel extends ViewModel {
     }
 
     private void handleUserStateDetails(UserStateDetails userStateDetails, io.literal.lib.Callback<Exception, User> callback) {
+
         if (userStateDetails.getUserState().equals(UserState.SIGNED_IN)) {
+            Box<Boolean> didReceiveSignedOutState = new Box(false);
+            UserStateListener userStateListener = new UserStateListener() {
+
+                @Override
+                public void onUserStateChanged(UserStateDetails details) {
+                    if (details.getUserState().equals(UserState.SIGNED_OUT_FEDERATED_TOKENS_INVALID) || details.getUserState().equals(UserState.SIGNED_OUT_USER_POOLS_TOKENS_INVALID) || details.getUserState().equals(UserState.SIGNED_OUT)) {
+                        didReceiveSignedOutState.set(true);
+                        User inst = new User(details.getUserState());
+                        user.postValue(inst);
+                        callback.invoke(null, inst);
+
+                        AWSMobileClient.getInstance().releaseSignInWait();
+                        AWSMobileClient.getInstance().removeUserStateListener(this);
+                    }
+                }
+            };
+            AWSMobileClient.getInstance().addUserStateListener(userStateListener);
             String identityId = AuthenticationRepository.getIdentityId();
             final String[] username = new String[1];
             final Map<String, String>[] userAttributes = new Map[1];
             final Tokens[] tokens = new Tokens[1];
 
             ManyCallback<Exception, Boolean> manyCallback = new ManyCallback<>(3, (e, _void) -> {
+                AWSMobileClient.getInstance().removeUserStateListener(userStateListener);
+                if (didReceiveSignedOutState.get()) {
+                    // userStateListener already received invalidation state
+                    return;
+                }
+
                 String aliasedUsername = username[0] != null && userAttributes[0] != null
                     ? username[0].startsWith("Google") ? username[0] : userAttributes[0].get("sub")
                         : null;

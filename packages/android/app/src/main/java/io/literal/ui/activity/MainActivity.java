@@ -231,6 +231,7 @@ public class MainActivity extends InstrumentedActivity {
             appWebViewBottomSheetFragment = (AppWebView) getSupportFragmentManager().getFragment(savedInstanceState, APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME);
             sourceWebViewBottomSheetFragment = (SourceWebView) getSupportFragmentManager().getFragment(savedInstanceState, SOURCE_WEB_VIEW_FRAGMENT_NAME);
         }
+
         if (appWebViewPrimaryFragment == null) {
             appWebViewPrimaryFragment = AppWebView.newInstance(initialUrl, APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME);
         }
