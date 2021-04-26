@@ -35,7 +35,6 @@ let make = () => {
       }
       classes={MaterialUi.IconButton.Classes.make(~root=cn(["p-0"]), ())}>
       <Svg
-        placeholderViewBox="0 0 24 24"
         className={cn(["w-8", "h-8", "pointer-events-none", "opacity-75"])}
         icon=Svg.close
       />

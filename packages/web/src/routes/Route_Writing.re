@@ -60,7 +60,6 @@ let default = (~items) =>
             <a>
               <Svg
                 icon=Svg.logo
-                placeholderViewBox="0 0 24 24"
                 className={Cn.fromList([
                   "pointer-events-none",
                   "w-12",

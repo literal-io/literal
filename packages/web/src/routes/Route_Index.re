@@ -23,7 +23,6 @@ module ArrowListItem = {
         ])}>
         <Svg
           icon=Svg.arrowRight
-          placeholderViewBox="0 0 32 32"
           className={cn(["pointer-events-none", "w-8", "h-8"])}
         />
         <div>
@@ -50,7 +49,6 @@ module Header = {
     <>
       <Svg
         icon=Svg.logo
-        placeholderViewBox="0 0 24 24"
         className={cn(["pointer-events-none", "w-12", "h-12", "block"])}
       />
       <h1
@@ -437,7 +435,6 @@ module Footer = {
               </div>
               <Svg
                 icon=Svg.arrowRight
-                placeholderViewBox="0 0 48 48"
                 className={cn([
                   "pointer-events-none",
                   "w-12",

@@ -54,7 +54,6 @@ let make = (~onCreateTag, ~autoFocus=false) => {
         ),
       "startAdornment":
         <Svg
-          placeholderViewBox="0 0 24 24"
           className={Cn.fromList([
             "pointer-events-none",
             "opacity-50",

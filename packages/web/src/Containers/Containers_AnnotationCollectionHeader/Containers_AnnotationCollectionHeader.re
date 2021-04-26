@@ -54,7 +54,6 @@ let make =
         (),
       )}>
       <Svg
-        placeholderViewBox="0 0 24 24"
         className={cn(["pointer-events-none", "opacity-75"])}
         style={ReactDOMRe.Style.make(~width="1.5rem", ~height="1.5rem", ())}
         icon=Svg.add
@@ -87,7 +86,6 @@ let make =
         (),
       )}>
       <Svg
-        placeholderViewBox="0 0 24 24"
         className={cn(["pointer-events-none", "opacity-75"])}
         style={ReactDOMRe.Style.make(~width="1.5rem", ~height="1.5rem", ())}
         icon=Svg.delete
@@ -110,7 +108,6 @@ let make =
         (),
       )}>
       <Svg
-        placeholderViewBox="0 0 24 24"
         className={cn(["pointer-events-none"])}
         style={ReactDOMRe.Style.make(~width="1.5rem", ~height="1.5rem", ())}
         icon=Svg.waves
@@ -178,7 +175,6 @@ let make =
                  "ml-6",
                ])}>
                <Svg
-                 placeholderViewBox="0 0 24 24"
                  className={Cn.fromList([
                    "pointer-events-none",
                    "opacity-75",

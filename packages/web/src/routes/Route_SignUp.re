@@ -112,7 +112,6 @@ let default = () => {
           (),
         )}>
         <Svg
-          placeholderViewBox="0 0 24 24"
           className={Cn.fromList([
             "w-5",
             "h-5",
@@ -151,7 +150,6 @@ let default = () => {
             "mb-4",
           ])}>
           <Svg
-            placeholderViewBox="0 0 24 24"
             className={Cn.fromList(["w-5", "h-5", "pointer-events-none"])}
             icon=Svg.errorOutline
           />

@@ -25,7 +25,6 @@ let make = (~icon, ~label, ~className=?, ~onClick=?, ~href=?) => {
       (),
     )}>
     <Svg
-      placeholderViewBox="0 0 24 24"
       className={Cn.fromList(["w-16", "h-16", "pointer-events-none"])}
       icon
     />

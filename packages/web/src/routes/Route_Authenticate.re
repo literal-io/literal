@@ -124,7 +124,6 @@ let default = () => {
           (),
         )}>
         <Svg
-          placeholderViewBox="0 0 24 24"
           className={Cn.fromList([
             "w-6",
             "h-6",
@@ -188,7 +187,6 @@ let default = () => {
       ])}>
       <Svg
         icon=Svg.logo
-        placeholderViewBox="0 0 24 24"
         className={cn(["pointer-events-none", "w-20", "h-20"])}
       />
     </div>

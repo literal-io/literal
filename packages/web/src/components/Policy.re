@@ -23,7 +23,6 @@ let make = (~html) =>
           <a>
             <Svg
               icon=Svg.logo
-              placeholderViewBox="0 0 24 24"
               className={cn(["pointer-events-none", "w-12", "h-12", "block"])}
             />
           </a>

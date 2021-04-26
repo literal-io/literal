@@ -16,7 +16,6 @@ let make = (~text) =>
     </p>
     <Svg
       icon=Svg.helpOutline
-      placeholderViewBox="0 0 24 24"
       className={Cn.fromList([
         "pointer-events-none",
         "w-6",

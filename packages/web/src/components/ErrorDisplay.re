@@ -45,7 +45,6 @@ let make = () => {
     <div className={Cn.fromList(["flex", "justify-center", "items-center"])}>
       <Svg
         icon=Svg.logo
-        placeholderViewBox="0 0 24 24"
         className={Cn.fromList(["pointer-events-none", "w-16", "h-16"])}
       />
     </div>

@@ -28,7 +28,6 @@ let make =
           (),
         )}>
         <Svg
-          placeholderViewBox="0 0 24 24"
           className={Cn.fromList(["pointer-events-none"])}
           style={ReactDOMRe.Style.make(
             ~width="1.75rem",
@@ -85,7 +84,6 @@ let make =
            )}
            icon={
              <Svg
-               placeholderViewBox="0 0 24 24"
                className={Cn.fromList(["pointer-events-none"])}
                style={ReactDOMRe.Style.make(
                  ~width="1.75rem",

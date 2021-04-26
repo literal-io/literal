@@ -257,7 +257,6 @@ module Empty = {
           "flex-1",
         ])}>
         <Svg
-          placeholderViewBox="0 0 24 24"
           className={Cn.fromList([
             "w-24",
             "h-24",
