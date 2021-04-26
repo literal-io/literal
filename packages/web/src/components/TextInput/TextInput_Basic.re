@@ -105,7 +105,7 @@ let make =
                 Cn.(
                   fromList([
                     "text-lightPrimary",
-                    "font-serif",
+                    "font-sans",
                     "text-base",
                     "leading-relaxed",
                     "box-decoration-break-clone",

@@ -16,6 +16,7 @@ type textualTarget = {
 [@decco]
 type externalTarget = {
   id: string,
+  hashId: option(string),
   language: option(string),
   processingLanguage: option(string),
   textDirection: option(string),
@@ -128,9 +129,11 @@ let makeExternalTarget =
       ~accessibility=?,
       ~rights=?,
       ~type_=?,
+      ~hashId=?,
       (),
     ) => {
   id,
+  hashId,
   language,
   processingLanguage,
   textDirection,

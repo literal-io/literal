@@ -7,16 +7,25 @@ let make = () => {
     ();
   };
 
-  <Header className={cn(["py-2", "mx-4"])}>
+  <Header
+    className={Cn.fromList([
+      "py-2",
+      "px-4",
+      "bg-darkAccent",
+      "border-b",
+      "border-dotted",
+      "border-lightDisabled",
+      "flex",
+      "flex-row",
+      "items-center"
+    ])}>
     <MaterialUi.IconButton
       size=`Small
       edge=MaterialUi.IconButton.Edge.start
       onClick={_ => {
         let _ =
-          Service_Analytics.(
-            track(Click({action: "close", label: None}))
-          );
-        handleClose()
+          Service_Analytics.(track(Click({action: "close", label: None})));
+        handleClose();
       }}
       _TouchRippleProps={
         "classes": {
@@ -31,5 +40,18 @@ let make = () => {
         icon=Svg.close
       />
     </MaterialUi.IconButton>
+    <h1
+      className={Cn.fromList([
+        "font-sans",
+        "italic",
+        "uppercase",
+        "text-lg",
+        "text-lightPrimary",
+        "font-bold",
+        "uppercase",
+        "ml-4",
+      ])}>
+      {React.string("Create Annotation")}
+    </h1>
   </Header>;
 };

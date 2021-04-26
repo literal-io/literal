@@ -10,6 +10,24 @@ module GetAnnotationFragment = [%graphql
           purpose
         }
       }
+      target {
+        ... on ExternalTarget {
+          __typename
+          externalTargetId: id
+          format
+        }
+        ... on SpecificTarget {
+          __typename
+          specificTargetId: id
+          source {
+            ... on ExternalTarget {
+              externalTargetId: id,
+              format
+              __typename
+            }
+          }
+        }
+      }
     }
   |}
 ];

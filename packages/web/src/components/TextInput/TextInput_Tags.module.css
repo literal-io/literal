@@ -1,7 +1,0 @@
-.underline {
-  padding: 4px 0 7px;
-}
-
-.underline:after {
-  border-bottom-color: rgba(255, 255, 255, .92) !important;
-}

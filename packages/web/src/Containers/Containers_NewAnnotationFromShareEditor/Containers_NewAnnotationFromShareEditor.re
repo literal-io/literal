@@ -342,12 +342,6 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
           icon=Svg.done_
         />
       </FloatingActionButton>
-      <TextInput_Tags
-        className={Cn.fromList(["px-2", "z-10", "bg-black"])}
-        onValueChange=handlePendingTagChange
-        onValueCommit=handlePendingTagCommit
-        value=pendingTagValue
-      />
     </div>
   </div>;
 };

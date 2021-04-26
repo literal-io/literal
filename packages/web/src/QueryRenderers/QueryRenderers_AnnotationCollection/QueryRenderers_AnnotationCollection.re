@@ -2,11 +2,39 @@ open QueryRenderers_AnnotationCollection_GraphQL;
 
 module Loading = {
   [@react.component]
-  let make = () => {
+  let make = (~annotationCollectionIdComponent, ~currentUser=?) => {
+    let annotationCollectionFragment =
+      if (annotationCollectionIdComponent
+          == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel) {
+        Some({
+          "label": "recent",
+          "id": annotationCollectionIdComponent,
+          "type_": [|`TAG_COLLECTION|],
+        });
+      } else {
+        currentUser
+        ->Belt.Option.flatMap(currentUser =>
+            Lib_GraphQL_AnnotationCollection.Apollo.readCache(
+              ~id=
+                Lib_GraphQL.AnnotationCollection.makeIdFromComponent(
+                  ~creatorUsername=
+                    currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                  ~annotationCollectionIdComponent,
+                  (),
+                ),
+              ~fragment=Containers_AnnotationCollectionHeader_GraphQL.cacheAnnotationCollectionFragment,
+            )
+          )
+        ->Belt.Option.map(result =>
+            Containers_AnnotationCollectionHeader_GraphQL.GetAnnotationCollectionFragment.AnnotationCollectionHeader_AnnotationCollection.parse(
+              result,
+            )
+          );
+      };
+
     <div className={Cn.fromList(["w-full", "h-full", "bg-black"])}>
-      <Containers_AnnotationCollectionHeader />
+      <Containers_AnnotationCollectionHeader ?annotationCollectionFragment />
       <TextInput_Loading className={Cn.fromList(["px-6", "pb-4", "pt-16"])} />
-      <Containers_NewTagInput />
     </div>;
   };
 };
@@ -19,6 +47,7 @@ module Data = {
         ~annotations,
         ~initialAnnotationId,
         ~onAnnotationIdChange,
+        ~onOpenCollectionsDrawer,
         ~onFetchMore,
         ~currentUser,
       ) => {
@@ -80,7 +109,7 @@ module Data = {
         ->Belt.Option.flatMap(json =>
             switch (Lib_WebView_Model_Annotation.decode(json)) {
             | Ok(r) => Some(r)
-            | Error(e) => None
+            | Error(_) => None
             }
           )
         ->Belt.Option.forEach(annotation =>
@@ -156,39 +185,38 @@ module Data = {
       setActiveIdx(_ => idx);
     };
 
-    <div
-      className={Cn.fromList([
-        "w-full",
-        "h-full",
-        "bg-black",
-        "overflow-y-scroll",
-      ])}>
-      <Containers_AnnotationCollectionHeader
-        annotationFragment={activeAnnotation##annotationCollectionHeader}
-        annotationCollectionFragment=
-          {annotationCollection##annotationCollectionHeader}
-        currentUser
-      />
-      <ScrollSnapList.Container
-        direction=ScrollSnapList.Horizontal
-        onIdxChange=handleIdxChange
-        initialIdx=activeIdx>
-        {annotations->Belt.Array.map(annotation =>
-           <ScrollSnapList.Item
-             key={annotation##id} direction=ScrollSnapList.Horizontal>
-             <Containers_AnnotationEditor
-               isVisible={annotation##id == activeAnnotation##id}
-               annotationFragment={annotation##editorAnnotationFragment}
-               currentUser
-             />
-           </ScrollSnapList.Item>
-         )}
-      </ScrollSnapList.Container>
-      <Containers_NewTagInput
-        currentUser
-        annotationFragment={activeAnnotation##newTagInputFragment}
-      />
-    </div>;
+    <>
+      <div
+        className={Cn.fromList([
+          "w-full",
+          "h-full",
+          "bg-black",
+          "overflow-y-scroll",
+        ])}>
+        <Containers_AnnotationCollectionHeader
+          onCollectionsButtonClick=onOpenCollectionsDrawer
+          annotationFragment={activeAnnotation##annotationCollectionHeader}
+          annotationCollectionFragment=
+            {annotationCollection##annotationCollectionHeader}
+          currentUser
+        />
+        <ScrollSnapList.Container
+          direction=ScrollSnapList.Horizontal
+          onIdxChange=handleIdxChange
+          initialIdx=activeIdx>
+          {annotations->Belt.Array.map(annotation =>
+             <ScrollSnapList.Item
+               key={annotation##id} direction=ScrollSnapList.Horizontal>
+               <Containers_AnnotationEditor
+                 isVisible={annotation##id == activeAnnotation##id}
+                 annotationFragment={annotation##editorAnnotationFragment}
+                 currentUser
+               />
+             </ScrollSnapList.Item>
+           )}
+        </ScrollSnapList.Container>
+      </div>
+    </>;
   };
 };
 
@@ -210,7 +238,7 @@ module Error = {
 
 module Empty = {
   [@react.component]
-  let make = (~currentUser) =>
+  let make = () =>
     <div
       className={Cn.fromList([
         "w-full",
@@ -219,7 +247,7 @@ module Empty = {
         "flex",
         "flex-col",
       ])}>
-      <Containers_AnnotationCollectionHeader hideDelete=true currentUser />
+      <Containers_AnnotationCollectionHeader hideDelete=true />
       <div
         className={Cn.fromList([
           "flex",
@@ -250,6 +278,7 @@ module Empty = {
 let make =
     (
       ~annotationCollectionIdComponent,
+      ~onOpenCollectionsDrawer,
       ~onAnnotationIdChange,
       ~authentication: Hooks_CurrentUserInfo_Types.state,
       ~initialAnnotationId,
@@ -312,7 +341,7 @@ let make =
           );
         let updateQuery = (prev, next: ApolloHooksQuery.updateQueryOptions) => {
           let prevAnnotationPageItems =
-            GetAnnotationCollection.unsafeToCache(prev)##getAnnotationCollection
+            GetAnnotationCollection.Cache.unsafeToCache(prev)##getAnnotationCollection
             ->Js.Null.toOption
             ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
             ->Belt.Option.flatMap(d => d##items->Js.Null.toOption)
@@ -322,7 +351,7 @@ let make =
             next
             ->ApolloHooksQuery.fetchMoreResultGet
             ->Belt.Option.flatMap(d =>
-                GetAnnotationCollection.unsafeToCache(d)##getAnnotationCollection
+                GetAnnotationCollection.Cache.unsafeToCache(d)##getAnnotationCollection
                 ->Js.Null.toOption
               )
             ->Belt.Option.flatMap(d => d##first->Js.Null.toOption)
@@ -342,12 +371,12 @@ let make =
             ->Js.Null.return;
 
           prev
-          ->GetAnnotationCollection.unsafeToCache
+          ->GetAnnotationCollection.Cache.unsafeToCache
           ->GetAnnotationCollection.setAnnotationPageItems(
               newAnnotationPageItems,
             )
           ->GetAnnotationCollection.setNextToken(newAnnotationNextToken)
-          ->GetAnnotationCollection.unsafeCacheToJson;
+          ->GetAnnotationCollection.Cache.unsafeCacheToJson;
         };
         let _ = query.fetchMore(~variables, ~updateQuery, ());
         ();
@@ -359,12 +388,14 @@ let make =
   switch (query, rehydrated, authentication) {
   | (_, false, _)
   | (_, _, Loading)
-  | ({data: None, loading: true}, _, _) => <Loading />
+  | ({data: None, loading: true}, _, _) =>
+    <Loading annotationCollectionIdComponent />
   | ({data: Some(data), loading}, true, Authenticated(currentUser)) =>
     let isRecentAnnotationCollection =
       annotationCollectionIdComponent
       == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent;
-    switch (
+    let annotationCollection = data##getAnnotationCollection;
+    let annotations =
       data##getAnnotationCollection
       ->Belt.Option.flatMap(annotationCollection =>
           annotationCollection##first
@@ -373,51 +404,69 @@ let make =
               annotationPageItemConnection##items
             )
           ->Belt.Option.map(annotationPageItems => {
-              let annotations =
-                annotationPageItems->Belt.Array.keepMap(annotationPageItem =>
-                  annotationPageItem->Belt.Option.map(annotationPageItem =>
-                    annotationPageItem##annotation
-                  )
-                );
-              (annotationCollection, annotations);
+              annotationPageItems->Belt.Array.keepMap(annotationPageItem =>
+                annotationPageItem->Belt.Option.map(annotationPageItem =>
+                  annotationPageItem##annotation
+                )
+              )
             })
-        ),
-      data##getAgent,
-    ) {
-    | (None, _) when loading => <Loading />
-    | (None, None) when isRecentAnnotationCollection =>
+        );
+    let agent = data##getAgent;
+    switch (annotationCollection, annotations, agent) {
+    | (None, _, _) when loading =>
+      <Loading annotationCollectionIdComponent currentUser />
+    | (Some(annotationCollection), _, _)
+        when
+          loading
+          && Lib_GraphQL.AnnotationCollection.idComponent(
+               annotationCollection##id,
+             )
+          != annotationCollectionIdComponent =>
+      <Loading
+        annotationCollectionIdComponent
+        currentUser=?{
+          switch (authentication) {
+          | Authenticated(currentUser) => Some(currentUser)
+          | _ => None
+          }
+        }
+      />
+    | (None, None, None) when isRecentAnnotationCollection =>
       <Containers_Onboarding currentUser onAnnotationIdChange />
-    | (None, Some(_)) when isRecentAnnotationCollection =>
-      <Empty currentUser />
-    | (None, _) =>
+    | (None, None, Some(_)) when isRecentAnnotationCollection => <Empty />
+    | (None, None, _)
+    | (Some(_), None, _)
+    | (None, Some(_), _) =>
       <Redirect
         staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath
         path={Routes.CreatorsIdAnnotationCollectionsId.path(
           ~creatorUsername=currentUser.username,
           ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
         )}>
-        <Loading />
+        <Loading annotationCollectionIdComponent />
       </Redirect>
-    | (Some((_, annotations)), None)
+    | (Some(_), Some(annotations), None)
         when
           isRecentAnnotationCollection && Js.Array2.length(annotations) == 0 =>
       <Containers_Onboarding currentUser onAnnotationIdChange />
-    | (Some((_, annotations)), Some(_))
+    | (Some(_), Some(annotations), Some(_))
         when
           isRecentAnnotationCollection && Js.Array2.length(annotations) == 0 =>
-      <Empty currentUser />
-    | (Some((_, annotations)), _) when Js.Array2.length(annotations) == 0 =>
+      <Empty />
+    | (Some(_), Some(annotations), _)
+        when Js.Array2.length(annotations) == 0 =>
       <Redirect
         staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath
         path={Routes.CreatorsIdAnnotationCollectionsId.path(
           ~creatorUsername=currentUser.username,
           ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
         )}>
-        <Loading />
+        <Loading annotationCollectionIdComponent />
       </Redirect>
-    | (Some((annotationCollection, annotations)), _) =>
+    | (Some(annotationCollection), Some(annotations), _) =>
       <Data
         onAnnotationIdChange
+        onOpenCollectionsDrawer
         onFetchMore=handleFetchMore
         initialAnnotationId
         currentUser
@@ -432,7 +481,7 @@ let make =
     <Redirect
       staticPath={Routes.Authenticate.path()}
       path={Routes.Authenticate.path()}>
-      <Loading />
+      <Loading annotationCollectionIdComponent />
     </Redirect>
   };
 };

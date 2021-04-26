@@ -1,5 +1,3 @@
-let styles = [%raw "require('./TextInput_Loading.module.css')"];
-
 open Styles;
 
 [@react.component]
@@ -13,17 +11,35 @@ let make = (~className=?, ~lineCount=8) => {
         );
     });
 
-  <div ?className>
-    {Belt.Array.make(lineCount, 0)
-     ->Belt.Array.mapWithIndex((idx, _) => {
-         <MaterialUiLab.Skeleton
-           key={string_of_int(idx)}
-           variant=`text
-           classes={
-             "root": cn([styles##skeleton, "mb-1", "h-8", margins[idx]]),
-           }
-         />
-       })
-     ->React.array}
+  <div
+    className={Cn.fromList(["mx-4"])}
+    style={ReactDOM.Style.make(~paddingTop="4.5rem", ())}>
+    <div className={Cn.fromList(["p-4", "bg-darkAccent", "rounded-t-sm"])}>
+      {Belt.Array.make(lineCount, 0)
+       ->Belt.Array.mapWithIndex((idx, _) => {
+           <Skeleton
+             key={string_of_int(idx)}
+             variant=`text
+             className={Cn.fromList(["mb-1", "h-6", margins[idx]])}
+           />
+         })
+       ->React.array}
+    </div>
+    <div
+      className={Cn.fromList([
+        "flex",
+        "flex-row",
+        "border-dotted",
+        "border-t",
+        "border-lightDisabled",
+        "p-4",
+        "bg-darkAccent",
+        "rounded-b-sm"
+      ])}>
+      <Skeleton
+        variant=`text
+        className={Cn.fromList(["h-6", "w-40"])}
+      />
+    </div>
   </div>;
 };

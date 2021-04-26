@@ -176,8 +176,7 @@ module Apollo = {
         )
       );
 
-  let getAnnotationCollectionOperations =
-      (~annotation, ~operations): array(Operation.t(string, string, string)) =>
+  let getAnnotationCollectionOperations = (~annotation, ~operations) =>
     annotation
     ->Js.Json.decodeObject
     ->Belt.Option.flatMap(dict => dict->Js.Dict.get("body"))
@@ -245,9 +244,11 @@ module Apollo = {
                       }
                     )
                   ->Belt.Option.getWithDefault(false)) {
-                let id =
-                  body##textualBody->Belt.Option.getExn->(body => body##id);
-                Operation.(Some(Add(id)));
+                let (id, value) =
+                  body##textualBody
+                  ->Belt.Option.getExn
+                  ->(body => (body##id, body##value));
+                Operation.(Some(Add((id, value))));
               } else {
                 None;
               }
@@ -455,11 +456,13 @@ module Apollo = {
       )
       ->Belt.Array.forEach(op =>
           switch (op) {
-          | Add(annotationCollectionId) =>
+          | Add((annotationCollectionId, annotationCollectionLabel)) =>
             Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationToCollection(
               ~annotation=updatedAnnotation,
               ~currentUser,
               ~annotationCollectionId,
+              ~annotationCollectionLabel,
+              ~annotationCollectionType="TAG_COLLECTION",
               ~onCreateAnnotationCollection,
             )
           | Remove(annotationCollectionId) =>
