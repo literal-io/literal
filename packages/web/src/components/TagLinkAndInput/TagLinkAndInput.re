@@ -84,6 +84,7 @@ module TextField = {
         "onKeyUp": handleKeyUp,
         "onKeyDown": handleKeyDown,
         "onBlur": handleBlur,
+        "enterKeyHint": "done"
       },
     );
   };

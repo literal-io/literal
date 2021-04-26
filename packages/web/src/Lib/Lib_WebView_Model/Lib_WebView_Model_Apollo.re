@@ -85,6 +85,9 @@ let writeToCache = (~annotation, ~currentUser) => {
   let cacheAnnotation =
     annotation->Lib_WebView_Model_Annotation.encode->unsafeAsCache;
 
+  // FIXME: handle AnnotationCollectionsDrawer query, need to diff against cache
+  // to determine what values have changed
+
   annotation.body
   ->Belt.Option.getWithDefault([||])
   ->Belt.Array.keepMap(body =>
@@ -110,91 +113,197 @@ let writeToCache = (~annotation, ~currentUser) => {
 };
 
 let addManyToCache = (~annotations, ~currentUser) => {
-  let textualBodyAnnotationTuples =
-    annotations
-    ->Belt.Array.map(annotation => {
-        let cacheAnnotation =
-          annotation->Lib_WebView_Model_Annotation.encode->unsafeAsCache;
+  let _ = {
+    let textualBodyAnnotationTuples =
+      annotations
+      ->Belt.Array.map(annotation => {
+          let cacheAnnotation =
+            annotation->Lib_WebView_Model_Annotation.encode->unsafeAsCache;
 
-        annotation.body
-        ->Belt.Option.getWithDefault([||])
-        ->Belt.Array.keepMap(body =>
-            switch (body) {
-            | TextualBody(body)
-                when
-                  body.purpose
-                  ->Belt.Option.map(a =>
-                      a->Belt.Array.some(purpose => purpose == "TAGGING")
-                    )
-                  ->Belt.Option.getWithDefault(false) =>
-              Some((body, cacheAnnotation))
-            | _ => None
-            }
-          );
-      })
-    ->Belt.Array.concatMany;
+          annotation.body
+          ->Belt.Option.getWithDefault([||])
+          ->Belt.Array.keepMap(body =>
+              switch (body) {
+              | TextualBody(body)
+                  when
+                    body.purpose
+                    ->Belt.Option.map(a =>
+                        a->Belt.Array.some(purpose => purpose == "TAGGING")
+                      )
+                    ->Belt.Option.getWithDefault(false) =>
+                Some((body, cacheAnnotation))
+              | _ => None
+              }
+            );
+        })
+      ->Belt.Array.concatMany;
 
-  let textualBodyById =
-    textualBodyAnnotationTuples->Belt.Array.reduce(
-      Js.Dict.empty(),
-      (agg, (textualBody, _)) => {
-        if (Js.Dict.get(agg, textualBody.id)->Js.Option.isNone) {
-          let _ = Js.Dict.set(agg, textualBody.id, textualBody);
-          ();
-        };
-        agg;
-      },
-    );
+    textualBodyAnnotationTuples
+    ->Belt.Array.reduce(
+        Js.Dict.empty(),
+        (agg, (textualBody, cacheAnnotation)) => {
+          let update =
+            agg
+            ->Js.Dict.get(textualBody.id)
+            ->Belt.Option.map(((annotations, textualBody)) =>
+                (
+                  Belt.Array.concat(annotations, [|cacheAnnotation|]),
+                  textualBody,
+                )
+              )
+            ->Belt.Option.getWithDefault(([|cacheAnnotation|], textualBody));
 
-  textualBodyAnnotationTuples
-  ->Belt.Array.reduce(
-      Js.Dict.empty(),
-      (agg, (textualBody, cacheAnnotation)) => {
-        let annotations =
-          agg
-          ->Js.Dict.get(textualBody.id)
-          ->Belt.Option.map(a => Belt.Array.concat(a, [|cacheAnnotation|]))
-          ->Belt.Option.getWithDefault([|cacheAnnotation|]);
-        let _ = Js.Dict.set(agg, textualBody.id, annotations);
-        agg;
-      },
-    )
-  ->Js.Dict.entries
-  ->Belt.Array.forEach(((annotationCollectionId, annotations)) => {
-      let onCreateAnnotationCollection = () => Js.Promise.resolve(None);
-      Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationsToCollection(
-        ~annotations,
-        ~annotationCollectionId,
-        ~currentUser,
-        ~onCreateAnnotationCollection,
+          let _ = Js.Dict.set(agg, textualBody.id, update);
+          agg;
+        },
+      )
+    ->Js.Dict.entries
+    ->Belt.Array.forEach(
+        ((annotationCollectionId, (annotations, textualBody))) => {
+        let onCreateAnnotationCollection = () => Js.Promise.resolve(None);
+        Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationsToCollection(
+          ~annotations,
+          ~annotationCollectionId,
+          ~annotationCollectionLabel=textualBody.value,
+          ~annotationCollectionType="TAG_COLLECTION",
+          ~currentUser,
+          ~onCreateAnnotationCollection,
+        );
+      });
+  };
+
+  let _ = {
+    let externalTargetAnnotationTuples =
+      annotations
+      ->Belt.Array.map(annotation => {
+          let cacheAnnotation =
+            annotation->Lib_WebView_Model_Annotation.encode->unsafeAsCache;
+
+          annotation.target
+          ->Belt.Array.keepMap(target => {
+              switch (target) {
+              | ExternalTarget(target) => Some((target, cacheAnnotation))
+              | SpecificTarget({
+                  source: ExternalTarget({format: Some(format)} as target),
+                })
+                  when format == "TEXT_HTML" =>
+                Some((target, cacheAnnotation))
+              | _ => None
+              }
+            });
+        })
+      ->Belt.Array.concatMany;
+
+    let externalTargetById =
+      externalTargetAnnotationTuples->Belt.Array.reduce(
+        Js.Dict.empty(),
+        (agg, (externalTarget, _)) => {
+          if (Js.Dict.get(agg, externalTarget.id)->Js.Option.isNone) {
+            let _ = Js.Dict.set(agg, externalTarget.id, externalTarget);
+            ();
+          };
+          agg;
+        },
       );
-    });
+
+    externalTargetAnnotationTuples
+    ->Belt.Array.reduce(
+        Js.Dict.empty(),
+        (agg, (externalTarget, cacheAnnotation)) => {
+          let annotations =
+            agg
+            ->Js.Dict.get(externalTarget.id)
+            ->Belt.Option.map(a => Belt.Array.concat(a, [|cacheAnnotation|]))
+            ->Belt.Option.getWithDefault([|cacheAnnotation|]);
+          let _ = Js.Dict.set(agg, externalTarget.id, annotations);
+          agg;
+        },
+      )
+    ->Js.Dict.entries
+    ->Belt.Array.forEach(((annotationCollectionId, annotations)) => {
+        let externalTarget =
+          Js.Dict.get(externalTargetById, annotationCollectionId)
+          ->Belt.Option.getExn;
+        let onCreateAnnotationCollection = () => Js.Promise.resolve(None);
+        Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationsToCollection(
+          ~annotations,
+          ~annotationCollectionType="SOURCE_COLLECTION",
+          ~annotationCollectionId=
+            Lib_GraphQL.AnnotationCollection.makeIdFromComponent(
+              ~creatorUsername=currentUser.username,
+              ~annotationCollectionIdComponent=
+                externalTarget.hashId->Belt.Option.getWithDefault(""),
+              (),
+            ),
+          ~annotationCollectionLabel=externalTarget.id,
+          ~currentUser,
+          ~onCreateAnnotationCollection,
+        );
+      });
+  };
+
+  ();
 };
 
 let deleteFromCache = (~annotation, ~currentUser) => {
-  annotation.Lib_WebView_Model_Annotation.body
-  ->Belt.Option.getWithDefault([||])
-  ->Belt.Array.keepMap(body =>
-      switch (body) {
-      | Lib_WebView_Model_Body.TextualBody(textualBody)
-          when
-            textualBody.purpose
-            ->Belt.Option.map(a =>
-                a->Belt.Array.some(purpose => purpose == "TAGGING")
-              )
-            ->Belt.Option.getWithDefault(false) =>
-        Some(textualBody.id)
-      | _ => None
-      }
-    )
-  ->Belt.Array.forEach(annotationCollectionId =>
-      annotation.id
-      ->Belt.Option.forEach(annotationId =>
-          Lib_GraphQL_AnnotationCollection.Apollo.removeAnnotationFromCollection(
-            ~annotationId,
-            ~currentUser,
-            ~annotationCollectionId,
-          )
+  let tagAnnotationCollectionIds =
+    annotation.Lib_WebView_Model_Annotation.body
+    ->Belt.Option.getWithDefault([||])
+    ->Belt.Array.keepMap(body =>
+        switch (body) {
+        | Lib_WebView_Model_Body.TextualBody(textualBody)
+            when
+              textualBody.purpose
+              ->Belt.Option.map(a =>
+                  a->Belt.Array.some(purpose => purpose == "TAGGING")
+                )
+              ->Belt.Option.getWithDefault(false) =>
+          Some(textualBody.id)
+        | _ => None
+        }
+      )
+    ->Belt.Array.map(Js.Promise.resolve);
+
+  let sourceAnnotationCollectionIds =
+    annotation.target
+    ->Belt.Array.keepMap(target => {
+        switch (target) {
+        | ExternalTarget(target) => Some(target.id)
+        | SpecificTarget({
+            source: ExternalTarget({format: Some(format)} as target),
+          })
+            when format == "TEXT_HTML" =>
+          Some(target.id)
+        | _ => None
+        }
+      })
+    ->Belt.Array.map(id =>
+        Lib_GraphQL.AnnotationCollection.makeId(
+          ~creatorUsername=
+            currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+          ~label=id,
         )
-    );
+      );
+
+  let _ =
+    Belt.Array.concat(
+      tagAnnotationCollectionIds,
+      sourceAnnotationCollectionIds,
+    )
+    |> Js.Promise.all
+    |> Js.Promise.then_(annotationCollectionIds => {
+         let _ =
+           annotationCollectionIds->Belt.Array.forEach(annotationCollectionId =>
+             annotation.id
+             ->Belt.Option.forEach(annotationId =>
+                 Lib_GraphQL_AnnotationCollection.Apollo.removeAnnotationFromCollection(
+                   ~annotationId,
+                   ~currentUser,
+                   ~annotationCollectionId,
+                 )
+               )
+           );
+         Js.Promise.resolve();
+       });
+  ();
 };

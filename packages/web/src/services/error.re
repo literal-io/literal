@@ -1,5 +1,6 @@
 exception InvalidState(string);
 exception ApolloEmptyData;
+exception ApolloMutationError(array(ApolloHooksTypes.graphqlError));
 exception PromiseError(Js.Promise.error);
 exception AuthenticationRequired;
 exception DeccoDecodeError(Decco.decodeError);
@@ -23,6 +24,20 @@ let report = exn => {
     | ApolloEmptyData => (
         "ApolloEmptyData"->Externals_Error.make->Js.Option.some,
         None,
+      )
+    | ApolloMutationError(errors) => (
+        "ApolloMutationError"->Externals_Error.make->Js.Option.some,
+        errors
+        ->Js.Json.stringifyAny
+        ->Belt.Option.map(error =>
+            Sentry.makeExceptionContext(
+              ~extra=
+                Js.Json.object_(
+                  Js.Dict.fromList([("error", error->Js.Json.string)]),
+                ),
+              (),
+            )
+          ),
       )
     | PromiseError(error) => (
         "PromiseException"->Externals_Error.make->Js.Option.some,

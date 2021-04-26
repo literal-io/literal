@@ -10,6 +10,7 @@ let arrowRight: string = [%raw "require('./arrow-right.svg')"];
 let arrowDown: string = [%raw "require('./arrow-down.svg')"];
 let arrowUp: string = [%raw "require('./arrow-up.svg')"];
 let add: string = [%raw "require('./add.svg')"];
+let addCircle: string = [%raw "require('./add-circle.svg')"];
 let textFields: string = [%raw "require('./text-fields.svg')"];
 let textSnippet: string = [%raw "require('./text-snippet.svg')"];
 let label: string = [%raw "require('./label.svg')"];
@@ -18,8 +19,9 @@ let language: string = [%raw "require('./language.svg')"];
 let waves: string = [%raw "require('./waves.svg')"];
 let android: string = [%raw "require('./android.svg')"];
 let apple: string = [%raw "require('./apple.svg')"];
-let errorOutline = [%raw "require('./error-outline.svg')"];
-let more = [%raw "require('./more.svg')"];
+let errorOutline: string = [%raw "require('./error-outline.svg')"];
+let more: string = [%raw "require('./more.svg')"];
+let article: string = [%raw "require('./article.svg')"];
 
 type state = {
   isLoading: bool,

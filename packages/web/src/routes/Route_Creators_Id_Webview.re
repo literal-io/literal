@@ -58,7 +58,7 @@ let default = (~rehydrated) => {
 
   let authentication = Hooks_CurrentUserInfo.use();
 
-  let handleAnnotationChange = newAnnotation =>
+  let handleAnnotationChange = newAnnotation => {
     setViewState(viewState =>
       switch (viewState) {
       | Some(EditAnnotationTags(_)) =>
@@ -68,9 +68,28 @@ let default = (~rehydrated) => {
       | None => None
       }
     );
+    ();
+  };
 
-  let handleSetState = viewState => {
+  let handleSetState = newViewState => {
     let _ = Service_Analytics.(track(Click({action: "close", label: None})));
+    let _ =
+      switch (viewState, newViewState) {
+      | (Some(EditAnnotationTags(annotation)), "COLLAPSED_ANNOTATION_TAGS") =>
+        let _ =
+          Webview.(
+            postMessage(
+              WebEvent.make(
+                ~type_="EDIT_ANNOTATION_TAGS_RESULT",
+                ~data=annotation->Lib_WebView_Model_Annotation.encode,
+                (),
+              ),
+            )
+          );
+        ();
+      | _ => ()
+      };
+
     let _ =
       Webview.(
         postMessage(
@@ -78,7 +97,7 @@ let default = (~rehydrated) => {
             ~type_="SET_VIEW_STATE",
             ~data=
               Js.Json.object_(
-                Js.Dict.fromList([("state", Js.Json.string(viewState))]),
+                Js.Dict.fromList([("state", Js.Json.string(newViewState))]),
               ),
             (),
           ),

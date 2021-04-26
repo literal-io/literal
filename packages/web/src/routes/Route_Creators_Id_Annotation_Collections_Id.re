@@ -2,13 +2,12 @@
 let default = (~rehydrated) => {
   let router = Next.Router.useRouter();
   let searchParams =
-    router.asPath
-    ->Js.String2.split("?")
-    ->Belt.Array.get(1)
-    ->Belt.Option.getWithDefault("")
-    ->Webapi.Url.URLSearchParams.make
-    ->Routes.CreatorsIdAnnotationCollectionsId.parseSearch;
+    Hooks_SearchParams.use(
+      Routes.CreatorsIdAnnotationCollectionsId.parseSearch,
+    );
   let authentication = Hooks_CurrentUserInfo.use();
+  let (isCollectionsDrawerVisible, setIsCollectionsDrawerVisible) =
+    React.useState(_ => false);
 
   let _ =
     React.useEffect1(
@@ -34,6 +33,7 @@ let default = (~rehydrated) => {
         let search =
           Routes.CreatorsIdAnnotationCollectionsId.(
             makeSearch({
+              ...searchParams,
               annotationId:
                 annotationId
                 ->Lib_GraphQL.Annotation.idComponent
@@ -61,24 +61,35 @@ let default = (~rehydrated) => {
   ) {
   | (Loading, Ok(routeParams))
   | (Authenticated(_), Ok(routeParams)) =>
-    <QueryRenderers_AnnotationCollection
-      annotationCollectionIdComponent={
-                                        routeParams.
-                                          annotationCollectionIdComponent
-                                      }
-      onAnnotationIdChange=handleAnnotationIdChange
-      initialAnnotationId={
-        searchParams.annotationId
-        ->Belt.Option.map(annotationIdComponent =>
-            Lib_GraphQL.Annotation.makeIdFromComponent(
-              ~annotationIdComponent,
-              ~creatorUsername=routeParams.creatorUsername,
+    <>
+      <QueryRenderers_AnnotationCollectionsDrawer
+        onClose={() => setIsCollectionsDrawerVisible(_ => false)}
+        isVisible=isCollectionsDrawerVisible
+        authentication
+        rehydrated
+      />
+      <QueryRenderers_AnnotationCollection
+        annotationCollectionIdComponent={
+                                          routeParams.
+                                            annotationCollectionIdComponent
+                                        }
+        onOpenCollectionsDrawer={() =>
+          setIsCollectionsDrawerVisible(_ => true)
+        }
+        onAnnotationIdChange=handleAnnotationIdChange
+        initialAnnotationId={
+          searchParams.annotationId
+          ->Belt.Option.map(annotationIdComponent =>
+              Lib_GraphQL.Annotation.makeIdFromComponent(
+                ~annotationIdComponent,
+                ~creatorUsername=routeParams.creatorUsername,
+              )
             )
-          )
-      }
-      authentication
-      rehydrated
-    />
+        }
+        authentication
+        rehydrated
+      />
+    </>
   | (Loading, Error(_)) => <Loading />
   | (Authenticated(currentUser), Error(_)) =>
     <Redirect

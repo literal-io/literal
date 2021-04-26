@@ -8,11 +8,12 @@ module GetAnnotationCollection = {
         }
 
         getAnnotationCollection(creatorUsername: $creatorUsername, id: $id) {
+          id
           ...Containers_AnnotationCollectionHeader_GraphQL.GetAnnotationCollectionFragment.AnnotationCollectionHeader_AnnotationCollection @bsField(name: "annotationCollectionHeader")
           __typename
           first {
             __typename
-            items(limit: 100, sortDirection: DESC, nextToken: $nextToken) {
+            items(limit: 50, sortDirection: DESC, nextToken: $nextToken) {
               __typename
               nextToken
               items {
@@ -23,7 +24,6 @@ module GetAnnotationCollection = {
                   id
                   ...Containers_AnnotationEditor_GraphQL.GetAnnotationFragment.EditorNotesAnnotationFragment @bsField(name: "editorAnnotationFragment")
                   ...Containers_AnnotationCollectionHeader_GraphQL.GetAnnotationFragment.AnnotationCollectionHeader_Annotation @bsField(name: "annotationCollectionHeader")
-                  ...Containers_NewTagInput_GraphQL.GetAnnotationFragment.NewTagInputAnnotation @bsField(name: "newTagInputFragment")
                 }
               }
             }
@@ -78,7 +78,9 @@ module GetAnnotationCollection = {
   type cacheGetAnnotationCollection = {
     .
     "__typename": string,
+    "id": string,
     "label": string,
+    "type_": array(string),
     "first":
       Js.Null.t({
         .
@@ -201,11 +203,13 @@ module GetAnnotationCollection = {
         ),
   };
 
-  external unsafeToCache: Js.Json.t => cache = "%identity";
-  external unsafeCacheToJson: cache => Js.Json.t = "%identity";
-
-  module CacheReadQuery = ApolloClient.ReadQuery(Query);
-  module CacheWriteQuery = ApolloClient.WriteQuery(Query);
+  module Cache =
+    Lib_Apollo_Cache.Make(
+      Query,
+      {
+        type t = cache;
+      },
+    );
 
   let setAnnotationPageItems =
       (
@@ -259,12 +263,22 @@ module GetAnnotationCollection = {
     Ramda.mergeDeepLeft(newQuery, cacheQuery);
   };
 
-  let makeCache = (~label, ~annotations, ~agent): cache => {
+  let makeCache =
+      (
+        ~annotationCollectionId,
+        ~label,
+        ~annotations,
+        ~annotationCollectionType,
+        ~agent,
+      )
+      : cache => {
     "__typename": "Query",
     "getAgent": agent,
     "getAnnotationCollection":
       Js.Null.return({
         "__typename": "AnnotationCollection",
+        "id": annotationCollectionId,
+        "type_": [|"ANNOTATION_COLLECTION", annotationCollectionType|],
         "label": label,
         "first":
           Js.Null.return({
@@ -283,35 +297,4 @@ module GetAnnotationCollection = {
           }),
       }),
   };
-
-  /**
-   * FIXME: Return type is not actually Query.t, as Apollo cache
-   * does not persist fragment alias fields -- everything is
-   * inlined on the root type.
-   */
-  let readCache = (~query, ~client, ()) => {
-    let readQueryOptions =
-      CacheReadQuery.{
-        query: ApolloClient.gql(. query##query),
-        variables: Js.Nullable.fromOption(Some(query##variables)),
-      };
-    switch (CacheReadQuery.readQuery(client, readQueryOptions)) {
-    | exception _ => None
-    | cachedResponse =>
-      cachedResponse->Js.Nullable.toOption->Belt.Option.map(unsafeToCache)
-    };
-  };
-
-  /**
-   * Data in cache format, i.e. everything inlined on GraphQL types. Not a good
-   * way to enforce type safety.
-   */
-  external unsafeFromCache: cache => Query.t = "%identity";
-  let writeCache = (~query, ~client, ~data: cache, ()) =>
-    CacheWriteQuery.make(
-      ~client,
-      ~variables=query##variables,
-      ~data=unsafeFromCache(data),
-      (),
-    );
 };

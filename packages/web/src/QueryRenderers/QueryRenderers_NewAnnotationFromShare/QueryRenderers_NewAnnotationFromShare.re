@@ -58,13 +58,6 @@ module Loading = {
             )}
           />
         </FloatingActionButton>
-        <TextInput_Tags
-          className={Cn.fromList(["px-2", "bg-black", "z-10"])}
-          onValueChange={_ => ()}
-          onValueCommit={_ => ()}
-          value=""
-          disabled=true
-        />
       </div>
     </>;
   };

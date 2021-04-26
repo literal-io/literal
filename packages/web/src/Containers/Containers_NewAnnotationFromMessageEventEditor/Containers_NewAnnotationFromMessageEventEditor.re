@@ -94,7 +94,8 @@ let make =
       [|annotation|],
     );
 
-  let handleTagsChange = value => {
+  let rec handleTagsChange = value => {
+    Js.log2("handleTagsChange", value);
     let textualBodies =
       value->Belt.Array.map((tag: Containers_AnnotationEditor_Tag.t) =>
         Lib_WebView_Model_Body.(
@@ -126,6 +127,58 @@ let make =
 
     let updatedAnnotation = {...annotation, body: updatedBody};
     let _ = onAnnotationChange(updatedAnnotation);
+
+    let _ =
+      value
+      ->Belt.Array.keepMap(tag =>
+          switch (tag.id) {
+          | Some(_) => None
+          | None => Some(tag)
+          }
+        )
+      ->Belt.Array.map(tag =>
+          Lib_GraphQL.AnnotationCollection.makeId(
+            ~creatorUsername=
+              currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+            ~label=tag.text,
+          )
+          |> Js.Promise.then_(id =>
+               Js.Promise.resolve(
+                 Containers_AnnotationEditor_Tag.{...tag, id: Some(id)},
+               )
+             )
+        )
+      ->Js.Promise.all
+      |> Js.Promise.then_(tagsWithIds => {
+           if (Js.Array2.length(tagsWithIds) > 0) {
+             let currentTags = tagsValueSelector(~annotation, ~currentUser);
+             let updatedTags =
+               Belt.Array.reduce(
+                 tagsWithIds,
+                 value,
+                 (
+                   agg: array(Containers_AnnotationEditor_Tag.t),
+                   tag: Containers_AnnotationEditor_Tag.t,
+                 ) => {
+                 agg
+                 ->Belt.Array.getIndexBy(t => t.text == tag.text)
+                 ->Belt.Option.map(idx => {
+                     let newTags = Js.Array2.copy(agg);
+                     let _ =
+                       Js.Array2.spliceInPlace(
+                         newTags,
+                         ~pos=idx,
+                         ~remove=1,
+                         ~add=[|tag|],
+                       );
+                     newTags;
+                   })
+                 ->Belt.Option.getWithDefault(agg)
+               });
+             handleTagsChange(updatedTags);
+           };
+           Js.Promise.resolve();
+         });
     ();
   };
 
@@ -180,25 +233,10 @@ let make =
           (),
         )}
       />
-      <TagsList value=tagsValue onChange=handleTagsChange />
-    </div>
-    <div
-      className={Cn.fromList([
-        "absolute",
-        "bottom-0",
-        "left-0",
-        "right-0",
-        "flex",
-        "flex-col",
-        "items-end",
-      ])}>
-      <TextInput_Tags
-        className={Cn.fromList(["px-2", "z-10", "bg-black"])}
-        onValueChange=handlePendingTagChange
-        onValueCommit=handlePendingTagCommit
-        value=pendingTagValue
-        autoFocus=true
-        placeholder="Add Tag..."
+      <TagsList
+        value=tagsValue
+        onChange=handleTagsChange
+        autoFocusAddTagInput=true
       />
     </div>
   </div>;

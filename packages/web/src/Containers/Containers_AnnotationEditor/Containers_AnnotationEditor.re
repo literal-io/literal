@@ -485,7 +485,13 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
       "flex-col",
       "overflow-y-auto",
     ])}>
-    <div className={Cn.fromList(["px-4", "py-16"])}>
+    <div
+      className={Cn.fromList(["px-4"])}
+      style={ReactDOM.Style.make(
+        ~paddingTop="4.5rem",
+        ~paddingBottom="3rem",
+        (),
+      )}>
       {switch (targetWithExternalTarget, textualTargetSelector(~annotation)) {
        | (Some((targetId, externalTarget)), Some(textualTarget)) =>
          <ExternalTargetCard

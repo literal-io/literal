@@ -266,12 +266,6 @@ let make = (~currentUser) => {
              />
            </FloatingActionButton>
          : React.null}
-      <TextInput_Tags
-        className={Cn.fromList(["px-2", "bg-black", "z-10"])}
-        onValueChange=handlePendingTagChange
-        onValueCommit=handlePendingTagCommit
-        value=pendingTagValue
-      />
     </div>
   </div>;
 };

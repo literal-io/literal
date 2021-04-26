@@ -1,30 +1,41 @@
 let styles = [%raw "require('./TagsList.module.css')"];
 
 [@react.component]
-let make = (~value, ~onChange, ~disabled=?) => {
+let make = (~value, ~onChange, ~disabled=?, ~autoFocusAddTagInput=false) => {
   let handleChange = (~newText, ~idx) => {
+    let currentTag: option(Containers_AnnotationEditor_Tag.t) =
+      value->Belt.Array.get(idx);
     let newTag =
-      value
-      ->Belt.Array.get(idx)
-      ->Belt.Option.flatMap(tag =>
-          newText->Belt.Option.map(text =>
-            Containers_AnnotationEditor_Tag.{id: None, href: None, text}
-          )
-        );
-    let newValue = Belt.Array.copy(value);
-    let _ =
-      Js.Array2.spliceInPlace(
-        newValue,
-        ~pos=idx,
-        ~remove=1,
-        ~add=
-          switch (newTag) {
-          | Some(newTag) => [|newTag|]
-          | None => [||]
-          },
+      currentTag->Belt.Option.flatMap(_ =>
+        newText->Belt.Option.map(text =>
+          Containers_AnnotationEditor_Tag.{id: None, href: None, text}
+        )
       );
-    Js.log4("handleChange", newText, idx, newValue);
-    onChange(newValue);
+    switch (currentTag, newTag) {
+    | (Some({text: currentTagText}), Some({text: newTagText} as newTag))
+        when currentTagText != newTagText =>
+      let newValue = Belt.Array.copy(value);
+      let _ =
+        Js.Array2.spliceInPlace(
+          newValue,
+          ~pos=idx,
+          ~remove=1,
+          ~add=[|newTag|],
+        );
+      onChange(newValue);
+    | (Some(_), None) =>
+      let newValue = Belt.Array.copy(value);
+      let _ =
+        Js.Array2.spliceInPlace(newValue, ~pos=idx, ~remove=1, ~add=[||]);
+      onChange(newValue);
+    | _ => ()
+    };
+  };
+
+  let handleCreateTag = text => {
+    let newTag = Containers_AnnotationEditor_Tag.{id: None, href: None, text};
+    onChange(Belt.Array.concat(value, [|newTag|]));
+    ();
   };
 
   let tags =
@@ -45,6 +56,14 @@ let make = (~value, ~onChange, ~disabled=?) => {
           </li>;
         }
       )
+    ->Belt.Array.concat([|
+        <li key="AddTagButtonAndInput">
+          <AddTagInput
+            onCreateTag=handleCreateTag
+            autoFocus=autoFocusAddTagInput
+          />
+        </li>,
+      |])
     ->React.array;
 
   <ul className={Cn.fromList(["pt-8", "pb-4"])}> tags </ul>;
