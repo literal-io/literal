@@ -47,6 +47,6 @@ public class User {
     }
 
     public boolean isSignedOut() {
-        return getState().equals(UserState.SIGNED_OUT);
+        return getState().equals(UserState.SIGNED_OUT) || getState().equals(UserState.SIGNED_OUT_FEDERATED_TOKENS_INVALID) || getState().equals(UserState.SIGNED_OUT_USER_POOLS_TOKENS_INVALID);
     }
 }
