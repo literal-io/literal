@@ -1,7 +1,7 @@
 open Containers_Onboarding_GraphQL;
 
 [@react.component]
-let make = (~currentUser, ~onAnnotationIdChange) => {
+let make = (~currentUser, ~children) => {
   let (onboardingMutation, _s, _f) =
     ApolloHooks.useMutation(OnboardingMutation.definition);
 
@@ -62,7 +62,7 @@ let make = (~currentUser, ~onAnnotationIdChange) => {
         |> Js.Promise.then_(((mutationResult, _)) => {
              switch (mutationResult) {
              | ApolloHooks.Mutation.Errors(errors) =>
-                Error.(report(ApolloMutationError(errors)))
+               Error.(report(ApolloMutationError(errors)))
              | NoData => Error.(report(ApolloEmptyData))
              | Data(_) => ()
              };
@@ -72,5 +72,5 @@ let make = (~currentUser, ~onAnnotationIdChange) => {
       None;
     });
 
-  <Loading />;
+  children;
 };

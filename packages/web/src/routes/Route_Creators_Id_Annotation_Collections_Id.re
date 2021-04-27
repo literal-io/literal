@@ -46,9 +46,13 @@ let default = (~rehydrated) => {
             ~annotationCollectionIdComponent=
               routeParams.annotationCollectionIdComponent,
           );
-        Next.Router.replaceWithAs(
-          Routes.CreatorsIdAnnotationCollectionsId.staticPath,
-          Js.String2.length(search) > 0 ? path ++ "?" ++ search : path,
+
+        Next.Router.(
+          replaceWithOptions(
+            Routes.CreatorsIdAnnotationCollectionsId.staticPath,
+            Js.String2.length(search) > 0 ? path ++ "?" ++ search : path,
+            {shallow: true},
+          )
         );
       | Error(_) => ()
       };
@@ -77,7 +81,7 @@ let default = (~rehydrated) => {
           setIsCollectionsDrawerVisible(_ => true)
         }
         onAnnotationIdChange=handleAnnotationIdChange
-        initialAnnotationId={
+        annotationId={
           searchParams.annotationId
           ->Belt.Option.map(annotationIdComponent =>
               Lib_GraphQL.Annotation.makeIdFromComponent(

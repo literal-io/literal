@@ -1,6 +1,35 @@
 open Containers_AnnotationCollectionHeader_GraphQL;
 open Styles;
 
+let fragmentFromCache = (~annotationCollectionIdComponent, ~currentUser=?, ()) =>
+  if (annotationCollectionIdComponent
+      == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent) {
+    Some({
+      "label": "recent",
+      "id": annotationCollectionIdComponent,
+      "type_": [|`TAG_COLLECTION|],
+    });
+  } else {
+    currentUser
+    ->Belt.Option.flatMap(currentUser =>
+        Lib_GraphQL_AnnotationCollection.Apollo.readCache(
+          ~id=
+            Lib_GraphQL.AnnotationCollection.makeIdFromComponent(
+              ~creatorUsername=
+                currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+              ~annotationCollectionIdComponent,
+              (),
+            ),
+          ~fragment=Containers_AnnotationCollectionHeader_GraphQL.cacheAnnotationCollectionFragment,
+        )
+      )
+    ->Belt.Option.map(result =>
+        Containers_AnnotationCollectionHeader_GraphQL.GetAnnotationCollectionFragment.AnnotationCollectionHeader_AnnotationCollection.parse(
+          result,
+        )
+      );
+  };
+
 [@react.component]
 let make =
     (
@@ -10,6 +39,12 @@ let make =
       ~onCollectionsButtonClick=?,
       ~currentUser=?,
     ) => {
+  let _ =
+    React.useEffect0(() => {
+      Js.log("mount");
+      Some(() => {Js.log("unmount")});
+    });
+
   let (deleteAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(
       Containers_AnnotationCollectionHeader_GraphQL.DeleteAnnotationMutation.definition,
@@ -139,7 +174,7 @@ let make =
           "flex",
           "items-center",
           "flex-shrink",
-          "overflow-x-auto"
+          "overflow-x-auto",
         ])}>
         collectionsButton
         {annotationCollection

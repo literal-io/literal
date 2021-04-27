@@ -57,7 +57,7 @@ let make = (~onCreateTag, ~autoFocus=false) => {
           className={Cn.fromList([
             "pointer-events-none",
             "opacity-50",
-            "mr-1",
+            "mr-2",
           ])}
           style={ReactDOMRe.Style.make(~width="1rem", ~height="1rem", ())}
           icon=Svg.addCircle

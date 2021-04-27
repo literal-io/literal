@@ -2,58 +2,23 @@ open QueryRenderers_AnnotationCollection_GraphQL;
 
 module Loading = {
   [@react.component]
-  let make = (~annotationCollectionIdComponent, ~currentUser=?) => {
-    let annotationCollectionFragment =
-      if (annotationCollectionIdComponent
-          == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionLabel) {
-        Some({
-          "label": "recent",
-          "id": annotationCollectionIdComponent,
-          "type_": [|`TAG_COLLECTION|],
-        });
-      } else {
-        currentUser
-        ->Belt.Option.flatMap(currentUser =>
-            Lib_GraphQL_AnnotationCollection.Apollo.readCache(
-              ~id=
-                Lib_GraphQL.AnnotationCollection.makeIdFromComponent(
-                  ~creatorUsername=
-                    currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-                  ~annotationCollectionIdComponent,
-                  (),
-                ),
-              ~fragment=Containers_AnnotationCollectionHeader_GraphQL.cacheAnnotationCollectionFragment,
-            )
-          )
-        ->Belt.Option.map(result =>
-            Containers_AnnotationCollectionHeader_GraphQL.GetAnnotationCollectionFragment.AnnotationCollectionHeader_AnnotationCollection.parse(
-              result,
-            )
-          );
-      };
-
-    <div className={Cn.fromList(["w-full", "h-full", "bg-black"])}>
-      <Containers_AnnotationCollectionHeader ?annotationCollectionFragment />
-      <TextInput_Loading className={Cn.fromList(["px-6", "pb-4", "pt-16"])} />
-    </div>;
-  };
+  let make = () =>
+    <TextInput_Loading className={Cn.fromList(["px-6", "pb-4", "pt-16"])} />;
 };
 
 module Data = {
   [@react.component]
   let make =
       (
-        ~annotationCollection,
         ~annotations,
-        ~initialAnnotationId,
+        ~annotationId,
         ~onAnnotationIdChange,
-        ~onOpenCollectionsDrawer,
         ~onFetchMore,
         ~currentUser,
       ) => {
     let (activeIdx, setActiveIdx) =
       React.useState(() =>
-        initialAnnotationId
+        annotationId
         ->Belt.Option.flatMap(initialAnnotationId =>
             annotations->Belt.Array.getIndexBy(a =>
               a##id === initialAnnotationId
@@ -185,38 +150,21 @@ module Data = {
       setActiveIdx(_ => idx);
     };
 
-    <>
-      <div
-        className={Cn.fromList([
-          "w-full",
-          "h-full",
-          "bg-black",
-          "overflow-y-scroll",
-        ])}>
-        <Containers_AnnotationCollectionHeader
-          onCollectionsButtonClick=onOpenCollectionsDrawer
-          annotationFragment={activeAnnotation##annotationCollectionHeader}
-          annotationCollectionFragment=
-            {annotationCollection##annotationCollectionHeader}
-          currentUser
-        />
-        <ScrollSnapList.Container
-          direction=ScrollSnapList.Horizontal
-          onIdxChange=handleIdxChange
-          initialIdx=activeIdx>
-          {annotations->Belt.Array.map(annotation =>
-             <ScrollSnapList.Item
-               key={annotation##id} direction=ScrollSnapList.Horizontal>
-               <Containers_AnnotationEditor
-                 isVisible={annotation##id == activeAnnotation##id}
-                 annotationFragment={annotation##editorAnnotationFragment}
-                 currentUser
-               />
-             </ScrollSnapList.Item>
-           )}
-        </ScrollSnapList.Container>
-      </div>
-    </>;
+    <ScrollSnapList.Container
+      direction=ScrollSnapList.Horizontal
+      onIdxChange=handleIdxChange
+      initialIdx=activeIdx>
+      {annotations->Belt.Array.map(annotation =>
+         <ScrollSnapList.Item
+           key={annotation##id} direction=ScrollSnapList.Horizontal>
+           <Containers_AnnotationEditor
+             isVisible={annotation##id == activeAnnotation##id}
+             annotationFragment={annotation##editorAnnotationFragment}
+             currentUser
+           />
+         </ScrollSnapList.Item>
+       )}
+    </ScrollSnapList.Container>;
   };
 };
 
@@ -247,7 +195,6 @@ module Empty = {
         "flex",
         "flex-col",
       ])}>
-      <Containers_AnnotationCollectionHeader hideDelete=true />
       <div
         className={Cn.fromList([
           "flex",
@@ -280,7 +227,7 @@ let make =
       ~onOpenCollectionsDrawer,
       ~onAnnotationIdChange,
       ~authentication: Hooks_CurrentUserInfo_Types.state,
-      ~initialAnnotationId,
+      ~annotationId,
       ~rehydrated,
     ) => {
   let (_, query) =
@@ -384,103 +331,163 @@ let make =
     ();
   };
 
-  switch (query, rehydrated, authentication) {
-  | (_, false, _)
-  | (_, _, Loading)
-  | ({data: None, loading: true}, _, _) =>
-    <Loading annotationCollectionIdComponent />
-  | ({data: Some(data), loading}, true, Authenticated(currentUser)) =>
-    let isRecentAnnotationCollection =
-      annotationCollectionIdComponent
-      == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent;
-    let annotationCollection = data##getAnnotationCollection;
-    let annotations =
-      data##getAnnotationCollection
-      ->Belt.Option.flatMap(annotationCollection =>
-          annotationCollection##first
-          ->Belt.Option.flatMap(annotationPage => annotationPage##items)
-          ->Belt.Option.flatMap(annotationPageItemConnection =>
-              annotationPageItemConnection##items
+  let currentUser =
+    switch (authentication) {
+    | Authenticated(currentUser) => Some(currentUser)
+    | _ => None
+    };
+  let isRecentAnnotationCollection =
+    annotationCollectionIdComponent
+    == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent;
+  let agent =
+    switch (query) {
+    | {data: Some(data)} => data##getAgent
+    | _ => None
+    };
+  let annotationCollection =
+    switch (query) {
+    | {data: Some(data), loading} =>
+      switch (data##getAnnotationCollection) {
+      | Some(annotationCollection)
+          when
+            loading
+            && Lib_GraphQL.AnnotationCollection.idComponent(
+                 annotationCollection##id,
+               )
+            != annotationCollectionIdComponent =>
+        None
+      | _ => data##getAnnotationCollection
+      }
+    | _ => None
+    };
+  let annotations =
+    annotationCollection->Belt.Option.flatMap(annotationCollection =>
+      annotationCollection##first
+      ->Belt.Option.flatMap(annotationPage => annotationPage##items)
+      ->Belt.Option.flatMap(annotationPageItemConnection =>
+          annotationPageItemConnection##items
+        )
+      ->Belt.Option.map(annotationPageItems => {
+          annotationPageItems->Belt.Array.keepMap(annotationPageItem =>
+            annotationPageItem->Belt.Option.map(annotationPageItem =>
+              annotationPageItem##annotation
             )
-          ->Belt.Option.map(annotationPageItems => {
-              annotationPageItems->Belt.Array.keepMap(annotationPageItem =>
-                annotationPageItem->Belt.Option.map(annotationPageItem =>
-                  annotationPageItem##annotation
-                )
-              )
-            })
-        );
-    let agent = data##getAgent;
-    switch (annotationCollection, annotations, agent) {
-    | (None, _, _) when loading =>
-      <Loading annotationCollectionIdComponent currentUser />
-    | (Some(annotationCollection), _, _)
+          )
+        })
+    );
+  let activeAnnotation =
+    switch (annotations, annotationId) {
+    | (Some(annotations), None) => Belt.Array.get(annotations, 0)
+    | (Some(annotations), Some(annotationId)) =>
+      annotations->Belt.Array.getBy(annotation =>
+        annotation##id == annotationId
+      )
+    | _ => None
+    };
+  let isLoading =
+    switch (annotationCollection, authentication) {
+    | _ when !rehydrated => true
+    | (None, _) when query.loading => true
+    | (_, Loading) => true
+    | (Some(annotationCollection), _)
         when
-          loading
+          query.loading
           && Lib_GraphQL.AnnotationCollection.idComponent(
                annotationCollection##id,
              )
           != annotationCollectionIdComponent =>
-      <Loading
-        annotationCollectionIdComponent
-        currentUser=?{
-          switch (authentication) {
-          | Authenticated(currentUser) => Some(currentUser)
-          | _ => None
-          }
-        }
-      />
-    | (None, None, None) when isRecentAnnotationCollection =>
-      <Containers_Onboarding currentUser onAnnotationIdChange />
-    | (None, None, Some(_)) when isRecentAnnotationCollection => <Empty />
-    | (None, None, _)
-    | (Some(_), None, _)
-    | (None, Some(_), _) =>
+      true
+    | _ => false
+    };
+  let isEmpty =
+    switch (annotations) {
+    | None when !isLoading => true
+    | Some(annotations) when Js.Array2.length(annotations) == 0 => true
+    | _ => false
+    };
+  let isOnboarding =
+    switch (agent) {
+    | None when !isLoading && isEmpty && isRecentAnnotationCollection => true
+    | _ => false
+    };
+
+  let header = {
+    let annotationCollectionFragment =
+      switch (annotationCollection, currentUser) {
+      | (Some(annotationCollection), _) =>
+        Some(annotationCollection##annotationCollectionHeader)
+      | (_, Some(currentUser)) =>
+        Containers_AnnotationCollectionHeader.fragmentFromCache(
+          ~annotationCollectionIdComponent,
+          ~currentUser,
+          (),
+        )
+      | _ =>
+        Containers_AnnotationCollectionHeader.fragmentFromCache(
+          ~annotationCollectionIdComponent,
+          (),
+        )
+      };
+    let annotationFragment =
+      switch (activeAnnotation) {
+      | Some(activeAnnotation) =>
+        Some(activeAnnotation##annotationCollectionHeader)
+      | None => None
+      };
+
+    <Containers_AnnotationCollectionHeader
+      ?annotationCollectionFragment
+      ?annotationFragment
+      ?currentUser
+      hideDelete=isEmpty
+      onCollectionsButtonClick=onOpenCollectionsDrawer
+    />;
+  };
+
+  let main =
+    switch (authentication, annotations) {
+    | _ when isLoading => <Loading />
+    | (Authenticated(currentUser), _) when isOnboarding =>
+      <Containers_Onboarding currentUser> <Loading /> </Containers_Onboarding>
+    | _ when isEmpty && isRecentAnnotationCollection => <Empty />
+    | (Authenticated(currentUser), _) when isEmpty =>
       <Redirect
         staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath
         path={Routes.CreatorsIdAnnotationCollectionsId.path(
           ~creatorUsername=currentUser.username,
           ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
         )}>
-        <Loading annotationCollectionIdComponent />
+        <Loading />
       </Redirect>
-    | (Some(_), Some(annotations), None)
-        when
-          isRecentAnnotationCollection && Js.Array2.length(annotations) == 0 =>
-      <Containers_Onboarding currentUser onAnnotationIdChange />
-    | (Some(_), Some(annotations), Some(_))
-        when
-          isRecentAnnotationCollection && Js.Array2.length(annotations) == 0 =>
-      <Empty />
-    | (Some(_), Some(annotations), _)
-        when Js.Array2.length(annotations) == 0 =>
-      <Redirect
-        staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath
-        path={Routes.CreatorsIdAnnotationCollectionsId.path(
-          ~creatorUsername=currentUser.username,
-          ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
-        )}>
-        <Loading annotationCollectionIdComponent />
-      </Redirect>
-    | (Some(annotationCollection), Some(annotations), _) =>
+    | (Authenticated(currentUser), Some(annotations)) =>
       <Data
         onAnnotationIdChange
-        onOpenCollectionsDrawer
         onFetchMore=handleFetchMore
-        initialAnnotationId
+        annotationId
         currentUser
-        annotationCollection
         annotations
       />
+    | (Unauthenticated, _) =>
+      <Redirect
+        staticPath={Routes.Authenticate.path()}
+        path={Routes.Authenticate.path()}>
+        <Loading />
+      </Redirect>
+    | _ =>
+      switch (query.error) {
+      | Some(error) => <Error error />
+      | _ => <Error />
+      }
     };
-  | ({error: Some(error)}, _, _) => <Error error />
-  | ({error: None, data: None, loading: false}, _, _) =>
-    /** FIXME: handle unexpected error **/ <Error />
-  | (_, _, Unauthenticated) =>
-    <Redirect
-      staticPath={Routes.Authenticate.path()}
-      path={Routes.Authenticate.path()}>
-      <Loading annotationCollectionIdComponent />
-    </Redirect>
-  };
+
+  <div
+    className={Cn.fromList([
+      "w-full",
+      "h-full",
+      "bg-black",
+      "overflow-y-scroll",
+    ])}>
+    header
+    main
+  </div>;
 };

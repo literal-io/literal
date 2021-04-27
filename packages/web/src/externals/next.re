@@ -22,9 +22,8 @@ module Head = {
 module Router = {
   [@bs.module "next/router"] external useRouter: unit => router = "useRouter";
 
-  type urlOptions = {
-    pathname: string,
-    query: Js.Json.t,
+  type replaceOptions = {
+    shallow: bool
   };
 
   [@bs.module "next/router"] [@bs.scope "default"]
@@ -32,7 +31,7 @@ module Router = {
   [@bs.module "next/router"] [@bs.scope "default"]
   external replaceWithAs: (string, string) => unit = "replace";
   [@bs.module "next/router"] [@bs.scope "default"]
-  external replaceWithOptions: urlOptions => unit = "replace";
+  external replaceWithOptions: (string, string, replaceOptions) => unit = "replace";
 
   [@bs.module "next/router"] [@bs.scope "default"]
   external back: unit => unit = "back";
