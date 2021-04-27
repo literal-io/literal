@@ -76,7 +76,6 @@ public class AuthenticationViewModel extends ViewModel {
         if (userStateDetails.getUserState().equals(UserState.SIGNED_IN)) {
             Box<Boolean> didReceiveSignedOutState = new Box(false);
             UserStateListener userStateListener = new UserStateListener() {
-
                 @Override
                 public void onUserStateChanged(UserStateDetails details) {
                     if (details.getUserState().equals(UserState.SIGNED_OUT_FEDERATED_TOKENS_INVALID) || details.getUserState().equals(UserState.SIGNED_OUT_USER_POOLS_TOKENS_INVALID) || details.getUserState().equals(UserState.SIGNED_OUT)) {

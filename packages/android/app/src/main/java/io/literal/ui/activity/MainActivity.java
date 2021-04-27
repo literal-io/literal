@@ -59,7 +59,6 @@ public class MainActivity extends InstrumentedActivity {
     private AppWebViewViewModel appWebViewViewModelBottomSheet;
     private SourceWebViewViewModel sourceWebViewViewModelBottomSheet;
     private AuthenticationViewModel authenticationViewModel;
-    private AppWebView appWebViewPrimaryFragment;
     private final BroadcastReceiver annotationCreatedBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -79,8 +78,9 @@ public class MainActivity extends InstrumentedActivity {
             }
         }
     };
-    private SourceWebView sourceWebViewBottomSheetFragment;
-    private AppWebView appWebViewBottomSheetFragment;
+    private AppWebView appWebViewPrimaryFragment = null;
+    private SourceWebView sourceWebViewBottomSheetFragment = null;
+    private AppWebView appWebViewBottomSheetFragment = null;
     private BottomSheetBehavior<FrameLayout> sourceWebViewBottomSheetBehavior;
     private final ActivityResultLauncher<Intent> createAnnotationFromSourceLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), MainActivity.this::handleCreateAnnotationFromSourceResult);
 
@@ -138,7 +138,9 @@ public class MainActivity extends InstrumentedActivity {
                 onAuthenticationViewModelInitialized
         );
         authenticationViewModel.getUser().observe(this, user -> {
-            if (appWebViewBottomSheetFragment == null) {
+            if (appWebViewBottomSheetFragment == null ||
+                    appWebViewModelPrimary == null ||
+                    !appWebViewModelPrimary.getHasFinishedInitializing().getValue()) {
                 return;
             }
 
