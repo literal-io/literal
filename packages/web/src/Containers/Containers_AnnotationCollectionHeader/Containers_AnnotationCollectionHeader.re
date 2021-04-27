@@ -39,11 +39,6 @@ let make =
       ~onCollectionsButtonClick=?,
       ~currentUser=?,
     ) => {
-  let _ =
-    React.useEffect0(() => {
-      Js.log("mount");
-      Some(() => {Js.log("unmount")});
-    });
 
   let (deleteAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(
