@@ -1,8 +1,8 @@
-let textValueSelector = (~annotation: Lib_WebView_Model_Annotation.t) =>
+let textValueSelector = (~annotation: LiteralModel.Annotation.t) =>
   annotation.target
   ->Belt.Array.keepMap(target =>
       switch (target) {
-      | Lib_WebView_Model_Target.TextualTarget(target) => Some(target)
+      | LiteralModel.Target.TextualTarget(target) => Some(target)
       | _ => None
       }
     )
@@ -11,12 +11,12 @@ let textValueSelector = (~annotation: Lib_WebView_Model_Annotation.t) =>
   ->Belt.Option.getWithDefault("");
 
 let tagsValueSelector =
-    (~annotation: Lib_WebView_Model_Annotation.t, ~currentUser) =>
+    (~annotation: LiteralModel.Annotation.t, ~currentUser) =>
   annotation.body
   ->Belt.Option.map(bodies =>
       bodies->Belt.Array.keepMap(body =>
         switch (body) {
-        | Lib_WebView_Model_Body.TextualBody(body) =>
+        | LiteralModel.Body.TextualBody(body) =>
           let href =
             Lib_GraphQL.AnnotationCollection.(
               makeIdFromComponent(
@@ -43,7 +43,7 @@ let tagsValueSelector =
 [@react.component]
 let make =
     (
-      ~annotation: Lib_WebView_Model_Annotation.t,
+      ~annotation: LiteralModel.Annotation.t,
       ~currentUser,
       ~onAnnotationChange,
     ) => {
@@ -98,7 +98,7 @@ let make =
     Js.log2("handleTagsChange", value);
     let textualBodies =
       value->Belt.Array.map((tag: Containers_AnnotationEditor_Tag.t) =>
-        Lib_WebView_Model_Body.(
+        LiteralModel.Body.(
           TextualBody(
             makeTextualBody(
               ~id=tag.id->Belt.Option.getWithDefault(tag.text),
@@ -118,7 +118,7 @@ let make =
       ->Belt.Option.getWithDefault([||])
       ->Belt.Array.keep(body =>
           switch (body) {
-          | Lib_WebView_Model_Body.NotImplemented_Passthrough(_) => true
+          | LiteralModel.Body.NotImplemented_Passthrough(_) => true
           | _ => false
           }
         )

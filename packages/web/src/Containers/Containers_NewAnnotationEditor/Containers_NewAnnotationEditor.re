@@ -70,7 +70,7 @@ let make = (~currentUser, ~initialPhaseState=`PhasePrompt) => {
         ->Belt.Option.flatMap(Js.Json.decodeArray)
         ->Belt.Option.map(json => {
             json->Belt.Array.keepMap(json =>
-              switch (Lib_WebView_Model_Annotation.decode(json)) {
+              switch (LiteralModel.Annotation.decode(json)) {
               | Ok(r) => Some(r)
               | Error(e) =>
                 Js.log2("Error decoding annotation", e);

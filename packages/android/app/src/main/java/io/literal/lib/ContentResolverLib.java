@@ -11,10 +11,10 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class ContentResolverLib {
-    public static File toFile (Context context, Uri uri, String fileName) {
+    public static File toFile (Context context, File directory, Uri uri, String fileName) {
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(uri);
-            File outputFile = new File(context.getFilesDir(), fileName);
+            File outputFile = new File(directory, fileName);
             FileUtils.copyInputStreamToFile(inputStream, outputFile);
             return outputFile;
         } catch (IOException e) {

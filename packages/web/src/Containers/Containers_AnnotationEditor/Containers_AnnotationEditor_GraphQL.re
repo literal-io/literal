@@ -122,7 +122,7 @@ module Webview = {
   let makeState =
     fun
     | `TimeState(t) =>
-      t->Lib_WebView_Model_State.makeTimeStateFromGraphQL->Js.Option.some
+      t->LiteralModel.State.makeTimeStateFromGraphQL->Js.Option.some
     | `Nonexhaustive => None;
 
   let makeSpecificTargetSelector = {
@@ -130,12 +130,12 @@ module Webview = {
       fun
       | `XPathSelector(xPathSelector) =>
         xPathSelector
-        |> Lib_WebView_Model_Selector.makeXPathSelectorFromGraphQL(
+        |> LiteralModel.Selector.makeXPathSelectorFromGraphQL(
              ~makeRefinedBy={
                fun
                | `TextPositionSelector(textPositionSelector) =>
                  textPositionSelector
-                 ->Lib_WebView_Model_Selector.makeTextPositionSelectorFromGraphQL
+                 ->LiteralModel.Selector.makeTextPositionSelectorFromGraphQL
                  ->Js.Option.some
                | `Nonexhaustive => None;
              },
@@ -145,7 +145,7 @@ module Webview = {
 
     fun
     | `RangeSelector(rangeSelector) =>
-      Lib_WebView_Model_Selector.makeRangeSelectorFromGraphQL(
+      LiteralModel.Selector.makeRangeSelectorFromGraphQL(
         ~makeStartSelector=makeXPathSelector,
         ~makeEndSelector=makeXPathSelector,
         rangeSelector,
@@ -154,29 +154,29 @@ module Webview = {
   };
 
   let makeAnnotation = annotation =>
-    Lib_WebView_Model_Annotation.makeAnnotationFromGraphQL(
+    LiteralModel.Annotation.makeAnnotationFromGraphQL(
       ~makeTarget={
         fun
         | `ExternalTarget(t) =>
           t
-          ->Lib_WebView_Model_Target.makeExternalTargetFromGraphQL
+          ->LiteralModel.Target.makeExternalTargetFromGraphQL
           ->Js.Option.some
         | `SpecificTarget(t) =>
-          Lib_WebView_Model_Target.makeSpecificTargetFromGraphQL(
+          LiteralModel.Target.makeSpecificTargetFromGraphQL(
             ~makeSelector=makeSpecificTargetSelector,
             ~makeState,
             t,
           )
         | `TextualTarget(t) =>
           t
-          ->Lib_WebView_Model_Target.makeTextualTargetFromGraphQL
+          ->LiteralModel.Target.makeTextualTargetFromGraphQL
           ->Js.Option.some
         | `Nonexhaustive => None;
       },
       ~makeBody={
         fun
         | `TextualBody(t) =>
-          t->Lib_WebView_Model_Body.makeTextualBodyFromGraphQL->Js.Option.some
+          t->LiteralModel.Body.makeTextualBodyFromGraphQL->Js.Option.some
         | `Nonexhaustive => None;
       },
       annotation,

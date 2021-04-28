@@ -5,13 +5,20 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.literal.lib.AnnotationLib;
+import io.literal.lib.AnnotationTargetLib;
+import io.literal.lib.Constants;
+import io.literal.lib.Crypto;
 import io.literal.lib.JsonArrayUtil;
+import io.literal.lib.WebRoutes;
+import io.literal.repository.ErrorRepository;
 import type.AnnotationType;
 import type.CreateAnnotationInput;
 
@@ -92,5 +99,49 @@ public class Annotation {
                                 ? Stream.of(this.body).map(Body::toAnnotationBodyInput).collect(Collectors.toList())
                                 : null
                 ).build();
+    }
+
+    public static Annotation fromText(String text, String creatorUsername) {
+        try {
+            String valueHash = Crypto.sha256Hex(text);
+            String annotationId = WebRoutes.creatorsIdAnnotationId(
+                    WebRoutes.getAPIHost(),
+                    creatorUsername,
+                    valueHash
+            );
+
+            Body[] bodies = { TextualBody.createTag(Constants.RECENT_ANNOTATION_COLLECTION_LABEL, creatorUsername) };
+            Target[] targets = { new TextualTarget(AnnotationTargetLib.makeId(annotationId), text) };
+            return new Annotation(
+                    bodies,
+                    targets,
+                    new Motivation[] { Motivation.HIGHLIGHTING },
+                    null,
+                    null,
+                    annotationId
+            );
+        } catch (NoSuchAlgorithmException ex) {
+            ErrorRepository.captureException(ex);
+            return null;
+        }
+    }
+
+    public static Annotation fromScreenshot(StorageObject screenshot, String creatorUsername) {
+        String annotationId = WebRoutes.creatorsIdAnnotationId(
+                WebRoutes.getAPIHost(),
+                creatorUsername,
+                UUID.randomUUID().toString()
+        );
+        Body[] bodies = { TextualBody.createTag(Constants.RECENT_ANNOTATION_COLLECTION_LABEL, creatorUsername) };
+        Target[] targets = { ExternalTarget.create(screenshot) };
+
+        return new Annotation(
+                bodies,
+                targets,
+                new Motivation[] { Motivation.HIGHLIGHTING },
+                null,
+                null,
+                annotationId
+        );
     }
 }

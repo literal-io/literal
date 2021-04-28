@@ -29,6 +29,28 @@ import type.DeleteAnnotationInput;
 import type.PatchAnnotationInput;
 
 public class AnnotationRepository {
+
+    public static void getAnnotationQuery(Context context, GetAnnotationQuery query, Callback<ApolloException, GetAnnotationQuery.Data> callback) {
+        AppSyncClientFactory.getInstance(context)
+                .query(query)
+                .enqueue(new GraphQLCall.Callback<GetAnnotationQuery.Data>() {
+                    @Override
+                    public void onResponse(@Nonnull Response<GetAnnotationQuery.Data> response) {
+                        if (response.hasErrors()) {
+                            response.errors().forEach((error -> ErrorRepository.captureException(new Exception(error.message()))));
+                            callback.invoke(new ApolloException("Server Error"), null);
+                        } else {
+                            callback.invoke(null, response.data());
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@Nonnull ApolloException e) {
+                        callback.invoke(e, null);
+                    }
+                });
+    }
+
     public static void patchAnnotationMutation(Context context, PatchAnnotationInput input, Callback<ApolloException, PatchAnnotationMutation.Data> callback) {
         try {
             JSONObject properties = new JSONObject();
@@ -96,29 +118,6 @@ public class AnnotationRepository {
                     }
                 });
     }
-
-
-    public static void getAnnotationQuery(Context context, GetAnnotationQuery query, Callback<ApolloException, GetAnnotationQuery.Data> callback) {
-        AppSyncClientFactory.getInstance(context)
-                .query(query)
-                .enqueue(new GraphQLCall.Callback<GetAnnotationQuery.Data>() {
-                    @Override
-                    public void onResponse(@Nonnull Response<GetAnnotationQuery.Data> response) {
-                        if (response.hasErrors()) {
-                            response.errors().forEach((error -> ErrorRepository.captureException(new Exception(error.message()))));
-                            callback.invoke(new ApolloException("Server Error"), null);
-                        } else {
-                            callback.invoke(null, response.data());
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(@Nonnull ApolloException e) {
-                        callback.invoke(e, null);
-                    }
-                });
-    }
-
 
     public static void createAnnotations(Context context, Annotation[] annotations, Callback<ApolloException, List<CreateAnnotationMutation.Data>> callback) {
         ManyCallback<ApolloException, CreateAnnotationMutation.Data> manyCallback = new ManyCallback<>(annotations.length, callback);

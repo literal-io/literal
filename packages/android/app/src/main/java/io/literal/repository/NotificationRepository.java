@@ -22,6 +22,7 @@ import io.literal.lib.AnnotationLib;
 import io.literal.lib.Constants;
 import io.literal.lib.DomainMetadata;
 import io.literal.lib.WebRoutes;
+import io.literal.model.User;
 import io.literal.ui.activity.MainActivity;
 
 public class NotificationRepository {
@@ -66,11 +67,11 @@ public class NotificationRepository {
         }
     }
 
-    public static void annotationCreatedNotification(Context context, GetAnnotationQuery.GetAnnotation annotation) {
+    public static void annotationCreatedNotification(Context context, User user, GetAnnotationQuery.GetAnnotation annotation) {
         Intent intent = new Intent(context, MainActivity.class);
         Uri annotationUri = Uri.parse(
                 WebRoutes.creatorsIdAnnotationCollectionIdAnnotationId(
-                        AWSMobileClient.getInstance().getUsername(),
+                        user.getUsername(),
                         Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT,
                         AnnotationLib.idComponentFromId(annotation.id())
                 )

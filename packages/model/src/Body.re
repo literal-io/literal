@@ -48,23 +48,17 @@ type t =
 let makeTextualBodyFromGraphQL = textualBody =>
   TextualBody(
     makeTextualBody(
-      ~language=?
-        textualBody##language->Belt.Option.map(Lib_GraphQL_Language.toString),
+      ~language=?textualBody##language->Belt.Option.map(Language.toString),
       ~processingLanguage=?
-        textualBody##processingLanguage
-        ->Belt.Option.map(Lib_GraphQL_Language.toString),
+        textualBody##processingLanguage->Belt.Option.map(Language.toString),
       ~accessibility=?textualBody##accessibility,
       ~rights=?textualBody##rights,
       ~textDirection=?
-        textualBody##textDirection
-        ->Belt.Option.map(Lib_GraphQL_TextDirection.toString),
-      ~format=?
-        textualBody##format->Belt.Option.map(Lib_GraphQL_Format.toString),
+        textualBody##textDirection->Belt.Option.map(TextDirection.toString),
+      ~format=?textualBody##format->Belt.Option.map(Format.toString),
       ~purpose=?
         textualBody##purpose
-        ->Belt.Option.map(d =>
-            d->Belt.Array.map(Lib_GraphQL_Motivation.toString)
-          ),
+        ->Belt.Option.map(d => d->Belt.Array.map(Motivation.toString)),
       ~value=textualBody##value,
       ~id=textualBody##id,
       (),

@@ -14,6 +14,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+import io.literal.lib.AnnotationCollectionLib;
+import io.literal.lib.Constants;
 import io.literal.lib.Crypto;
 import io.literal.lib.JsonArrayUtil;
 import io.literal.repository.ErrorRepository;
@@ -73,6 +75,24 @@ public class TextualBody extends Body {
                         .map(Motivation::valueOf).toArray(Motivation[]::new)
                         : null,
                 json.getString("value")
+        );
+    }
+
+    public static TextualBody createTag(String text, String creatorUsername) {
+        String annotationCollectionId = AnnotationCollectionLib.makeId(
+                creatorUsername,
+                text
+        );
+        return new TextualBody(
+            annotationCollectionId,
+                Format.TEXT_PLAIN,
+                Language.EN_US,
+                Language.EN_US,
+                TextDirection.LTR,
+                null,
+                null,
+                new Motivation[] { Motivation.TAGGING },
+                text
         );
     }
 

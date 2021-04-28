@@ -88,6 +88,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-auth:19.0.0'
 
     implementation 'io.sentry:sentry-android:4.3.0'
+    implementation 'net.jodah:failsafe:2.4.0'
 
     // Amplitude
     implementation 'com.amplitude:android-sdk:2.25.2'

@@ -1,6 +1,6 @@
 type viewState =
-  | EditAnnotationTags(Lib_WebView_Model_Annotation.t)
-  | CollapsedAnnotationTags(Lib_WebView_Model_Annotation.t);
+  | EditAnnotationTags(LiteralModel.Annotation.t)
+  | CollapsedAnnotationTags(LiteralModel.Annotation.t);
 
 [@react.component]
 let default = (~rehydrated) => {
@@ -10,7 +10,7 @@ let default = (~rehydrated) => {
     React.useEffect0(() => {
       let handleEditAnnotationTags = (event: option(Js.Json.t)) => {
         event
-        ->Belt.Option.map(Lib_WebView_Model_Annotation.decode)
+        ->Belt.Option.map(LiteralModel.Annotation.decode)
         ->Belt.Option.forEach(result =>
             switch (result) {
             | Ok(annotation) =>
@@ -22,7 +22,7 @@ let default = (~rehydrated) => {
 
       let handleCollapsedAnnotationTags = (event: option(Js.Json.t)) => {
         event
-        ->Belt.Option.map(Lib_WebView_Model_Annotation.decode)
+        ->Belt.Option.map(LiteralModel.Annotation.decode)
         ->Belt.Option.forEach(result =>
             switch (result) {
             | Ok(annotation) =>
@@ -81,7 +81,7 @@ let default = (~rehydrated) => {
             postMessage(
               WebEvent.make(
                 ~type_="EDIT_ANNOTATION_TAGS_RESULT",
-                ~data=annotation->Lib_WebView_Model_Annotation.encode,
+                ~data=annotation->LiteralModel.Annotation.encode,
                 (),
               ),
             )

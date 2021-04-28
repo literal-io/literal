@@ -51,12 +51,6 @@ public class AppWebView extends NestedScrollingChildWebView {
         setNestedScrollingEnabled(true);
     }
 
-    @Override
-    public void loadUrl(@NonNull String url) {
-        super.loadUrl(url);
-        Log.d("AppWebView", "loadUrl: " + url, new Exception("trace"));
-    }
-
     @SuppressLint("SetJavaScriptEnabled")
     public void initialize() {
         AppWebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);

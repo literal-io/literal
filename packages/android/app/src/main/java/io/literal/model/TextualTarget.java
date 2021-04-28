@@ -38,6 +38,19 @@ public class TextualTarget extends Target {
         this.value = value;
     }
 
+    public TextualTarget(String id, String value) {
+        this(
+                id,
+                Format.TEXT_PLAIN,
+                Language.EN_US,
+                Language.EN_US,
+                TextDirection.LTR,
+                null,
+                null,
+                value
+        );
+    }
+
     public static TextualTarget fromJson(JSONObject json) throws JSONException {
         return new TextualTarget(
                 json.optString("id"),

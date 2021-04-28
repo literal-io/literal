@@ -1,0 +1,29 @@
+{
+  "name": "@literal-io/model",
+  "version": "1.0.0",
+  "reason": {
+    "react-jsx": 3
+  },
+  "sources": [
+    {
+      "dir": "src",
+      "subdirs": true
+    }
+  ],
+  "package-specs": {
+    "module": "commonjs",
+    "in-source": true
+  },
+  "suffix": ".js",
+  "bs-dependencies": [
+    "decco"
+  ],
+  "ppx-flags": [
+    "decco/ppx"
+  ],
+  "warnings": {
+    "error": "+101"
+  },
+  "namespace": "LiteralModel",
+  "refmt": 3
+}

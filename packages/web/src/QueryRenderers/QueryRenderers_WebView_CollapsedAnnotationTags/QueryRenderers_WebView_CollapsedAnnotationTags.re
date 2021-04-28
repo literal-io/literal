@@ -1,10 +1,10 @@
 let tagsValueSelector =
-    (~annotation: Lib_WebView_Model_Annotation.t, ~currentUser) =>
+    (~annotation: LiteralModel.Annotation.t, ~currentUser) =>
   annotation.body
   ->Belt.Option.map(bodies =>
       bodies->Belt.Array.keepMap(body =>
         switch (body) {
-        | Lib_WebView_Model_Body.TextualBody(body) =>
+        | LiteralModel.Body.TextualBody(body) =>
           let href =
             Lib_GraphQL.AnnotationCollection.(
               makeIdFromComponent(
