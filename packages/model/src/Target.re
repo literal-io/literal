@@ -1,4 +1,3 @@
-/** io.literal.model.Annotation **/
 [@decco]
 type textualTarget = {
   id: string,
@@ -36,10 +35,10 @@ type specificTarget = {
   selector:
     option(
       array(
-        [@decco.codec Lib_WebView_Model_Selector.codec] Lib_WebView_Model_Selector.t,
+        [@decco.codec Selector.codec] Selector.t,
       ),
     ),
-  state: option(array(Lib_WebView_Model_State.t)),
+  state: option(array(State.t)),
   [@decco.default "SpecificTarget"] [@decco.key "__typename"]
   typename: string,
 }
@@ -104,17 +103,17 @@ let makeTextualTargetFromGraphQL = textualTarget =>
       ~value=textualTarget##value,
       ~language=?
         textualTarget##language
-        ->Belt.Option.map(Lib_GraphQL_Language.toString),
+        ->Belt.Option.map(Language.toString),
       ~processingLanguage=?
         textualTarget##processingLanguage
-        ->Belt.Option.map(Lib_GraphQL_Language.toString),
+        ->Belt.Option.map(Language.toString),
       ~accessibility=?textualTarget##accessibility,
       ~rights=?textualTarget##rights,
       ~textDirection=?
         textualTarget##textDirection
-        ->Belt.Option.map(Lib_GraphQL_TextDirection.toString),
+        ->Belt.Option.map(TextDirection.toString),
       ~format=?
-        textualTarget##format->Belt.Option.map(Lib_GraphQL_Format.toString),
+        textualTarget##format->Belt.Option.map(Format.toString),
       (),
     ),
   );
@@ -150,19 +149,19 @@ let makeExternalTargetFromGraphQL = externalTarget => {
       ~id=externalTarget##externalTargetId,
       ~language=?
         externalTarget##language
-        ->Belt.Option.map(Lib_GraphQL_Language.toString),
+        ->Belt.Option.map(Language.toString),
       ~processingLanguage=?
         externalTarget##processingLanguage
-        ->Belt.Option.map(Lib_GraphQL_Language.toString),
+        ->Belt.Option.map(Language.toString),
       ~accessibility=?externalTarget##accessibility,
       ~rights=?externalTarget##rights,
       ~textDirection=?
         externalTarget##textDirection
-        ->Belt.Option.map(Lib_GraphQL_TextDirection.toString),
+        ->Belt.Option.map(TextDirection.toString),
       ~format=?
-        externalTarget##format->Belt.Option.map(Lib_GraphQL_Format.toString),
+        externalTarget##format->Belt.Option.map(Format.toString),
       ~type_=?
-        externalTarget##type_->Belt.Option.map(Lib_GraphQL_ResourceType.toJs),
+        externalTarget##type_->Belt.Option.map(ResourceType.toJs),
       (),
     ),
   );

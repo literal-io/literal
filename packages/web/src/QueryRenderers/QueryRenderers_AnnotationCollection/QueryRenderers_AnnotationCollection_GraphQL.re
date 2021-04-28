@@ -129,6 +129,7 @@ module GetAnnotationCollection = {
           switch (d) {
           | `TEXT_PLAIN => "TEXT_PLAIN"
           | `TEXT_HTML => "TEXT_HTML"
+          | _ => "TEXT_PLAIN"
           }
         )
       ->Js.Null.fromOption,
@@ -180,7 +181,7 @@ module GetAnnotationCollection = {
               "externalTargetId": Js.Null.empty,
               "format":
                 d##format
-                ->Belt.Option.map(Lib_GraphQL_Format.toString)
+                ->Belt.Option.map(LiteralModel.Format.toString)
                 ->Js.Null.fromOption,
               "language":
                 d##language

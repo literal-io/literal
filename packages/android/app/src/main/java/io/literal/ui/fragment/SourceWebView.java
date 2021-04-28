@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
@@ -27,8 +26,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.amazonaws.services.kms.model.EnableKeyRotationRequest;
-import com.google.android.gms.auth.api.signin.internal.Storage;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
@@ -36,14 +33,12 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
-import java.lang.reflect.Array;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -64,16 +59,15 @@ import io.literal.model.Body;
 import io.literal.model.ExternalTarget;
 import io.literal.model.SpecificTarget;
 import io.literal.model.State;
+import io.literal.model.StorageObject;
 import io.literal.model.Target;
 import io.literal.model.TextualBody;
 import io.literal.model.TextualTarget;
 import io.literal.model.TimeState;
 import io.literal.repository.AnnotationRepository;
-import io.literal.repository.ArchiveRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.StorageRepository;
 import io.literal.service.AnnotationService;
-import io.literal.ui.MainApplication;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
@@ -409,17 +403,19 @@ public class SourceWebView extends Fragment {
         }
 
         String script = sourceWebViewViewModel.getGetAnnotationScript(getActivity().getAssets());
+        StorageObject archive = new StorageObject(StorageObject.Type.ARCHIVE, UUID.randomUUID().toString(), StorageObject.Status.MEMORY_ONLY, null, null);
         webView.evaluateJavascript(script, value -> {
             mode.finish();
             webView.saveWebArchive(
-                    ArchiveRepository.getLocalDir(getContext()).getAbsolutePath() + "/" + UUID.randomUUID().toString() + ".mhtml",
+                    archive.getFile(getContext()).toURI().getPath(),
                     false,
                     (filePath) -> {
+                        archive.setStatus(StorageObject.Status.UPLOAD_REQUIRED);
                         String creatorUsername = authenticationViewModel.getUser().getValue().getUsername();
                         Annotation annotation = sourceWebViewViewModel.createAnnotation(value, creatorUsername, false);
 
                         TimeState timeState = new TimeState(
-                                new String[]{"file://" + filePath},
+                                new StorageObject[]{archive},
                                 new String[]{DateUtil.toISO8601UTC(new Date())}
                         );
 
@@ -796,30 +792,34 @@ public class SourceWebView extends Fragment {
                         String externalTargetUri = null;
                         Target source = ((SpecificTarget) t).getSource();
                         if (source.getType() == Target.Type.EXTERNAL_TARGET) {
-                            externalTargetUri = ((ExternalTarget) source).getId();
+                            externalTargetUri = ((ExternalTarget) source).getId().toString();
                         }
 
-                        Optional<String> cachedURL = Arrays.stream(Optional.ofNullable(((SpecificTarget) t).getState()).orElse(new State[0]))
+                        Optional<StorageObject> cachedStorageObject = Arrays.stream(Optional.ofNullable(((SpecificTarget) t).getState()).orElse(new State[0]))
                                 .filter((s) -> s.getType().equals(State.Type.TIME_STATE))
                                 .findFirst()
-                                .flatMap((s) -> Arrays.stream(((TimeState) s).getCached()).filter(cachedUrl -> Uri.parse(cachedUrl).getScheme().equals("https")).findFirst());
+                                .flatMap((s) -> Arrays.stream(((TimeState) s).getCached()).filter(cached -> {
+                                    URI uri = cached.getCanonicalURI(getContext(), authenticationViewModel.getUser().getValue());
+                                    return uri.getScheme().equals("https");
+                                }).findFirst());
 
-                        if (cachedURL.isPresent()) {
+                        if (cachedStorageObject.isPresent()) {
                             String finalExternalTargetUri = externalTargetUri;
-                            authenticationViewModel.initialize(getActivity(), (e, user) -> getActivity().runOnUiThread(() -> {
+                            URI cachedStorageObjectURI = cachedStorageObject.get().getCanonicalURI(getContext(), authenticationViewModel.getUser().getValue());
+                            authenticationViewModel.initialize(getActivity()).whenComplete((user, error) -> getActivity().runOnUiThread(() -> {
                                 try {
                                     onTargetUrl.invoke(
                                             null,
-                                            cachedURL.get(),
+                                            cachedStorageObjectURI.toString(),
                                             finalExternalTargetUri != null
                                                     ? new DomainMetadata(
-                                                    new URL(cachedURL.get()),
+                                                    cachedStorageObjectURI.toURL(),
                                                     new URL(finalExternalTargetUri),
                                                     null)
                                                     : null
                                     );
                                 } catch (MalformedURLException _e) {
-                                    onTargetUrl.invoke(null, cachedURL.get(), null);
+                                    onTargetUrl.invoke(null, cachedStorageObjectURI.toString(), null);
                                 }
                             }));
                             return;
@@ -836,7 +836,7 @@ public class SourceWebView extends Fragment {
                     }
 
                     if (t.getType() == Target.Type.EXTERNAL_TARGET) {
-                        String id = ((ExternalTarget) t).getId();
+                        String id = ((ExternalTarget) t).getId().toString();
                         try {
                             onTargetUrl.invoke(null, id, new DomainMetadata(new URL(id), null));
                         } catch (MalformedURLException e) {
@@ -984,22 +984,9 @@ public class SourceWebView extends Fragment {
         Annotation[] createdAnnotations = new Annotation[0];
 
         if (createdAnnotationIds != null && annotations != null && createdAnnotationIds.size() > 0) {
-            try {
-                createdAnnotations = annotations.stream().filter((annotation) -> createdAnnotationIds.contains(annotation.getId())).toArray(Annotation[]::new);
-                Intent serviceIntent = new Intent(getActivity(), AnnotationService.class);
-                serviceIntent.setAction(AnnotationService.ACTION_CREATE_ANNOTATIONS);
-                serviceIntent.putExtra(
-                        AnnotationService.EXTRA_ANNOTATIONS,
-                        JsonArrayUtil.stringifyObjectArray(createdAnnotations, Annotation::toJson).toString()
-                );
-                serviceIntent.putExtra(
-                        AnnotationService.EXTRA_DOMAIN_METADATA,
-                        domainMetadata.toJson(getContext()).toString()
-                );
-                getActivity().startService(serviceIntent);
-            } catch (JSONException ex) {
-                ErrorRepository.captureException(ex);
-            }
+            createdAnnotations = annotations.stream().filter((annotation) -> createdAnnotationIds.contains(annotation.getId())).toArray(Annotation[]::new);
+            Intent serviceIntent = AnnotationService.getCreateAnnotationsIntent(getActivity(), createdAnnotations, domainMetadata);
+            getActivity().startService(serviceIntent);
         }
 
         if (onToolbarPrimaryActionCallback != null) {

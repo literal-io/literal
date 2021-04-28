@@ -32,6 +32,7 @@
     "@literal-io/apollo-link-analytics",
     "@literal-io/bs-sentry",
     "@literal-io/bs-amazon-cognito-identity-js",
+    "@literal-io/model",
     "@jsiebern/bs-material-ui"
   ],
   "ppx-flags": [

@@ -5,12 +5,12 @@ type t = {
   id: option(string),
   target:
     array(
-      [@decco.codec Lib_WebView_Model_Target.codec] Lib_WebView_Model_Target.t,
+      [@decco.codec Target.codec] Target.t,
     ),
   body:
     option(
       array(
-        [@decco.codec Lib_WebView_Model_Body.codec] Lib_WebView_Model_Body.t,
+        [@decco.codec Body.codec] Body.t,
       ),
     ),
   [@decco.default "Annotation"] [@decco.key "__typename"]

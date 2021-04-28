@@ -83,7 +83,7 @@ let unsafeAsCache = [%raw
 
 let writeToCache = (~annotation, ~currentUser) => {
   let cacheAnnotation =
-    annotation->Lib_WebView_Model_Annotation.encode->unsafeAsCache;
+    annotation->LiteralModel.Annotation.encode->unsafeAsCache;
 
   // FIXME: handle AnnotationCollectionsDrawer query, need to diff against cache
   // to determine what values have changed
@@ -92,7 +92,7 @@ let writeToCache = (~annotation, ~currentUser) => {
   ->Belt.Option.getWithDefault([||])
   ->Belt.Array.keepMap(body =>
       switch (body) {
-      | Lib_WebView_Model_Body.TextualBody(textualBody)
+      | LiteralModel.Body.TextualBody(textualBody)
           when
             textualBody.purpose
             ->Belt.Option.map(a =>
@@ -118,7 +118,7 @@ let addManyToCache = (~annotations, ~currentUser) => {
       annotations
       ->Belt.Array.map(annotation => {
           let cacheAnnotation =
-            annotation->Lib_WebView_Model_Annotation.encode->unsafeAsCache;
+            annotation->LiteralModel.Annotation.encode->unsafeAsCache;
 
           annotation.body
           ->Belt.Option.getWithDefault([||])
@@ -177,7 +177,7 @@ let addManyToCache = (~annotations, ~currentUser) => {
       annotations
       ->Belt.Array.map(annotation => {
           let cacheAnnotation =
-            annotation->Lib_WebView_Model_Annotation.encode->unsafeAsCache;
+            annotation->LiteralModel.Annotation.encode->unsafeAsCache;
 
           annotation.target
           ->Belt.Array.keepMap(target => {
@@ -247,11 +247,11 @@ let addManyToCache = (~annotations, ~currentUser) => {
 
 let deleteFromCache = (~annotation, ~currentUser) => {
   let tagAnnotationCollectionIds =
-    annotation.Lib_WebView_Model_Annotation.body
+    annotation.LiteralModel.Annotation.body
     ->Belt.Option.getWithDefault([||])
     ->Belt.Array.keepMap(body =>
         switch (body) {
-        | Lib_WebView_Model_Body.TextualBody(textualBody)
+        | LiteralModel.Body.TextualBody(textualBody)
             when
               textualBody.purpose
               ->Belt.Option.map(a =>

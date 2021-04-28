@@ -5,7 +5,7 @@ module Data = {
       let _ = onAnnotationChange(newAnnotation);
 
       let allBodiesHaveId =
-        newAnnotation.Lib_WebView_Model_Annotation.body
+        newAnnotation.LiteralModel.Annotation.body
         ->Belt.Option.getWithDefault([||])
         ->Belt.Array.every(
             fun
@@ -22,7 +22,7 @@ module Data = {
               postMessage(
                 WebEvent.make(
                   ~type_="EDIT_ANNOTATION_TAGS_RESULT",
-                  ~data=Lib_WebView_Model_Annotation.encode(newAnnotation),
+                  ~data=LiteralModel.Annotation.encode(newAnnotation),
                   (),
                 ),
               )

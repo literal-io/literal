@@ -29,6 +29,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import io.literal.R;
 import io.literal.lib.Callback;
@@ -88,7 +89,8 @@ public class MainActivity extends InstrumentedActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        this.initializeViewModel((e, user) -> runOnUiThread(() -> {
+        this.initializeViewModel().whenComplete((user, error) -> runOnUiThread(() -> {
+            // FIXME: handle unknown user state with displayed error
             if (savedInstanceState == null) {
                 String initialUrl;
                 String defaultUrl =
@@ -131,12 +133,9 @@ public class MainActivity extends InstrumentedActivity {
         LocalBroadcastManager.getInstance(getBaseContext()).unregisterReceiver(annotationCreatedBroadcastReceiver);
     }
 
-    private void initializeViewModel(Callback<Exception, User> onAuthenticationViewModelInitialized) {
+    private CompletableFuture<User> initializeViewModel() {
         authenticationViewModel = new ViewModelProvider(this).get(AuthenticationViewModel.class);
-        authenticationViewModel.initialize(
-                this,
-                onAuthenticationViewModelInitialized
-        );
+        CompletableFuture<User> userFuture = authenticationViewModel.initialize(this);
         authenticationViewModel.getUser().observe(this, user -> {
             if (appWebViewBottomSheetFragment == null ||
                     appWebViewModelPrimary == null ||
@@ -225,6 +224,8 @@ public class MainActivity extends InstrumentedActivity {
                     (_e, webEvent) -> appWebViewBottomSheetFragment.postWebEvent(webEvent)
             );
         });
+
+        return userFuture;
     }
 
     private void commitFragments(Bundle savedInstanceState, String initialUrl, User user) {

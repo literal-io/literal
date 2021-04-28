@@ -1,6 +1,7 @@
 package io.literal.repository;
 
 import android.content.Context;
+import android.net.Uri;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
@@ -20,6 +21,7 @@ import io.literal.factory.AWSMobileClientFactory;
 import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.Callback;
 import io.literal.lib.Callback3;
+import io.literal.model.User;
 
 public class StorageRepository {
 
@@ -27,8 +29,8 @@ public class StorageRepository {
     private static String bucketRegion;
     private static String storageHost;
 
-    public static String getPrivatePath(String creatorIdentityId, String path) {
-        return "private/" + creatorIdentityId + "/" + path;
+    public static AmazonS3URI getPrivateUri(Context context, User user, String path) {
+        return new AmazonS3URI("s3://" + getBucketName(context) + "/private/" + user.getIdentityId() + "/" + path);
     }
 
     public static String getBucketName(Context context) {

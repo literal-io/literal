@@ -1,5 +1,6 @@
 package io.literal.repository;
 
+import android.provider.Telephony;
 import android.util.Log;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
@@ -8,10 +9,14 @@ import com.amazonaws.mobile.client.UserStateListener;
 
 import io.literal.BuildConfig;
 import io.literal.lib.Thunk;
+import io.sentry.Breadcrumb;
 import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import io.sentry.protocol.User;
 
 public class ErrorRepository {
+
+    public static String CATEGORY_AUTHENTICATION = "Authentication";
 
     public static UserStateListener userStateListener = details -> {
         Log.d("ErrorRepository", "userStateListener: " + details.getUserState().name());
@@ -40,6 +45,13 @@ public class ErrorRepository {
         Log.d("ErrorRepository", "Capture Exception", exception);
     }
 
+    public static void captureException(Throwable exception) {
+        if (!BuildConfig.DEBUG) {
+            Sentry.captureException(exception);
+        }
+        Log.d("ErrorRepository", "Capture Exception", exception);
+    }
+
     public static void captureException(Exception exception, String message) {
         if (!BuildConfig.DEBUG) {
             Sentry.configureScope(scope -> {
@@ -55,5 +67,16 @@ public class ErrorRepository {
 
     public static void captureWarning(Exception exception) {
         Log.d("ErrorRepository", "warning", exception);
+    }
+
+    public static void captureBreadcrumb(String category, String message, SentryLevel level) {
+        if (!BuildConfig.DEBUG) {
+            Breadcrumb breadcrumb = new Breadcrumb();
+            breadcrumb.setCategory(category);
+            breadcrumb.setMessage(message);
+            breadcrumb.setLevel(level);
+            Sentry.addBreadcrumb(breadcrumb);
+        }
+        Log.i(category, message);
     }
 }

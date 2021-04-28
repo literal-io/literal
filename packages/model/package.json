@@ -1,0 +1,17 @@
+{
+  "name": "@literal-io/model",
+  "version": "1.0.0",
+  "description": "BuckleScript bindings for the Web Annotation data model as implemented by Literal.",
+  "main": "index.js",
+  "scripts": {
+    "bsb:build": "bsb -make-world",
+    "bsb:start": "bsb -make-world -w",
+    "bsb:clean": "bsb -clean-world"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "bs-platform": "8.2.0",
+    "decco": "1.3.0"
+  }
+}

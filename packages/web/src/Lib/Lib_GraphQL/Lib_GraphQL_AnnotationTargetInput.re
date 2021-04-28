@@ -126,7 +126,7 @@ let toCache = {
       (
         "format",
         t##format
-        ->Belt.Option.map(f => f->Lib_GraphQL_Format.toString->Js.Json.string)
+        ->Belt.Option.map(f => f->LiteralModel.Format.toString->Js.Json.string)
         ->Belt.Option.getWithDefault(Js.Json.null),
       ),
       (
@@ -178,7 +178,7 @@ let toCache = {
       (
         "format",
         t##format
-        ->Belt.Option.map(f => f->Lib_GraphQL_Format.toString->Js.Json.string)
+        ->Belt.Option.map(f => f->LiteralModel.Format.toString->Js.Json.string)
         ->Belt.Option.getWithDefault(Js.Json.null),
       ),
       (

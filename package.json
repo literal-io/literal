@@ -4,7 +4,8 @@
   "description": "A textual annotation management system.",
   "main": "index.js",
   "scripts": {
-    "lerna": "lerna"
+    "lerna": "lerna",
+    "lerna:bootstrap": "lerna bootstrap --hoist -- --legacy-peer-deps"
   },
   "repository": {
     "type": "git",

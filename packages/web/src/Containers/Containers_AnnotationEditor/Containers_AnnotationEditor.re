@@ -203,7 +203,7 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
                     "annotation",
                     annotation
                     ->Containers_AnnotationEditor_GraphQL.Webview.makeAnnotation
-                    ->Lib_WebView_Model_Annotation.encode,
+                    ->LiteralModel.Annotation.encode,
                   ),
                   (
                     "displayBottomSheet",

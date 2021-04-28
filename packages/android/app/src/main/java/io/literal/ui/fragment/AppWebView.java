@@ -37,6 +37,7 @@ import io.literal.R;
 import io.literal.lib.ContentResolverLib;
 import io.literal.lib.FileActivityResultCallback;
 import io.literal.lib.WebEvent;
+import io.literal.model.StorageObject;
 import io.literal.model.User;
 import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.ErrorRepository;
@@ -309,7 +310,12 @@ public class AppWebView extends Fragment {
                     public void onReceiveValue(Uri[] value) {
                         Uri[] absoluteUrls = new Uri[value.length];
                         for (int idx = 0; idx < value.length; idx++) {
-                            File file = value[idx] != null ? ContentResolverLib.toFile(getActivity(), value[idx], UUID.randomUUID().toString()) : null;
+                            File file = value[idx] != null ? ContentResolverLib.toFile(
+                                    getActivity(),
+                                    StorageObject.getDirectory(getContext(), StorageObject.Type.SCREENSHOT),
+                                    value[idx],
+                                    UUID.randomUUID().toString()
+                            ) : null;
                             absoluteUrls[idx] = Uri.fromFile(file);
                         }
                         filePathCallback.onReceiveValue(absoluteUrls);

@@ -53,7 +53,7 @@ module Data = {
         ->Belt.Option.flatMap(Js.Json.decodeObject)
         ->Belt.Option.flatMap(dict => Js.Dict.get(dict, "annotation"))
         ->Belt.Option.flatMap(json =>
-            switch (Lib_WebView_Model_Annotation.decode(json)) {
+            switch (LiteralModel.Annotation.decode(json)) {
             | Ok(r) => Some(r)
             | Error(e) =>
               let _ = Error.(report(DeccoDecodeError(e)));
@@ -72,7 +72,7 @@ module Data = {
         ->Belt.Option.flatMap(ev => ev->Js.Json.decodeObject)
         ->Belt.Option.flatMap(dict => Js.Dict.get(dict, "annotation"))
         ->Belt.Option.flatMap(json =>
-            switch (Lib_WebView_Model_Annotation.decode(json)) {
+            switch (LiteralModel.Annotation.decode(json)) {
             | Ok(r) => Some(r)
             | Error(_) => None
             }
@@ -100,7 +100,7 @@ module Data = {
         ->Belt.Option.flatMap(Js.Json.decodeArray)
         ->Belt.Option.map(json => {
             json->Belt.Array.keepMap(json =>
-              switch (Lib_WebView_Model_Annotation.decode(json)) {
+              switch (LiteralModel.Annotation.decode(json)) {
               | Ok(r) => Some(r)
               | Error(e) =>
                 Js.log2("Error decoding annotation", e);
@@ -339,6 +339,7 @@ let make =
   let isRecentAnnotationCollection =
     annotationCollectionIdComponent
     == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent;
+  Js.log(query);
   let agent =
     switch (query) {
     | {data: Some(data)} => data##getAgent
