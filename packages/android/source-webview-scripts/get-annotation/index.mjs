@@ -1,3 +1,6 @@
+import "core-js/index.js";
+import "regenerator-runtime/runtime.js";
+
 import { makeAnnotationFromSelection } from "./model.mjs";
 import {
   get as storageGet,

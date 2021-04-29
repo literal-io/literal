@@ -37,6 +37,9 @@ public class AppWebView extends NestedScrollingChildWebView {
     private WebEvent.Callback webEventCallback;
     private WebViewClient externalWebViewClient;
     private ArrayDeque<String> baseHistory;
+    WebMessagePortCompat[] webMessageChannel;
+    Handler mainHandler = new Handler(Looper.getMainLooper());
+
 
     public AppWebView(Context context) {
         super(context);
@@ -46,6 +49,12 @@ public class AppWebView extends NestedScrollingChildWebView {
     public AppWebView(Context context, AttributeSet attrs) {
         super(context, attrs);
         setNestedScrollingEnabled(true);
+    }
+
+    @Override
+    public void loadUrl(@NonNull String url) {
+        super.loadUrl(url);
+        Log.d("AppWebView", "loadUrl: " + url, new Exception("trace"));
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -92,9 +101,8 @@ public class AppWebView extends NestedScrollingChildWebView {
         if (WebViewFeature.isFeatureSupported(WebViewFeature.CREATE_WEB_MESSAGE_CHANNEL) &&
                 WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK) &&
                 WebViewFeature.isFeatureSupported(WebViewFeature.POST_WEB_MESSAGE)) {
-            final WebMessagePortCompat[] channel = WebViewCompat.createWebMessageChannel(this);
-            final Handler handler = new Handler(Looper.getMainLooper());
-            channel[0].setWebMessageCallback(handler, new WebMessagePortCompat.WebMessageCallbackCompat() {
+            webMessageChannel = WebViewCompat.createWebMessageChannel(this);
+            webMessageChannel[0].setWebMessageCallback(mainHandler, new WebMessagePortCompat.WebMessageCallbackCompat() {
                 @SuppressLint("RequiresFeature")
                 @Override
                 public void onMessage(@NonNull WebMessagePortCompat port, @Nullable WebMessageCompat message) {
@@ -108,7 +116,6 @@ public class AppWebView extends NestedScrollingChildWebView {
                         }
 
                         JSONObject loggedEvent = webEvent.toJSON(!webEvent.getType().startsWith("AUTH"));
-                        Log.i("Literal", "Received WebEvent " + loggedEvent.toString());
                         if (!webEvent.getType().equals(WebEvent.TYPE_ANALYTICS_LOG_EVENT) && !webEvent.getType().equals(WebEvent.TYPE_ANALYTICS_SET_USER_ID)) {
                             JSONObject properties = new JSONObject();
                             properties.put("target", "AppWebView");
@@ -124,7 +131,7 @@ public class AppWebView extends NestedScrollingChildWebView {
             // Initial handshake - deliver WebMessageChannel port to JS.
             WebViewCompat.postWebMessage(
                     this,
-                    new WebMessageCompat("", new WebMessagePortCompat[]{channel[1]}),
+                    new WebMessageCompat("", new WebMessagePortCompat[]{webMessageChannel[1]}),
                     Uri.parse(WebRoutes.getWebHost())
             );
         }
@@ -169,19 +176,38 @@ public class AppWebView extends NestedScrollingChildWebView {
         public boolean isWebview() {
             return true;
         }
+
+        @android.webkit.JavascriptInterface
+        public void sendMessagePort() {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    initializeWebMessageChannel();
+                }
+            });
+        }
     }
 
     private final WebViewClient webViewClient = new WebViewClient() {
         @Override
         public void onPageFinished(android.webkit.WebView webview, String url) {
-            initializeWebMessageChannel();
-            if (AppWebView.this.externalWebViewClient != null) {
-                AppWebView.this.externalWebViewClient.onPageFinished(webview, url);
+            if (url == null) {
+                return;
+            }
+
+            if (webview.getProgress() == 100) {
+                if (AppWebView.this.externalWebViewClient != null) {
+                    AppWebView.this.externalWebViewClient.onPageFinished(webview, url);
+                }
             }
         }
 
         @Override
         public void onPageStarted(android.webkit.WebView webview, String url, Bitmap favicon) {
+            if (url == null) {
+                return;
+            }
+
             if (AppWebView.this.externalWebViewClient != null) {
                 AppWebView.this.externalWebViewClient.onPageStarted(webview, url, favicon);
             }

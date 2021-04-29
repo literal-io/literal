@@ -1,5 +1,7 @@
-type t;
+type literalWebview;
+[@bs.get] [@bs.return nullable]
+external inst: Dom.window => option(literalWebview) = "literalWebview";
 
-[@bs.val] [@bs.scope ("globalThis")] [@bs.return nullable]
-external inst: option(t) = "literalWebview";
-[@bs.send] external isWebview: t => bool = "isWebview";
+[@bs.send] external isWebview: literalWebview => bool = "isWebview";
+[@bs.send]
+external sendMessagePort: literalWebview => unit = "sendMessagePort";

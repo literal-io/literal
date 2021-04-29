@@ -53,8 +53,10 @@ public class AuthenticationViewModel extends ViewModel {
             @Override
             public void onResult(UserStateDetails result) {
                 handleUserStateDetails(result, (e, user) -> {
-                    initializationCallbacks.forEach(cb -> cb.invoke(e, user));
-                    initializationCallbacks = null;
+                    if (initializationCallbacks != null) {
+                        initializationCallbacks.forEach(cb -> cb.invoke(e, user));
+                        initializationCallbacks = null;
+                    }
                     hasInitialized = true;
                     AWSMobileClient.getInstance().addUserStateListener(userStateListener);
                 });
@@ -63,8 +65,10 @@ public class AuthenticationViewModel extends ViewModel {
             @Override
             public void onError(Exception e) {
                 ErrorRepository.captureException(e);
-                initializationCallbacks.forEach(cb -> cb.invoke(e, null));
-                initializationCallbacks = null;
+                if (initializationCallbacks != null) {
+                    initializationCallbacks.forEach(cb -> cb.invoke(e, null));
+                    initializationCallbacks = null;
+                }
                 hasInitialized = true;
                 AWSMobileClient.getInstance().addUserStateListener(userStateListener);
             }

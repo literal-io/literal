@@ -1,3 +1,6 @@
+import "core-js/index.js";
+import "regenerator-runtime/runtime.js";
+
 import {
   get as storageGet,
   initialize as storageInitialize,

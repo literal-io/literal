@@ -70,6 +70,9 @@ public class SourceWebView extends NestedScrollingChildWebView {
     private Callback2<SourceWebView, WebEvent> webEventCallback;
     private WebViewClient externalWebViewClient;
 
+    WebMessagePortCompat[] webMessageChannel;
+    Handler mainHandler = new Handler(Looper.getMainLooper());
+
     public SourceWebView(Context context) {
         this(context, null);
     }
@@ -87,6 +90,7 @@ public class SourceWebView extends NestedScrollingChildWebView {
         webSettings.setDomStorageEnabled(true);
         webSettings.setBuiltInZoomControls(true);
         webSettings.setDisplayZoomControls(false);
+        this.addJavascriptInterface(new JavascriptInterface(), "literalWebview");
         this.setWebViewClient(new SourceWebViewClient(getContext()));
 
         this.setWebChromeClient(new WebChromeClient() {
@@ -125,16 +129,8 @@ public class SourceWebView extends NestedScrollingChildWebView {
         if (WebViewFeature.isFeatureSupported(WebViewFeature.CREATE_WEB_MESSAGE_CHANNEL) &&
                 WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK) &&
                 WebViewFeature.isFeatureSupported(WebViewFeature.POST_WEB_MESSAGE)) {
-
-            // Ensure web context is setup to begin the message channel handshake.
-            if (this.onGetWebMessageChannelInitializerScript != null) {
-                String script = this.onGetWebMessageChannelInitializerScript.invoke(null, null);
-                this.evaluateJavascript(script, (value -> { /** noop **/}));
-            }
-
-            final WebMessagePortCompat[] channel = WebViewCompat.createWebMessageChannel(this);
-            final Handler handler = new Handler(Looper.getMainLooper());
-            channel[0].setWebMessageCallback(handler, new WebMessagePortCompat.WebMessageCallbackCompat() {
+            webMessageChannel = WebViewCompat.createWebMessageChannel(this);
+            webMessageChannel[0].setWebMessageCallback(mainHandler, new WebMessagePortCompat.WebMessageCallbackCompat() {
                 @SuppressLint("RequiresFeature")
                 @Override
                 public void onMessage(@NonNull WebMessagePortCompat port, @Nullable WebMessageCompat message) {
@@ -160,9 +156,26 @@ public class SourceWebView extends NestedScrollingChildWebView {
             // Initial handshake - deliver WebMessageChannel port to JS.
             WebViewCompat.postWebMessage(
                     this,
-                    new WebMessageCompat("", new WebMessagePortCompat[]{channel[1]}),
+                    new WebMessageCompat("", new WebMessagePortCompat[]{webMessageChannel[1]}),
                     Uri.parse("*")
             );
+        }
+    }
+
+    private class JavascriptInterface {
+        @android.webkit.JavascriptInterface
+        public boolean isWebview() {
+            return true;
+        }
+
+        @android.webkit.JavascriptInterface
+        public void sendMessagePort() {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    initializeWebMessageChannel();
+                }
+            });
         }
     }
 
@@ -425,9 +438,16 @@ public class SourceWebView extends NestedScrollingChildWebView {
 
         @Override
         public void onPageFinished(android.webkit.WebView webview, String url) {
-            initializeWebMessageChannel();
-            if (SourceWebView.this.externalWebViewClient != null) {
-                SourceWebView.this.externalWebViewClient.onPageFinished(webview, url);
+            if (webview.getProgress() == 100) {
+                // Ensure web context is setup to begin the message channel handshake.
+                if (onGetWebMessageChannelInitializerScript != null) {
+                    String script = onGetWebMessageChannelInitializerScript.invoke(null, null);
+                    evaluateJavascript(script, (value -> { /** noop **/}));
+                }
+
+                if (SourceWebView.this.externalWebViewClient != null) {
+                    SourceWebView.this.externalWebViewClient.onPageFinished(webview, url);
+                }
             }
         }
 

@@ -80,9 +80,9 @@ let make =
               +. Webapi.Dom.(Window.scrollY(window));
 
             let _ =
-              Webapi.Dom.Element.scrollToWithOptions(
-                {"top": targetTop, "left": 0., "behavior": "smooth"},
+              Raw.maybeScrollTo(
                 scrollContainerElem,
+                {"top": targetTop, "left": 0., "behavior": "smooth"},
               );
             ();
           | _ => ()

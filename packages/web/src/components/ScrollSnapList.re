@@ -36,13 +36,13 @@ module Container = {
           directedScrollTargetIdx.current = Some(idx);
           let width = Webapi.Dom.Element.clientWidth(elem);
           let _ =
-            Webapi.Dom.Element.scrollToWithOptions(
+            Raw.maybeScrollTo(
+              elem,
               {
                 "behavior": behavior,
                 "left": float_of_int(width * idx),
                 "top": 0.,
               },
-              elem,
             );
           let _ = setHasScrolledToInitialIdx(_ => true);
           ();
@@ -50,13 +50,13 @@ module Container = {
           directedScrollTargetIdx.current = Some(idx);
           let height = Webapi.Dom.Element.clientHeight(elem);
           let _ =
-            Webapi.Dom.Element.scrollToWithOptions(
+            Raw.maybeScrollTo(
+              elem,
               {
                 "behavior": behavior,
                 "left": 0.,
                 "top": float_of_int(height * idx),
               },
-              elem,
             );
           let _ = setHasScrolledToInitialIdx(_ => true);
           ();
@@ -81,7 +81,7 @@ module Container = {
       let onScroll = ev => {
         containerRef.current
         ->Js.Nullable.toOption
-        ->Belt.Option.forEach(container => {
+        ->Belt.Option.forEach(container =>
             if (Raw.unsafeEq(ReactEvent.UI.target(ev), container)) {
               let _ = ReactEvent.UI.stopPropagation(ev);
               let (scroll, containerDimen) =
@@ -122,7 +122,7 @@ module Container = {
                 };
               };
             }
-        });
+          );
       };
 
       <div

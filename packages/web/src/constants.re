@@ -1,11 +1,6 @@
 [@bs.module "./aws-exports.js"]
 external awsAmplifyConfig: AwsAmplify.Config.t = "default";
 
-type window;
-[@bs.val] [@bs.scope "globalThis"] [@bs.return nullable]
-external window: option(window) = "window";
-let isBrowser = window->Js.Option.isSome;
-
 module Env = {
   [@bs.val] external nodeEnv: string = "process.env.NODE_ENV";
   [@bs.val] external amplifyEnv: string = "process.env.AMPLIFY_ENV";
