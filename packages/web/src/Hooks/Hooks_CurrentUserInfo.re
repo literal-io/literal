@@ -44,12 +44,8 @@ let use = () => {
     React.useContext(Providers_Authentication.authenticationContext);
 
   let checkAuthenticationState = () => {
-    let isWebview =
-      LiteralWebview.inst
-      ->Belt.Option.map(LiteralWebview.isWebview)
-      ->Belt.Option.getWithDefault(false);
     let _ =
-      (isWebview ? currentUserInfoWebview : currentUserInfoWeb)()
+      (Webview.isWebview() ? currentUserInfoWebview : currentUserInfoWeb)()
       |> Js.Promise.then_(currentUser => {
            let newAuthenticationState =
              switch (currentUser) {

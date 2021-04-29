@@ -1,5 +1,5 @@
 let _ =
-  Constants.isBrowser
+  Raw.isBrowser()
     ? Amplitude.(getInstance()->init(Constants.Env.amplitudeApiKey)) : ();
 
 [@decco.encode]
@@ -47,7 +47,7 @@ let track = event => {
     | Error(p) => ("ERROR", error_encode(p))
     };
 
-  if (Constants.isBrowser) {
+  if (Raw.isBrowser()) {
     let data =
       Js.Json.object_(
         Js.Dict.fromList([
@@ -70,7 +70,7 @@ let track = event => {
 };
 
 let setUserId = userId => {
-  if (Constants.isBrowser) {
+  if (Raw.isBrowser()) {
     let dispatched =
       Webview.(
         postMessage(

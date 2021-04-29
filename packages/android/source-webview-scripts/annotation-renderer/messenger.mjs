@@ -4,14 +4,18 @@ export class Messenger {
     this.eventQueue = [];
 
     window.addEventListener("message", (ev) => {
-      if (ev.ports && ev.ports.length > 0 && !globalThis.literalMessagePort) {
-        globalThis.literalMessagePort = ev.ports[0];
+      if (ev.ports && ev.ports.length > 0 && !window.literalMessagePort) {
+        window.literalMessagePort = ev.ports[0];
         this.eventQueue.forEach(this.postMessage);
         this.eventQueue = [];
       }
 
       this._handleMessage(ev);
     });
+
+    if (!window.literalMessagePort && window.literalWebview) {
+      window.literalWebview.sendMessagePort();
+    }
   }
 
   _handleMessage(ev) {
@@ -28,11 +32,11 @@ export class Messenger {
   }
 
   postMessage(ev) {
-    if (!globalThis.literalMessagePort) {
+    if (!window.literalMessagePort) {
       this.eventQueue.push(ev);
       return;
     }
-    globalThis.literalMessagePort.postMessage(JSON.stringify(ev));
+    window.literalMessagePort.postMessage(JSON.stringify(ev));
   }
 
   on(type, handler) {

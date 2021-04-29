@@ -1,3 +1,6 @@
+import "core-js/index.js";
+import "regenerator-runtime/runtime.js";
+
 import { Messenger } from "./messenger.mjs";
 import { Highlighter } from "./highlighter.mjs";
 import { Renderer } from "./renderer.mjs";
@@ -34,7 +37,6 @@ const renderer = new Renderer({
   annotationFocusManager,
 });
 
-
 const onDocumentReady = (cb) => {
   if (document.readyState === "complete") {
     cb();
@@ -47,7 +49,6 @@ const onDocumentReady = (cb) => {
 
 export default () =>
   onDocumentReady(async () => {
-
     storageInitialize();
     storageSet(KEY_SERVICE_ANNOTATION_FOCUS_MANAGER, annotationFocusManager);
     storageSet(KEY_SERVICE_HIGHLIGHTER, highlighter);
@@ -65,7 +66,7 @@ export default () =>
     annotationFocusManager.onAnnotationsRendered({
       annotations: ANNOTATIONS,
       focusedAnnotationId: FOCUSED_ANNOTATION_ID,
-      initialRender: true
+      initialRender: true,
     });
 
     messenger.postMessage({

@@ -88,7 +88,8 @@ module WebEvent = {
 };
 
 let isWebview = () =>
-  LiteralWebview.inst
+  Raw.global()
+  ->Belt.Option.flatMap(LiteralWebview.inst)
   ->Belt.Option.map(LiteralWebview.isWebview)
   ->Belt.Option.getWithDefault(false);
 
@@ -235,5 +236,12 @@ let initialize = () => {
            ();
          })
     );
+
+  let _ =
+    if (Belt.Option.isNone(port^)) {
+      Raw.global()
+      ->Belt.Option.flatMap(LiteralWebview.inst)
+      ->Belt.Option.forEach(LiteralWebview.sendMessagePort);
+    };
   ();
 };

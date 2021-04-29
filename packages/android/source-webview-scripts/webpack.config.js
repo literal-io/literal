@@ -17,6 +17,24 @@ const config = {
     path: resolvePath("./dist"),
     library: "Literal",
   },
+  module: {
+    rules: [
+      {
+        test: /\.m?js$/,
+        exclude: [
+          // \\ for Windows, \/ for Mac OS and Linux
+          /node_modules[\\\/]core-js/,
+          /node_modules[\\\/]webpack[\\\/]buildin/,
+        ],
+        use: {
+          loader: "babel-loader",
+          options: {
+            presets: ["@babel/preset-env"],
+          },
+        },
+      },
+    ],
+  },
 };
 
 export default config;
