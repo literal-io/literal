@@ -1,9 +1,26 @@
 open QueryRenderers_AnnotationCollection_GraphQL;
 
-module Loading = {
+module MainLoading = {
   [@react.component]
   let make = () =>
     <TextInput_Loading className={Cn.fromList(["px-6", "pb-4", "pt-16"])} />;
+};
+
+module Loading = {
+  [@react.component]
+  let make = () =>
+    <div
+      className={Cn.fromList([
+        "w-full",
+        "h-full",
+        "bg-black",
+        "overflow-y-scroll",
+      ])}>
+      <Containers_AnnotationCollectionHeader
+        onCollectionsButtonClick={() => ()}
+      />
+      <MainLoading />
+    </div>;
 };
 
 module Data = {
@@ -14,7 +31,7 @@ module Data = {
         ~annotationId,
         ~onAnnotationIdChange,
         ~onFetchMore,
-        ~currentUser,
+        ~identityId,
       ) => {
     let (activeIdx, setActiveIdx) =
       React.useState(() =>
@@ -61,7 +78,7 @@ module Data = {
             }
           )
         ->Belt.Option.forEach(annotation =>
-            Lib_WebView_Model_Apollo.writeToCache(~annotation, ~currentUser)
+            Lib_WebView_Model_Apollo.writeToCache(~annotation, ~identityId)
           );
       ();
     };
@@ -78,10 +95,7 @@ module Data = {
             }
           )
         ->Belt.Option.forEach(annotation =>
-            Lib_WebView_Model_Apollo.deleteFromCache(
-              ~annotation,
-              ~currentUser,
-            )
+            Lib_WebView_Model_Apollo.deleteFromCache(~annotation, ~identityId)
           );
       ();
     };
@@ -112,13 +126,13 @@ module Data = {
 
       if (Js.Array2.length(annotations) > 0) {
         let _ =
-          Lib_WebView_Model_Apollo.addManyToCache(~annotations, ~currentUser);
+          Lib_WebView_Model_Apollo.addManyToCache(~annotations, ~identityId);
 
         Routes.CreatorsIdAnnotationCollectionsId.(
           Next.Router.replaceWithAs(
             staticPath,
             path(
-              ~creatorUsername=currentUser.username,
+              ~identityId,
               ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
             ),
           )
@@ -160,7 +174,7 @@ module Data = {
            <Containers_AnnotationEditor
              isVisible={annotation##id == activeAnnotation##id}
              annotationFragment={annotation##editorAnnotationFragment}
-             currentUser
+             identityId
            />
          </ScrollSnapList.Item>
        )}
@@ -226,29 +240,34 @@ let make =
       ~annotationCollectionIdComponent,
       ~onOpenCollectionsDrawer,
       ~onAnnotationIdChange,
-      ~authentication: Hooks_CurrentUserInfo_Types.state,
+      ~user: Providers_Authentication_User.t,
       ~annotationId,
       ~rehydrated,
     ) => {
+  let identityId =
+    switch (user) {
+    | GuestUser({identityId})
+    | SignedInUser({identityId}) => Some(identityId)
+    | _ => None
+    };
   let (_, query) =
     ApolloHooks.useQuery(
       ~skip=
-        switch (authentication) {
-        | Authenticated(_) when rehydrated => false
-        | Loading
-        | Unauthenticated => true
+        switch (user) {
+        | GuestUser(_) when rehydrated => false
+        | SignedInUser(_) when rehydrated => false
+        | Unknown
+        | SignedOutPromptAuthentication
         | _ => true
         },
       ~variables=
-        switch (authentication) {
-        | Authenticated(currentUser) when rehydrated =>
+        switch (identityId) {
+        | Some(identityId) when rehydrated =>
           GetAnnotationCollection.Query.makeVariables(
-            ~creatorUsername=
-              currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+            ~creatorUsername=identityId,
             ~id=
               Lib_GraphQL.AnnotationCollection.makeIdFromComponent(
-                ~creatorUsername=
-                  currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                ~identityId,
                 ~annotationCollectionIdComponent,
                 (),
               ),
@@ -268,16 +287,14 @@ let make =
       ->Belt.Option.flatMap(d => d##nextToken);
 
     let _ =
-      switch (nextToken, authentication) {
-      | (Some(nextToken), Authenticated(currentUser)) when !query.loading =>
+      switch (nextToken, identityId) {
+      | (Some(nextToken), Some(identityId)) when !query.loading =>
         let variables =
           GetAnnotationCollection.Query.makeVariables(
-            ~creatorUsername=
-              currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+            ~creatorUsername=identityId,
             ~id=
               Lib_GraphQL.AnnotationCollection.makeIdFromComponent(
-                ~creatorUsername=
-                  currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                ~identityId,
                 ~annotationCollectionIdComponent,
                 (),
               ),
@@ -331,15 +348,10 @@ let make =
     ();
   };
 
-  let currentUser =
-    switch (authentication) {
-    | Authenticated(currentUser) => Some(currentUser)
-    | _ => None
-    };
   let isRecentAnnotationCollection =
     annotationCollectionIdComponent
     == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent;
-  Js.log(query);
+
   let agent =
     switch (query) {
     | {data: Some(data)} => data##getAgent
@@ -386,10 +398,11 @@ let make =
     | _ => None
     };
   let isLoading =
-    switch (annotationCollection, authentication) {
+    switch (annotationCollection, user) {
     | _ when !rehydrated => true
     | (None, _) when query.loading => true
-    | (_, Loading) => true
+    | (_, Unknown)
+    | (_, SignedInUserMergingIdentites(_)) => true
     | (Some(annotationCollection), _)
         when
           query.loading
@@ -414,13 +427,13 @@ let make =
 
   let header = {
     let annotationCollectionFragment =
-      switch (annotationCollection, currentUser) {
+      switch (annotationCollection, identityId) {
       | (Some(annotationCollection), _) =>
         Some(annotationCollection##annotationCollectionHeader)
-      | (_, Some(currentUser)) =>
+      | (_, Some(identityId)) =>
         Containers_AnnotationCollectionHeader.fragmentFromCache(
           ~annotationCollectionIdComponent,
-          ~currentUser,
+          ~identityId,
           (),
         )
       | _ =>
@@ -439,40 +452,40 @@ let make =
     <Containers_AnnotationCollectionHeader
       ?annotationCollectionFragment
       ?annotationFragment
-      ?currentUser
+      ?identityId
       hideDelete=isEmpty
       onCollectionsButtonClick=onOpenCollectionsDrawer
     />;
   };
 
   let main =
-    switch (authentication, annotations) {
-    | _ when isLoading => <Loading />
-    | (Authenticated(currentUser), _) when isOnboarding =>
-      <Containers_Onboarding currentUser> <Loading /> </Containers_Onboarding>
+    switch (identityId, annotations, user) {
+    | _ when isLoading => <MainLoading />
+    | (Some(_), _, _) when isOnboarding =>
+      <Containers_Onboarding user> <MainLoading /> </Containers_Onboarding>
     | _ when isEmpty && isRecentAnnotationCollection => <Empty />
-    | (Authenticated(currentUser), _) when isEmpty =>
+    | (Some(identityId), _, _) when isEmpty =>
       <Redirect
         staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath
         path={Routes.CreatorsIdAnnotationCollectionsId.path(
-          ~creatorUsername=currentUser.username,
+          ~identityId,
           ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
         )}>
-        <Loading />
+        <MainLoading />
       </Redirect>
-    | (Authenticated(currentUser), Some(annotations)) =>
+    | (Some(identityId), Some(annotations), _) =>
       <Data
         onAnnotationIdChange
         onFetchMore=handleFetchMore
         annotationId
-        currentUser
+        identityId
         annotations
       />
-    | (Unauthenticated, _) =>
+    | (_, _, SignedOutPromptAuthentication) =>
       <Redirect
         staticPath={Routes.Authenticate.path()}
         path={Routes.Authenticate.path()}>
-        <Loading />
+        <MainLoading />
       </Redirect>
     | _ =>
       switch (query.error) {

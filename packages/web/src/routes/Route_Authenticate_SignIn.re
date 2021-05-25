@@ -1,10 +1,14 @@
-type signUpError =
-  | UserExists
-  | SignUpFailed;
+type authenticationError =
+  | UserNotFound
+  | UserNotAuthorized
+  | AuthenticationFailed;
 
 [@react.component]
 let default = () => {
-  let authentication = Hooks_CurrentUserInfo.use();
+  let Providers_Authentication.{user, setUser} =
+    React.useContext(Providers_Authentication.authenticationContext);
+  let Providers_ModalNavigation.{onNext} =
+    React.useContext(Providers_ModalNavigation.context);
   let (isAuthenticating, setIsAuthenticating) = React.useState(() => false);
   let (authenticationError, setAuthenticationError) =
     React.useState(() => None);
@@ -12,13 +16,13 @@ let default = () => {
   let _ =
     React.useEffect1(
       () => {
-        switch (authentication) {
-        | Authenticated(currentUser) =>
+        switch (user) {
+        | SignedInUser({identityId}) =>
           Routes.CreatorsIdAnnotationCollectionsId.(
             Next.Router.replaceWithAs(
               staticPath,
               path(
-                ~creatorUsername=currentUser.username,
+                ~identityId,
                 ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
               ),
             )
@@ -27,7 +31,7 @@ let default = () => {
         };
         None;
       },
-      [|authentication|],
+      [|user|],
     );
 
   let ((email, password), setAuthenticationValue) =
@@ -39,7 +43,7 @@ let default = () => {
     let _ =
       Webview.postMessageForResult(
         Webview.WebEvent.make(
-          ~type_="AUTH_SIGN_UP",
+          ~type_="AUTH_SIGN_IN",
           ~data=
             Js.Json.object_(
               Js.Dict.fromList([
@@ -57,17 +61,39 @@ let default = () => {
                  Webview.WebEvent.AuthSignInResult.decode,
                )
              ) {
-             | Some(Ok({error: None})) =>
-               Webview.HubEvent.publish(~event="AUTH_SIGN_UP_RESULT", ())
-             | Some(Ok({error: Some("SIGN_UP_FAILED_USER_EXISTS")})) =>
+             | Some(Ok({error: None, user: Some(user)})) =>
+               let authenticationUser =
+                 user->Providers_Authentication_User.makeFromAuthGetUserResult;
+               let _ = setUser(authenticationUser);
+               let _ = setIsAuthenticating(_ => false);
+               let _ =
+                 switch (authenticationUser) {
+                 | SignedInUser({identityId}) =>
+                   onNext(() =>
+                     Next.Router.replaceWithAs(
+                       Routes.CreatorsIdAnnotationCollectionsId.staticPath,
+                       Routes.CreatorsIdAnnotationCollectionsId.path(
+                         ~identityId,
+                         ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
+                       ),
+                     )
+                   );
+                   ();
+                 | _ => setAuthenticationError(_ => Some(AuthenticationFailed))
+                 };
+               ();
+             | Some(Ok({error: Some("SIGN_IN_FAILED_USER_NOT_FOUND")})) =>
                setIsAuthenticating(_ => false);
-               setAuthenticationError(_ => Some(UserExists));
-             | Some(Ok({error: Some("SIGN_UP_FAILED")}))
+               setAuthenticationError(_ => Some(UserNotFound));
+             | Some(Ok({error: Some("SIGN_IN_FAILED_USER_NOT_AUTHORIZED")})) =>
+               setIsAuthenticating(_ => false);
+               setAuthenticationError(_ => Some(UserNotAuthorized));
              | Some(Ok({error: Some(_)}))
+             | Some(Ok({user: None}))
              | Some(Error(_))
              | None =>
                setIsAuthenticating(_ => false);
-               setAuthenticationError(_ => Some(SignUpFailed));
+               setAuthenticationError(_ => Some(AuthenticationFailed));
              };
            Js.Promise.resolve();
          });
@@ -129,7 +155,7 @@ let default = () => {
           "text-lg",
           "font-bold",
         ])}>
-        {React.string("Sign Up")}
+        {React.string("Sign In")}
       </h1>
     </Header>
     <main
@@ -163,9 +189,10 @@ let default = () => {
             ])}>
             {React.string(
                switch (authenticationError) {
-               | Some(UserExists) => "A user with this email already exists, try signing in."
-               | Some(SignUpFailed)
-               | None => "Unable to sign up. Please try again, and contact us if the issue persists."
+               | Some(UserNotFound) => "No user exists for this email. Verify it is correct, or sign up."
+               | Some(UserNotAuthorized)
+               | Some(AuthenticationFailed)
+               | None => "Unable to sign in. Verify that your credentials are correct."
                },
              )}
           </p>
@@ -174,10 +201,16 @@ let default = () => {
       <AuthenticationFields
         onChange={v => setAuthenticationValue(_ => v)}
         onSubmit=handleSubmit
-        type_=AuthenticationFields.SignUp
+        type_=AuthenticationFields.SignIn
       />
       <div
-        className={Cn.fromList(["flex", "flex-row", "justify-end", "mt-6"])}>
+        className={Cn.fromList([
+          "flex",
+          "flex-row",
+          "items-center",
+          "justify-end",
+          "mt-6",
+        ])}>
         <MaterialUi.Button
           onClick={_ => handleSubmit()}
           fullWidth=false
@@ -211,11 +244,11 @@ let default = () => {
                    (),
                  )}
                />
-             : React.string("Sign Up")}
+             : React.string("Sign In")}
         </MaterialUi.Button>
       </div>
     </main>
   </div>;
 };
 
-let page = "authenticate/sign-up.js";
+let page = "authenticate/sign-in.js";

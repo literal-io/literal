@@ -1,6 +1,6 @@
 module TextField = {
   [@react.component]
-  let make = (~text, ~onChange, ~onBlur) => {
+  let make = (~text, ~onChange, ~onBlur, ~onFocus=?) => {
     let keyEventHandled = React.useRef(false);
 
     let (value, setValue) = React.useState(() => text);
@@ -84,7 +84,8 @@ module TextField = {
         "onKeyUp": handleKeyUp,
         "onKeyDown": handleKeyDown,
         "onBlur": handleBlur,
-        "enterKeyHint": "done"
+        "onFocus": onFocus,
+        "enterKeyHint": "done",
       },
     );
   };
@@ -180,7 +181,7 @@ module Link = {
 };
 
 [@react.component]
-let make = (~href, ~text, ~disabled=?, ~onChange) => {
+let make = (~href, ~text, ~disabled=?, ~onChange, ~onFocus=?, ~onBlur=?) => {
   let (isEditing, setIsEditing) = React.useState(_ => false);
   let elemRef = React.useRef(Js.Nullable.null);
   let _ =
@@ -205,6 +206,17 @@ let make = (~href, ~text, ~disabled=?, ~onChange) => {
       None;
     });
 
+  let handleBlur = _ => {
+    let _ = setIsEditing(_ => false);
+    onBlur->Belt.Option.forEach(cb => cb());
+    ();
+  };
+  let handleLongPress = _ => {
+    setIsEditing(_ => true);
+    let _ = onFocus->Belt.Option.forEach(cb => cb());
+    ()
+  };
+
   <div
     ref={elemRef->ReactDOMRe.Ref.domRef}
     className={Cn.fromList([
@@ -222,12 +234,7 @@ let make = (~href, ~text, ~disabled=?, ~onChange) => {
       "duration-300",
     ])}>
     {isEditing
-       ? <TextField text onChange onBlur={_ => setIsEditing(_ => false)} />
-       : <Link
-           text
-           href
-           ?disabled
-           onLongPress={_ => setIsEditing(_ => true)}
-         />}
+       ? <TextField text onChange onBlur=handleBlur ?onFocus />
+       : <Link text href ?disabled onLongPress=handleLongPress />}
   </div>;
 };

@@ -34,40 +34,28 @@ public class AuthenticationViewModel extends ViewModel {
 
     private final MutableLiveData<User> user = new MutableLiveData<>(new User(UserState.UNKNOWN));
     private UserStateListener userStateListener;
-    private CompletableFuture<Void> initializedFuture;
+    private CompletableFuture<User> initializedFuture;
 
     public CompletableFuture<User> initialize(Activity activity) {
         if (initializedFuture == null) {
-            initializedFuture = new CompletableFuture<>();
-            AWSMobileClientFactory.initializeClient(activity.getApplicationContext(), new Callback<UserStateDetails>() {
-                @Override
-                public void onResult(UserStateDetails userStateDetails) {
-                    User.getInstance(userStateDetails).whenComplete((instance, error) -> activity.runOnUiThread(() -> {
-                        if (error != null) {
-                            ErrorRepository.captureException(error);
-                            initializedFuture.completeExceptionally(error);
-                            return;
-                        }
+            initializedFuture = AWSMobileClientFactory.initializeClient(activity.getApplicationContext()).thenCompose(User::getInstance);
 
-                        user.setValue(instance);
-                        userStateListener = User.subscribe((e1, instance1) -> {
-                            user.postValue(instance1);
-                            return null;
-                        });
-                        initializedFuture.complete(null);
-                    }));
+            initializedFuture.whenComplete((instance, error) -> activity.runOnUiThread(() -> {
+                userStateListener = User.subscribe((e1, instance1) -> {
+                    user.postValue(instance1);
+                    return null;
+                });
+
+                if (error != null) {
+                    ErrorRepository.captureException(error);
+                    initializedFuture.completeExceptionally(error);
+                    return;
                 }
 
-                @Override
-                public void onError(Exception e) {
-                    ErrorRepository.captureException(e);
-                    initializedFuture.completeExceptionally(e);
-                    userStateListener = User.subscribe((e1, instance1) -> {
-                        user.postValue(instance1);
-                        return null;
-                    });
-                }
-            });
+                user.setValue(instance);
+            }));
+
+            return initializedFuture;
         }
 
         return initializedFuture.thenApply(_void -> getUser().getValue());
@@ -141,5 +129,9 @@ public class AuthenticationViewModel extends ViewModel {
             }
             AWSMobileClient.getInstance().addUserStateListener(userStateListener);
         });
+    }
+
+    public CompletableFuture<Void> signOut() {
+        return AuthenticationRepository.signOut();
     }
 }

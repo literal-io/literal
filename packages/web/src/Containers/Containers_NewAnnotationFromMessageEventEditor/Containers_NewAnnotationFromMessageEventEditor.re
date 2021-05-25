@@ -10,8 +10,7 @@ let textValueSelector = (~annotation: LiteralModel.Annotation.t) =>
   ->Belt.Option.map(target => target.value)
   ->Belt.Option.getWithDefault("");
 
-let tagsValueSelector =
-    (~annotation: LiteralModel.Annotation.t, ~currentUser) =>
+let tagsValueSelector = (~annotation: LiteralModel.Annotation.t, ~identityId) =>
   annotation.body
   ->Belt.Option.map(bodies =>
       bodies->Belt.Array.keepMap(body =>
@@ -21,8 +20,7 @@ let tagsValueSelector =
             Lib_GraphQL.AnnotationCollection.(
               makeIdFromComponent(
                 ~annotationCollectionIdComponent=idComponent(body.id),
-                ~creatorUsername=
-                  currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                ~identityId,
                 ~origin=Webapi.Dom.(window->Window.location->Location.origin),
                 (),
               )
@@ -42,11 +40,7 @@ let tagsValueSelector =
 
 [@react.component]
 let make =
-    (
-      ~annotation: LiteralModel.Annotation.t,
-      ~currentUser,
-      ~onAnnotationChange,
-    ) => {
+    (~annotation: LiteralModel.Annotation.t, ~identityId, ~onAnnotationChange) => {
   let scrollContainerRef = React.useRef(Js.Nullable.null);
   let (pendingTagValue, setPendingTagValue) = React.useState(_ => "");
   let previousAnnotation = React.useRef(annotation);
@@ -55,11 +49,11 @@ let make =
   let _ =
     React.useEffect1(
       () => {
-        let currentTags = tagsValueSelector(~annotation, ~currentUser);
+        let currentTags = tagsValueSelector(~annotation, ~identityId);
         let previousTags =
           tagsValueSelector(
             ~annotation=previousAnnotation.current,
-            ~currentUser,
+            ~identityId,
           );
 
         // scroll the newly added tag into view
@@ -95,7 +89,6 @@ let make =
     );
 
   let rec handleTagsChange = value => {
-    Js.log2("handleTagsChange", value);
     let textualBodies =
       value->Belt.Array.map((tag: Containers_AnnotationEditor_Tag.t) =>
         LiteralModel.Body.(
@@ -138,8 +131,7 @@ let make =
         )
       ->Belt.Array.map(tag =>
           Lib_GraphQL.AnnotationCollection.makeId(
-            ~creatorUsername=
-              currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+            ~identityId,
             ~label=tag.text,
           )
           |> Js.Promise.then_(id =>
@@ -151,7 +143,7 @@ let make =
       ->Js.Promise.all
       |> Js.Promise.then_(tagsWithIds => {
            if (Js.Array2.length(tagsWithIds) > 0) {
-             let currentTags = tagsValueSelector(~annotation, ~currentUser);
+             let currentTags = tagsValueSelector(~annotation, ~identityId);
              let updatedTags =
                Belt.Array.reduce(
                  tagsWithIds,
@@ -183,7 +175,7 @@ let make =
   };
 
   let textValue = textValueSelector(~annotation);
-  let tagsValue = tagsValueSelector(~annotation, ~currentUser);
+  let tagsValue = tagsValueSelector(~annotation, ~identityId);
 
   let handlePendingTagChange = value => setPendingTagValue(_ => value);
   let handlePendingTagCommit = value => {
@@ -192,10 +184,7 @@ let make =
     let _ = handleTagsChange(Belt.Array.concat(tagsValue, [|newTag|]));
     let _ = setPendingTagValue(_ => "");
     let _ =
-      Lib_GraphQL.AnnotationCollection.makeId(
-        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-        ~label=value,
-      )
+      Lib_GraphQL.AnnotationCollection.makeId(~identityId, ~label=value)
       |> Js.Promise.then_(id => {
            let newTag =
              Containers_AnnotationEditor_Tag.{

@@ -5,6 +5,8 @@ let make =
     (
       ~onChange,
       ~value,
+      ~onFocus=?,
+      ~onBlur=?,
       ~disabled=?,
       ~autoFocus=?,
       ~placeholder=?,
@@ -60,6 +62,8 @@ let make =
     ?autoFocus
     ?disabled
     ?inputClasses
+    ?onFocus
+    ?onBlur
     inputProps={"onKeyDown": handleTextKeyDown, "disableUnderline": false}
   />;
 };

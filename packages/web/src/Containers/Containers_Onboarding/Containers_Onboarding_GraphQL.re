@@ -77,7 +77,7 @@ let makeOnboardingAnnotation =
     (
       ~id,
       ~textualTargetValue,
-      ~currentUser,
+      ~identityId,
       ~timestamp,
       ~textualBodyValues=?,
       ~specificTarget=?,
@@ -86,11 +86,7 @@ let makeOnboardingAnnotation =
   textualBodyValues
   ->Belt.Option.getWithDefault([||])
   ->Belt.Array.map(tag =>
-      Lib_GraphQL.AnnotationCollection.makeId(
-        ~creatorUsername=
-          AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-        ~label=tag,
-      )
+      Lib_GraphQL.AnnotationCollection.makeId(~identityId, ~label=tag)
       |> Js.Promise.then_(id =>
            Js.Promise.resolve(
              Containers_AnnotationEditor_Tag.{
@@ -108,8 +104,7 @@ let makeOnboardingAnnotation =
             Some(
               Lib_GraphQL.AnnotationCollection.(
                 makeIdFromComponent(
-                  ~creatorUsername=
-                    currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                  ~identityId,
                   ~annotationCollectionIdComponent=recentAnnotationCollectionIdComponent,
                   (),
                 )
@@ -173,8 +168,7 @@ let makeOnboardingAnnotation =
          ~modified=timestamp->Js.Json.string,
          ~generated=timestamp->Js.Json.string,
          ~motivation=[|`HIGHLIGHTING|],
-         ~creatorUsername=
-           AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+         ~creatorUsername=identityId,
          ~target,
          (),
        )
@@ -279,21 +273,19 @@ let makeSpecificTarget =
   );
 };
 
-let makeOnboardingAnnotations = (~currentUser) => {
+let makeOnboardingAnnotations = (~identityId) => {
   let baseTs = Js.Date.make();
-  let creatorUsername =
-    AwsAmplify.Auth.CurrentUserInfo.(currentUser->username);
 
   [|
     makeOnboardingAnnotation(
       ~id=
         Lib_GraphQL.Annotation.makeIdFromComponent(
-          ~creatorUsername,
+          ~identityId,
           ~annotationIdComponent=Uuid.makeV4(),
         ),
       ~textualTargetValue=
         "Welcome to Literal.\n\nLiteral is a textual annotation management system; a tool for bookmarking thoughts, ideas, and knowledge.\n\nAs you read, capture highlights of text with Literal. Literal automatically archives the source, context, and location of your annotation. Use tags to organize and add notes to annotations. Over time, revisit and leverage your annotations and their source context to augment the reading experience.\n\nSwipe left to learn more. ->",
-      ~currentUser,
+      ~identityId,
       ~timestamp={
         let _ = baseTs->Js.Date.setMilliseconds(float_of_int(100));
         baseTs->Js.Date.toISOString;
@@ -303,13 +295,13 @@ let makeOnboardingAnnotations = (~currentUser) => {
     makeOnboardingAnnotation(
       ~id=
         Lib_GraphQL.Annotation.makeIdFromComponent(
-          ~creatorUsername,
+          ~identityId,
           ~annotationIdComponent=Uuid.makeV4(),
         ),
       ~textualTargetValue=
         "Capture annotations wherever you read.\n\nTo annotate web-based content, use the device sharesheet to share the URL with Literal, and use the source viewer to read and annotate.\n\nTo annotate other content types (e.g. PDF, Kindle), highlight the text within your reader application, take a screenshot, and use the device sharesheet to share the screenshot with Literal.\n\nSwipe left to learn more. ->",
       ~textualBodyValues=?None,
-      ~currentUser,
+      ~identityId,
       ~timestamp={
         let _ = baseTs->Js.Date.setMilliseconds(float_of_int(99));
         baseTs->Js.Date.toISOString;
@@ -319,13 +311,13 @@ let makeOnboardingAnnotations = (~currentUser) => {
     makeOnboardingAnnotation(
       ~id=
         Lib_GraphQL.Annotation.makeIdFromComponent(
-          ~creatorUsername,
+          ~identityId,
           ~annotationIdComponent=Uuid.makeV4(),
         ),
       ~textualTargetValue=
         "Annotations are organized by tags and their source context. Tap the \"knowledge\" tag associated with this annotation and swipe left to explore example annotations. Tap an example annotation to see its source.\n\nIf you have any questions, feel to reach out to daniel@literal.io. Once you\'ve created annotations of your own, feel free to delete these example anotations.",
       ~textualBodyValues=[|"knowledge"|],
-      ~currentUser,
+      ~identityId,
       ~timestamp={
         let _ = baseTs->Js.Date.setMilliseconds(float_of_int(98));
         baseTs->Js.Date.toISOString;
@@ -335,7 +327,7 @@ let makeOnboardingAnnotations = (~currentUser) => {
     {
       let annotationId =
         Lib_GraphQL.Annotation.makeIdFromComponent(
-          ~creatorUsername,
+          ~identityId,
           ~annotationIdComponent=Uuid.makeV4(),
         );
       makeOnboardingAnnotation(
@@ -357,7 +349,7 @@ let makeOnboardingAnnotations = (~currentUser) => {
               ++ Constants.awsAmplifyConfig->AwsAmplify.Config.userFilesS3BucketGet
               ++ ".s3.amazonaws.com/shared-public-read/onboarding/library_of_babel/assets/https!urbigenous.net!library!library_of_babel.html",
           ),
-        ~currentUser,
+        ~identityId,
         ~timestamp={
           let _ = baseTs->Js.Date.setMilliseconds(float_of_int(97));
           baseTs->Js.Date.toISOString;
@@ -368,7 +360,7 @@ let makeOnboardingAnnotations = (~currentUser) => {
     {
       let annotationId =
         Lib_GraphQL.Annotation.makeIdFromComponent(
-          ~creatorUsername,
+          ~identityId,
           ~annotationIdComponent=Uuid.makeV4(),
         );
       makeOnboardingAnnotation(
@@ -398,7 +390,7 @@ let makeOnboardingAnnotations = (~currentUser) => {
               ++ Constants.awsAmplifyConfig->AwsAmplify.Config.userFilesS3BucketGet
               ++ ".s3.amazonaws.com/shared-public-read/onboarding/clausewitz/assets/https!en.m.wikipedia.org!wiki!Carl_von_Clausewitz",
           ),
-        ~currentUser,
+        ~identityId,
         ~timestamp={
           let _ = baseTs->Js.Date.setMilliseconds(float_of_int(97));
           baseTs->Js.Date.toISOString;
@@ -409,7 +401,7 @@ let makeOnboardingAnnotations = (~currentUser) => {
     {
       let annotationId =
         Lib_GraphQL.Annotation.makeIdFromComponent(
-          ~creatorUsername,
+          ~identityId,
           ~annotationIdComponent=Uuid.makeV4(),
         );
       makeOnboardingAnnotation(
@@ -431,7 +423,7 @@ let makeOnboardingAnnotations = (~currentUser) => {
               ++ Constants.awsAmplifyConfig->AwsAmplify.Config.userFilesS3BucketGet
               ++ ".s3.amazonaws.com/shared-public-read/onboarding/moby_dick/assets/https!www.gutenberg.org!files!2701!2701-h!2701-h.htm%23link2HCH0036",
           ),
-        ~currentUser,
+        ~identityId,
         ~timestamp={
           let _ = baseTs->Js.Date.setMilliseconds(float_of_int(97));
           baseTs->Js.Date.toISOString;

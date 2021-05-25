@@ -14,41 +14,26 @@ let cacheAgentFragment =
 |},
   );
 
-let makeId = (~currentUser) =>
-  Constants.apiOrigin
-  ++ "/agents/"
-  ++ currentUser->AwsAmplify.Auth.CurrentUserInfo.username;
+let makeId = (~identityId) => Constants.apiOrigin ++ "/agents/" ++ identityId;
 
-let makeCache = (~currentUser) => {
-  let email = AwsAmplify.Auth.CurrentUserInfo.(currentUser->attributes->email);
-
-  Lib_GraphQL.makeHash(~digest="SHA-1", email)
-  |> Js.Promise.then_(hashedEmail =>
-       Js.Json.object_(
-         Js.Dict.fromList([
-           ("__typename", "Agent"->Js.Json.string),
-           ("id", makeId(~currentUser)->Js.Json.string),
-           ("email", [|email->Js.Json.string|]->Js.Json.array),
-           ("email_sha1", [|hashedEmail->Js.Json.string|]->Js.Json.array),
-           ("type", "PERSON"->Js.Json.string),
-           (
-             "username",
-             currentUser
-             ->AwsAmplify.Auth.CurrentUserInfo.username
-             ->Js.Json.string,
-           ),
-           ("homepage", Js.Json.null),
-           ("name", Js.Json.null),
-           ("nickname", Js.Json.null),
-         ]),
-       )
-       ->Js.Promise.resolve
-     );
-};
+let makeCache = (~identityId) =>
+  Js.Json.object_(
+    Js.Dict.fromList([
+      ("__typename", "Agent"->Js.Json.string),
+      ("id", makeId(~identityId)->Js.Json.string),
+      ("email", Js.Json.null),
+      ("email_sha1", Js.Json.null),
+      ("type", "PERSON"->Js.Json.string),
+      ("username", identityId->Js.Json.string),
+      ("homepage", Js.Json.null),
+      ("name", Js.Json.null),
+      ("nickname", Js.Json.null),
+    ]),
+  );
 
 let readCache = id => {
   Apollo.Client.readFragment(
-    Providers_Apollo.client,
+    Providers_Apollo_Client.inst^,
     {id: "Agent:" ++ id, fragment: cacheAgentFragment},
   );
 };

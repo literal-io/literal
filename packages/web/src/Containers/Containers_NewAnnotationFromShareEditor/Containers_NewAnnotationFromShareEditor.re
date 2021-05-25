@@ -1,7 +1,7 @@
 open Containers_NewAnnotationFromShareEditor_GraphQL;
 
 [@react.component]
-let make = (~annotationFragment as annotation, ~currentUser) => {
+let make = (~annotationFragment as annotation, ~identityId) => {
   let scrollContainerRef = React.useRef(Js.Nullable.null);
   let textInputRef = React.useRef(Js.Nullable.null);
   let (textValue, setTextValue) =
@@ -33,8 +33,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
                 Lib_GraphQL.AnnotationCollection.(
                   makeIdFromComponent(
                     ~annotationCollectionIdComponent=idComponent(body##id),
-                    ~creatorUsername=
-                      currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                    ~identityId,
                     ~origin=
                       Webapi.Dom.(window->Window.location->Location.origin),
                     (),
@@ -59,8 +58,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
               Some(
                 Lib_GraphQL.AnnotationCollection.(
                   makeIdFromComponent(
-                    ~creatorUsername=
-                      currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                    ~identityId,
                     ~annotationCollectionIdComponent=recentAnnotationCollectionIdComponent,
                     (),
                   )
@@ -150,10 +148,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       tagsValue
       ->Belt.Array.map(tag =>
           tag
-          |> Containers_AnnotationEditor_Tag.ensureId(
-               ~creatorUsername=
-                 AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-             )
+          |> Containers_AnnotationEditor_Tag.ensureId(~identityId)
           |> Js.Promise.then_(tag =>
                tag
                ->Containers_AnnotationEditor_Tag.asTextualBody
@@ -165,8 +160,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
            let input =
              Lib_GraphQL_PatchAnnotationMutation.Input.make(
                ~id=annotation##id,
-               ~creatorUsername=
-                 AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+               ~creatorUsername=identityId,
                ~operations=
                  Belt.Array.concat(
                    Lib_GraphQL_PatchAnnotationMutation.Input.makeFromBodyDiff(
@@ -181,7 +175,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
            let mutationResult = patchAnnotationMutation(~variables, ());
            let _ =
              Lib_GraphQL_PatchAnnotationMutation.Apollo.updateCache(
-               ~currentUser,
+               ~identityId,
                ~input,
              );
 
@@ -192,7 +186,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
                    staticPath,
                    path(
                      ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
-                     ~creatorUsername=currentUser.username,
+                     ~identityId,
                    ),
                  )
                );
@@ -230,10 +224,7 @@ let make = (~annotationFragment as annotation, ~currentUser) => {
       );
     let _ = setPendingTagValue(_ => "");
     let _ =
-      Lib_GraphQL.AnnotationCollection.makeId(
-        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-        ~label=value,
-      )
+      Lib_GraphQL.AnnotationCollection.makeId(~identityId, ~label=value)
       |> Js.Promise.then_(id => {
            let _ =
              setTagsValue(tags => {

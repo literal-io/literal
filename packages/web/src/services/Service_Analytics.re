@@ -78,7 +78,14 @@ let setUserId = userId => {
             ~type_="ANALYTICS_SET_USER_ID",
             ~data=
               Js.Json.object_(
-                Js.Dict.fromList([("userId", userId->Js.Json.string)]),
+                Js.Dict.fromList([
+                  (
+                    "userId",
+                    userId
+                    ->Belt.Option.map(Js.Json.string)
+                    ->Belt.Option.getWithDefault(Js.Json.null),
+                  ),
+                ]),
               ),
             (),
           ),

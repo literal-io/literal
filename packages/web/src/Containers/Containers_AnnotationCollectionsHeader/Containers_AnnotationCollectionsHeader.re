@@ -40,11 +40,9 @@ let make =
       <h1
         className={Cn.fromList([
           "font-sans",
-          "italic",
+          "font-bold",
           "text-lg",
           "text-lightPrimary",
-          "font-bold",
-          "uppercase",
           "ml-4",
         ])}>
         {React.string("Collections")}

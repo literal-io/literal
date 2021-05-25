@@ -23,7 +23,9 @@
     "aws-appsync": "^4.0.0",
     "aws-appsync-react": "^4.0.0",
     "reason-apollo": "^0.20.0",
-    "reason-react": "^0.9.1"
+    "reason-react": "^0.9.1",
+    "@literal-io/bs-aws-amplify": "1.0.0",
+    "@literal-io/bs-amazon-cognito-identity-js": "1.0.0"
   },
   "peerDependencies": {
     "bs-platform": "^8.2.0"

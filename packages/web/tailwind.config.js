@@ -48,6 +48,7 @@ module.exports = {
         lightPrimary: "rgba(255, 255, 255, .92)",
         lightSecondary: "rgba(255, 255, 255, .72)",
         lightDisabled: "rgba(255, 255, 255, .50)",
+        lightDivider: "rgba(255, 255, 255, .12)",
 
         // accent black
         darkAccent: "#2A2A2A",
@@ -62,6 +63,7 @@ module.exports = {
         lightPrimary: "rgba(255, 255, 255, .92)",
         lightSecondary: "rgba(255, 255, 255, .72)",
         lightDisabled: "rgba(255, 255, 255, .50)",
+        lightDivider: "rgba(255, 255, 255, .12)",
       },
       textColor: {
         lightPrimary: "rgba(255, 255, 255, .92)",

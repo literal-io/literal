@@ -6,11 +6,11 @@ import android.util.Log;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
+import com.amazonaws.mobile.client.UserState;
 import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.mobile.config.AWSConfiguration;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferService;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 
 import org.json.JSONException;
@@ -18,11 +18,13 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 
 import io.literal.R;
 import io.literal.lib.Constants;
 import io.literal.repository.ErrorRepository;
+import io.literal.repository.SharedPreferencesRepository;
 
 public class AWSMobileClientFactory {
 
@@ -35,40 +37,54 @@ public class AWSMobileClientFactory {
     public static volatile AmplifyEnvironment amplifyEnvironment;
     private static volatile AmazonS3Client amazonS3Client;
 
-    static CountDownLatch initializationLatch = new CountDownLatch(1);
+    private static CompletableFuture<Void> initializedFuture;
 
-    public static void initializeClient(Context context, final Callback<UserStateDetails> callback) {
+    public static CompletableFuture<UserStateDetails> initializeClient(Context context, boolean forceReinitialize) {
+        boolean isSignedOut = SharedPreferencesRepository.getIsSignedOut(context);
+        if (initializedFuture == null || forceReinitialize) {
+            initializedFuture = new CompletableFuture<>();
+            try {
+                context.startService(new Intent(context, TransferService.class));
+            } catch (Exception ex) { /** May be in background, noop **/}
+            AWSMobileClient.getInstance().initialize(context, getConfiguration(context), new Callback<UserStateDetails>() {
+                @Override
+                public void onResult(UserStateDetails result) {
+                    initializedFuture.complete(null);
+                }
 
-        if (initializationLatch.getCount() == 0 && callback != null) {
-            callback.onResult(AWSMobileClient.getInstance().currentUserState());
-            return;
+                @Override
+                public void onError(Exception e) {
+                    initializedFuture.completeExceptionally(e);
+                }
+            });
         }
 
-        try {
-            context.startService(new Intent(context, TransferService.class));
-        } catch (Exception ex) { /** May be in background, noop **/ }
-        AWSMobileClient.getInstance().initialize(context, getConfiguration(context), new Callback<UserStateDetails>() {
-            @Override
-            public void onResult(UserStateDetails result) {
-                if (callback != null) {
-                    callback.onResult(result);
+        return initializedFuture.thenCompose((_void) -> {
+            CompletableFuture<UserStateDetails> userStateDetailsFuture = new CompletableFuture<>();
+            AWSMobileClient.getInstance().currentUserState(new Callback<UserStateDetails>() {
+                @Override
+                public void onResult(UserStateDetails result) {
+                    userStateDetailsFuture.complete(result);
                 }
-                initializationLatch.countDown();
-            }
 
-            @Override
-            public void onError(Exception e) {
-                if (callback != null) {
-                    callback.onError(e);
+                @Override
+                public void onError(Exception e) {
+                    userStateDetailsFuture.completeExceptionally(e);
                 }
-                initializationLatch.countDown();
+            });
+            return userStateDetailsFuture;
+        }).thenCompose((userStateDetails) -> {
+            if (userStateDetails.getUserState().equals(UserState.SIGNED_OUT) && !forceReinitialize && !isSignedOut) {
+                AWSMobileClient.getInstance().getCredentials();
+                return initializeClient(context, true);
             }
+            return CompletableFuture.completedFuture(userStateDetails);
         });
     }
 
-    public static void initializeClient(Context context) { initializeClient(context, null); }
-
-    public static CountDownLatch getInitializationLatch() { return initializationLatch; }
+    public static CompletableFuture<UserStateDetails> initializeClient(Context context) {
+        return initializeClient(context, false);
+    }
 
     public static AmplifyEnvironment getAmplifyEnvironment() { return amplifyEnvironment; }
 

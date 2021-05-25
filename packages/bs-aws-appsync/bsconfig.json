@@ -17,7 +17,8 @@
   "bs-dependencies": [
     "reason-react",
     "reason-apollo",
-    "@literal-io/bs-aws-amplify"
+    "@literal-io/bs-aws-amplify",
+    "@literal-io/bs-amazon-cognito-identity-js"
   ],
   "ppx-flags": [],
   "refmt": 3

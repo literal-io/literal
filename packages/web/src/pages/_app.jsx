@@ -4,10 +4,13 @@ import "@fontsource/domine/latin.css";
 
 import Router from "next/router";
 
-import AuthenticationProvider from "../Providers/Providers_Authentication.js";
-import ApolloProvider from "../Providers/Providers_Apollo.js";
+import AuthenticationProvider from "../Providers/Providers_Authentication/Providers_Authentication.js";
+import ApolloProvider from "../Providers/Providers_Apollo/Providers_Apollo.js";
+import ModalNavigationProvider from "../Providers/Providers_ModalNavigation/Providers_ModalNavigation.js";
+import BottomNavigationProvider from "../Providers/Providers_BottomNavigation/Providers_BottomNavigation.js";
 import ErrorBoundary from "../components/ErrorBoundary/ErrorBoundary.js";
 import Head from "../components/Head.js";
+import BottomNavigation from "../components/BottomNavigation/BottomNavigation.js";
 import { page, track } from "../services/Service_Analytics.js";
 
 import * as React from "react";
@@ -21,6 +24,7 @@ export default function App({
   pageProps,
   router: { asPath, route, query },
 }) {
+
   // Next.js currently does not allow trailing slash in a route.
   // This is a client side redirect in case trailing slash occurs.
   // https://github.com/zeit/next.js/issues/5214
@@ -47,15 +51,22 @@ export default function App({
   return (
     <>
       <Head.make />
-      <AuthenticationProvider.make>
-        <ErrorBoundary.make>
-          <ApolloProvider.make
-            render={(rehydrated) => (
-              <Component rehydrated={rehydrated} {...pageProps} />
-            )}
-          />
-        </ErrorBoundary.make>
-      </AuthenticationProvider.make>
+      <ErrorBoundary.make>
+        <AuthenticationProvider.make>
+          <ModalNavigationProvider.make>
+            <BottomNavigationProvider.make>
+              <ApolloProvider.make
+                render={(rehydrated) => (
+                  <>
+                    <Component rehydrated={rehydrated} {...pageProps} />
+                    <BottomNavigation.make />
+                  </>
+                )}
+              />
+            </BottomNavigationProvider.make>
+          </ModalNavigationProvider.make>
+        </AuthenticationProvider.make>
+      </ErrorBoundary.make>
     </>
   );
 }

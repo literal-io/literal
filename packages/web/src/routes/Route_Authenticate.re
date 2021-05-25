@@ -31,7 +31,8 @@ let resetPasswordUrl =
 
 [@react.component]
 let default = () => {
-  let authentication = Hooks_CurrentUserInfo.use();
+  let Providers_Authentication.{user} =
+    React.useContext(Providers_Authentication.authenticationContext);
   let (isAuthenticating, setIsAuthenticating) = React.useState(() => false);
   let (isMenuOpen, setIsMenuOpen) = React.useState(() => false);
   let menuIconButtonRef = React.useRef(Js.Nullable.null);
@@ -48,21 +49,21 @@ let default = () => {
       () => {
         let _ =
           switch (
-            authentication,
+            user,
             searchParams |> Webapi.Url.URLSearchParams.get("forResult"),
           ) {
-          | (Authenticated(currentUser), None) =>
+          | (SignedInUser({identityId}), None) =>
             setIsAuthenticating(_ => false);
             Routes.CreatorsIdAnnotationCollectionsId.(
               Next.Router.replaceWithAs(
                 staticPath,
                 path(
-                  ~creatorUsername=currentUser.username,
+                  ~identityId,
                   ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
                 ),
               )
             );
-          | (Authenticated(currentUser), Some(_)) =>
+          | (SignedInUser({identityId}), Some(_)) =>
             setIsAuthenticating(_ => false);
             let _ =
               Webview.(
@@ -73,7 +74,7 @@ let default = () => {
           };
         None;
       },
-      [|authentication|],
+      [|user|],
     );
 
   let handleAuthenticateGoogle = () => {

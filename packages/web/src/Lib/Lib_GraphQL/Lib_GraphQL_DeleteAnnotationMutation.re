@@ -6,7 +6,7 @@ module Input = {
 };
 
 module Apollo = {
-  let updateCache = (~annotation, ~currentUser) => {
+  let updateCache = (~annotation, ~identityId) => {
     let tagAnnotationCollectionIds =
       annotation##body
       ->Belt.Option.getWithDefault([||])
@@ -41,11 +41,7 @@ module Apollo = {
           );
         })
       ->Belt.Array.map(id =>
-          Lib_GraphQL.AnnotationCollection.makeId(
-            ~creatorUsername=
-              currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-            ~label=id,
-          )
+          Lib_GraphQL.AnnotationCollection.makeId(~identityId, ~label=id)
         );
 
     let _ =
@@ -60,7 +56,7 @@ module Apollo = {
                annotationCollectionId => {
                Lib_GraphQL_AnnotationCollection.Apollo.removeAnnotationFromCollection(
                  ~annotationId=annotation##id,
-                 ~currentUser,
+                 ~identityId,
                  ~annotationCollectionId,
                )
              });

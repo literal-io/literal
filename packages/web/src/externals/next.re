@@ -2,6 +2,7 @@ type router = {
   query: Js.Json.t,
   pathname: string,
   asPath: string,
+  route: string
 };
 
 type path('a) = {params: 'a};
@@ -52,8 +53,9 @@ module Link = {
       ~prefetch: bool=?,
       ~replace: bool=?,
       ~scroll: bool=?,
-      ~children: React.element
+      ~children: React.element=?
     ) =>
     React.element =
     "default";
 };
+

@@ -1,4 +1,4 @@
-let _ = Sentry.(init(config(~dsn=Constants.Env.sentryDsn, ~normalizeDepth=10)));
+let _ = SentryBrowser.(init(config(~dsn=Constants.Env.sentryDsn, ~normalizeDepth=10)));
 
 module RawErrorBoundary = {
   [@bs.module "./raw-error-boundary.js"] [@react.component]
@@ -17,7 +17,7 @@ let make = (~children) => {
   <RawErrorBoundary
     renderErrorBoundary={() => <ErrorDisplay />}
     onComponentDidCatch={error => {
-      let _ = Sentry.captureException(error);
+      let _ = SentryBrowser.captureException(error);
       ();
     }}>
     children

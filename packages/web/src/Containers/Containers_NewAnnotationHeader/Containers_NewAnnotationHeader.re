@@ -9,6 +9,7 @@ let make = () => {
 
   <Header
     className={Cn.fromList([
+      "h-14",
       "py-2",
       "px-4",
       "bg-darkAccent",
@@ -42,12 +43,9 @@ let make = () => {
     <h1
       className={Cn.fromList([
         "font-sans",
-        "italic",
-        "uppercase",
+        "font-bold",
         "text-lg",
         "text-lightPrimary",
-        "font-bold",
-        "uppercase",
         "ml-4",
       ])}>
       {React.string("Create Annotation")}

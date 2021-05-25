@@ -7,7 +7,7 @@ type action =
   | SetPhase(phase);
 
 [@react.component]
-let make = (~currentUser, ~initialPhaseState=`PhasePrompt) => {
+let make = (~identityId, ~initialPhaseState=`PhasePrompt) => {
   let (phaseState, dispatchPhaseAction) =
     React.useReducer(
       (_, action) => {
@@ -46,11 +46,7 @@ let make = (~currentUser, ~initialPhaseState=`PhasePrompt) => {
     let _ =
       Next.Router.pushWithAs(
         Routes.CreatorsIdAnnotationsNew.staticPath,
-        Routes.CreatorsIdAnnotationsNew.path(
-          ~creatorUsername=
-            currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-        )
-        ++ search,
+        Routes.CreatorsIdAnnotationsNew.path(~identityId) ++ search,
       );
     ();
   };
@@ -82,12 +78,12 @@ let make = (~currentUser, ~initialPhaseState=`PhasePrompt) => {
 
       if (Js.Array2.length(annotations) > 0) {
         let _ =
-          Lib_WebView_Model_Apollo.addManyToCache(~annotations, ~currentUser);
+          Lib_WebView_Model_Apollo.addManyToCache(~annotations, ~identityId);
         Routes.CreatorsIdAnnotationCollectionsId.(
           Next.Router.replaceWithAs(
             staticPath,
             path(
-              ~creatorUsername=currentUser.username,
+              ~identityId,
               ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
             ),
           )
@@ -117,7 +113,7 @@ let make = (~currentUser, ~initialPhaseState=`PhasePrompt) => {
 
   switch (phaseState) {
   | `PhaseTextInput =>
-    <Containers_NewAnnotationEditor_PhaseTextInput currentUser />
+    <Containers_NewAnnotationEditor_PhaseTextInput identityId />
   | `PhasePrompt =>
     <Containers_NewAnnotationEditor_PhasePrompt
       onCreateFromFile=handleCreateFromFile

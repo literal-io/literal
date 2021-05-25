@@ -29,9 +29,8 @@ import type.DeleteAnnotationInput;
 import type.PatchAnnotationInput;
 
 public class AnnotationRepository {
-
-    public static void getAnnotationQuery(Context context, GetAnnotationQuery query, Callback<ApolloException, GetAnnotationQuery.Data> callback) {
-        AppSyncClientFactory.getInstance(context)
+    public static void getAnnotationQuery(AWSAppSyncClient appSyncClient, GetAnnotationQuery query, Callback<ApolloException, GetAnnotationQuery.Data> callback) {
+        appSyncClient
                 .query(query)
                 .enqueue(new GraphQLCall.Callback<GetAnnotationQuery.Data>() {
                     @Override
@@ -51,7 +50,7 @@ public class AnnotationRepository {
                 });
     }
 
-    public static void patchAnnotationMutation(Context context, PatchAnnotationInput input, Callback<ApolloException, PatchAnnotationMutation.Data> callback) {
+    public static void patchAnnotationMutation(AWSAppSyncClient appSyncClient, PatchAnnotationInput input, Callback<ApolloException, PatchAnnotationMutation.Data> callback) {
         try {
             JSONObject properties = new JSONObject();
             JSONObject operationVariables = new JSONObject();
@@ -64,7 +63,7 @@ public class AnnotationRepository {
             ErrorRepository.captureException(e);
         }
 
-        AppSyncClientFactory.getInstance(context)
+        appSyncClient
                 .mutate(PatchAnnotationMutation.builder().input(input).build())
                 .enqueue(new GraphQLCall.Callback<PatchAnnotationMutation.Data>() {
                     @Override
@@ -86,7 +85,7 @@ public class AnnotationRepository {
                 });
     }
 
-    public static void deleteAnnotationMutation(Context context, DeleteAnnotationInput input, Callback<ApolloException, DeleteAnnotationMutation.Data> callback) {
+    public static void deleteAnnotationMutation(AWSAppSyncClient appSyncClient, DeleteAnnotationInput input, Callback<ApolloException, DeleteAnnotationMutation.Data> callback) {
         try {
             JSONObject properties = new JSONObject();
             JSONObject operationVariables = new JSONObject();
@@ -99,7 +98,7 @@ public class AnnotationRepository {
             ErrorRepository.captureException(e);
         }
 
-        AppSyncClientFactory.getInstance(context)
+        appSyncClient
                 .mutate(DeleteAnnotationMutation.builder().input(input).build())
                 .enqueue(new GraphQLCall.Callback<DeleteAnnotationMutation.Data>() {
                     @Override
@@ -119,9 +118,8 @@ public class AnnotationRepository {
                 });
     }
 
-    public static void createAnnotations(Context context, Annotation[] annotations, Callback<ApolloException, List<CreateAnnotationMutation.Data>> callback) {
+    public static void createAnnotations(AWSAppSyncClient appSyncClient, Annotation[] annotations, Callback<ApolloException, List<CreateAnnotationMutation.Data>> callback) {
         ManyCallback<ApolloException, CreateAnnotationMutation.Data> manyCallback = new ManyCallback<>(annotations.length, callback);
-        AWSAppSyncClient appSyncClient = AppSyncClientFactory.getInstance(context);
 
         for (int i = 0; i < annotations.length; i++) {
             Callback<ApolloException, CreateAnnotationMutation.Data> innerCallback = manyCallback.getCallback(i);

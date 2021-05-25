@@ -24,22 +24,22 @@ let makeHash = (~digest="SHA-256", text) => {
 module Annotation = {
   let defaultContext = "http://www.w3.org/ns/anno.jsonld";
 
-  let makeId = (~creatorUsername, ~textualTargetValue) =>
+  let makeId = (~identityId, ~textualTargetValue) =>
     makeHash(textualTargetValue)
     |> Js.Promise.then_(valueHash => {
          Js.Promise.resolve(
            Constants.apiOrigin
            ++ "/creators/"
-           ++ creatorUsername
+           ++ identityId
            ++ "/annotations/"
            ++ valueHash,
          )
        });
 
-  let makeIdFromComponent = (~creatorUsername, ~annotationIdComponent) =>
+  let makeIdFromComponent = (~identityId, ~annotationIdComponent) =>
     Constants.apiOrigin
     ++ "/creators/"
-    ++ creatorUsername
+    ++ identityId
     ++ "/annotations/"
     ++ annotationIdComponent;
 
@@ -55,8 +55,7 @@ module Annotation = {
         )
       ->Belt.Option.getWithDefault(false);
 
-    body##__typename === "TextualBody"
-    && hasTaggingPurpose;
+    body##__typename === "TextualBody" && hasTaggingPurpose;
   };
 
   let annotationFromCreateAnnotationInput = [%raw
@@ -108,13 +107,13 @@ module Annotation = {
 };
 
 module AnnotationCollection = {
-  let makeId = (~creatorUsername, ~label) =>
+  let makeId = (~identityId, ~label) =>
     makeHash(label)
     |> Js.Promise.then_(hash =>
          Js.Promise.resolve(
            Constants.apiOrigin
            ++ "/creators/"
-           ++ creatorUsername
+           ++ identityId 
            ++ "/annotation-collections/"
            ++ hash,
          )
@@ -122,14 +121,14 @@ module AnnotationCollection = {
 
   let makeIdFromComponent =
       (
-        ~creatorUsername,
+        ~identityId,
         ~annotationCollectionIdComponent,
         ~origin=Constants.apiOrigin,
         (),
       ) =>
     origin
     ++ "/creators/"
-    ++ creatorUsername
+    ++ identityId 
     ++ "/annotation-collections/"
     ++ annotationCollectionIdComponent;
 

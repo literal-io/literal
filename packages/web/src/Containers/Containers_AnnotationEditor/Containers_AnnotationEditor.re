@@ -23,7 +23,7 @@ let textValueSelector = (~annotation) =>
   ->Belt.Option.map(target => target##value)
   ->Belt.Option.getWithDefault("");
 
-let tagsValueSelector = (~currentUser, ~annotation) =>
+let tagsValueSelector = (~identityId, ~annotation) =>
   annotation##body
   ->Belt.Option.map(bodies =>
       bodies->Belt.Array.keepMap(body =>
@@ -33,8 +33,7 @@ let tagsValueSelector = (~currentUser, ~annotation) =>
             Lib_GraphQL.AnnotationCollection.(
               makeIdFromComponent(
                 ~annotationCollectionIdComponent=idComponent(body##id),
-                ~creatorUsername=
-                  currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                ~identityId,
                 ~origin=Webapi.Dom.(window->Window.location->Location.origin),
                 (),
               )
@@ -56,8 +55,7 @@ let tagsValueSelector = (~currentUser, ~annotation) =>
         text: recentAnnotationCollectionLabel,
         id:
           makeIdFromComponent(
-            ~creatorUsername=
-              currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+            ~identityId,
             ~annotationCollectionIdComponent=recentAnnotationCollectionIdComponent,
             (),
           )
@@ -119,7 +117,7 @@ module ModifiedValue = {
 };
 
 [@react.component]
-let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
+let make = (~annotationFragment as annotation, ~identityId, ~isVisible) => {
   let (patchAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(
       Containers_AnnotationEditor_GraphQL.PatchAnnotationMutation.definition,
@@ -127,6 +125,8 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
   let scrollContainerRef = React.useRef(Js.Nullable.null);
   let textInputRef = React.useRef(Js.Nullable.null);
   let previousAnnotation = React.useRef(annotation);
+  let Providers_BottomNavigation.{setIsVisible: setIsBottomNavigationVisible} =
+    React.useContext(Providers_BottomNavigation.context);
 
   let (ModifiedValue.{value: textValue}, setTextValue) =
     React.useState(() =>
@@ -157,7 +157,7 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
   let (ModifiedValue.{value: tagsValue}, setTagsValue) =
     React.useState(() =>
       ModifiedValue.{
-        value: tagsValueSelector(~currentUser, ~annotation),
+        value: tagsValueSelector(~identityId, ~annotation),
         modified: modifiedSelector(~annotation),
       }
     );
@@ -169,7 +169,7 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
           setTagsValue(currentModified => {
             let newModified =
               ModifiedValue.{
-                value: tagsValueSelector(~currentUser, ~annotation),
+                value: tagsValueSelector(~identityId, ~annotation),
                 modified: modifiedSelector(~annotation),
               };
 
@@ -177,7 +177,7 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
           });
         None;
       },
-      (annotation, currentUser),
+      (annotation, identityId),
     );
 
   let handleViewTargetForAnnotation =
@@ -253,10 +253,7 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
       tagsValue
       ->Belt.Array.map(tag =>
           tag
-          |> Containers_AnnotationEditor_Tag.ensureId(
-               ~creatorUsername=
-                 AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-             )
+          |> Containers_AnnotationEditor_Tag.ensureId(~identityId)
           |> Js.Promise.then_(tag =>
                tag
                ->Containers_AnnotationEditor_Tag.asTextualBody
@@ -268,10 +265,7 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
       newTagsValue
       ->Belt.Array.map(tag =>
           tag
-          |> Containers_AnnotationEditor_Tag.ensureId(
-               ~creatorUsername=
-                 AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
-             )
+          |> Containers_AnnotationEditor_Tag.ensureId(~identityId)
           |> Js.Promise.then_(tag =>
                tag
                ->Containers_AnnotationEditor_Tag.asTextualBody
@@ -287,8 +281,7 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
              Lib_GraphQL_PatchAnnotationMutation.Input.(
                make(
                  ~id=annotation##id,
-                 ~creatorUsername=
-                   AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                 ~creatorUsername=identityId,
                  ~operations=
                    Lib_GraphQL_PatchAnnotationMutation.Input.makeFromBodyDiff(
                      ~oldBody=textualBodies->Belt.Array.keepMap(d => d),
@@ -306,7 +299,7 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
              );
            let _ =
              Lib_GraphQL_PatchAnnotationMutation.Apollo.updateCache(
-               ~currentUser,
+               ~identityId,
                ~input,
              );
            Js.Promise.resolve();
@@ -404,8 +397,7 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
                let input =
                  Lib_GraphQL_PatchAnnotationMutation.Input.make(
                    ~id=annotation##id,
-                   ~creatorUsername=
-                     AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                   ~creatorUsername=identityId,
                    ~operations=[|updateTargetOperation|],
                  );
                let _ =
@@ -436,11 +428,11 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
   let _ =
     React.useEffect1(
       () => {
-        let currentTags = tagsValueSelector(~annotation, ~currentUser);
+        let currentTags = tagsValueSelector(~annotation, ~identityId);
         let previousTags =
           tagsValueSelector(
             ~annotation=previousAnnotation.current,
-            ~currentUser,
+            ~identityId,
           );
 
         // scroll the newly added tag into view
@@ -511,6 +503,8 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
        | _ =>
          <TextInput.Annotation
            onChange=handleTextChange
+           onFocus={_ => setIsBottomNavigationVisible(false)}
+           onBlur={_ => setIsBottomNavigationVisible(true)}
            value=textValue
            textInputRef
            inputClasses={MaterialUi.Input.Classes.make(
@@ -520,7 +514,12 @@ let make = (~annotationFragment as annotation, ~currentUser, ~isVisible) => {
            )}
          />
        }}
-      <TagsList value=tagsValue onChange=handleTagsChange />
+      <TagsList
+        value=tagsValue
+        onChange=handleTagsChange
+        onFocus={_ => setIsBottomNavigationVisible(false)}
+        onBlur={_ => setIsBottomNavigationVisible(true)}
+      />
     </div>
   </div>;
 };

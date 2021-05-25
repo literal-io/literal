@@ -20,6 +20,8 @@ let apple: string = [%raw "require('./apple.svg')"];
 let errorOutline: string = [%raw "require('./error-outline.svg')"];
 let more: string = [%raw "require('./more.svg')"];
 let article: string = [%raw "require('./article.svg')"];
+let manageAccounts: string = [%raw "require('./manage-accounts.svg')"];
+let highlight: string = [%raw "require('./highlight.svg')"];
 
 [@react.component]
 let make = (~className=?, ~style=?, ~onClick=?, ~icon) => {

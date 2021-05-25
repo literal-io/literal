@@ -1,7 +1,7 @@
 open Styles;
 
 [@react.component]
-let make = (~currentUser, ~initialPhaseState=?) =>
+let make = (~identityId, ~initialPhaseState=?) =>
   <div
     className={cn([
       "w-full",
@@ -13,5 +13,5 @@ let make = (~currentUser, ~initialPhaseState=?) =>
       "overflow-y-auto",
     ])}>
     <Containers_NewAnnotationHeader />
-    <Containers_NewAnnotationEditor currentUser ?initialPhaseState />
+    <Containers_NewAnnotationEditor identityId ?initialPhaseState />
   </div>;

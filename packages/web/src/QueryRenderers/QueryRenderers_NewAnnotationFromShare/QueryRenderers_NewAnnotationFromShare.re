@@ -7,7 +7,7 @@ let noDataAlert = "Unable to parse image. Make sure the text is clearly highligh
 
 module Data = {
   [@react.component]
-  let make = (~annotation, ~currentUser) => {
+  let make = (~annotation, ~identityId) => {
     <div
       className={cn([
         "w-full",
@@ -19,11 +19,11 @@ module Data = {
         "overflow-y-auto",
       ])}>
       <Containers_NewAnnotationFromShareHeader
-        currentUser
+        identityId
         annotationFragment={annotation##headerAnnotationFragment}
       />
       <Containers_NewAnnotationFromShareEditor
-        currentUser
+        identityId
         annotationFragment={annotation##editorAnnotationFragment}
       />
     </div>;
@@ -65,15 +65,14 @@ module Loading = {
 
 module FromAnnotationId = {
   [@react.component]
-  let make = (~currentUser, ~annotationId) => {
+  let make = (~identityId, ~annotationId) => {
     let (isLoaded, setIsLoaded) = React.useState(_ => false);
     let (query, _fullQuery) =
       ApolloHooks.useQuery(
         ~variables=
           GetAnnotationQuery.makeVariables(
             ~id=annotationId,
-            ~creatorUsername=
-              AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+            ~creatorUsername=identityId,
             (),
           ),
         ~pollInterval=isLoaded ? 0 : pollInterval,
@@ -108,12 +107,10 @@ module FromAnnotationId = {
     | (_, false) => <Loading />
     | (Data(data), true) =>
       switch (data##getAnnotation) {
-      | Some(annotation) => <Data annotation currentUser />
+      | Some(annotation) => <Data annotation identityId />
       | None =>
         <Redirect
-          path={Routes.CreatorsIdAnnotationsNew.path(
-            ~creatorUsername=currentUser.username,
-          )}
+          path={Routes.CreatorsIdAnnotationsNew.path(~identityId)}
           staticPath=Routes.CreatorsIdAnnotationsNew.staticPath
           search=Alert.(query_encode({alert: noDataAlert}))>
           <Loading />
@@ -122,9 +119,7 @@ module FromAnnotationId = {
     | (NoData, true)
     | (Error(_), true) =>
       <Redirect
-        path={Routes.CreatorsIdAnnotationsNew.path(
-          ~creatorUsername=currentUser.username,
-        )}
+        path={Routes.CreatorsIdAnnotationsNew.path(~identityId)}
         staticPath=Routes.CreatorsIdAnnotationsNew.staticPath
         search=Alert.(query_encode({alert: noDataAlert}))>
         <Loading />
@@ -139,7 +134,7 @@ module FromFileUrl = {
     | PhaseData(CreateAnnotationFromExternalTargetMutation.t);
 
   [@react.component]
-  let make = (~currentUser, ~fileUrl) => {
+  let make = (~identityId, ~fileUrl) => {
     let (createAnnotationFromExternalTargetMutation, _s, _f) =
       ApolloHooks.useMutation(
         CreateAnnotationFromExternalTargetMutation.definition,
@@ -156,11 +151,7 @@ module FromFileUrl = {
 
       Next.Router.replaceWithAs(
         Routes.CreatorsIdAnnotationsNew.staticPath,
-        Routes.CreatorsIdAnnotationsNew.path(
-          ~creatorUsername=
-            currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-        )
-        ++ search,
+        Routes.CreatorsIdAnnotationsNew.path(~identityId) ++ search,
       );
     };
 
@@ -188,31 +179,25 @@ module FromFileUrl = {
                    AwsAmplify.Config.(
                      Constants.awsAmplifyConfig->userFilesS3BucketGet
                    );
-                 let currentUserId =
-                   currentUser
-                   ->AwsAmplify.Auth.CurrentUserInfo.id
-                   ->Belt.Option.getExn;
 
                  "s3://"
                  ++ bucketName
                  ++ "/private/"
-                 ++ currentUserId
+                 ++ identityId
                  ++ "/"
                  ++ result.AwsAmplify.Storage.key;
                };
 
                Lib_GraphQL.makeHash(s3Url)
                |> Js.Promise.then_(hashId => {
-                    let creatorUsername =
-                      currentUser->AwsAmplify.Auth.CurrentUserInfo.username;
                     let variables =
                       CreateAnnotationFromExternalTargetMutation.makeVariables(
                         ~input=
                           Lib_GraphQL_CreateAnnotationFromExternalTargetMutation.Input.make(
-                            ~creatorUsername,
+                            ~creatorUsername=identityId,
                             ~annotationId=
                               Lib_GraphQL.Annotation.makeIdFromComponent(
-                                ~creatorUsername,
+                                ~identityId,
                                 ~annotationIdComponent=fileId,
                               )
                               ->Js.Option.some,
@@ -263,12 +248,10 @@ module FromFileUrl = {
     | PhaseLoading => <Loading />
     | PhaseData(data) =>
       switch (data##createAnnotationFromExternalTarget) {
-      | Some(data) => <Data annotation=data currentUser />
+      | Some(data) => <Data annotation=data identityId />
       | None =>
         <Redirect
-          path={Routes.CreatorsIdAnnotationsNew.path(
-            ~creatorUsername=currentUser.username,
-          )}
+          path={Routes.CreatorsIdAnnotationsNew.path(~identityId)}
           staticPath=Routes.CreatorsIdAnnotationsNew.staticPath
           search=Alert.{alert: noDataAlert}>
           <Loading />
@@ -279,33 +262,9 @@ module FromFileUrl = {
 };
 
 [@react.component]
-let make =
-    (
-      ~fileUrl=?,
-      ~annotationId=?,
-      ~authentication: Hooks_CurrentUserInfo_Types.state,
-      ~rehydrated,
-    ) => {
-  switch (rehydrated, authentication, annotationId, fileUrl) {
-  | (_, Unauthenticated, _, _) =>
-    <Redirect
-      staticPath={Routes.Authenticate.path()}
-      path={Routes.Authenticate.path()}>
-      <Loading />
-    </Redirect>
-  | (_, Authenticated(currentUser), None, None) =>
-    <Redirect
-      path={Routes.CreatorsIdAnnotationsNew.path(
-        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-      )}
-      staticPath=Routes.CreatorsIdAnnotationsNew.staticPath>
-      <Loading />
-    </Redirect>
-  | (_, Loading, _, _)
-  | (false, _, _, _) => <Loading />
-  | (true, Authenticated(currentUser), Some(annotationId), _) =>
-    <FromAnnotationId currentUser annotationId />
-  | (true, Authenticated(currentUser), _, Some(fileUrl)) =>
-    <FromFileUrl currentUser fileUrl />
+let make = (~fileUrl=?, ~annotationId=?, ~identityId) => {
+  switch (annotationId, fileUrl) {
+  | (Some(annotationId), _) => <FromAnnotationId identityId annotationId />
+  | (_, Some(fileUrl)) => <FromFileUrl identityId fileUrl />
   };
 };

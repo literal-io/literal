@@ -11,33 +11,41 @@ let default = (~rehydrated) => {
     ->Belt.Array.get(1)
     ->Belt.Option.getWithDefault("")
     ->Webapi.Url.URLSearchParams.make;
-  let authentication = Hooks_CurrentUserInfo.use();
+  let Providers_Authentication.{user} =
+    React.useContext(Providers_Authentication.authenticationContext);
 
   let _ =
     React.useEffect1(
       () => {
         let _ =
-          switch (authentication) {
-          | Unauthenticated => Next.Router.replace(Routes.Authenticate.path())
+          switch (user) {
+          | SignedOutPromptAuthentication =>
+            Next.Router.replace(Routes.Authenticate.path())
           | _ => ()
           };
         None;
       },
-      [|authentication|],
+      [|user|],
     );
 
-  let handleClear = () =>
-    switch (authentication) {
-    | Authenticated(currentUser) =>
-      Next.Router.replaceWithAs(
-        Routes.CreatorsIdAnnotationsNew.staticPath,
-        Routes.CreatorsIdAnnotationsNew.path(
-          ~creatorUsername=
-            currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-        ),
-      )
-    | _ => ()
-    };
+  let handleClear = () => {
+    let identityId =
+      switch (user) {
+      | SignedInUser({identityId})
+      | GuestUser({identityId}) => Some(identityId)
+      | _ => None
+      };
+
+    let _ =
+      identityId->Belt.Option.forEach(identityId =>
+        Next.Router.replaceWithAs(
+          Routes.CreatorsIdAnnotationsNew.staticPath,
+          Routes.CreatorsIdAnnotationsNew.path(~identityId),
+        )
+      );
+
+    ();
+  };
 
   let searchVariant =
     switch (
@@ -50,42 +58,53 @@ let default = (~rehydrated) => {
     };
   <>
     {switch (
-       authentication,
+       user,
        Routes.CreatorsIdAnnotationsNew.params_decode(router.Next.query),
        searchVariant,
      ) {
-     | (Unauthenticated, _, _) => <Loading />
      | (_, Ok(_), Some(SearchVariantFileUrl(fileUrl))) =>
-       <QueryRenderers_NewAnnotationFromShare
-         fileUrl=?{Some(fileUrl)}
-         authentication
-         rehydrated
-       />
-     | (
-         _,
-         Ok({creatorUsername}),
-         Some(SearchVariantAnnotationId(annotationIdComponent)),
-       )
+       switch (user) {
+       | Unknown
+       | SignedOutPromptAuthentication
+       | _ when !rehydrated =>
+         <QueryRenderers_NewAnnotationFromShare.Loading />
+       | SignedInUser({identityId})
+       | GuestUser({identityId}) =>
+         <QueryRenderers_NewAnnotationFromShare
+           fileUrl=?{Some(fileUrl)}
+           identityId
+         />
+       }
+     | (_, Ok(_), Some(SearchVariantAnnotationId(annotationIdComponent)))
          when Js.String.length(annotationIdComponent) > 0 =>
-       <QueryRenderers_NewAnnotationFromShare
-         annotationId=?{
-           Some(
+       switch (user) {
+       | Unknown
+       | SignedOutPromptAuthentication
+       | _ when !rehydrated =>
+         <QueryRenderers_NewAnnotationFromShare.Loading />
+       | SignedInUser({identityId})
+       | GuestUser({identityId}) =>
+         <QueryRenderers_NewAnnotationFromShare
+           annotationId=?{
              Lib_GraphQL.Annotation.makeIdFromComponent(
-               ~creatorUsername,
+               ~identityId,
                ~annotationIdComponent,
-             ),
-           )
-         }
-         authentication
-         rehydrated
-       />
-     | (Loading, _, _) => <Loading />
+             )
+             ->Js.Option.some
+           }
+           identityId
+         />
+       }
+     | (Unknown, _, _)
+     | (SignedOutPromptAuthentication, _, _)
+     | (SignedInUserMergingIdentites(_), _, _)
      | _ when !rehydrated => <Loading />
-     | (Authenticated(currentUser), _, _) =>
-       <QueryRenderers_NewAnnotation currentUser />
+     | (GuestUser({identityId}), _, _)
+     | (SignedInUser({identityId}), _, _) =>
+       <QueryRenderers_NewAnnotation identityId />
      }}
     <Alert urlSearchParams=searchParams onClear=handleClear />
   </>;
 };
 
-let page = "creators/[creatorUsername]/annotations/new.js";
+let page = "creators/[identityId]/annotations/new.js";

@@ -1,11 +1,27 @@
-module CreatorsIdAnnotationsNew = {
-  let staticPath = "/creators/[creatorUsername]/annotations/new";
+module UriEncodedCodec = {
+  let encoder = s => s->Js.Global.encodeURIComponent->Js.Json.string;
+  let decoder = json =>
+    switch (json->Js.Json.classify) {
+    | JSONString(s) => Ok(s->Js.Global.decodeURIComponent)
+    | _ =>
+      Error({
+        Decco.path: "",
+        message: "Expected JSONString for UriEncodedCodec",
+        value: json,
+      })
+    };
 
-  let path = (~creatorUsername) =>
-    "/creators/" ++ creatorUsername ++ "/annotations/new";
+  let codec: Decco.codec(string) = (encoder, decoder);
+};
+
+module CreatorsIdAnnotationsNew = {
+  let staticPath = "/creators/[identityId]/annotations/new";
+
+  let path = (~identityId) =>
+    "/creators/" ++ identityId ++ "/annotations/new";
 
   [@decco]
-  type params = {creatorUsername: string};
+  type params = {identityId: string};
 
   [@decco]
   type searchParams = {
@@ -15,17 +31,17 @@ module CreatorsIdAnnotationsNew = {
 };
 
 module CreatorsIdAnnotationCollectionsId = {
-  let staticPath = "/creators/[creatorUsername]/annotation-collections/[annotationCollectionIdComponent]";
+  let staticPath = "/creators/[identityId]/annotation-collections/[annotationCollectionIdComponent]";
 
-  let path = (~creatorUsername, ~annotationCollectionIdComponent) =>
+  let path = (~identityId, ~annotationCollectionIdComponent) =>
     "/creators/"
-    ++ creatorUsername
+    ++ Js.Global.encodeURIComponent(identityId)
     ++ "/annotation-collections/"
     ++ annotationCollectionIdComponent;
 
   [@decco]
   type params = {
-    creatorUsername: string,
+    identityId: [@decco.codec UriEncodedCodec.codec] string,
     annotationCollectionIdComponent: string,
   };
 
@@ -45,6 +61,12 @@ module CreatorsIdAnnotationCollectionsId = {
   };
 };
 
+module CreatorsIdSettings = {
+  let staticPath = "/creators/[identityId]/settings";
+  let path = (~identityId) =>
+    "/creators/" ++ Js.Global.encodeURIComponent(identityId) ++ "/settings";
+};
+
 module WritingId = {
   let path = (~id) => "/writing/" ++ id;
   let staticPath = "/writing/[id]";
@@ -52,16 +74,24 @@ module WritingId = {
 
 module Register = {
   let path = () => "/register";
-}
+};
 
 module Authenticate = {
   let path = () => "/authenticate";
 };
 
+module AuthenticateSignUp = {
+  let path = () => "/authenticate/sign-up";
+};
+
+module AuthenticateSignIn = {
+  let path = () => "/authenticate/sign-in";
+};
+
 module PolicyId = {
   let path = (~id) => "/policies/" ++ id;
   let staticPath = "/policies/[id]";
-}
+};
 
 module Index = {
   let path = () => "/";
