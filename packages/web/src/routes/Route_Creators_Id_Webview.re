@@ -56,7 +56,8 @@ let default = (~rehydrated) => {
       );
     });
 
-  let authentication = Hooks_CurrentUserInfo.use();
+  let Providers_Authentication.{user} =
+    React.useContext(Providers_Authentication.authenticationContext);
 
   let handleAnnotationChange = newAnnotation => {
     setViewState(viewState =>
@@ -106,24 +107,35 @@ let default = (~rehydrated) => {
     ();
   };
 
-  switch (viewState) {
-  | None => <Loading />
-  | Some(EditAnnotationTags(annotation)) =>
+  switch (user, viewState) {
+  | (_, None)
+  | (SignedOutPromptAuthentication, _)
+  | (Unknown, _) => <Loading />
+  | _ when !rehydrated => <Loading />
+  | (GuestUser({identityId}), Some(EditAnnotationTags(annotation)))
+  | (SignedInUser({identityId}), Some(EditAnnotationTags(annotation)))
+  | (
+      SignedInUserMergingIdentites({identityId}),
+      Some(EditAnnotationTags(annotation)),
+    ) =>
     <QueryRenderers_WebView_EditAnnotationTags
-      rehydrated
-      authentication
+      identityId
       annotation
       onAnnotationChange=handleAnnotationChange
       onCollapse={() => handleSetState("COLLAPSED_ANNOTATION_TAGS")}
     />
-  | Some(CollapsedAnnotationTags(annotation)) =>
+  | (GuestUser({identityId}), Some(CollapsedAnnotationTags(annotation)))
+  | (SignedInUser({identityId}), Some(CollapsedAnnotationTags(annotation)))
+  | (
+      SignedInUserMergingIdentites({identityId}),
+      Some(CollapsedAnnotationTags(annotation)),
+    ) =>
     <QueryRenderers_WebView_CollapsedAnnotationTags
-      rehydrated
-      authentication
+      identityId
       annotation
       onExpand={() => handleSetState("EDIT_ANNOTATION_TAGS")}
     />
   };
 };
 
-let page = "creators/[creatorUsername]/webview.js";
+let page = "creators/[identityId]/webview.js";

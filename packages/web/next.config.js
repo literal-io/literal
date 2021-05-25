@@ -2,6 +2,11 @@ const R = require("ramda");
 const RemarkHTML = require("remark-html");
 const amplifyConfig = require("./amplify/.config/local-env-info.json");
 
+const commitHash = require("child_process")
+  .execSync("git rev-parse --short HEAD")
+  .toString()
+  .trim();
+
 module.exports = {
   devIndicators: {
     autoPrerender: false,
@@ -61,6 +66,7 @@ module.exports = {
             "process.env.SENTRY_DSN": JSON.stringify(
               "https://2ca22f543045459bbe86e915bb94953e@o455440.ingest.sentry.io/5447049"
             ),
+            "process.env.WEB_APP_VERSION": JSON.stringify(commitHash),
           }),
           R.pathOr([], ["plugins"], config)
         )

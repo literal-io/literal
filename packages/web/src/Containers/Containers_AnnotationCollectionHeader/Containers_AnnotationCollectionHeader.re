@@ -1,7 +1,7 @@
 open Containers_AnnotationCollectionHeader_GraphQL;
 open Styles;
 
-let fragmentFromCache = (~annotationCollectionIdComponent, ~currentUser=?, ()) =>
+let fragmentFromCache = (~annotationCollectionIdComponent, ~identityId=?, ()) =>
   if (annotationCollectionIdComponent
       == Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent) {
     Some({
@@ -10,13 +10,12 @@ let fragmentFromCache = (~annotationCollectionIdComponent, ~currentUser=?, ()) =
       "type_": [|`TAG_COLLECTION|],
     });
   } else {
-    currentUser
-    ->Belt.Option.flatMap(currentUser =>
+    identityId
+    ->Belt.Option.flatMap(identityId =>
         Lib_GraphQL_AnnotationCollection.Apollo.readCache(
           ~id=
             Lib_GraphQL.AnnotationCollection.makeIdFromComponent(
-              ~creatorUsername=
-                currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+              ~identityId,
               ~annotationCollectionIdComponent,
               (),
             ),
@@ -37,19 +36,17 @@ let make =
       ~annotationFragment as annotation=?,
       ~annotationCollectionFragment as annotationCollection=?,
       ~onCollectionsButtonClick=?,
-      ~currentUser=?,
+      ~identityId=?,
     ) => {
-
   let (deleteAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(
       Containers_AnnotationCollectionHeader_GraphQL.DeleteAnnotationMutation.definition,
     );
 
-  let handleDelete = (~annotation, ~currentUser) => {
+  let handleDelete = (~annotation, ~identityId) => {
     let input =
       Lib_GraphQL_DeleteAnnotationMutation.Input.make(
-        ~creatorUsername=
-          AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+        ~creatorUsername=identityId,
         ~id=annotation##id,
       );
 
@@ -59,7 +56,7 @@ let make =
     let _ =
       Lib_GraphQL_DeleteAnnotationMutation.Apollo.updateCache(
         ~annotation,
-        ~currentUser,
+        ~identityId,
       );
     ();
   };
@@ -95,13 +92,13 @@ let make =
       size=`Small
       edge=MaterialUi.IconButton.Edge._end
       onClick={_ =>
-        switch (annotation, currentUser) {
-        | (Some(annotation), Some(currentUser)) =>
+        switch (annotation, identityId) {
+        | (Some(annotation), Some(identityId)) =>
           let _ =
             Service_Analytics.(
               track(Click({action: "delete", label: None}))
             );
-          handleDelete(~annotation, ~currentUser);
+          handleDelete(~annotation, ~identityId);
         | _ => ()
         }
       }
@@ -246,13 +243,10 @@ let make =
       </div>
       <div className={Cn.fromList(["flex", "items-center", "flex-shrink-0"])}>
         {hideDelete ? React.null : deleteButton}
-        {switch (currentUser) {
-         | Some(currentUser) =>
+        {switch (identityId) {
+         | Some(identityId) =>
            <Next.Link
-             _as={Routes.CreatorsIdAnnotationsNew.path(
-               ~creatorUsername=
-                 currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-             )}
+             _as={Routes.CreatorsIdAnnotationsNew.path(~identityId)}
              href=Routes.CreatorsIdAnnotationsNew.staticPath>
              createButton
            </Next.Link>

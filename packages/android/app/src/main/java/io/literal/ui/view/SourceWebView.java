@@ -48,6 +48,7 @@ import java.util.Map;
 import io.literal.BuildConfig;
 import io.literal.R;
 import io.literal.factory.AWSMobileClientFactory;
+import io.literal.factory.AmazonS3ClientFactory;
 import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.Callback;
 import io.literal.lib.Callback2;
@@ -417,7 +418,7 @@ public class SourceWebView extends NestedScrollingChildWebView {
             }
 
             try {
-                S3Object object = AppSyncClientFactory.getS3Client(getContext()).getObject(storageBucket, request.getUrl().getPath().substring(1));
+                S3Object object = AmazonS3ClientFactory.getInstance(getContext()).getObject(storageBucket, request.getUrl().getPath().substring(1));
                 ObjectMetadata metadata = object.getObjectMetadata();
                 WebResourceResponse response = new WebResourceResponse(
                         metadata.getContentType(),

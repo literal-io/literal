@@ -116,7 +116,7 @@ public class StorageObject {
 
     public String getPath() {
         if (type.equals(Type.ARCHIVE)) {
-            return "archives" + File.separator + id + File.separator + "archive.mhtml";
+            return "archives" + File.separator + id;
         } else if (type.equals(Type.SCREENSHOT)){
             return "screenshots" + File.separator + id;
         } else {
@@ -244,9 +244,11 @@ public class StorageObject {
     }
 
     public TransferObserver upload(Context context, User user, Callback<Exception, AmazonS3URI> onUploadComplete, Callback3<Integer, Long, Long> onUploadProgress) {
+        AmazonS3URI uri = getAmazonS3URI(context, user);
+        Log.i("StorageObject", "upload uri: " + uri.toString() + ", for path: " + getPath());
         return StorageRepository.upload(
                 context,
-                getAmazonS3URI(context, user).getKey(),
+                uri.getKey(),
                 getFile(context),
                 getObjectMetadata(context),
                 (e, uri1) -> {

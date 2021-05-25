@@ -71,7 +71,7 @@ public class NotificationRepository {
         Intent intent = new Intent(context, MainActivity.class);
         Uri annotationUri = Uri.parse(
                 WebRoutes.creatorsIdAnnotationCollectionIdAnnotationId(
-                        user.getUsername(),
+                        user.getAppSyncIdentity(),
                         Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT,
                         AnnotationLib.idComponentFromId(annotation.id())
                 )

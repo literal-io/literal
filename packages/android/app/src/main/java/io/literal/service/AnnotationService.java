@@ -27,6 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import io.literal.factory.AWSMobileClientFactory;
+import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.Callback;
 import io.literal.lib.Callback3;
 import io.literal.lib.DomainMetadata;
@@ -148,39 +149,20 @@ public class AnnotationService extends Service {
             return CompletableFuture.completedFuture(user);
         }
 
-        CompletableFuture<User> userFuture = new CompletableFuture<>();
-        AWSMobileClientFactory.initializeClient(context, new com.amazonaws.mobile.client.Callback<UserStateDetails>() {
-            @Override
-            public void onResult(UserStateDetails result) {
-                User.getInstance(result).whenComplete((user, error) -> {
-                   if (error != null) {
-                       userFuture.completeExceptionally(error);
-                    } else {
-                       userFuture.complete(user);
-                   }
-                });
+        CompletableFuture<User> userFuture = AWSMobileClientFactory.initializeClient(getApplicationContext()).thenCompose(User::getInstance);
 
-                userStateListener = User.subscribe((e, instance) -> {
-                    if (e != null) {
-                        ErrorRepository.captureException(e);
-                    }
-                    user = instance;
-                    return null;
-                });
+        userFuture.whenComplete((instance, error) -> {
+            userStateListener = User.subscribe((e1, newUser) -> {
+                user = newUser;
+                return null;
+            });
+
+            if (error != null) {
+                ErrorRepository.captureException(error);
+                return;
             }
 
-            @Override
-            public void onError(Exception e) {
-                ErrorRepository.captureException(e);
-                userFuture.completeExceptionally(e);
-                userStateListener = User.subscribe((e1, instance) -> {
-                    if (e1 != null) {
-                        ErrorRepository.captureException(e1);
-                    }
-                    user = instance;
-                    return null;
-                });
-            }
+            user = instance;
         });
 
         return userFuture;
@@ -327,7 +309,7 @@ public class AnnotationService extends Service {
             if (e != null) {
                 NotificationRepository.sourceCreatedNotificationError(
                         context,
-                        user.getUsername(),
+                        user.getAppSyncIdentity(),
                         domainMetadata
                 );
                onFinish.invoke(e, _v);
@@ -339,7 +321,7 @@ public class AnnotationService extends Service {
             if (domainMetadata != null) {
                 NotificationRepository.sourceCreatedNotificationComplete(
                         context,
-                        user.getUsername(),
+                        user.getAppSyncIdentity(),
                         domainMetadata
                 );
             }
@@ -354,7 +336,7 @@ public class AnnotationService extends Service {
 
             NotificationRepository.sourceCreatedNotificationStart(
                     context,
-                    user.getUsername(),
+                    user.getAppSyncIdentity(),
                     domainMetadata,
                     new Pair<>(100, Math.max(uploadProgress - 5, 0)) // subtract 5 to fake mutation progress
             );
@@ -367,12 +349,18 @@ public class AnnotationService extends Service {
                 user,
                 annotations,
                 onDisplayNotificationProgress,
-                (e, processedAnnotations) ->
+                (e, processedAnnotations) -> {
+                    if (e != null) {
+                        onFinishWithNotification.invoke(e, null);
+                        return;
+                    }
+
                     AnnotationRepository.createAnnotations(
-                        getBaseContext(),
-                        processedAnnotations,
+                            AppSyncClientFactory.getInstanceForUser(context, user),
+                            processedAnnotations,
                             (e1, data) -> onFinishWithNotification.invoke(e1, null)
-                    )
+                    );
+                }
         );
     }
 

@@ -48,6 +48,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.literal.R;
+import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.Callback;
 import io.literal.lib.Callback2;
 import io.literal.lib.DateUtil;
@@ -64,6 +65,7 @@ import io.literal.model.Target;
 import io.literal.model.TextualBody;
 import io.literal.model.TextualTarget;
 import io.literal.model.TimeState;
+import io.literal.model.User;
 import io.literal.repository.AnnotationRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.StorageRepository;
@@ -71,6 +73,7 @@ import io.literal.service.AnnotationService;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
+import io.sentry.protocol.App;
 import type.DeleteAnnotationInput;
 import type.PatchAnnotationInput;
 import type.PatchAnnotationOperationInput;
@@ -410,9 +413,10 @@ public class SourceWebView extends Fragment {
                     archive.getFile(getContext()).toURI().getPath(),
                     false,
                     (filePath) -> {
+                        Log.i("SourceWebView", "archive filePath: " + filePath);
                         archive.setStatus(StorageObject.Status.UPLOAD_REQUIRED);
-                        String creatorUsername = authenticationViewModel.getUser().getValue().getUsername();
-                        Annotation annotation = sourceWebViewViewModel.createAnnotation(value, creatorUsername, false);
+                        String appSyncIdentity = authenticationViewModel.getUser().getValue().getAppSyncIdentity();
+                        Annotation annotation = sourceWebViewViewModel.createAnnotation(value, appSyncIdentity, false);
 
                         TimeState timeState = new TimeState(
                                 new StorageObject[]{archive},
@@ -591,19 +595,15 @@ public class SourceWebView extends Fragment {
                         annotation.getModified(),
                         annotation.getId()
                 );
-                String username = authenticationViewModel.getUser().getValue().getUsername();
-                if (username == null) {
-                    ErrorRepository.captureException(new Exception("Expected username, but found none"));
-                    return;
-                }
+                User user = authenticationViewModel.getUser().getValue();
 
                 if (!sourceWebViewViewModel.getCreatedAnnotationIds().contains(updatedAnnotation.getId())) {
                     PatchAnnotationInput input = PatchAnnotationInput.builder()
-                            .creatorUsername(username)
+                            .creatorUsername(user.getAppSyncIdentity())
                             .id(updatedAnnotation.getId())
                             .operations(patchAnnotationOperationInputs).build();
                     AnnotationRepository.patchAnnotationMutation(
-                            getContext(),
+                            AppSyncClientFactory.getInstanceForUser(getContext(), user),
                             input,
                             (e, data) -> {
                                 if (e != null) {
@@ -697,10 +697,11 @@ public class SourceWebView extends Fragment {
                         .collect(Collectors.toList())
             );
 
+            User user = authenticationViewModel.getUser().getValue();
             AnnotationRepository.patchAnnotationMutation(
-                    getContext(),
+                    AppSyncClientFactory.getInstanceForUser(getContext(), user),
                     PatchAnnotationInput.builder()
-                            .creatorUsername(authenticationViewModel.getUser().getValue().getUsername())
+                            .creatorUsername(user.getAppSyncIdentity())
                             .id(newAnnotation.getId())
                             .operations(operations)
                             .build(),
@@ -944,10 +945,11 @@ public class SourceWebView extends Fragment {
         }
 
         if (!sourceWebViewViewModel.getCreatedAnnotationIds().contains(annotationId)) {
+            User user = authenticationViewModel.getUser().getValue();
             AnnotationRepository.deleteAnnotationMutation(
-                    getContext(),
+                    AppSyncClientFactory.getInstanceForUser(getContext(), user),
                     DeleteAnnotationInput.builder()
-                            .creatorUsername(authenticationViewModel.getUser().getValue().getUsername())
+                            .creatorUsername(user.getAppSyncIdentity())
                             .id(annotationId)
                             .build(),
                     (e, _data) -> {

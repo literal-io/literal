@@ -1,6 +1,8 @@
 package io.literal.ui.fragment;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -31,8 +33,10 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
+import io.literal.BuildConfig;
 import io.literal.R;
 import io.literal.lib.ContentResolverLib;
 import io.literal.lib.FileActivityResultCallback;
@@ -41,6 +45,7 @@ import io.literal.model.StorageObject;
 import io.literal.model.User;
 import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.ErrorRepository;
+import io.literal.repository.SharedPreferencesRepository;
 import io.literal.ui.MainApplication;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
@@ -59,22 +64,6 @@ public class AppWebView extends Fragment {
     private AuthenticationViewModel authenticationViewModel;
     private io.literal.ui.view.AppWebView appWebView;
     private final WebEvent.Callback webEventCallback = new WebEvent.Callback() {
-
-        private JSONObject getTokens(User user) {
-            Tokens tokens = user.getTokens();
-            JSONObject result = new JSONObject();
-            try {
-                result.put("idToken", tokens.getIdToken().getTokenString());
-                result.put("refreshToken", tokens.getRefreshToken().getTokenString());
-                result.put("accessToken", tokens.getAccessToken().getTokenString());
-
-                return result;
-            } catch (Exception jsonException) {
-                ErrorRepository.captureException(jsonException);
-                return null;
-            }
-        }
-
         private void handleSignUp(io.literal.ui.view.AppWebView view, String email, String password) {
             authenticationViewModel.signUp(email, password, (e, user) -> {
                 if (e != null) {
@@ -84,7 +73,7 @@ public class AppWebView extends Fragment {
                 try {
                     JSONObject result = new JSONObject();
                     if (e == null && !user.isSignedOut()) {
-                        result.put("tokens", getTokens(user));
+                        result.put("user", user.toJSON());
                     } else {
                         String errorCode;
                         if (e instanceof UsernameExistsException) {
@@ -103,6 +92,10 @@ public class AppWebView extends Fragment {
                 } catch (JSONException ex) {
                     ErrorRepository.captureException(ex);
                 }
+
+                if (e == null) {
+                    SharedPreferencesRepository.setIsSignedOut(getContext(), false);
+                }
             });
         }
 
@@ -113,11 +106,20 @@ public class AppWebView extends Fragment {
                     return;
                 }
 
-                getActivity().runOnUiThread(() -> {
-                    view.postWebEvent(
-                            new WebEvent(WebEvent.TYPE_AUTH_SIGN_IN_GOOGLE_RESULT, UUID.randomUUID().toString(), getTokens(user))
-                    );
-                });
+                try {
+                    JSONObject result = new JSONObject();
+                    result.put("user", user);
+
+                    getActivity().runOnUiThread(() -> view.postWebEvent(
+                            new WebEvent(WebEvent.TYPE_AUTH_SIGN_IN_GOOGLE_RESULT, UUID.randomUUID().toString(), result)
+                    ));
+                } catch (JSONException ex) {
+                    ErrorRepository.captureException(ex);
+                }
+
+                if (e == null) {
+                    SharedPreferencesRepository.setIsSignedOut(getContext(), false);
+                }
             });
         }
         private void handleSignIn(io.literal.ui.view.AppWebView view, String email, String password) {
@@ -129,7 +131,7 @@ public class AppWebView extends Fragment {
                 try {
                     JSONObject result = new JSONObject();
                     if (e == null && !user.isSignedOut()) {
-                        result.put("tokens", getTokens(user));
+                        result.put("user", user.toJSON());
                     } else {
                         String errorCode;
                         if (e instanceof UserNotFoundException) {
@@ -150,48 +152,60 @@ public class AppWebView extends Fragment {
                 } catch (JSONException ex) {
                     ErrorRepository.captureException(ex);
                 }
+
+                if (e == null) {
+                    SharedPreferencesRepository.setIsSignedOut(getContext(), false);
+                }
             });
         }
 
+        private void handleSignOut(io.literal.ui.view.AppWebView view) {
+            authenticationViewModel.signOut()
+                    .whenComplete((e, _void) -> {
+                        try {
+                            JSONObject result = new JSONObject();
+                            if (e != null) {
+                                result.put("error", "SIGN_OUT_FAILED");
+                            }
+                            getActivity().runOnUiThread(() -> {
+                                view.postWebEvent(
+                                        new WebEvent(WebEvent.TYPE_AUTH_SIGN_OUT_RESULT, UUID.randomUUID().toString(), result)
+                                );
+                            });
+                        } catch (JSONException e1) {
+                            ErrorRepository.captureException(e1);
+                        }
 
-        private void handleGetTokens(io.literal.ui.view.AppWebView view) {
+                        if (e == null) {
+                            SharedPreferencesRepository.setIsSignedOut(getContext(), true);
+                        }
+                    });
+        }
+
+        private void handleGetUser(io.literal.ui.view.AppWebView view) {
             User user = authenticationViewModel.getUser().getValue();
-            Tokens tokens = user.getTokens();
-            JSONObject result = new JSONObject();
-            try {
-                result.put("idToken", tokens.getIdToken().getTokenString());
-                result.put("refreshToken", tokens.getRefreshToken().getTokenString());
-                result.put("accessToken", tokens.getAccessToken().getTokenString());
+            view.postWebEvent(
+                    new WebEvent(WebEvent.TYPE_AUTH_GET_USER_RESULT, UUID.randomUUID().toString(), user.toJSON())
+            );
+        }
 
-                view.postWebEvent(
-                        new WebEvent(WebEvent.TYPE_AUTH_GET_TOKENS_RESULT, UUID.randomUUID().toString(), result)
-                );
-            } catch (JSONException e) {
+        private void handleActionViewURI(io.literal.ui.view.AppWebView view, String uri) {
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+                startActivity(intent);
+            } catch (ActivityNotFoundException e) {
                 ErrorRepository.captureException(e);
             }
         }
 
-        private void handleGetUserInfo(io.literal.ui.view.AppWebView view) {
-            FragmentActivity activity = getActivity();
-            if (activity == null) {
-                return;
+        private void handleGetAppVersion(io.literal.ui.view.AppWebView view) {
+            try {
+                JSONObject result = new JSONObject();
+                result.put("versionName", BuildConfig.VERSION_NAME);
+                view.postWebEvent(new WebEvent(WebEvent.TYPE_GET_APP_VERSION_RESULT, UUID.randomUUID().toString(), result));
+            } catch (JSONException e) {
+                ErrorRepository.captureException(e);
             }
-
-            ((MainApplication) activity.getApplication()).getThreadPoolExecutor().execute(() -> {
-                User user = authenticationViewModel.getUser().getValue();
-                try {
-                    JSONObject result = new JSONObject();
-                    result.put("username", user.getUsername());
-                    result.put("id", user.getIdentityId());
-                    Map<String, String> userAttributes = user.getAttributes();
-                    result.put("attributes", userAttributes != null ? new JSONObject(userAttributes) : null);
-                    activity.runOnUiThread(() -> view.postWebEvent(
-                            new WebEvent(WebEvent.TYPE_AUTH_GET_USER_INFO_RESULT, UUID.randomUUID().toString(), result)
-                    ));
-                } catch (JSONException e) {
-                    ErrorRepository.captureException(e);
-                }
-            });
         }
 
         public void onWebEvent(io.literal.ui.view.AppWebView view, WebEvent event) {
@@ -218,11 +232,11 @@ public class AppWebView extends Fragment {
                 case WebEvent.TYPE_AUTH_SIGN_IN_GOOGLE:
                     this.handleSignInGoogle(view);
                     return;
-                case WebEvent.TYPE_AUTH_GET_TOKENS:
-                    this.handleGetTokens(view);
+                case WebEvent.TYPE_AUTH_GET_USER:
+                    this.handleGetUser(view);
                     return;
-                case WebEvent.TYPE_AUTH_GET_USER_INFO:
-                    this.handleGetUserInfo(view);
+                case WebEvent.TYPE_AUTH_SIGN_OUT:
+                    this.handleSignOut(view);
                     return;
                 case WebEvent.TYPE_ANALYTICS_LOG_EVENT:
                     try {
@@ -240,6 +254,17 @@ public class AppWebView extends Fragment {
                     } catch (JSONException e) {
                         ErrorRepository.captureException(e);
                     }
+                    return;
+                case WebEvent.TYPE_ACTION_VIEW_URI:
+                    try {
+                        String uri = event.getData().getString("uri");
+                        this.handleActionViewURI(view, uri);
+                    } catch (JSONException e) {
+                        ErrorRepository.captureException(e);
+                    }
+                    return;
+                case WebEvent.TYPE_GET_APP_VERSION:
+                    this.handleGetAppVersion(view);
                     return;
             }
         }

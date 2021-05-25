@@ -14,6 +14,7 @@ import androidx.fragment.app.FragmentContainerView;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.amplify.generated.graphql.GetAnnotationQuery;
+import com.amazonaws.mobile.client.UserState;
 import com.amazonaws.mobileconnectors.appsync.ClearCacheException;
 import com.amazonaws.mobileconnectors.appsync.ClearCacheOptions;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
@@ -168,7 +169,6 @@ public class ShareTargetHandler extends InstrumentedActivity {
     }
 
     private void installAppWebView(String appWebViewUri) {
-        Log.i("ShareTargetHandler", "installAppWebView: " + appWebViewUri);
         // Remove unused bottom sheet fragment container
         ViewGroup layout = findViewById(R.id.layout);
         View bottomSheetContainer = findViewById(R.id.bottom_sheet_fragment_container);
@@ -190,12 +190,12 @@ public class ShareTargetHandler extends InstrumentedActivity {
     }
 
     private void handleCreateFromSource(Intent intent, User user) {
-        if (user.isSignedOut()) {
+        if (!user.getState().equals(UserState.SIGNED_IN) && !user.getState().equals(UserState.GUEST)) {
             handleSignedOut();
             return;
         }
         String sourceWebViewUri = intent.getStringExtra(Intent.EXTRA_TEXT);
-        String appWebViewUri = WebRoutes.creatorsIdWebview(user.getUsername());
+        String appWebViewUri = WebRoutes.creatorsIdWebview(user.getEncodedIdentityId());
         installSourceWebView(sourceWebViewUri, appWebViewUri);
     }
 
@@ -218,15 +218,13 @@ public class ShareTargetHandler extends InstrumentedActivity {
 
     private void handleCreateFromText(Intent intent, User user) {
         String text = intent.getStringExtra(Intent.EXTRA_TEXT);
-
-        // FIXME: handle unknown user state with displayed error
-        if (user.isSignedOut()) {
-            handleSignedOut();
+        if (!user.getState().equals(UserState.SIGNED_IN) && !user.getState().equals(UserState.GUEST)) {
+                handleSignedOut();
             return;
         }
-        Annotation annotation = Annotation.fromText(text, user.getUsername());
+        Annotation annotation = Annotation.fromText(text, user.getAppSyncIdentity());
         String uri = WebRoutes.creatorsIdAnnotationsNewAnnotationId(
-                user.getUsername(),
+                user.getEncodedIdentityId(),
                 AnnotationLib.idComponentFromId(annotation.getId())
         );
         installAppWebView(uri);
@@ -255,15 +253,15 @@ public class ShareTargetHandler extends InstrumentedActivity {
 
     private void handleCreateFromImage(Intent intent, User user) {
         Uri imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
-        if (user.isSignedOut()) {
+        if (!user.getState().equals(UserState.SIGNED_IN) && !user.getState().equals(UserState.GUEST)) {
             handleSignedOut();
             return;
         }
 
         StorageObject storageObject = StorageObject.createFromContentResolverURI(this, StorageObject.Type.SCREENSHOT, imageUri);
-        Annotation annotation = Annotation.fromScreenshot(storageObject, user.getUsername());
+        Annotation annotation = Annotation.fromScreenshot(storageObject, user.getAppSyncIdentity());
         String uri = WebRoutes.creatorsIdAnnotationsNewAnnotationId(
-                user.getUsername(),
+                user.getEncodedIdentityId(),
                 AnnotationLib.idComponentFromId(annotation.getId())
         );
         installAppWebView(uri);
@@ -289,14 +287,14 @@ public class ShareTargetHandler extends InstrumentedActivity {
     private void displayAnnotationCreatedNotification(User user, Annotation annotation) {
         // Try to refetch the annotation, as it may have changed within the WebView.
         try {
-            AppSyncClientFactory.getInstance(this).clearCaches(ClearCacheOptions.builder().clearQueries().build());
+            AppSyncClientFactory.getInstanceForUser(this, user).clearCaches(ClearCacheOptions.builder().clearQueries().build());
         } catch (ClearCacheException e) {
             ErrorRepository.captureException(e);
         }
 
         AnnotationRepository.getAnnotationQuery(
-                this,
-                GetAnnotationQuery.builder().creatorUsername(user.getUsername()).id(annotation.getId()).build(),
+                AppSyncClientFactory.getInstanceForUser(this, user),
+                GetAnnotationQuery.builder().creatorUsername(user.getAppSyncIdentity()).id(annotation.getId()).build(),
                 (e, updatedAnnotation) -> {
                     if (e != null) {
                         ErrorRepository.captureException(e);

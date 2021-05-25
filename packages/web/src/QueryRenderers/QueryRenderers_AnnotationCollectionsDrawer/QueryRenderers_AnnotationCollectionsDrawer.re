@@ -201,9 +201,7 @@ module Data = {
           data={getItems(`TAG_COLLECTION)}
           className={Cn.fromList(["p-4", "flex", "flex-wrap"])}
           itemKey={(~item, ~idx) => item##id}
-          itemClassName={(~item, ~idx) =>
-            Cn.fromList(["mb-4", "mr-4"])
-          }
+          itemClassName={(~item, ~idx) => Cn.fromList(["mb-4", "mr-4"])}
           renderItem={(~item, ~idx) =>
             <TagListItem
               annotationCollectionFragment={item##tagListItem}
@@ -217,30 +215,24 @@ module Data = {
 };
 
 [@react.component]
-let make =
-    (
-      ~isVisible,
-      ~onClose,
-      ~rehydrated,
-      ~authentication: Hooks_CurrentUserInfo_Types.state,
-    ) => {
+let make = (~isVisible, ~onClose, ~rehydrated, ~user) => {
   let (activeCollectionType, setActiveCollectionType) =
     React.useState(() => `TAG_COLLECTION);
 
-  let currentUser =
-    switch (authentication) {
-    | Authenticated(currentUser) => Some(currentUser)
+  let identityId =
+    switch (user) {
+    | Providers_Authentication_User.GuestUser({identityId})
+    | SignedInUser({identityId}) => Some(identityId)
     | _ => None
     };
 
   let (_, query) =
     ApolloHooks.useQuery(
       ~variables=
-        currentUser
-        ->Belt.Option.map(currentUser =>
+        identityId
+        ->Belt.Option.map(identityId =>
             ListAnnotationCollections.Query.makeVariables(
-              ~creatorUsername=
-                currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+              ~creatorUsername=identityId,
               (),
             )
           )
@@ -254,15 +246,15 @@ let make =
   };
 
   let main =
-    switch (query, rehydrated, authentication) {
+    switch (query, rehydrated, identityId) {
     | (_, false, _)
-    | (_, _, Loading)
+    | (_, _, None)
     | ({data: None, loading: true}, _, _) =>
       <Loading
         activeCollectionType
         onActiveCollectionTypeChange=handleActiveCollectionTypeChange
       />
-    | ({data: Some(data), loading}, true, Authenticated(_)) =>
+    | ({data: Some(data), loading}, true, Some(_)) =>
       let annotationCollections =
         data##listAnnotationCollections
         ->Belt.Option.flatMap(c => c##items)

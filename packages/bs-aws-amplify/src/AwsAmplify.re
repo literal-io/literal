@@ -43,13 +43,19 @@ module Config = {
 };
 
 module Credentials = {
-  type t;
+  type t = {
+    accessKeyId: string,
+    sessionToken: string,
+    secretAccessKey: string,
+    identityId: string,
+    authenticated: bool,
+  };
 
   [@bs.module "@aws-amplify/core"] external inst: t = "Credentials";
 
   [@bs.send]
   external setSession:
-    (t, AmazonCognitoIdentity.userSession, [@bs.as "session"] _) => unit =
+    (t, AmazonCognitoIdentity.UserSession.t, [@bs.as "session"] _) => unit =
     "set";
 };
 
@@ -58,16 +64,6 @@ module Auth = {
     type t;
 
     external unsafeOfString: string => t = "%identity";
-  };
-
-  module CognitoIdToken = {
-    type t;
-    [@bs.send] external getJwtToken: t => JwtToken.t = "getJwtToken";
-  };
-
-  module CognitoUserSession = {
-    type t;
-    [@bs.send] external getIdToken: t => CognitoIdToken.t = "getIdToken";
   };
 
   module CurrentUserInfo = {
@@ -82,7 +78,7 @@ module Auth = {
 
     [@bs.deriving accessors]
     type t = {
-      id: option(string),
+      id: string,
       username: string,
       attributes,
     };
@@ -95,7 +91,7 @@ module Auth = {
   [@bs.send] external configure: (t, Config.t) => unit = "configure";
 
   [@bs.send]
-  external currentSession: t => Js.Promise.t(CognitoUserSession.t) =
+  external currentSession: t => Js.Promise.t(AmazonCognitoIdentity.UserSession.t) =
     "currentSession";
 
   [@bs.send]
@@ -129,7 +125,7 @@ module Auth = {
     "federatedSignIn";
 
   [@bs.send]
-  external createCognitoUser: (t, string) => AmazonCognitoIdentity.cognitoUser =
+  external createCognitoUser: (t, string) => AmazonCognitoIdentity.CognitoUser.t =
     "createCognitoUser";
 };
 

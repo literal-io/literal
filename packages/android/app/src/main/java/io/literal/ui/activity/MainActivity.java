@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -43,7 +42,6 @@ import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.ToastRepository;
 import io.literal.service.AnnotationService;
-import io.literal.ui.MainApplication;
 import io.literal.ui.fragment.AppWebView;
 import io.literal.ui.fragment.AppWebViewBottomSheetAnimator;
 import io.literal.ui.fragment.SourceWebView;
@@ -60,6 +58,7 @@ public class MainActivity extends InstrumentedActivity {
     private AppWebViewViewModel appWebViewViewModelBottomSheet;
     private SourceWebViewViewModel sourceWebViewViewModelBottomSheet;
     private AuthenticationViewModel authenticationViewModel;
+    private AppWebView appWebViewPrimaryFragment = null;
     private final BroadcastReceiver annotationCreatedBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -79,7 +78,6 @@ public class MainActivity extends InstrumentedActivity {
             }
         }
     };
-    private AppWebView appWebViewPrimaryFragment = null;
     private SourceWebView sourceWebViewBottomSheetFragment = null;
     private AppWebView appWebViewBottomSheetFragment = null;
     private BottomSheetBehavior<FrameLayout> sourceWebViewBottomSheetBehavior;
@@ -90,13 +88,11 @@ public class MainActivity extends InstrumentedActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         this.initializeViewModel().whenComplete((user, error) -> runOnUiThread(() -> {
-            // FIXME: handle unknown user state with displayed error
             if (savedInstanceState == null) {
                 String initialUrl;
-                String defaultUrl =
-                        !user.isSignedOut()
-                                ? WebRoutes.creatorsIdAnnotationCollectionId(user.getUsername(), Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT)
-                                : WebRoutes.authenticate();
+                String defaultUrl = user.getState().equals(UserState.SIGNED_IN) || user.getState().equals(UserState.GUEST)
+                        ? WebRoutes.creatorsIdAnnotationCollectionId(user.getAppSyncIdentity(), Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT)
+                        : WebRoutes.authenticate();
                 Intent intent = getIntent();
                 if (intent != null) {
                     Uri uri = intent.getData();
@@ -144,8 +140,8 @@ public class MainActivity extends InstrumentedActivity {
             }
 
             String paramInitialUrl = appWebViewBottomSheetFragment.getArguments().getString(AppWebView.PARAM_INITIAL_URL);
-            String newParamInitialUrl = WebRoutes.creatorsIdWebview(user.getUsername());
-            if (!paramInitialUrl.equals(newParamInitialUrl)) {
+            String newParamInitialUrl = WebRoutes.creatorsIdWebview(user.getEncodedIdentityId());
+            if (paramInitialUrl == null || !paramInitialUrl.equals(newParamInitialUrl)) {
                 appWebViewBottomSheetFragment = AppWebView.newInstance(newParamInitialUrl, APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME);
                 getSupportFragmentManager()
                         .beginTransaction()
@@ -165,8 +161,6 @@ public class MainActivity extends InstrumentedActivity {
                     if (webEvents == null) {
                         return;
                     }
-
-                    // FIXME: push this into fragment
                     webEvents.iterator().forEachRemaining(webEvent -> {
                         if (webEvent.getType().equals(WebEvent.TYPE_ACTIVITY_FINISH)) {
                             Intent intent = getIntent();
@@ -248,7 +242,9 @@ public class MainActivity extends InstrumentedActivity {
         }
         if (appWebViewBottomSheetFragment == null) {
             appWebViewBottomSheetFragment = AppWebView.newInstance(
-                    WebRoutes.creatorsIdWebview(user.getUsername()),
+                    user.getState().equals(UserState.SIGNED_IN) || user.getState().equals(UserState.GUEST)
+                        ? WebRoutes.creatorsIdWebview(user.getEncodedIdentityId())
+                        : null,
                     APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME
             );
         }

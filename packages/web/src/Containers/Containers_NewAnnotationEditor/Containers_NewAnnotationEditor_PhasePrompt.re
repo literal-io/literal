@@ -7,7 +7,7 @@ let make = (~onCreateFromText, ~onCreateFromFile, ~onCreateFromWeb) => {
     let _ =
       Js.Array2.length(files) > 0
         ? files->Belt.Array.getExn(0)->onCreateFromFile
-        : Sentry.captureMessage("Expected files, but got none.");
+        : SentryBrowser.captureMessage("Expected files, but got none.");
     ();
   };
 

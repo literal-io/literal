@@ -25,31 +25,7 @@ module WebEvent = {
   [@decco]
   type routerReplace = {url: string};
 
-  [@decco]
-  type authGetTokensResult = {
-    idToken: string,
-    refreshToken: string,
-    accessToken: string,
-  };
-
-  module AuthSignInResult = {
-    [@decco]
-    type tokens = {
-      idToken: string,
-      refreshToken: string,
-      accessToken: string,
-    };
-
-    [@decco]
-    type t = {
-      tokens: option(tokens),
-      error: option(string),
-    };
-
-    let decode = t_decode;
-  };
-
-  module AuthGetUserInfoResult = {
+  module AuthGetUserResult = {
     [@decco]
     type attributes = {
       email: string,
@@ -60,11 +36,37 @@ module WebEvent = {
     };
 
     [@decco]
-    type t = {
-      id: string,
-      username: string,
-      attributes,
+    type credentials = {
+      tokens: option(Providers_Authentication_Credentials.tokens),
+      awsCredentials:
+        option(Providers_Authentication_Credentials.awsCredentials),
     };
+
+    [@decco]
+    type t = {
+      attributes: option(attributes),
+      username: option(string),
+      credentials: option(credentials),
+      identityId: option(string),
+      state: string,
+    };
+
+    let decode = t_decode;
+  };
+
+  module AuthSignInResult = {
+    [@decco]
+    type t = {
+      user: option(AuthGetUserResult.t),
+      error: option(string),
+    };
+
+    let decode = t_decode;
+  };
+
+  module AuthSignOutResult = {
+    [@decco]
+    type t = {error: option(string)};
 
     let decode = t_decode;
   };
@@ -123,22 +125,7 @@ module WebEventHandler = {
     ();
   };
 
-  let handleGetTokensResult = (type_, event: option(Js.Json.t)) => {
-    event->Belt.Option.forEach(data => {
-      switch (WebEvent.authGetTokensResult_decode(data)) {
-      | Belt.Result.Ok(_) => HubEvent.publish(~event=type_, ())
-      | Belt.Result.Error(e) => Js.log2("handleGetTokensResult error", e)
-      }
-    });
-  };
-
-  let config = [|
-    ("ROUTER_REPLACE", handleRouterReplace),
-    (
-      "AUTH_SIGN_IN_GOOGLE_RESULT",
-      handleGetTokensResult("AUTH_SIGN_IN_GOOGLE_RESULT"),
-    ),
-  |];
+  let config = [|("ROUTER_REPLACE", handleRouterReplace)|];
 
   let dispatch = (ev: WebEvent.t) => {
     config

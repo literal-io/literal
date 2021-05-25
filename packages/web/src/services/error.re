@@ -12,7 +12,7 @@ let report = exn => {
     | InvalidState(message) => (
         "InvalidState"->Externals_Error.make->Js.Option.some,
         Some(
-          Sentry.makeExceptionContext(
+          SentryBrowser.makeExceptionContext(
             ~extra=
               Js.Json.object_(
                 Js.Dict.fromList([("message", Js.Json.string(message))]),
@@ -30,7 +30,7 @@ let report = exn => {
         errors
         ->Js.Json.stringifyAny
         ->Belt.Option.map(error =>
-            Sentry.makeExceptionContext(
+            SentryBrowser.makeExceptionContext(
               ~extra=
                 Js.Json.object_(
                   Js.Dict.fromList([("error", error->Js.Json.string)]),
@@ -44,7 +44,7 @@ let report = exn => {
         error
         ->Js.Json.stringifyAny
         ->Belt.Option.map(error =>
-            Sentry.makeExceptionContext(
+            SentryBrowser.makeExceptionContext(
               ~extra=
                 Js.Json.object_(
                   Js.Dict.fromList([("error", error->Js.Json.string)]),
@@ -59,12 +59,12 @@ let report = exn => {
       )
     | GenericErrorWithExtra((message, extra)) => (
         message->Externals_Error.make->Js.Option.some,
-        Some(Sentry.makeExceptionContext(~extra, ())),
+        Some(SentryBrowser.makeExceptionContext(~extra, ())),
       )
     | DeccoDecodeError({path, message, value}) => (
         "DeccoDecodeError"->Externals_Error.make->Js.Option.some,
         Some(
-          Sentry.makeExceptionContext(
+          SentryBrowser.makeExceptionContext(
             ~extra=
               Js.Json.object_(
                 Js.Dict.fromList([
@@ -81,10 +81,11 @@ let report = exn => {
 
   let _ =
     switch (error, errorContext) {
-    | _ when Constants.Env.nodeEnv != "production" => Js.log(error)
+    | _ when Constants.Env.nodeEnv != "production" =>
+      Js.log2(error, errorContext)
     | (Some(error), Some(errorContext)) =>
-      Sentry.captureExceptionWithContext(error, errorContext)
-    | (Some(error), None) => Sentry.captureException(error)
+      SentryBrowser.captureExceptionWithContext(error, errorContext)
+    | (Some(error), None) => SentryBrowser.captureException(error)
     | (_, _) => ()
     };
   let _ =
@@ -92,7 +93,7 @@ let report = exn => {
     | _ when Constants.Env.nodeEnv != "production" => ()
     | Some(_) =>
       Service_Analytics.(
-        {sentryEventId: Sentry.lastEventId(), type_: "ErrorService"}
+        {sentryEventId: SentryBrowser.lastEventId(), type_: "ErrorService"}
         ->error
         ->track
       )

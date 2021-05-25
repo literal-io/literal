@@ -81,7 +81,7 @@ let unsafeAsCache = [%raw
 |}
 ];
 
-let writeToCache = (~annotation, ~currentUser) => {
+let writeToCache = (~annotation, ~identityId) => {
   let cacheAnnotation =
     annotation->LiteralModel.Annotation.encode->unsafeAsCache;
 
@@ -106,13 +106,13 @@ let writeToCache = (~annotation, ~currentUser) => {
   ->Belt.Array.forEach(annotationCollectionId => {
       Lib_GraphQL_AnnotationCollection.Apollo.setAnnotationInCollection(
         ~annotation=cacheAnnotation,
-        ~currentUser,
+        ~identityId,
         ~annotationCollectionId,
       )
     });
 };
 
-let addManyToCache = (~annotations, ~currentUser) => {
+let addManyToCache = (~annotations, ~identityId) => {
   let _ = {
     let textualBodyAnnotationTuples =
       annotations
@@ -166,7 +166,7 @@ let addManyToCache = (~annotations, ~currentUser) => {
           ~annotationCollectionId,
           ~annotationCollectionLabel=textualBody.value,
           ~annotationCollectionType="TAG_COLLECTION",
-          ~currentUser,
+          ~identityId,
           ~onCreateAnnotationCollection,
         );
       });
@@ -230,13 +230,13 @@ let addManyToCache = (~annotations, ~currentUser) => {
           ~annotationCollectionType="SOURCE_COLLECTION",
           ~annotationCollectionId=
             Lib_GraphQL.AnnotationCollection.makeIdFromComponent(
-              ~creatorUsername=currentUser.username,
+              ~identityId,
               ~annotationCollectionIdComponent=
                 externalTarget.hashId->Belt.Option.getWithDefault(""),
               (),
             ),
           ~annotationCollectionLabel=externalTarget.id,
-          ~currentUser,
+          ~identityId,
           ~onCreateAnnotationCollection,
         );
       });
@@ -245,7 +245,7 @@ let addManyToCache = (~annotations, ~currentUser) => {
   ();
 };
 
-let deleteFromCache = (~annotation, ~currentUser) => {
+let deleteFromCache = (~annotation, ~identityId) => {
   let tagAnnotationCollectionIds =
     annotation.LiteralModel.Annotation.body
     ->Belt.Option.getWithDefault([||])
@@ -278,11 +278,7 @@ let deleteFromCache = (~annotation, ~currentUser) => {
         }
       })
     ->Belt.Array.map(id =>
-        Lib_GraphQL.AnnotationCollection.makeId(
-          ~creatorUsername=
-            currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-          ~label=id,
-        )
+        Lib_GraphQL.AnnotationCollection.makeId(~identityId, ~label=id)
       );
 
   let _ =
@@ -298,7 +294,7 @@ let deleteFromCache = (~annotation, ~currentUser) => {
              ->Belt.Option.forEach(annotationId =>
                  Lib_GraphQL_AnnotationCollection.Apollo.removeAnnotationFromCollection(
                    ~annotationId,
-                   ~currentUser,
+                   ~identityId,
                    ~annotationCollectionId,
                  )
                )

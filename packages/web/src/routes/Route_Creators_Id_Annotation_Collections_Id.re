@@ -5,7 +5,8 @@ let default = (~rehydrated) => {
     Hooks_SearchParams.use(
       Routes.CreatorsIdAnnotationCollectionsId.parseSearch,
     );
-  let authentication = Hooks_CurrentUserInfo.use();
+  let Providers_Authentication.{user} =
+    React.useContext(Providers_Authentication.authenticationContext);
   let (isCollectionsDrawerVisible, setIsCollectionsDrawerVisible) =
     React.useState(_ => false);
 
@@ -13,13 +14,14 @@ let default = (~rehydrated) => {
     React.useEffect1(
       () => {
         let _ =
-          switch (authentication) {
-          | Unauthenticated => Next.Router.replace(Routes.Authenticate.path())
+          switch (user) {
+          | SignedOutPromptAuthentication =>
+            Next.Router.replace(Routes.Authenticate.path())
           | _ => ()
           };
         None;
       },
-      [|authentication|],
+      [|user|],
     );
 
   let handleAnnotationIdChange = annotationId => {
@@ -42,7 +44,7 @@ let default = (~rehydrated) => {
           );
         let path =
           Routes.CreatorsIdAnnotationCollectionsId.path(
-            ~creatorUsername=routeParams.creatorUsername,
+            ~identityId=routeParams.identityId,
             ~annotationCollectionIdComponent=
               routeParams.annotationCollectionIdComponent,
           );
@@ -60,16 +62,18 @@ let default = (~rehydrated) => {
   };
 
   switch (
-    authentication,
+    user,
     Routes.CreatorsIdAnnotationCollectionsId.params_decode(router.Next.query),
   ) {
-  | (Loading, Ok(routeParams))
-  | (Authenticated(_), Ok(routeParams)) =>
+  | (Unknown, Ok(routeParams))
+  | (SignedInUser(_), Ok(routeParams))
+  | (GuestUser(_), Ok(routeParams))
+  | (SignedInUserMergingIdentites(_), Ok(routeParams)) =>
     <>
       <QueryRenderers_AnnotationCollectionsDrawer
         onClose={() => setIsCollectionsDrawerVisible(_ => false)}
         isVisible=isCollectionsDrawerVisible
-        authentication
+        user
         rehydrated
       />
       <QueryRenderers_AnnotationCollection
@@ -86,32 +90,33 @@ let default = (~rehydrated) => {
           ->Belt.Option.map(annotationIdComponent =>
               Lib_GraphQL.Annotation.makeIdFromComponent(
                 ~annotationIdComponent,
-                ~creatorUsername=routeParams.creatorUsername,
+                ~identityId=routeParams.identityId,
               )
             )
         }
-        authentication
+        user
         rehydrated
       />
     </>
-  | (Loading, Error(_)) => <Loading />
-  | (Authenticated(currentUser), Error(_)) =>
+  | (Unknown, Error(_)) => <Loading />
+  | (GuestUser({identityId}), Error(_))
+  | (SignedInUser({identityId}), Error(_))
+  | (SignedInUserMergingIdentites({identityId}), Error(_)) =>
     <Redirect
       staticPath=Routes.CreatorsIdAnnotationCollectionsId.staticPath
       path={Routes.CreatorsIdAnnotationCollectionsId.path(
-        ~creatorUsername=currentUser.username,
+        ~identityId,
         ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
       )}>
-      <Loading />
+      <QueryRenderers_AnnotationCollection.Loading />
     </Redirect>
-  | (Unauthenticated, Ok(_))
-  | (Unauthenticated, Error(_)) =>
+  | (SignedOutPromptAuthentication, _) =>
     <Redirect
       staticPath={Routes.Authenticate.path()}
       path={Routes.Authenticate.path()}>
-      <Loading />
+      <QueryRenderers_AnnotationCollection.Loading />
     </Redirect>
   };
 };
 
-let page = "creators/[creatorUsername]/annotation-collections/[annotationCollectionIdComponent].js";
+let page = "creators/[identityId]/annotation-collections/[annotationCollectionIdComponent].js";

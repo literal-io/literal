@@ -2,17 +2,17 @@ module Apollo = {
   open QueryRenderers_AnnotationCollection_GraphQL;
 
   let updateCacheListAnnotationCollectionsItems =
-      (~currentUser, ~onUpdateItems, ~onCreateAnnotationCollections) => {
+      (~identityId, ~onUpdateItems, ~onCreateAnnotationCollections) => {
     let cacheQuery =
       QueryRenderers_AnnotationCollectionsDrawer_GraphQL.ListAnnotationCollections.Query.make(
-        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+        ~creatorUsername=identityId,
         (),
       );
 
     let _ =
       QueryRenderers_AnnotationCollectionsDrawer_GraphQL.ListAnnotationCollections.Cache.readCache(
         ~query=cacheQuery,
-        ~client=Providers_Apollo.client,
+        ~client=Providers_Apollo_Client.inst^,
         (),
       )
       ->Belt.Option.forEach(data => {
@@ -38,7 +38,7 @@ module Apollo = {
             newData->Belt.Option.forEach(newData =>
               QueryRenderers_AnnotationCollectionsDrawer_GraphQL.ListAnnotationCollections.Cache.writeCache(
                 ~query=cacheQuery,
-                ~client=Providers_Apollo.client,
+                ~client=Providers_Apollo_Client.inst^,
                 ~data=newData,
                 (),
               )
@@ -50,21 +50,21 @@ module Apollo = {
 
   let updateCacheAnnotationCollectionItems =
       (
-        ~currentUser,
+        ~identityId,
         ~annotationCollectionId,
         ~onUpdateItems,
         ~onCreateAnnotationCollection,
       ) => {
     let cacheQuery =
       GetAnnotationCollection.Query.make(
-        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+        ~creatorUsername=identityId,
         ~id=annotationCollectionId,
         (),
       );
     let _ =
       GetAnnotationCollection.Cache.readCache(
         ~query=cacheQuery,
-        ~client=Providers_Apollo.client,
+        ~client=Providers_Apollo_Client.inst^,
         (),
       )
       ->Belt.Option.forEach(data => {
@@ -97,7 +97,7 @@ module Apollo = {
                  ->Belt.Option.forEach(newData =>
                      GetAnnotationCollection.Cache.writeCache(
                        ~query=cacheQuery,
-                       ~client=Providers_Apollo.client,
+                       ~client=Providers_Apollo_Client.inst^,
                        ~data=newData,
                        (),
                      )
@@ -110,7 +110,7 @@ module Apollo = {
   };
 
   let setAnnotationInCollection =
-      (~annotation, ~currentUser, ~annotationCollectionId) => {
+      (~annotation, ~identityId, ~annotationCollectionId) => {
     let annotationId = a =>
       a
       ->Js.Json.decodeObject
@@ -139,7 +139,7 @@ module Apollo = {
     let onCreateAnnotationCollection = () => Js.Promise.resolve(None);
 
     updateCacheAnnotationCollectionItems(
-      ~currentUser,
+      ~identityId,
       ~annotationCollectionId,
       ~onUpdateItems,
       ~onCreateAnnotationCollection,
@@ -149,7 +149,7 @@ module Apollo = {
   let addAnnotationToCollection =
       (
         ~annotation,
-        ~currentUser,
+        ~identityId,
         ~annotationCollectionId,
         ~annotationCollectionLabel,
         ~annotationCollectionType,
@@ -163,7 +163,7 @@ module Apollo = {
         )
         ->Js.Option.some;
       updateCacheAnnotationCollectionItems(
-        ~currentUser,
+        ~identityId,
         ~annotationCollectionId,
         ~onUpdateItems,
         ~onCreateAnnotationCollection,
@@ -213,7 +213,7 @@ module Apollo = {
         ->Js.Option.some;
 
       updateCacheListAnnotationCollectionsItems(
-        ~currentUser,
+        ~identityId,
         ~onUpdateItems,
         ~onCreateAnnotationCollections,
       );
@@ -224,7 +224,7 @@ module Apollo = {
   let addAnnotationsToCollection =
       (
         ~annotations,
-        ~currentUser,
+        ~identityId,
         ~annotationCollectionId,
         ~annotationCollectionLabel,
         ~annotationCollectionType,
@@ -245,7 +245,7 @@ module Apollo = {
         ->Js.Option.some;
 
       updateCacheAnnotationCollectionItems(
-        ~currentUser,
+        ~identityId,
         ~annotationCollectionId,
         ~onUpdateItems,
         ~onCreateAnnotationCollection,
@@ -295,7 +295,7 @@ module Apollo = {
         ->Js.Option.some;
 
       updateCacheListAnnotationCollectionsItems(
-        ~currentUser,
+        ~identityId,
         ~onUpdateItems,
         ~onCreateAnnotationCollections,
       );
@@ -304,7 +304,7 @@ module Apollo = {
   };
 
   let removeAnnotationFromCollection =
-      (~annotationId, ~currentUser, ~annotationCollectionId) => {
+      (~annotationId, ~identityId, ~annotationCollectionId) => {
     let _ = {
       let onUpdateItems = items =>
         items
@@ -321,7 +321,7 @@ module Apollo = {
       let onCreateAnnotationCollection = () => Js.Promise.resolve(None);
 
       updateCacheAnnotationCollectionItems(
-        ~currentUser,
+        ~identityId,
         ~annotationCollectionId,
         ~onUpdateItems,
         ~onCreateAnnotationCollection,
@@ -368,7 +368,7 @@ module Apollo = {
       let onCreateAnnotationCollections = () => None;
 
       updateCacheListAnnotationCollectionsItems(
-        ~currentUser,
+        ~identityId,
         ~onUpdateItems,
         ~onCreateAnnotationCollections,
       );
@@ -378,7 +378,7 @@ module Apollo = {
 
   let readCache = (~id, ~fragment) =>
     Apollo.Client.readFragment(
-      Providers_Apollo.client,
+      Providers_Apollo_Client.inst^,
       {id: "AnnotationCollection:" ++ id, fragment},
     );
 };

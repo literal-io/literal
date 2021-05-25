@@ -1,22 +1,21 @@
 open Styles;
 
 [@react.component]
-let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
+let make = (~annotationFragment as annotation=?, ~identityId=?) => {
   let (deleteAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(
       Containers_NewAnnotationFromShareHeader_GraphQL.DeleteAnnotationMutation.definition,
     );
 
   let handleClose = () => {
-    switch (annotation, currentUser) {
-    | (Some(annotation), Some(currentUser)) =>
+    switch (annotation, identityId) {
+    | (Some(annotation), Some(identityId)) =>
       let variables =
         Containers_NewAnnotationFromShareHeader_GraphQL.DeleteAnnotationMutation.makeVariables(
           ~input=
             Lib_GraphQL_DeleteAnnotationMutation.Input.make(
               ~id=annotation##id,
-              ~creatorUsername=
-                AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+              ~creatorUsername=identityId,
             ),
           (),
         );
@@ -24,7 +23,7 @@ let make = (~annotationFragment as annotation=?, ~currentUser=?) => {
       let _ =
         Lib_GraphQL_DeleteAnnotationMutation.Apollo.updateCache(
           ~annotation,
-          ~currentUser,
+          ~identityId,
         );
       if (!Webview.isWebview()) {
         Next.Router.back();

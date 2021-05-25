@@ -1,7 +1,15 @@
 let styles = [%raw "require('./TagsList.module.css')"];
 
 [@react.component]
-let make = (~value, ~onChange, ~disabled=?, ~autoFocusAddTagInput=false) => {
+let make =
+    (
+      ~value,
+      ~onChange,
+      ~disabled=?,
+      ~autoFocusAddTagInput=false,
+      ~onFocus=?,
+      ~onBlur=?,
+    ) => {
   let handleChange = (~newText, ~idx) => {
     let currentTag: option(Containers_AnnotationEditor_Tag.t) =
       value->Belt.Array.get(idx);
@@ -52,6 +60,8 @@ let make = (~value, ~onChange, ~disabled=?, ~autoFocusAddTagInput=false) => {
               text={tag.text}
               href={tag.href}
               ?disabled
+              ?onFocus
+              ?onBlur
             />
           </li>;
         }
@@ -61,6 +71,8 @@ let make = (~value, ~onChange, ~disabled=?, ~autoFocusAddTagInput=false) => {
           <AddTagInput
             onCreateTag=handleCreateTag
             autoFocus=autoFocusAddTagInput
+            ?onFocus
+            ?onBlur
           />
         </li>,
       |])

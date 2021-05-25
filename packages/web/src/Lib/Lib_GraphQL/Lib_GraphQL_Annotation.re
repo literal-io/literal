@@ -99,7 +99,7 @@ let cacheAnnotationFragment =
 
 let readCache = id => {
   Apollo.Client.readFragment(
-    Providers_Apollo.client,
+    Providers_Apollo_Client.inst^,
     {id: "Annotation:" ++ id, fragment: cacheAnnotationFragment},
   );
 };

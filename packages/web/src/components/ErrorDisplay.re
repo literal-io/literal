@@ -1,12 +1,15 @@
 [@react.component]
 let make = () => {
-  let authentication = Hooks_CurrentUserInfo.use();
+  let Providers_Authentication.{user} =
+    React.useContext(Providers_Authentication.authenticationContext);
+
   let handleRetry = () => {
     let newHref =
-      switch (authentication) {
-      | Authenticated(currentUser) =>
+      switch (user) {
+      | GuestUser({identityId})
+      | SignedInUser({identityId}) =>
         Routes.CreatorsIdAnnotationCollectionsId.path(
-          ~creatorUsername=currentUser.username,
+          ~identityId,
           ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
         )
       | _ => Routes.Authenticate.path()

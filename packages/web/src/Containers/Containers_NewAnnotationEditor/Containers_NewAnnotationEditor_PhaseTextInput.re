@@ -1,7 +1,7 @@
 open Containers_NewAnnotationEditor_GraphQL;
 
 [@react.component]
-let make = (~currentUser) => {
+let make = (~identityId) => {
   let scrollContainerRef = React.useRef(Js.Nullable.null);
   let textInputRef = React.useRef(Js.Nullable.null);
   let (textValue, setTextValue) = React.useState(() => "");
@@ -14,8 +14,7 @@ let make = (~currentUser) => {
             Some(
               Lib_GraphQL.AnnotationCollection.(
                 makeIdFromComponent(
-                  ~creatorUsername=
-                    currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                  ~identityId,
                   ~annotationCollectionIdComponent=recentAnnotationCollectionIdComponent,
                   (),
                 )
@@ -34,8 +33,7 @@ let make = (~currentUser) => {
   let handleSave = () => {
     let idPromise =
       Lib_GraphQL.Annotation.makeId(
-        ~creatorUsername=
-          AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+        ~identityId,
         ~textualTargetValue=textValue,
       );
 
@@ -47,8 +45,7 @@ let make = (~currentUser) => {
             | Some(id) => Js.Promise.resolve(id)
             | None =>
               Lib_GraphQL.AnnotationCollection.makeId(
-                ~creatorUsername=
-                  AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+                ~identityId,
                 ~label=tag.text,
               )
             };
@@ -83,8 +80,7 @@ let make = (~currentUser) => {
                ~context=[|Lib_GraphQL.Annotation.defaultContext|],
                ~id,
                ~motivation=[|`HIGHLIGHTING|],
-               ~creatorUsername=
-                 AwsAmplify.Auth.CurrentUserInfo.(currentUser->username),
+               ~creatorUsername=identityId,
                ~target=[|
                  Lib_GraphQL_AnnotationTargetInput.(
                    make(
@@ -109,7 +105,7 @@ let make = (~currentUser) => {
 
            let _ =
              Lib_GraphQL_CreateAnnotationMutation.Apollo.updateCache(
-               ~currentUser,
+               ~identityId,
                ~input,
                (),
              );
@@ -120,7 +116,7 @@ let make = (~currentUser) => {
                  staticPath,
                  path(
                    ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
-                   ~creatorUsername=currentUser.username,
+                   ~identityId,
                  ),
                )
              );
@@ -148,10 +144,7 @@ let make = (~currentUser) => {
       );
     let _ = setPendingTagValue(_ => "");
     let _ =
-      Lib_GraphQL.AnnotationCollection.makeId(
-        ~creatorUsername=currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
-        ~label=value,
-      )
+      Lib_GraphQL.AnnotationCollection.makeId(~identityId, ~label=value)
       |> Js.Promise.then_(id => {
            let _ =
              setTagsValue(tags => {

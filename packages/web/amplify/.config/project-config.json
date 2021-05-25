@@ -6,7 +6,7 @@
   "version": "3.0",
   "frontend": "javascript",
   "javascript": {
-    "framework": "react",
+    "framework": "none",
     "config": {
       "SourceDir": "src",
       "DistributionDir": "out",

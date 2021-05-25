@@ -1,47 +1,68 @@
-type accessTokenInput = {
-  [@bs.as "AccessToken"]
-  accessToken: string,
+module JwtToken = {
+  type t;
+  external toString: t => string = "%identity";
 };
-type accessToken;
 
-[@bs.new] [@bs.module "amazon-cognito-identity-js"]
-external makeAccessToken: accessTokenInput => accessToken = "CognitoIdToken";
+module RefreshToken = {
+  type t;
+  type input = {
+    [@bs.as "RefreshToken"]
+    refreshToken: string,
+  };
 
-type refreshTokenInput = {
-  [@bs.as "RefreshToken"]
-  refreshToken: string,
+  [@bs.new] [@bs.module "amazon-cognito-identity-js"]
+  external make: input => t = "CognitoRefreshToken";
 };
-type refreshToken;
-[@bs.new] [@bs.module "amazon-cognito-identity-js"]
-external makeRefreshToken: refreshTokenInput => refreshToken =
-  "CognitoRefreshToken";
 
-type idToken;
-[@bs.send]
-external decodePayload: idToken => Js.Dict.t(string) = "decodePayload";
-type idTokenInput = {
-  [@bs.as "IdToken"]
-  idToken: string,
+module AccessToken = {
+  type t;
+  type input = {
+    [@bs.as "AccessToken"]
+    accessToken: string,
+  };
+
+  [@bs.send] external getJwtToken: t => JwtToken.t = "getJwtToken";
+
+  [@bs.new] [@bs.module "amazon-cognito-identity-js"]
+  external make: input => t = "CognitoIdToken";
 };
-[@bs.new] [@bs.module "amazon-cognito-identity-js"]
-external makeIdToken: idTokenInput => idToken = "CognitoIdToken";
 
-type userSessionInput = {
-  [@bs.as "IdToken"]
-  idToken,
-  [@bs.as "AccessToken"]
-  accessToken,
-  [@bs.as "RefreshToken"]
-  refreshToken,
+module IdToken = {
+  type t;
+  type input = {
+    [@bs.as "IdToken"]
+    idToken: string,
+  };
+
+  [@bs.send] external getJwtToken: t => JwtToken.t = "getJwtToken";
+  [@bs.send] external decodePayload: t => Js.Json.t = "decodePayload";
+
+  [@bs.new] [@bs.module "amazon-cognito-identity-js"]
+  external make: input => t = "CognitoIdToken";
 };
-type userSession;
 
-[@bs.new] [@bs.module "amazon-cognito-identity-js"]
-external makeUserSession: userSessionInput => userSession =
-  "CognitoUserSession";
-[@bs.send] external getIdToken: userSession => idToken = "getIdToken";
+module UserSession = {
+  type t;
+  type input = {
+    [@bs.as "IdToken"]
+    idToken: IdToken.t,
+    [@bs.as "AccessToken"]
+    accessToken: AccessToken.t,
+    [@bs.as "RefreshToken"]
+    refreshToken: RefreshToken.t,
+  };
 
-type cognitoUser;
-[@bs.send]
-external setSignInUserSession: (cognitoUser, userSession) => unit =
-  "setSignInUserSession";
+  [@bs.new] [@bs.module "amazon-cognito-identity-js"]
+  external make: input => t = "CognitoUserSession";
+
+  [@bs.send] external getIdToken: t => IdToken.t = "getIdToken";
+  [@bs.send] external getRefreshToken: t => RefreshToken.t = "getRefreshToken";
+  [@bs.send] external getAccessToken: t => AccessToken.t = "getRefreshToken";
+};
+
+module CognitoUser = {
+  type t;
+  [@bs.send]
+  external setSignInUserSession: (t, UserSession.t) => unit =
+    "setSignInUserSession";
+};

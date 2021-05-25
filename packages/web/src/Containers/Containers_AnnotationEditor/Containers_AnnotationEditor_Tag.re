@@ -4,15 +4,12 @@ type t = {
   text: string,
 };
 
-let ensureId = (~creatorUsername, tag) => {
+let ensureId = (~identityId, tag) => {
   let id =
     switch (tag.id) {
     | Some(id) => Js.Promise.resolve(id)
     | None =>
-      Lib_GraphQL.AnnotationCollection.makeId(
-        ~creatorUsername,
-        ~label=tag.text,
-      )
+      Lib_GraphQL.AnnotationCollection.makeId(~identityId, ~label=tag.text)
     };
   id |> Js.Promise.then_(id => Js.Promise.resolve({...tag, id: Some(id)}));
 };

@@ -16,10 +16,8 @@ public class WebEvent {
     public static final String TYPE_AUTH_SIGN_IN_RESULT = "AUTH_SIGN_IN_RESULT";
     public static final String TYPE_AUTH_SIGN_IN_GOOGLE = "AUTH_SIGN_IN_GOOGLE";
     public static final String TYPE_AUTH_SIGN_IN_GOOGLE_RESULT = "AUTH_SIGN_IN_GOOGLE_RESULT";
-    public static final String TYPE_AUTH_GET_TOKENS = "AUTH_GET_TOKENS";
-    public static final String TYPE_AUTH_GET_TOKENS_RESULT = "AUTH_GET_TOKENS_RESULT";
-    public static final String TYPE_AUTH_GET_USER_INFO = "AUTH_GET_USER_INFO";
-    public static final String TYPE_AUTH_GET_USER_INFO_RESULT = "AUTH_GET_USER_INFO_RESULT";
+    public static final String TYPE_AUTH_GET_USER = "AUTH_GET_USER";
+    public static final String TYPE_AUTH_GET_USER_RESULT = "AUTH_GET_USER_RESULT";
     public static final String TYPE_VIEW_TARGET_FOR_ANNOTATION = "VIEW_TARGET_FOR_ANNOTATION";
     public static final String TYPE_SET_CACHE_ANNOTATION = "SET_CACHE_ANNOTATION";
     public static final String TYPE_DELETE_CACHE_ANNOTATION = "DELETE_CACHE_ANNOTATION";
@@ -27,6 +25,11 @@ public class WebEvent {
     public static final String TYPE_ADD_CACHE_ANNOTATIONS = "ADD_CACHE_ANNOTATIONS";
     public static final String TYPE_ANALYTICS_LOG_EVENT = "ANALYTICS_LOG_EVENT";
     public static final String TYPE_ANALYTICS_SET_USER_ID = "ANALYTICS_SET_USER_ID";
+    public static final String TYPE_AUTH_SIGN_OUT = "AUTH_SIGN_OUT";
+    public static final String TYPE_AUTH_SIGN_OUT_RESULT = "AUTH_SIGN_OUT_RESULT";
+    public static final String TYPE_ACTION_VIEW_URI = "ACTION_VIEW_URI";
+    public static final String TYPE_GET_APP_VERSION = "GET_APP_VERSION";
+    public static final String TYPE_GET_APP_VERSION_RESULT = "GET_APP_VERSION_RESULT";
 
     // Source WebView
     public static final String TYPE_VIEW_STATE_EDIT_ANNOTATION_TAGS = "VIEW_STATE_EDIT_ANNOTATION_TAGS";

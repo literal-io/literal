@@ -4,7 +4,7 @@ module Client = {
     [@bs.as "type"]
     type_: string,
     [@bs.optional]
-    jwtToken: unit => Js.Promise.t(AwsAmplify.Auth.JwtToken.t),
+    jwtToken: unit => Js.Promise.t(AmazonCognitoIdentity.JwtToken.t),
     [@bs.optional]
     credentials: unit => Js.Promise.t(AwsAmplify.Credentials.t),
   };
@@ -17,7 +17,7 @@ module Client = {
   type appSyncLinkOptions = {
     url: string,
     region: string,
-    auth: authOptions,
+    auth: option(authOptions),
     disableOffline: bool,
     mandatorySignIn: bool,
     complexObjectsCredentials:

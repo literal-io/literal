@@ -13,6 +13,7 @@ import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.HostedUIOptions;
 import com.amazonaws.mobile.client.SignInUIOptions;
+import com.amazonaws.mobile.client.SignOutOptions;
 import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.mobile.client.results.SignInResult;
 import com.amazonaws.mobile.client.results.SignUpResult;
@@ -104,22 +105,13 @@ public class AuthenticationRepository {
     }
 
     public static CompletableFuture<String> getUsername() {
-        return getUserAttributes().thenCompose((userAttributes) -> {
-            CompletableFuture<String> future = new CompletableFuture<>();
-            String username = AWSMobileClient.getInstance().getUsername();
-            if (username == null) {
-                future.completeExceptionally(new InvalidStateException("Username is null."));
-                return future;
-            }
-            future.complete(username.startsWith("Google") ? username : userAttributes.get("sub"));
-            return future;
-        });
+        return CompletableFuture.completedFuture(AWSMobileClient.getInstance().getUsername());
     }
 
     public static CompletableFuture<String> getUsernameWithRetry() {
         return Failsafe.with(retryPolicy).getStageAsyncExecution(execution -> getUsername().whenComplete((username, throwable) -> {
             if (execution.complete(username, throwable)) {
-                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Username retrieved successfully.", SentryLevel.INFO);
+                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Username retrieved successfully: " + username, SentryLevel.INFO);
             } else if (!execution.retryFor(username, throwable)) {
                 ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Failed to retrieve username.", SentryLevel.ERROR);
             }
@@ -140,12 +132,28 @@ public class AuthenticationRepository {
     public static CompletableFuture<String> getIdentityIdWithRetry() {
         return Failsafe.with(retryPolicy).getStageAsyncExecution(execution -> getIdentityId().whenComplete((identityId, throwable) -> {
             if (execution.complete(identityId, throwable)) {
-                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Identity ID retrieved successfully.", SentryLevel.INFO);
+                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Identity ID retrieved successfully: " + identityId, SentryLevel.INFO);
             } else if (!execution.retryFor(identityId, throwable)) {
                 ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Failed to retrieve Identity ID.", SentryLevel.ERROR);
 
             }
         }));
+    }
+
+    public static CompletableFuture<Void> signOut() {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        AWSMobileClient.getInstance().signOut(SignOutOptions.builder().build(), new com.amazonaws.mobile.client.Callback<Void>() {
+            @Override
+            public void onResult(Void result) {
+                future.complete(null);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                future.completeExceptionally(e);
+            }
+        });
+        return future;
     }
 
     public static void signInGoogle(Activity activity, Callback<UserStateDetails> callback) {

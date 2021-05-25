@@ -6,6 +6,7 @@ module Env = {
   [@bs.val] external amplifyEnv: string = "process.env.AMPLIFY_ENV";
   [@bs.val] external amplitudeApiKey: string = "process.env.AMPLITUDE_API_KEY";
   [@bs.val] external sentryDsn: string = "process.env.SENTRY_DSN";
+  [@bs.val] external webAppVersion: string = "process.env.WEB_APP_VERSION";
 };
 
 let apiOrigin =

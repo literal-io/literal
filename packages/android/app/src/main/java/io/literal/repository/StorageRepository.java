@@ -19,6 +19,7 @@ import java.util.Date;
 
 import io.literal.factory.AWSMobileClientFactory;
 import io.literal.factory.AppSyncClientFactory;
+import io.literal.lib.AWSConfigurationLib;
 import io.literal.lib.Callback;
 import io.literal.lib.Callback3;
 import io.literal.model.User;
@@ -35,7 +36,7 @@ public class StorageRepository {
 
     public static String getBucketName(Context context) {
         if (bucketName == null) {
-            JSONObject s3TransferUtilityJson = AppSyncClientFactory
+            JSONObject s3TransferUtilityJson = AWSConfigurationLib
                     .getConfiguration(context)
                     .optJsonObject("S3TransferUtility");
             bucketName = s3TransferUtilityJson.optString("Bucket");
@@ -45,7 +46,7 @@ public class StorageRepository {
 
     public static String getBucketRegion(Context context) {
         if (bucketRegion == null) {
-            JSONObject s3TransferUtilityJson = AppSyncClientFactory
+            JSONObject s3TransferUtilityJson = AWSConfigurationLib
                     .getConfiguration(context)
                     .optJsonObject("S3TransferUtility");
             bucketRegion = s3TransferUtilityJson.optString("Region");

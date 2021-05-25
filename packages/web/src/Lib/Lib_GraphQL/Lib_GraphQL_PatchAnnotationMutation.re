@@ -372,7 +372,7 @@ module Apollo = {
     };
   };
 
-  let updateCache = (~currentUser, ~input) => {
+  let updateCache = (~identityId, ~input) => {
     let parsedOperations = input##operations->Belt.Array.map(Operation.parse);
     let cacheAnnotation =
       Lib_GraphQL_Annotation.readCache(input##id)->Belt.Option.getExn;
@@ -459,7 +459,7 @@ module Apollo = {
           | Add((annotationCollectionId, annotationCollectionLabel)) =>
             Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationToCollection(
               ~annotation=updatedAnnotation,
-              ~currentUser,
+              ~identityId,
               ~annotationCollectionId,
               ~annotationCollectionLabel,
               ~annotationCollectionType="TAG_COLLECTION",
@@ -468,13 +468,13 @@ module Apollo = {
           | Remove(annotationCollectionId) =>
             Lib_GraphQL_AnnotationCollection.Apollo.removeAnnotationFromCollection(
               ~annotationId=input##id,
-              ~currentUser,
+              ~identityId,
               ~annotationCollectionId,
             )
           | Set(annotationCollectionId) =>
             Lib_GraphQL_AnnotationCollection.Apollo.setAnnotationInCollection(
               ~annotation=updatedAnnotation,
-              ~currentUser,
+              ~identityId,
               ~annotationCollectionId,
             )
           }

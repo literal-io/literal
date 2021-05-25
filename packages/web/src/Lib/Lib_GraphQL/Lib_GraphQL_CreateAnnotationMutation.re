@@ -82,7 +82,7 @@ module Input = {
 
 module Apollo = {
   let updateCache =
-      (~currentUser, ~input, ~createAnnotationCollection=false, ()) => {
+      (~identityId, ~input, ~createAnnotationCollection=false, ()) => {
     let _ =
       input##body
       ->Belt.Option.getWithDefault([||])
@@ -103,28 +103,28 @@ module Apollo = {
 
           let onCreateAnnotationCollection =
             createAnnotationCollection
-              ? () =>
-                  Lib_GraphQL_Agent.(readCache(makeId(~currentUser)))
-                  ->Belt.Option.map(Js.Promise.resolve)
-                  ->Belt.Option.getWithDefault(
-                      Lib_GraphQL_Agent.makeCache(~currentUser),
-                    )
-                  |> Js.Promise.then_(agent =>
-                       QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.makeCache(
-                         ~label=textualBody##value,
-                         ~annotationCollectionType="TAG_COLLECTION",
-                         ~annotationCollectionId=textualBody##id,
-                         ~annotations=[|cacheAnnotation|],
-                         ~agent,
-                       )
-                       ->Js.Option.some
-                       ->Js.Promise.resolve
-                     )
+              ? () => {
+                  let agent =
+                    Lib_GraphQL_Agent.(readCache(makeId(~identityId)))
+                    ->Belt.Option.getWithDefault(
+                        Lib_GraphQL_Agent.makeCache(~identityId),
+                      );
+
+                  QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.makeCache(
+                    ~label=textualBody##value,
+                    ~annotationCollectionType="TAG_COLLECTION",
+                    ~annotationCollectionId=textualBody##id,
+                    ~annotations=[|cacheAnnotation|],
+                    ~agent,
+                  )
+                  ->Js.Option.some
+                  ->Js.Promise.resolve;
+                }
               : (() => Js.Promise.resolve(None));
 
           Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationToCollection(
             ~annotation=cacheAnnotation,
-            ~currentUser,
+            ~identityId,
             ~annotationCollectionId=textualBody##id,
             ~annotationCollectionLabel=textualBody##value,
             ~annotationCollectionType="TAG_COLLECTION",
@@ -165,11 +165,11 @@ module Apollo = {
             ~annotationCollectionLabel=externalTarget##id,
             ~annotationCollectionId=
               Lib_GraphQL.AnnotationCollection.makeIdFromComponent(
-                ~creatorUsername=currentUser.username,
+                ~identityId,
                 ~annotationCollectionIdComponent=externalTarget##hashId,
                 (),
               ),
-            ~currentUser,
+            ~identityId,
             ~onCreateAnnotationCollection,
           );
         });
@@ -177,7 +177,7 @@ module Apollo = {
   };
 
   let updateCacheMany =
-      (~currentUser, ~inputs, ~createAnnotationCollection=false, ()) => {
+      (~identityId, ~inputs, ~createAnnotationCollection=false, ()) => {
     let cacheAnnotations = inputs->Belt.Array.map(Input.toCacheAnnotation);
     let _ = {
       let textualBodyAnnotationTuples =
@@ -234,8 +234,7 @@ module Apollo = {
             || annotationCollectionId
             == Lib_GraphQL.AnnotationCollection.(
                  makeIdFromComponent(
-                   ~creatorUsername=
-                     currentUser->AwsAmplify.Auth.CurrentUserInfo.username,
+                   ~identityId,
                    ~annotationCollectionIdComponent=recentAnnotationCollectionIdComponent,
                    (),
                  )
@@ -247,23 +246,22 @@ module Apollo = {
 
           let onCreateAnnotationCollection =
             shouldCreateAnnotationCollection
-              ? () =>
-                  Lib_GraphQL_Agent.(readCache(makeId(~currentUser)))
-                  ->Belt.Option.map(Js.Promise.resolve)
-                  ->Belt.Option.getWithDefault(
-                      Lib_GraphQL_Agent.makeCache(~currentUser),
-                    )
-                  |> Js.Promise.then_(agent =>
-                       QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.makeCache(
-                         ~annotationCollectionId,
-                         ~annotationCollectionType="TAG_COLLECTION",
-                         ~label=textualBody##value,
-                         ~annotations,
-                         ~agent,
-                       )
-                       ->Js.Option.some
-                       ->Js.Promise.resolve
-                     )
+              ? () => {
+                  let agent =
+                    Lib_GraphQL_Agent.(readCache(makeId(~identityId)))
+                    ->Belt.Option.getWithDefault(
+                        Lib_GraphQL_Agent.makeCache(~identityId),
+                      );
+                  QueryRenderers_AnnotationCollection_GraphQL.GetAnnotationCollection.makeCache(
+                    ~annotationCollectionId,
+                    ~annotationCollectionType="TAG_COLLECTION",
+                    ~label=textualBody##value,
+                    ~annotations,
+                    ~agent,
+                  )
+                  ->Js.Option.some
+                  ->Js.Promise.resolve;
+                }
               : (() => Js.Promise.resolve(None));
 
           Lib_GraphQL_AnnotationCollection.Apollo.addAnnotationsToCollection(
@@ -271,7 +269,7 @@ module Apollo = {
             ~annotationCollectionId,
             ~annotationCollectionLabel=textualBody##value,
             ~annotationCollectionType="TAG_COLLECTION",
-            ~currentUser,
+            ~identityId,
             ~onCreateAnnotationCollection,
           );
         });
@@ -346,12 +344,12 @@ module Apollo = {
             ~annotationCollectionType="SOURCE_COLLECTION",
             ~annotationCollectionId=
               Lib_GraphQL.AnnotationCollection.makeIdFromComponent(
-                ~creatorUsername=currentUser.username,
+                ~identityId,
                 ~annotationCollectionIdComponent=externalTarget##hashId,
                 (),
               ),
             ~annotationCollectionLabel=externalTarget##id,
-            ~currentUser,
+            ~identityId,
             ~onCreateAnnotationCollection,
           );
         });
