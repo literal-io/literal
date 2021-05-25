@@ -19,6 +19,49 @@ module Container = {
       let containerRef = React.useRef(Js.Nullable.null);
       let directedScrollTargetIdx = React.useRef(None);
       let prevScroll = React.useRef(None);
+      let debouncedOnScroll =
+        React.useRef(
+          Lodash.debounce2(
+            (. scrollTop, scrollLeft) => {
+              let (scroll, containerDimen) =
+                switch (direction) {
+                | Vertical =>
+                  let bodyHeight =
+                    Webapi.Dom.(
+                      document
+                      |> Document.unsafeAsHtmlDocument
+                      |> HtmlDocument.body
+                      |> Js.Option.getExn
+                      |> Element.clientHeight
+                    );
+                  (scrollTop, bodyHeight);
+                | Horizontal =>
+                  let windowWidth = Webapi.Dom.(window->Window.innerWidth);
+                  (scrollLeft, windowWidth);
+                };
+
+              if (scroll != prevScroll.current->Belt.Option.getWithDefault(-1)) {
+                prevScroll.current = Some(scroll);
+                let relativePos = float_of_int(scroll) /. float_of_int(containerDimen);
+                let activeIdx =
+                  switch (Constants.browser()->Bowser.getBrowserName) {
+                  | Some(`Chrome) => relativePos->Js.Math.round->int_of_float
+                  | Some(`Safari)
+                  | _ => relativePos->Js.Math.floor
+                  };
+
+                switch (directedScrollTargetIdx.current) {
+                | Some(idx) when activeIdx == idx =>
+                  directedScrollTargetIdx.current = None
+                | Some(_) => ()
+                | None =>
+                  onIdxChange->Belt.Option.forEach(fn => fn(activeIdx))
+                };
+              };
+            },
+            200,
+          ),
+        );
 
       let (hasScrolledToInitialIdx, setHasScrolledToInitialIdx) =
         React.useState(() =>
@@ -79,50 +122,10 @@ module Container = {
         });
 
       let onScroll = ev => {
-        containerRef.current
-        ->Js.Nullable.toOption
-        ->Belt.Option.forEach(container =>
-            if (Raw.unsafeEq(ReactEvent.UI.target(ev), container)) {
-              let _ = ReactEvent.UI.stopPropagation(ev);
-              let (scroll, containerDimen) =
-                switch (direction) {
-                | Vertical =>
-                  let scrollTop = ReactEvent.UI.target(ev)##scrollTop;
-                  let bodyHeight =
-                    Webapi.Dom.(
-                      document
-                      |> Document.unsafeAsHtmlDocument
-                      |> HtmlDocument.body
-                      |> Js.Option.getExn
-                      |> Element.clientHeight
-                    );
-                  (scrollTop, bodyHeight);
-                | Horizontal =>
-                  let scrollLeft = ReactEvent.UI.target(ev)##scrollLeft;
-                  let windowWidth = Webapi.Dom.(window->Window.innerWidth);
-                  (scrollLeft, windowWidth);
-                };
-
-              if (scroll != prevScroll.current->Belt.Option.getWithDefault(-1)) {
-                prevScroll.current = Some(scroll);
-                let relativePos = scroll /. float_of_int(containerDimen);
-                let activeIdx =
-                  switch (Constants.browser()->Bowser.getBrowserName) {
-                  | Some(`Chrome) => relativePos->Js.Math.round->int_of_float
-                  | Some(`Safari)
-                  | _ => relativePos->Js.Math.floor
-                  };
-
-                switch (directedScrollTargetIdx.current) {
-                | Some(idx) when activeIdx == idx =>
-                  directedScrollTargetIdx.current = None
-                | Some(_) => ()
-                | None =>
-                  onIdxChange->Belt.Option.forEach(fn => fn(activeIdx))
-                };
-              };
-            }
-          );
+        debouncedOnScroll.current(.
+          ReactEvent.UI.target(ev)##scrollTop,
+          ReactEvent.UI.target(ev)##scrollLeft,
+        );
       };
 
       <div
