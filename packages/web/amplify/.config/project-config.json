@@ -2,11 +2,11 @@
   "providers": [
     "awscloudformation"
   ],
-  "projectName": "literal - staging",
+  "projectName": "literal - production",
   "version": "3.0",
   "frontend": "javascript",
   "javascript": {
-    "framework": "none",
+    "framework": "react",
     "config": {
       "SourceDir": "src",
       "DistributionDir": "out",
