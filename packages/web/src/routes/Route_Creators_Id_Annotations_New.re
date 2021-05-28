@@ -66,6 +66,8 @@ let default = (~rehydrated) => {
        switch (user) {
        | Unknown
        | SignedOutPromptAuthentication
+       | SignedInUserMergingIdentites(_) =>
+         <QueryRenderers_NewAnnotationFromShare.Loading />
        | _ when !rehydrated =>
          <QueryRenderers_NewAnnotationFromShare.Loading />
        | SignedInUser({identityId})
@@ -80,6 +82,8 @@ let default = (~rehydrated) => {
        switch (user) {
        | Unknown
        | SignedOutPromptAuthentication
+       | SignedInUserMergingIdentites(_) =>
+         <QueryRenderers_NewAnnotationFromShare.Loading />
        | _ when !rehydrated =>
          <QueryRenderers_NewAnnotationFromShare.Loading />
        | SignedInUser({identityId})
@@ -97,7 +101,7 @@ let default = (~rehydrated) => {
        }
      | (Unknown, _, _)
      | (SignedOutPromptAuthentication, _, _)
-     | (SignedInUserMergingIdentites(_), _, _)
+     | (SignedInUserMergingIdentites(_), _, _) => <Loading />
      | _ when !rehydrated => <Loading />
      | (GuestUser({identityId}), _, _)
      | (SignedInUser({identityId}), _, _) =>

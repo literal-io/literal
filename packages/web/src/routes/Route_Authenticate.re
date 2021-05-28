@@ -1,34 +1,5 @@
 open Styles;
 
-let resetPasswordUrl =
-  AwsAmplify.Config.(
-    "https://"
-    ++ Constants.awsAmplifyConfig->oauthGet->domainGet
-    ++ "/forgotPassword?"
-    ++ Webapi.Url.URLSearchParams.(
-         makeWithArray([|
-           ("client_id", Constants.awsAmplifyConfig->userPoolsWebClientIdGet),
-           (
-             "response_type",
-             Constants.awsAmplifyConfig->oauthGet->responseTypeGet,
-           ),
-           (
-             "scope",
-             Constants.awsAmplifyConfig
-             ->oauthGet
-             ->scopeGet
-             ->Js.Array2.joinWith("+"),
-           ),
-           (
-             "redirect_uri",
-             Constants.awsAmplifyConfig->oauthGet->redirectSignInGet,
-           ),
-         |])
-         ->toString
-         ->Js.Global.decodeURIComponent
-       )
-  );
-
 [@react.component]
 let default = () => {
   let Providers_Authentication.{user} =
@@ -63,7 +34,7 @@ let default = () => {
                 ),
               )
             );
-          | (SignedInUser({identityId}), Some(_)) =>
+          | (SignedInUser(_), Some(_)) =>
             setIsAuthenticating(_ => false);
             let _ =
               Webview.(
@@ -76,24 +47,6 @@ let default = () => {
       },
       [|user|],
     );
-
-  let handleAuthenticateGoogle = () => {
-    setIsMenuOpen(_ => false);
-    setIsAuthenticating(_ => true);
-    let didPostMessage =
-      Webview.(postMessage(WebEvent.make(~type_="AUTH_SIGN_IN_GOOGLE", ())));
-
-    let _ =
-      if (!didPostMessage) {
-        AwsAmplify.Auth.(
-          federatedSignInWithOptions(
-            inst,
-            {provider: "Google", customState: None},
-          )
-        );
-      };
-    ();
-  };
 
   let handleToggleIsMenuOpen = () => setIsMenuOpen(open_ => !open_);
 
@@ -147,7 +100,7 @@ let default = () => {
               (),
             )}>
             <a
-              href=resetPasswordUrl
+              href=Constants.resetPasswordUrl
               className={Cn.fromList(["flex", "flex-1", "items-center"])}>
               {React.string("Reset Password")}
             </a>
@@ -166,14 +119,6 @@ let default = () => {
                 {React.string("Privacy Policy")}
               </a>
             </Next.Link>
-          </MaterialUi.MenuItem>
-          <MaterialUi.MenuItem
-            classes={MaterialUi.MenuItem.Classes.make(
-              ~root=Cn.fromList(["font-sans"]),
-              (),
-            )}
-            onClick={_ => handleAuthenticateGoogle()}>
-            {React.string("Sign in with Google")}
           </MaterialUi.MenuItem>
         </MaterialUi.Menu>
       </MaterialUi.NoSsr>

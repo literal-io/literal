@@ -2,6 +2,7 @@
 let default = () => {
   let Providers_Authentication.{user, setUser} =
     React.useContext(Providers_Authentication.authenticationContext);
+  let router = Next.Router.useRouter();
   let (nativeAppVersion, setNativeAppVersion) = React.useState(_ => None);
   let _ =
     React.useEffect0(() => {
@@ -21,6 +22,32 @@ let default = () => {
            });
       None;
     });
+  let _ =
+    React.useEffect2(
+      () => {
+        // When we return after authentication, ensure identity id encoded in the route is updated.
+        let _ =
+          switch (
+            user,
+            Routes.CreatorsIdSettings.params_decode(router.Next.query),
+          ) {
+          | (SignedInUser({identityId}), Ok({identityId: routeIdentityId}))
+          | (
+              SignedInUserMergingIdentites({identityId}),
+              Ok({identityId: routeIdentityId}),
+            )
+          | (GuestUser({identityId}), Ok({identityId: routeIdentityId}))
+              when identityId != routeIdentityId =>
+            Next.Router.replaceWithAs(
+              Routes.CreatorsIdSettings.staticPath,
+              Routes.CreatorsIdSettings.path(~identityId),
+            )
+          | _ => ()
+          };
+        None;
+      },
+      (user, router.query),
+    );
 
   let viewURI = url => {
     let _ =

@@ -1,12 +1,10 @@
 package io.literal.ui.fragment;
 
-import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,21 +17,16 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.amazonaws.mobile.client.results.Tokens;
 import com.amazonaws.services.cognitoidentityprovider.model.NotAuthorizedException;
 import com.amazonaws.services.cognitoidentityprovider.model.UserNotFoundException;
 import com.amazonaws.services.cognitoidentityprovider.model.UsernameExistsException;
-import com.apollographql.apollo.json.JsonDataException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import io.literal.BuildConfig;
@@ -46,7 +39,6 @@ import io.literal.model.User;
 import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.SharedPreferencesRepository;
-import io.literal.ui.MainApplication;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 
@@ -103,12 +95,16 @@ public class AppWebView extends Fragment {
             authenticationViewModel.signInGoogle(getActivity(), (e, user) -> {
                 if (e != null) {
                     ErrorRepository.captureException(e);
-                    return;
                 }
 
                 try {
                     JSONObject result = new JSONObject();
-                    result.put("user", user);
+                    if (e == null && !user.isSignedOut()) {
+                        result.put("user", user.toJSON());
+                    } else {
+                        String errorCode = "SIGN_IN_FAILED";
+                        result.put("error", errorCode);
+                    }
 
                     getActivity().runOnUiThread(() -> view.postWebEvent(
                             new WebEvent(WebEvent.TYPE_AUTH_SIGN_IN_GOOGLE_RESULT, UUID.randomUUID().toString(), result)

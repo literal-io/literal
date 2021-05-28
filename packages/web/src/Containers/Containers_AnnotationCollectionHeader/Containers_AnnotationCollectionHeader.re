@@ -91,7 +91,7 @@ let make =
     <MaterialUi.IconButton
       size=`Small
       edge=MaterialUi.IconButton.Edge._end
-      onClick={_ =>
+      onClick={_ => {
         switch (annotation, identityId) {
         | (Some(annotation), Some(identityId)) =>
           let _ =
@@ -100,8 +100,8 @@ let make =
             );
           handleDelete(~annotation, ~identityId);
         | _ => ()
-        }
-      }
+        };
+      }}
       _TouchRippleProps={
         "classes": {
           "child": cn(["bg-white"]),

@@ -13,6 +13,26 @@ let apiOrigin =
   Env.amplifyEnv === "production"
     ? "https://literal.io" : "https://staging.literal.io";
 
+let resetPasswordUrl =
+  AwsAmplify.Config.(
+    "https://"
+    ++ awsAmplifyConfig->oauthGet->domainGet
+    ++ "/forgotPassword?"
+    ++ Webapi.Url.URLSearchParams.(
+         makeWithArray([|
+           ("client_id", awsAmplifyConfig->userPoolsWebClientIdGet),
+           ("response_type", awsAmplifyConfig->oauthGet->responseTypeGet),
+           (
+             "scope",
+             awsAmplifyConfig->oauthGet->scopeGet->Js.Array2.joinWith("+"),
+           ),
+           ("redirect_uri", awsAmplifyConfig->oauthGet->redirectSignInGet),
+         |])
+         ->toString
+         ->Js.Global.decodeURIComponent
+       )
+  );
+
 %raw
 {|
   const domains = awsAmplifyConfig.oauth.redirectSignIn.split(",")

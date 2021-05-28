@@ -65,6 +65,9 @@ module CreatorsIdSettings = {
   let staticPath = "/creators/[identityId]/settings";
   let path = (~identityId) =>
     "/creators/" ++ Js.Global.encodeURIComponent(identityId) ++ "/settings";
+
+  [@decco]
+  type params = {identityId: string};
 };
 
 module WritingId = {

@@ -9,6 +9,8 @@ let default = () => {
   let Providers_ModalNavigation.{onNext} =
     React.useContext(Providers_ModalNavigation.context);
   let (isAuthenticating, setIsAuthenticating) = React.useState(() => false);
+  let (isMenuOpen, setIsMenuOpen) = React.useState(() => false);
+  let menuIconButtonRef = React.useRef(Js.Nullable.null);
   let (authenticationError, setAuthenticationError) =
     React.useState(() => None);
 
@@ -16,7 +18,18 @@ let default = () => {
     React.useEffect1(
       () => {
         switch (user) {
-        | SignedInUser(_) => Next.Router.back()
+        | SignedInUser({identityId}) =>
+          onNext(() =>
+            Routes.CreatorsIdAnnotationCollectionsId.(
+              Next.Router.replaceWithAs(
+                staticPath,
+                path(
+                  ~identityId,
+                  ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
+                ),
+              )
+            )
+          )
         | _ => ()
         };
         None;
@@ -27,6 +40,40 @@ let default = () => {
   let ((email, password), setAuthenticationValue) =
     React.useState(_ => ("", ""));
 
+  let handleSignInResult = result =>
+    switch (result->Belt.Option.map(Webview.WebEvent.AuthSignInResult.decode)) {
+    | Some(Ok({error: None, user: Some(user)})) =>
+      let authenticationUser =
+        user->Providers_Authentication_User.makeFromAuthGetUserResult;
+      let _ = setUser(authenticationUser);
+      let _ = setIsAuthenticating(_ => false);
+      let _ =
+        switch (authenticationUser) {
+        | SignedInUser({identityId}) =>
+          onNext(() =>
+            Next.Router.replaceWithAs(
+              Routes.CreatorsIdAnnotationCollectionsId.staticPath,
+              Routes.CreatorsIdAnnotationCollectionsId.path(
+                ~identityId,
+                ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
+              ),
+            )
+          );
+          ();
+        | _ => setAuthenticationError(_ => Some(SignUpFailed))
+        };
+      ();
+    | Some(Ok({error: Some("SIGN_UP_FAILED_USER_EXISTS")})) =>
+      setIsAuthenticating(_ => false);
+      setAuthenticationError(_ => Some(UserExists));
+    | Some(Ok({error: Some("SIGN_UP_FAILED")}))
+    | Some(Ok({error: Some(_)}))
+    | Some(Error(_))
+    | Some(Ok({error: None, user: None}))
+    | None =>
+      setIsAuthenticating(_ => false);
+      setAuthenticationError(_ => Some(SignUpFailed));
+    };
   let handleSubmit = () => {
     setAuthenticationError(_ => None);
     setIsAuthenticating(_ => true);
@@ -45,53 +92,30 @@ let default = () => {
         ),
       )
       |> Js.Promise.then_(result => {
-           let _ =
-             switch (
-               result->Belt.Option.map(
-                 Webview.WebEvent.AuthSignInResult.decode,
-               )
-             ) {
-             | Some(Ok({error: None, user: Some(user)})) =>
-               let authenticationUser =
-                 user->Providers_Authentication_User.makeFromAuthGetUserResult;
-               let _ = setUser(authenticationUser);
-               let _ = setIsAuthenticating(_ => false);
-               let _ =
-                 switch (authenticationUser) {
-                 | SignedInUser({identityId}) =>
-                   onNext(() =>
-                     Next.Router.replaceWithAs(
-                       Routes.CreatorsIdAnnotationCollectionsId.staticPath,
-                       Routes.CreatorsIdAnnotationCollectionsId.path(
-                         ~identityId,
-                         ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
-                       ),
-                     )
-                   );
-                   ();
-                 | _ => setAuthenticationError(_ => Some(SignUpFailed))
-                 };
-               ();
-             | Some(Ok({error: Some("SIGN_UP_FAILED_USER_EXISTS")})) =>
-               setIsAuthenticating(_ => false);
-               setAuthenticationError(_ => Some(UserExists));
-             | Some(Ok({error: Some("SIGN_UP_FAILED")}))
-             | Some(Ok({error: Some(_)}))
-             | Some(Error(_))
-             | Some(Ok({error: None, user: None}))
-             | None =>
-               setIsAuthenticating(_ => false);
-               setAuthenticationError(_ => Some(SignUpFailed));
-             };
+           let _ = handleSignInResult(result);
            Js.Promise.resolve();
          });
     ();
   };
-
   let handleBack = () => {
     let _ = Next.Router.back();
     ();
   };
+  let handleAuthenticateGoogle = () => {
+    setIsMenuOpen(_ => false);
+    setIsAuthenticating(_ => true);
+
+    let _ =
+      Webview.(
+        postMessageForResult(WebEvent.make(~type_="AUTH_SIGN_IN_GOOGLE", ()))
+      )
+      |> Js.Promise.then_(result => {
+           let _ = handleSignInResult(result);
+           Js.Promise.resolve();
+         });
+    ();
+  };
+  let handleToggleIsMenuOpen = () => setIsMenuOpen(open_ => !open_);
 
   <div
     className={Cn.fromList([
@@ -110,41 +134,104 @@ let default = () => {
         "border-b",
         "border-dotted",
         "border-lightDisabled",
+        "w-full",
       ])}>
-      <MaterialUi.IconButton
-        size=`Small
-        edge=MaterialUi.IconButton.Edge.start
-        onClick={_ => {handleBack()}}
-        _TouchRippleProps={
-          "classes": {
-            "child": Cn.fromList(["bg-white"]),
-            "rippleVisible": Cn.fromList(["opacity-75"]),
-          },
-        }
-        classes={MaterialUi.IconButton.Classes.make(
-          ~root=Cn.fromList(["p-0"]),
-          (),
-        )}>
-        <Svg
+      <div className={Cn.fromList(["flex", "flex-row", "flex-1"])}>
+        <MaterialUi.IconButton
+          size=`Small
+          edge=MaterialUi.IconButton.Edge.start
+          onClick={_ => {handleBack()}}
+          _TouchRippleProps={
+            "classes": {
+              "child": Cn.fromList(["bg-white"]),
+              "rippleVisible": Cn.fromList(["opacity-75"]),
+            },
+          }
+          classes={MaterialUi.IconButton.Classes.make(
+            ~root=Cn.fromList(["p-0"]),
+            (),
+          )}>
+          <Svg
+            className={Cn.fromList([
+              "w-5",
+              "h-5",
+              "pointer-events-none",
+              "opacity-75",
+            ])}
+            icon=Svg.back
+          />
+        </MaterialUi.IconButton>
+        <h1
           className={Cn.fromList([
-            "w-5",
-            "h-5",
-            "pointer-events-none",
-            "opacity-75",
-          ])}
-          icon=Svg.back
-        />
-      </MaterialUi.IconButton>
-      <h1
-        className={Cn.fromList([
-          "ml-2",
-          "font-sans",
-          "text-lightPrimary",
-          "text-lg",
-          "font-bold",
-        ])}>
-        {React.string("Sign Up")}
-      </h1>
+            "ml-2",
+            "font-sans",
+            "text-lightPrimary",
+            "text-lg",
+            "font-bold",
+          ])}>
+          {React.string("Sign Up")}
+        </h1>
+      </div>
+      <div className={Cn.fromList(["flex-row", "justify-end", "flex"])}>
+        <MaterialUi.IconButton
+          ref={menuIconButtonRef->ReactDOMRe.Ref.domRef}
+          size=`Small
+          edge=MaterialUi.IconButton.Edge.start
+          onClick={_ => {handleToggleIsMenuOpen()}}
+          _TouchRippleProps={
+            "classes": {
+              "child": Cn.fromList(["bg-white"]),
+              "rippleVisible": Cn.fromList(["opacity-75"]),
+            },
+          }
+          classes={MaterialUi.IconButton.Classes.make(
+            ~root=Cn.fromList(["p-0", "flex-initial", "flex-shrink-0"]),
+            (),
+          )}>
+          <Svg
+            className={Cn.fromList([
+              "w-6",
+              "h-6",
+              "pointer-events-none",
+              "opacity-75",
+            ])}
+            icon=Svg.more
+          />
+        </MaterialUi.IconButton>
+        <MaterialUi.NoSsr>
+          <MaterialUi.Menu
+            anchorEl={MaterialUi_Types.Any(menuIconButtonRef.current)}
+            anchorReference=`AnchorEl
+            _open=isMenuOpen
+            onClose={(_, _) => {handleToggleIsMenuOpen()}}>
+            <MaterialUi.MenuItem
+              classes={MaterialUi.MenuItem.Classes.make(
+                ~root=
+                  Cn.fromList([
+                    "font-sans",
+                    "flex",
+                    "flex-1",
+                    "items-stretch",
+                  ]),
+                (),
+              )}>
+              <a
+                href=Constants.resetPasswordUrl
+                className={Cn.fromList(["flex", "flex-1", "items-center"])}>
+                {React.string("Reset Password")}
+              </a>
+            </MaterialUi.MenuItem>
+            <MaterialUi.MenuItem
+              classes={MaterialUi.MenuItem.Classes.make(
+                ~root=Cn.fromList(["font-sans"]),
+                (),
+              )}
+              onClick={_ => handleAuthenticateGoogle()}>
+              {React.string("Sign in with Google")}
+            </MaterialUi.MenuItem>
+          </MaterialUi.Menu>
+        </MaterialUi.NoSsr>
+      </div>
     </Header>
     <main
       className={Cn.fromList(["flex", "flex-col", "px-4", "py-4", "flex-1"])}>

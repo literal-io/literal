@@ -157,10 +157,13 @@ public class User {
 
     public String getEncodedIdentityId() {
         String encodedIdentityId = identityId;
-        try {
-            encodedIdentityId = URLEncoder.encode(identityId, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            ErrorRepository.captureException(e);
+
+        if (identityId != null) {
+            try {
+                encodedIdentityId = URLEncoder.encode(identityId, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                ErrorRepository.captureException(e);
+            }
         }
         return encodedIdentityId;
     }
