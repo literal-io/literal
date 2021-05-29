@@ -66,6 +66,7 @@ public class AppWebView extends Fragment {
                     JSONObject result = new JSONObject();
                     if (e == null && !user.isSignedOut()) {
                         result.put("user", user.toJSON());
+                        result.put("shouldMergeUserIdentities", !SharedPreferencesRepository.getIsSignedOut(getContext()));
                     } else {
                         String errorCode;
                         if (e instanceof UsernameExistsException) {
@@ -101,6 +102,7 @@ public class AppWebView extends Fragment {
                     JSONObject result = new JSONObject();
                     if (e == null && !user.isSignedOut()) {
                         result.put("user", user.toJSON());
+                        result.put("shouldMergeUserIdentities", !SharedPreferencesRepository.getIsSignedOut(getContext()));
                     } else {
                         String errorCode = "SIGN_IN_FAILED";
                         result.put("error", errorCode);
@@ -128,6 +130,7 @@ public class AppWebView extends Fragment {
                     JSONObject result = new JSONObject();
                     if (e == null && !user.isSignedOut()) {
                         result.put("user", user.toJSON());
+                        result.put("shouldMergeUserIdentities", !SharedPreferencesRepository.getIsSignedOut(getContext()));
                     } else {
                         String errorCode;
                         if (e instanceof UserNotFoundException) {

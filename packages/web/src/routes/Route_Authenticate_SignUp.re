@@ -42,10 +42,10 @@ let default = () => {
 
   let handleSignInResult = result =>
     switch (result->Belt.Option.map(Webview.WebEvent.AuthSignInResult.decode)) {
-    | Some(Ok({error: None, user: Some(user)})) =>
+    | Some(Ok({error: None, user: Some(user), shouldMergeUserIdentities})) =>
       let authenticationUser =
         user->Providers_Authentication_User.makeFromAuthGetUserResult;
-      let _ = setUser(authenticationUser);
+      let _ = setUser(~shouldMergeUserIdentities?, authenticationUser);
       let _ = setIsAuthenticating(_ => false);
       let _ =
         switch (authenticationUser) {

@@ -58,6 +58,7 @@ module WebEvent = {
     [@decco]
     type t = {
       user: option(AuthGetUserResult.t),
+      shouldMergeUserIdentities: option(bool),
       error: option(string),
     };
 

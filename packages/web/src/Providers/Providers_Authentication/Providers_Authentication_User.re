@@ -62,7 +62,7 @@ let makeFromAuthGetUserResult =
         });
 
     SignedInUser({
-      identityId: attributes.sub,
+      identityId: username,
       username,
       attributes: {
         email: attributes.email,

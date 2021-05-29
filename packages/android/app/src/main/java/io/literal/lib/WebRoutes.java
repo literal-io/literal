@@ -11,8 +11,7 @@ public class WebRoutes {
 
     public static String getAPIHost() {
         if (
-                AWSMobileClientFactory.getAmplifyEnvironment() ==
-                        AWSMobileClientFactory.AmplifyEnvironment.PRODUCTION
+                AWSMobileClientFactory.getAmplifyEnvironment().equals(AWSMobileClientFactory.AmplifyEnvironment.PRODUCTION)
         ) {
             return "https://literal.io";
         } else {
@@ -21,7 +20,7 @@ public class WebRoutes {
     }
 
     public static String getWebHost() {
-        if (BuildConfig.DEBUG) {
+        if (BuildConfig.DEBUG && !AWSMobileClientFactory.getAmplifyEnvironment().equals(AWSMobileClientFactory.AmplifyEnvironment.PRODUCTION)) {
             return "http://localhost:3000";
         } else {
             return getAPIHost();

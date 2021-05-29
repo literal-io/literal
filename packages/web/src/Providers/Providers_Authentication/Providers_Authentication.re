@@ -1,14 +1,16 @@
 let logTag = "Providers_Authentication";
 type context = {
   user: Providers_Authentication_User.t,
-  setUser: Providers_Authentication_User.t => Js.Promise.t(unit),
+  setUser:
+    (~shouldMergeUserIdentities: bool=?, Providers_Authentication_User.t) =>
+    Js.Promise.t(unit),
   refreshUser: unit => Js.Promise.t(Providers_Authentication_User.t),
 };
 
 let authenticationContext =
   React.createContext({
     user: Providers_Authentication_User.Unknown,
-    setUser: _ => Js.Promise.resolve(),
+    setUser: (~shouldMergeUserIdentities=false, _) => Js.Promise.resolve(),
     refreshUser: () =>
       Js.Promise.resolve(Providers_Authentication_User.Unknown),
   });
@@ -56,9 +58,14 @@ let make = (~children) => {
       Providers_Authentication_GraphQL.MergeUserIdentitiesMutation.definition,
     );
 
-  let handleSetUser = (newUser: Providers_Authentication_User.t) => {
+  let handleSetUser =
+      (
+        ~shouldMergeUserIdentities=true,
+        newUser: Providers_Authentication_User.t,
+      ) => {
     switch (user, newUser) {
-    | (GuestUser(guestUser), SignedInUser(signedInUser)) =>
+    | (GuestUser(guestUser), SignedInUser(signedInUser))
+        when shouldMergeUserIdentities =>
       Service_Log.log(logTag, "merge user identity");
       let input =
         Providers_Authentication_GraphQL.Input.make(
