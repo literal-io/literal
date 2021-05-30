@@ -301,7 +301,10 @@ public class ShareTargetHandler extends InstrumentedActivity {
                         return;
                     }
                     // FIXME: Need to broadcast the updated annotation.
-                    NotificationRepository.annotationCreatedNotification(this, user, updatedAnnotation.getAnnotation());
+                    GetAnnotationQuery.GetAnnotation updatedAnnotationData = updatedAnnotation.getAnnotation();
+                    if (updatedAnnotationData != null) {
+                        NotificationRepository.annotationCreatedNotification(this, user, updatedAnnotationData);
+                    }
                 }
         );
     }

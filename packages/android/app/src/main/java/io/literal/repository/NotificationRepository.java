@@ -13,7 +13,6 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.amazonaws.amplify.generated.graphql.GetAnnotationQuery;
-import com.amazonaws.mobile.client.AWSMobileClient;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -130,7 +129,7 @@ public class NotificationRepository {
         notificationManager.notify(targetDomainMetadata.getUrl().getHost().hashCode(), builder.build());
     }
 
-    public static void sourceCreatedNotificationError(Context context, String creatorUsername, @NotNull DomainMetadata targetDomainMetadata) {
+    public static void sourceCreatedNotificationError(Context context, String creatorUsername, DomainMetadata targetDomainMetadata) {
         Intent intent = new Intent(context, MainActivity.class);
         Uri uri = Uri.parse(WebRoutes.creatorsIdAnnotationCollectionId(
                 creatorUsername,
@@ -138,13 +137,16 @@ public class NotificationRepository {
         ));
         intent.setData(uri);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+        String descriptionText = targetDomainMetadata != null
+                ? context.getString(R.string.source_created_error_notification_description, targetDomainMetadata.getUrl().getHost())
+                : context.getString(R.string.source_created_error_notification_description_default);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, context.getString(R.string.source_created_notification_channel_id))
                 .setSmallIcon(R.drawable.ic_stat_name)
                 .setColor(Color.BLACK)
                 .setContentTitle(context.getString(R.string.source_created_error_notification_title))
                 .setStyle(
-                        new NotificationCompat.BigTextStyle().bigText(context.getString(R.string.source_created_error_notification_description, targetDomainMetadata.getUrl().getHost()))
+                        new NotificationCompat.BigTextStyle().bigText(descriptionText)
                 )
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setContentIntent(pendingIntent)
