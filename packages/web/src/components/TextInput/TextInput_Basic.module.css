@@ -1,3 +1,6 @@
+.underline:before {
+  border-bottom-width: 0px !important;
+}
 .underline:after {
   border-bottom-color: rgba(255, 255, 255, .92) !important;
 }

@@ -479,10 +479,7 @@ let make = (~annotationFragment as annotation, ~identityId, ~isVisible) => {
     ])}>
     <div
       className={Cn.fromList(["px-4", "pt-4"])}
-      style={ReactDOM.Style.make(
-        ~paddingBottom="3rem",
-        (),
-      )}>
+      style={ReactDOM.Style.make(~paddingBottom="3rem", ())}>
       {switch (targetWithExternalTarget, textualTargetSelector(~annotation)) {
        | (Some((targetId, externalTarget)), Some(textualTarget)) =>
          <ExternalTargetCard
@@ -507,7 +504,15 @@ let make = (~annotationFragment as annotation, ~identityId, ~isVisible) => {
            value=textValue
            textInputRef
            inputClasses={MaterialUi.Input.Classes.make(
-             ~root=Cn.fromList(["p-4", "bg-darkAccent", "rounded-sm"]),
+             ~root=
+               Cn.fromList([
+                 "p-4",
+                 "bg-darkAccent",
+                 "rounded-sm",
+                 "border-solid",
+                 "border-lightDivider",
+                 "border",
+               ]),
              ~inputMultiline=Cn.fromList(["px-0"]),
              (),
            )}
