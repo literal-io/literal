@@ -167,7 +167,8 @@ module Data = {
     <ScrollSnapList.Container
       direction=ScrollSnapList.Horizontal
       onIdxChange=handleIdxChange
-      initialIdx=activeIdx>
+      initialIdx=activeIdx
+      className={Cn.fromList(["mt-14", "w-full", "h-full"])}>
       {annotations->Belt.Array.map(annotation =>
          <ScrollSnapList.Item
            key={annotation##id} direction=ScrollSnapList.Horizontal>
@@ -494,14 +495,5 @@ let make =
       }
     };
 
-  <div
-    className={Cn.fromList([
-      "w-full",
-      "h-full",
-      "bg-black",
-      "overflow-y-scroll",
-    ])}>
-    header
-    main
-  </div>;
+  <> header main </>;
 };

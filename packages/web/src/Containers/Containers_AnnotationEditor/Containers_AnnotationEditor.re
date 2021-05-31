@@ -478,9 +478,8 @@ let make = (~annotationFragment as annotation, ~identityId, ~isVisible) => {
       "overflow-y-auto",
     ])}>
     <div
-      className={Cn.fromList(["px-4"])}
+      className={Cn.fromList(["px-4", "pt-4"])}
       style={ReactDOM.Style.make(
-        ~paddingTop="4.5rem",
         ~paddingBottom="3rem",
         (),
       )}>
