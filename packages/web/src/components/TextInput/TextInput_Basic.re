@@ -109,7 +109,6 @@ let make =
                     "text-base",
                     "leading-relaxed",
                     "box-decoration-break-clone",
-                    "textInputBasic_input",
                     inputClasses##input->take,
                   ])
                 ),
