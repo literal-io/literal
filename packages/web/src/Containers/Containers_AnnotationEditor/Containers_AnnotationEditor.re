@@ -478,8 +478,7 @@ let make = (~annotationFragment as annotation, ~identityId, ~isVisible) => {
       "overflow-y-auto",
     ])}>
     <div
-      className={Cn.fromList(["px-4", "pt-4"])}
-      style={ReactDOM.Style.make(~paddingBottom="3rem", ())}>
+      className={Cn.fromList(["px-4", "pt-4", "mb-24"])}>
       {switch (targetWithExternalTarget, textualTargetSelector(~annotation)) {
        | (Some((targetId, externalTarget)), Some(textualTarget)) =>
          <ExternalTargetCard

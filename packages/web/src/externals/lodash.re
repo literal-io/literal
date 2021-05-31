@@ -13,3 +13,11 @@ external debounce2: ((. 'a, 'b) => 'c, int) => debounced2('a, 'b, 'c) =
 [@bs.module]
 external debounce3: ((. 'a, 'b, 'c) => 'd, int) => debounced3('a, 'b, 'c, 'd) =
   "lodash/debounce";
+
+module Throttled3 = {
+  type t('a, 'b, 'c, 'd) = (. 'a, 'b, 'c) => 'd;
+  [@bs.send] external flush: t('a, 'b, 'c, 'd) => unit = "flush";
+  [@bs.module]
+  external make: ((. 'a, 'b, 'c) => 'd, int) => t('a, 'b, 'c, 'd) =
+    "lodash/throttle";
+};
