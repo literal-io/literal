@@ -39,7 +39,11 @@ module Main = {
     let activeIdx =
       collectionTypes
       ->Belt.Array.getIndexBy(collectionType =>
-          collectionType === activeCollectionType
+          switch (collectionType, activeCollectionType) {
+          | (`TAG_COLLECTION, `TAG_COLLECTION)
+          | (`SOURCE_COLLECTION, `SOURCE_COLLECTION) => true
+          | _ => false
+          }
         )
       ->Belt.Option.getWithDefault(0);
 
@@ -61,7 +65,7 @@ module Main = {
         [|activeIdx|],
       );
 
-    let handleIdxChange = newIdx =>
+    let handleIdxChange = newIdx => {
       if (newIdx != activeIdx) {
         didChangeIdxViaScroll.current = true;
         let _ =
@@ -70,6 +74,7 @@ module Main = {
           ->Belt.Option.forEach(onActiveCollectionTypeChange);
         ();
       };
+    };
 
     <ScrollSnapList.Container
       ref=scrollSnapListRef

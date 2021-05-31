@@ -21,8 +21,8 @@ module Container = {
       let prevScroll = React.useRef(None);
       let debouncedOnScroll =
         React.useRef(
-          Lodash.debounce2(
-            (. scrollTop, scrollLeft) => {
+          Lodash.Throttled3.make(
+            (. scrollTop, scrollLeft, onIdxChange) => {
               let (scroll, containerDimen) =
                 switch (direction) {
                 | Vertical =>
@@ -42,7 +42,8 @@ module Container = {
 
               if (scroll != prevScroll.current->Belt.Option.getWithDefault(-1)) {
                 prevScroll.current = Some(scroll);
-                let relativePos = float_of_int(scroll) /. float_of_int(containerDimen);
+                let relativePos =
+                  float_of_int(scroll) /. float_of_int(containerDimen);
                 let activeIdx =
                   switch (Constants.browser()->Bowser.getBrowserName) {
                   | Some(`Chrome) => relativePos->Js.Math.round->int_of_float
@@ -76,32 +77,33 @@ module Container = {
         let elem = containerRef->React.Ref.current->Js.Nullable.toOption;
         switch (elem, direction) {
         | (Some(elem), Horizontal) =>
-          directedScrollTargetIdx.current = Some(idx);
-          let width = Webapi.Dom.Element.clientWidth(elem);
-          let _ =
-            Raw.maybeScrollTo(
-              elem,
-              {
-                "behavior": behavior,
-                "left": float_of_int(width * idx),
-                "top": 0.,
-              },
-            );
-          let _ = setHasScrolledToInitialIdx(_ => true);
-          ();
+          let currentScrollLeft = Webapi.Dom.Element.scrollLeft(elem);
+          let targetScrollLeft =
+            float_of_int(Webapi.Dom.Element.clientWidth(elem) * idx);
+          if (targetScrollLeft != currentScrollLeft) {
+            directedScrollTargetIdx.current = Some(idx);
+            let _ =
+              Raw.maybeScrollTo(
+                elem,
+                {"behavior": behavior, "left": targetScrollLeft, "top": 0.},
+              );
+            let _ = setHasScrolledToInitialIdx(_ => true);
+            ();
+          };
         | (Some(elem), Vertical) =>
-          directedScrollTargetIdx.current = Some(idx);
-          let height = Webapi.Dom.Element.clientHeight(elem);
-          let _ =
-            Raw.maybeScrollTo(
-              elem,
-              {
-                "behavior": behavior,
-                "left": 0.,
-                "top": float_of_int(height * idx),
-              },
-            );
-          let _ = setHasScrolledToInitialIdx(_ => true);
+          let currentScrollTop = Webapi.Dom.Element.scrollTop(elem);
+          let targetScrollTop =
+            float_of_int(Webapi.Dom.Element.clientHeight(elem) * idx);
+          if (targetScrollTop != currentScrollTop) {
+            directedScrollTargetIdx.current = Some(idx);
+            let _ =
+              Raw.maybeScrollTo(
+                elem,
+                {"behavior": behavior, "left": 0., "top": targetScrollTop},
+              );
+            let _ = setHasScrolledToInitialIdx(_ => true);
+            ();
+          };
           ();
         | _ => ()
         };
@@ -125,6 +127,7 @@ module Container = {
         debouncedOnScroll.current(.
           ReactEvent.UI.target(ev)##scrollTop,
           ReactEvent.UI.target(ev)##scrollLeft,
+          onIdxChange,
         );
       };
 

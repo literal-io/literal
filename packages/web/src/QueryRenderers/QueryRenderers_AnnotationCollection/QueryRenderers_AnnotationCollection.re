@@ -168,7 +168,7 @@ module Data = {
       direction=ScrollSnapList.Horizontal
       onIdxChange=handleIdxChange
       initialIdx=activeIdx
-      className={Cn.fromList(["mt-14", "w-full", "h-full"])}>
+      className={Cn.fromList(["pt-14", "w-full", "h-full"])}>
       {annotations->Belt.Array.map(annotation =>
          <ScrollSnapList.Item
            key={annotation##id} direction=ScrollSnapList.Horizontal>
