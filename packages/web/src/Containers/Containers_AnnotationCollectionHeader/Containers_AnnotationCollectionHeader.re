@@ -149,7 +149,6 @@ let make =
         "right-0",
         "top-0",
         "bg-darkAccent",
-        "z-10",
         "border-b",
         "border-dotted",
         "border-lightDisabled",
