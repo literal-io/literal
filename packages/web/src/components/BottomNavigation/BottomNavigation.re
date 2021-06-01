@@ -79,6 +79,7 @@ let make = () => {
             "border-t",
             "border-dotted",
             "border-lightDisabled",
+            value |> Js.Option.isNone |> Cn.on("hidden"),
           ]),
         (),
       )}>
