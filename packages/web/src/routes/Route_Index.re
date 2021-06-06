@@ -163,6 +163,8 @@ module Content = {
   |];
 };
 
+let defaultLoader = ({src}: Next.Image.loaderParams) => src;
+
 [@react.component]
 let default = () => {
   let (howItWorksVisibleIdx, setHowItWorksVisibleIdx) =
@@ -276,7 +278,7 @@ let default = () => {
           direction=ScrollSnapList.Horizontal>
           {Content.howItWorks->Belt.Array.map(((copy, src)) =>
              <ScrollSnapList.Item
-               key={src}
+               key=src
                className={Cn.fromList([
                  "flex-shrink-0",
                  "w-full",
@@ -294,7 +296,13 @@ let default = () => {
                  style={ReactDOM.Style.make(~minHeight="3.5rem", ())}>
                  {React.string(copy)}
                </p>
-               <Next.Image src width=350 height=724 />
+               <Next.Image
+                 src
+                 width=350
+                 height=724
+                 unoptimized=true
+                 loader=defaultLoader
+               />
              </ScrollSnapList.Item>
            )}
         </ScrollSnapList.Container>

@@ -11,6 +11,9 @@ module.exports = {
   devIndicators: {
     autoPrerender: false,
   },
+  images: {
+    loader: "imgix" // note: unused, should disable image optimization for now
+  },
   webpack: (config, { webpack, dev }) => {
     return R.pipe(
       R.assocPath(

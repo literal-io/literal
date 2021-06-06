@@ -59,6 +59,11 @@ module Link = {
 };
 
 module Image = {
+  type loaderParams = {
+    src: string,
+    width: int,
+    quality: int,
+  };
   [@bs.module "next/image"] [@react.component]
   external make:
     (
@@ -67,7 +72,9 @@ module Image = {
       ~width: int,
       ~height: int,
       ~priority: bool=?,
-      ~className: string=?
+      ~loader: loaderParams => string=?,
+      ~className: string=?,
+      ~unoptimized: bool=?
     ) =>
     React.element =
     "default";
