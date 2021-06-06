@@ -22,7 +22,7 @@ module.exports = {
         "Noto\\ Color\\ Emoji",
       ],
       serif: [
-        "Domine",
+        "Prata",
         "Georgia",
         "Cambria",
         "Times\\ New\\ Roman",

@@ -12,7 +12,7 @@
 }
 .md > p {
   @apply mb-4 font-sans text-base leading-relaxed;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .md > details {
@@ -22,7 +22,7 @@
 .md ol li,
 .md ul li {
   @apply mb-4 font-sans text-base leading-relaxed;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.92);
 }
 .md a {
   @apply underline;

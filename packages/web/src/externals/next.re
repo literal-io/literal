@@ -2,7 +2,7 @@ type router = {
   query: Js.Json.t,
   pathname: string,
   asPath: string,
-  route: string
+  route: string,
 };
 
 type path('a) = {params: 'a};
@@ -23,16 +23,15 @@ module Head = {
 module Router = {
   [@bs.module "next/router"] external useRouter: unit => router = "useRouter";
 
-  type replaceOptions = {
-    shallow: bool
-  };
+  type replaceOptions = {shallow: bool};
 
   [@bs.module "next/router"] [@bs.scope "default"]
   external replace: string => unit = "replace";
   [@bs.module "next/router"] [@bs.scope "default"]
   external replaceWithAs: (string, string) => unit = "replace";
   [@bs.module "next/router"] [@bs.scope "default"]
-  external replaceWithOptions: (string, string, replaceOptions) => unit = "replace";
+  external replaceWithOptions: (string, string, replaceOptions) => unit =
+    "replace";
 
   [@bs.module "next/router"] [@bs.scope "default"]
   external back: unit => unit = "back";
@@ -59,3 +58,17 @@ module Link = {
     "default";
 };
 
+module Image = {
+  [@bs.module "next/image"] [@react.component]
+  external make:
+    (
+      ~src: string,
+      ~alt: string=?,
+      ~width: int,
+      ~height: int,
+      ~priority: bool=?,
+      ~className: string=?
+    ) =>
+    React.element =
+    "default";
+};

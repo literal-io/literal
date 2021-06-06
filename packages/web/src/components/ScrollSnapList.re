@@ -68,8 +68,8 @@ module Container = {
         React.useState(() =>
           switch (initialIdx) {
           | Some(idx) when idx === 0 => true
-          | Some(_)
-          | None => false
+          | Some(_) => false
+          | None => true
           }
         );
 
@@ -131,7 +131,7 @@ module Container = {
         );
       };
 
-      <div
+      <ul
         onScroll=?{
           hasScrolledToInitialIdx && Js.Array2.length(children) > 0
             ? Some(onScroll) : None
@@ -143,9 +143,8 @@ module Container = {
           ),
           "invisible"->Cn.ifTrue(!hasScrolledToInitialIdx),
           switch (direction) {
-          | Horizontal =>
-            cn(["overflow-x-scroll", "flex", "overflow-y-hidden"])
-          | Vertical => cn(["overflow-y-scroll", "overflow-x-hidden"])
+          | Horizontal => cn(["overflow-x-auto", "flex", "overflow-y-hidden"])
+          | Vertical => cn(["overflow-y-auto", "overflow-x-hidden"])
           },
         ])}
         style={
@@ -163,14 +162,14 @@ module Container = {
             ])
         }>
         {React.array(children)}
-      </div>;
+      </ul>;
     });
 };
 
 module Item = {
   [@react.component]
   let make = (~className=?, ~direction, ~children=React.null) => {
-    <div
+    <li
       style={
         style()
         ->unsafeStyle([
@@ -188,6 +187,6 @@ module Item = {
         },
       ])}>
       children
-    </div>;
+    </li>;
   };
 };
