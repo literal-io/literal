@@ -1,375 +1,144 @@
-open Styles;
+module Content = {
+  let header = "Literal augments your online reading experience;\ncapture annotations, sources, and knowledge.";
 
-let styles = [%raw "require('./Route_Index.module.css')"];
+  let howItWorks = [|
+    (
+      "Share web content to Literal to add it to your library of sources and start annotating it.",
+      "/how-it-works-1.png",
+    ),
+    (
+      "As you read, highlight text to create annotations.",
+      "/how-it-works-2.png",
+    ),
+    (
+      "Build a knowledge base from your annotations, a library of idea bookmarks that link back to their source context.",
+      "/how-it-works-3.png",
+    ),
+    (
+      "Read annotations in their source context, and never lose track or access to sources within your library.",
+      "/how-it-works-5.png",
+    ),
+    (
+      "Organize annotations with tags, or view them grouped by their source.",
+      "/how-it-works-4.png",
+    ),
+  |];
 
-module ArrowListItem = {
-  [@react.component]
-  let make = (~href, ~label, ~action, ~className=?) => {
-    <Next.Link passHref=true href>
-      <a
-        onClick={_ => {
-          let _ =
-            Service_Analytics.(track(Click({action, label: Some(label)})));
-          ();
-        }}
-        className={cn([
-          "text-lightPrimary",
-          "text-lg",
+  let philosophy = [|
+    (
+      "A Tool for Digital Reading",
+      <p
+        className={Cn.fromList([
           "font-sans",
-          "flex",
-          "flex-row",
-          "items-center",
-          Cn.take(className),
+          "text-lightSecondary",
+          "text-base",
         ])}>
-        <Svg
-          icon=Svg.arrowRight
-          className={cn(["pointer-events-none", "w-8", "h-8"])}
+        {React.string(
+           "The way that we read has remained relatively unchanged even as the medium that carries text has evolved. E-reader applications are traditionally skeumorphic and seek to make reading digital text more like reading a physical book. Literal is instead designed to support interaction with digital-text in a native way.",
+         )}
+      </p>,
+    ),
+    (
+      "A Commonplace Book",
+      <p
+        className={Cn.fromList([
+          "font-sans",
+          "text-lightSecondary",
+          "text-base",
+        ])}>
+        {React.string(
+           "The web has led to the proliferation of information at a scale never before seen. Literal enables the practice of ",
+         )}
+        <UnderlineLink
+          href="https://en.wikipedia.org/wiki/Commonplace_book"
+          text="commonplacing"
         />
-        <div>
-          <span
-            className={Cn.fromList([
-              "italic",
-              "border-b",
-              "border-dotted",
-              "border-lightPrimary",
-              "block",
-              "leading-none",
-            ])}>
-            {React.string(label)}
-          </span>
-        </div>
-      </a>
-    </Next.Link>;
-  };
-};
-
-module Header = {
-  [@react.component]
-  let make = () =>
-    <>
-      <Svg
-        icon=Svg.logo
-        className={cn(["pointer-events-none", "w-12", "h-12", "block"])}
-      />
-      <h1
-        className={cn([
-          "text-lightPrimary",
-          "font-serif",
-          "text-2xl",
-          "leading-tight",
-          "mb-8",
-          "mt-20",
-        ])}>
-        {React.string("Literal is a textual annotation management system.")}
-      </h1>
+        {React.string(
+           " through annotation and source capture, and allows you to build a personal knowledgebase of curated information.",
+         )}
+      </p>,
+    ),
+    (
+      "A Star in a Constellation",
       <p
         className={Cn.fromList([
           "font-sans",
-          "text-lg",
           "text-lightSecondary",
-          "mb-8",
+          "text-base",
         ])}>
         {React.string(
-           "Capture ideas and phrases from text that you read. Build a digital garden of words.",
+           "Literal is a component of a much larger system though which your personal data flows. Literal is ",
          )}
-      </p>
-      <ArrowListItem
-        href="/start"
-        action="start cta"
-        label="Start Now"
-        className={Cn.fromList(["mb-40"])}
-      />
-    </>;
-};
-
-module WhyLiteral = {
-  let items = [|
-    (
-      "Separate signal from noise.",
-      "Interacting with text elevates the reading experience beyond one of passive consumption and into one that requires analysis and critical thought. Annotations are of equal value to the text itself.",
-    ),
-    (
-      "Build bridges, not silos.",
-      "Ideas do not exist in isolation. Ideas are threads that span otherwise disparate contexts. Annotations organized strictly by their original source is an artificial limitation.",
-    ),
-    (
-      "Understand the source.",
-      "Annotations removed from their original context are like a verse without a song, or a headline without an article. Given a highlight, you should frequently reexamine it within its original context.",
-    ),
-    (
-      "Open by default.",
-      "Information flows like ripples in a pond, and cascades to create and amplify network effects. Data - annotations and sources, creators and consumers - should be free to move across the boundaries of systems.",
-    ),
-  |];
-  [@react.component]
-  let make = () =>
-    <>
-      <h2
-        className={Cn.fromList([
-          "text-lightPrimary",
-          "font-serif",
-          "text-2xl",
-          "leading-none",
-          "mb-16",
-        ])}>
-        {React.string("Precepts")}
-      </h2>
-      {items
-       ->Belt.Array.map(((header, body)) =>
-           <React.Fragment key=header>
-             <h2
-               className={cn([
-                 "text-lightPrimary",
-                 "font-serif",
-                 "text-xl",
-                 "mb-2",
-               ])}>
-               {React.string(header)}
-             </h2>
-             <p
-               className={cn([
-                 "text-lightSecondary",
-                 "font-sans",
-                 "mb-14",
-                 "block",
-               ])}>
-               {React.string(body)}
-             </p>
-           </React.Fragment>
-         )
-       ->React.array}
-    </>;
-};
-
-module HowItWorks = {
-  let items = [|
-    (
-      "Highlight Text.",
-      "Literal supports annotations made within web browsers, PDF readers, and more.",
-    ),
-    (
-      "Import the Highlight.",
-      "Share the highlight with Literal to import it. Use the selection toolbar to share the highlighted text directly, or share a screenshot of the highlight.",
-    ),
-    (
-      "Annotate the Highlight.",
-      "Add context and thoughts by adding tags and notes.",
-    ),
-    (
-      "Explore.",
-      "Browse annotations grouped by tags and reflect as ideas evolve in response to new annotations and new relationships between them.",
+        <UnderlineLink
+          text="open source"
+          href="https://github.com/literal-io/literal"
+        />
+        {React.string(
+           " to increase trust and prevent proprietary lock-in, and implements the ",
+         )}
+        <UnderlineLink
+          text="W3C Web Annotation Data Model"
+          href="https://www.w3.org/TR/annotation-model/"
+        />
+        {React.string(" to ensure that your data is portable.")}
+      </p>,
     ),
   |];
 
-  [@react.component]
-  let make = () =>
-    <>
-      <h2
-        className={Cn.fromList([
-          "text-lightPrimary",
-          "font-serif",
-          "text-2xl",
-          "leading-none",
-        ])}>
-        {React.string("How It Works")}
-      </h2>
-      <ul
-        className={Cn.fromList([
-          "overflow-x-scroll",
-          "flex",
-          "pt-16",
-          "pb-8",
-          styles##scrollContainer,
-        ])}
-        style={
-          style(~width="calc(100% + 2rem)", ())
-          ->unsafeStyle([
-              ("scrollSnapType", "x mandatory"),
-              ("scrollSnapStop", "always"),
-            ])
-        }>
-        {items
-         ->Belt.Array.mapWithIndex((idx, (title, body)) =>
-             <div
-               style={
-                 style(
-                   ~width=
-                     idx === Belt.Array.length(items) - 1
-                       ? "calc(100% - 2rem)" : "calc(85%)",
-                   (),
-                 )
-                 ->unsafeStyle([
-                     ("scrollSnapStop", "always"),
-                     ("scrollSnapAlign", "start"),
-                   ])
-               }
-               className={Cn.fromList([
-                 "border",
-                 "border-lightDisabled",
-                 "border-dotted",
-                 "p-6",
-                 "flex-shrink-0",
-                 "mr-4",
-               ])}>
-               <h3
-                 className={Cn.fromList([
-                   "font-serif",
-                   "text-lightPrimary",
-                   "mb-4",
-                 ])}>
-                 {React.string(string_of_int(idx + 1) ++ ". " ++ title)}
-               </h3>
-               <p
-                 className={Cn.fromList(["font-sans", "text-lightSecondary"])}>
-                 {React.string(body)}
-               </p>
-             </div>
-           )
-         ->React.array}
-      </ul>
-      <h3
-        className={Cn.fromList([
-          "font-sans",
-          "text-lightSecondary",
-          "mt-8",
-          "mb-8",
-        ])}>
-        {React.string(
-           "Short videos are available that demonstrate how to use Literal: ",
-         )}
-      </h3>
-      <ul className={Cn.fromList(["mb-16"])}>
-        <li className={Cn.fromList(["font-sans", "text-lightSecondary"])}>
-          <ArrowListItem
-            action="how to annotate the web"
-            label="How to annotate the Web"
-            href="https://www.youtube.com/watch?v=nH1ukQY3Ia8"
-          />
-        </li>
-        <li className={Cn.fromList(["font-sans", "text-lightSecondary"])}>
-          <ArrowListItem
-            action="how to annotate twitter"
-            label="How to annotate Twitter"
-            href="https://www.youtube.com/watch?v=s7hps6_4VTU"
-          />
-        </li>
-        <li className={Cn.fromList(["font-sans", "text-lightSecondary"])}>
-          <ArrowListItem
-            action="how to annotate pdf"
-            label="How to annotate PDF"
-            href="https://www.youtube.com/watch?v=9NurlekUeZ8"
-          />
-        </li>
-      </ul>
-    </>;
-};
-
-module Features = {
-  type item = {
+  type feature = {
+    enabled: bool,
     title: string,
-    available: bool,
+    description: string,
   };
-  let items = [|
-    {title: "Android mobile app", available: true},
-    {title: "Create highlight from screenshot", available: true},
-    {title: "Create highlight from text", available: true},
-    {title: "Annotation tagging", available: true},
-    {title: "First-class W3C Web Annotation support", available: true},
-    {title: "Annotation source viewer", available: true},
-    {title: "iOS mobile app", available: false},
-    {title: "Graph viewer", available: false},
-    {title: "Browser extension", available: false},
-    {title: "Annotation sharing and discovery", available: false},
+  let features = [|
+    {
+      title: "Web Annotation",
+      description: "Annotate text while reading to capture ideas, phrases, and knowledge.",
+      enabled: true,
+    },
+    {
+      title: "Source Capture & Management",
+      description: "Build a digital library. Sources that you read and annotate are automatically archived and indexed.",
+      enabled: true,
+    },
+    {
+      title: "Tag Collections",
+      description: "Organize annotations and sources with tags to build collections of related ideas.",
+      enabled: true,
+    },
+    {
+      title: "Android Application",
+      description: "A fully-featured native application that allows for quick capture of sources via the share sheet, annotation, library management, and more.",
+      enabled: true,
+    },
+    {
+      title: "Additional Platforms",
+      description: "Read anywhere. iOS application, browser extensions, and a web application.",
+      enabled: false,
+    },
+    {
+      title: "Augmented Reader",
+      description: "An integrated development environment for understanding text.",
+      enabled: false,
+    },
+    {
+      title: "PDF Support",
+      description: "Vast amounts of digital text is contained within PDF documents.",
+      enabled: false,
+    },
+    {
+      title: "Integrations and APIs",
+      description: "Rich annotation embeds, Hypothes.is integration, data export, and a full API.",
+      enabled: false,
+    },
   |];
 
-  let renderFeature = (~text, ~available, ~className=?, ()) =>
-    <div
-      className={Cn.fromList([
-        "flex",
-        "flex-row",
-        "items-center",
-        Cn.take(className),
-      ])}>
-      <div
-        className={Cn.fromList([
-          "mr-4",
-          "w-4",
-          "h-4",
-          available
-            ? Cn.fromList(["bg-lightPrimary"])
-            : Cn.fromList(["border-lightDisabled", "border", "border-dotted"]),
-        ])}
-      />
-      <p
-        className={Cn.fromList([
-          available
-            ? Cn.fromList(["text-lightPrimary"])
-            : Cn.fromList(["text-lightDisabled"]),
-        ])}>
-        {React.string(text)}
-      </p>
-    </div>;
-
-  [@react.component]
-  let make = () =>
-    <>
-      <div
-        className={Cn.fromList([
-          "flex",
-          "flex-row",
-          "justify-between",
-          "items-center",
-          "mb-16",
-        ])}>
-        <h2
-          className={Cn.fromList([
-            "text-lightPrimary",
-            "font-serif",
-            "text-2xl",
-            "leading-none",
-          ])}>
-          {React.string("Features")}
-        </h2>
-        <div className={Cn.fromList(["flex", "flex-col"])}>
-          {renderFeature(
-             ~text="Available Now",
-             ~available=true,
-             ~className="mb-2",
-             (),
-           )}
-          {renderFeature(~text="Coming Soon", ~available=false, ())}
-        </div>
-      </div>
-      <p className={Cn.fromList(["text-lightSecondary", "mb-16"])}>
-        {React.string(
-           "We're just getting started, and there is so much work to do. Get started now, and keep in mind that we're always improving.",
-         )}
-      </p>
-      <ul className={Cn.fromList(["mb-16"])}>
-        {items
-         ->Belt.Array.map(({title, available}) =>
-             <li>
-               {renderFeature(
-                  ~text=title,
-                  ~available,
-                  ~className=Cn.fromList(["mb-4"]),
-                  (),
-                )}
-             </li>
-           )
-         ->React.array}
-      </ul>
-    </>;
-};
-
-module Footer = {
-  type item = {
+  type footerLink = {
     title: string,
     description: string,
     href: string,
   };
-
-  let items = [|
+  let footerLinks = [|
     {
       title: "Install",
       description: "Get the mobile application.",
@@ -392,116 +161,287 @@ module Footer = {
       href: "/policies/privacy",
     },
   |];
+};
 
-  [@react.component]
-  let make = () =>
-    items
-    ->Belt.Array.mapWithIndex((idx, {title, description, href}) =>
-        <Next.Link passHref=true href>
-          <a
+[@react.component]
+let default = () => {
+  let (howItWorksVisibleIdx, setHowItWorksVisibleIdx) =
+    React.useState(_ => 0);
+  let howItWorksContainerRef = React.useRef(Js.Nullable.null);
+
+  let handleHowItWorksScroll = newIdx => {
+    let _ =
+      howItWorksContainerRef.current
+      ->Js.Nullable.toOption
+      ->Belt.Option.forEach(scrollContainer => {
+          setHowItWorksVisibleIdx(_ => newIdx);
+          let _ = scrollContainer##scrollToIdx(~behavior="smooth", newIdx);
+          ();
+        });
+    ();
+  };
+  let handleHowItWorksVisibleIdxChange = newIdx => {
+    setHowItWorksVisibleIdx(_ => newIdx);
+  };
+
+  <>
+    <header className={Cn.fromList(["pt-12", "px-6", "sm:px-12"])}>
+      <Svg icon=Svg.logo className={Cn.fromList(["w-12", "h-12", "block"])} />
+    </header>
+    <main
+      style={ReactDOM.Style.make(~maxWidth="750px", ())}
+      className={Cn.fromList(["bg-black", "px-6", "sm:px-12"])}>
+      <section className={Cn.fromList(["py-40", "sm:py-56"])}>
+        <h1
+          className={Cn.fromList([
+            "text-2xl",
+            "font-serif",
+            "text-lightPrimary",
+          ])}>
+          {React.string(Content.header)}
+        </h1>
+        <ArrowTextButton
+          variant={ArrowTextButton.Link({href: "/start"})}
+          action="start cta"
+          label="Start Now"
+          className={Cn.fromList(["mt-12"])}
+          style={ReactDOMRe.Style.make(~opacity="0.72", ())}
+        />
+      </section>
+      <hr
+        className={Cn.fromList([
+          "border-t",
+          "border-dotted",
+          "border-lightDisabled",
+        ])}
+      />
+      <section className={Cn.fromList(["py-16"])}>
+        <h2
+          className={Cn.fromList([
+            "font-serif",
+            "text-lightPrimary",
+            "text-xl",
+          ])}>
+          {React.string("How It Works")}
+        </h2>
+        <div
+          className={Cn.fromList([
+            "flex",
+            "flex-row",
+            "justify-between",
+            "mb-8",
+            "mt-12",
+          ])}>
+          <ArrowTextButton
+            label="Prev"
+            action="how it works"
+            className=Cn.(
+              on(fromList(["invisible"]), howItWorksVisibleIdx == 0)
+            )
+            style={ReactDOM.Style.make(~opacity="0.72", ())}
+            iconStyle={ReactDOM.Style.make(~transform="rotate(180deg)", ())}
+            variant={
+              ArrowTextButton.Button({
+                onClick: () =>
+                  handleHowItWorksScroll(howItWorksVisibleIdx - 1),
+              })
+            }
+          />
+          <ArrowTextButton
+            label="Next"
+            action="how it works"
+            style={ReactDOM.Style.make(~opacity="0.72", ())}
+            className=Cn.(
+              fromList([
+                "mb-2",
+                on(
+                  fromList(["invisible"]),
+                  howItWorksVisibleIdx == Js.Array.length(Content.howItWorks)
+                  - 1,
+                ),
+              ])
+            )
+            variant={
+              ArrowTextButton.Button({
+                onClick: () =>
+                  handleHowItWorksScroll(howItWorksVisibleIdx + 1),
+              })
+            }
+          />
+        </div>
+        <ScrollSnapList.Container
+          ref=howItWorksContainerRef
+          onIdxChange=handleHowItWorksVisibleIdxChange
+          className={Cn.fromList(["flex", "flex-row", "overflow-x-auto"])}
+          direction=ScrollSnapList.Horizontal>
+          {Content.howItWorks->Belt.Array.map(((copy, src)) =>
+             <ScrollSnapList.Item
+               key={src}
+               className={Cn.fromList([
+                 "flex-shrink-0",
+                 "w-full",
+                 "sm:mb-12",
+               ])}
+               direction=ScrollSnapList.Horizontal>
+               <p
+                 className={Cn.fromList([
+                   "font-sans",
+                   "text-lightPrimary",
+                   "mb-8",
+                   "mr-4",
+                   "leading-7",
+                 ])}
+                 style={ReactDOM.Style.make(~minHeight="3.5rem", ())}>
+                 {React.string(copy)}
+               </p>
+               <Next.Image src width=350 height=724 />
+             </ScrollSnapList.Item>
+           )}
+        </ScrollSnapList.Container>
+      </section>
+      <hr
+        className={Cn.fromList([
+          "border-t",
+          "border-dotted",
+          "border-lightDisabled",
+        ])}
+      />
+      <section className={Cn.fromList(["py-16"])}>
+        <h2
+          className={Cn.fromList([
+            "font-serif",
+            "text-lightPrimary",
+            "text-xl",
+            "mb-12",
+          ])}>
+          {React.string("Philosophy")}
+        </h2>
+        <ul>
+          {Content.philosophy
+           ->Belt.Array.mapWithIndex((idx, (title, text)) =>
+               <li
+                 key=title
+                 className=Cn.(
+                   fromList([
+                     on(
+                       fromList(["mb-10"]),
+                       idx < Js.Array2.length(Content.philosophy) - 1,
+                     ),
+                   ])
+                 )>
+                 <h3
+                   className={Cn.fromList([
+                     "font-serif",
+                     "text-lg",
+                     "text-lightPrimary",
+                     "mb-2",
+                   ])}>
+                   {React.string(title)}
+                 </h3>
+                 text
+               </li>
+             )
+           ->React.array}
+        </ul>
+      </section>
+      <hr
+        className={Cn.fromList([
+          "border-t",
+          "border-dotted",
+          "border-lightDisabled",
+        ])}
+      />
+      <section className={Cn.fromList(["py-16"])}>
+        <div
+          className={Cn.fromList([
+            "flex",
+            "flex-row",
+            "justify-between",
+            "items-center",
+            "mb-12",
+          ])}>
+          <h2
             className={Cn.fromList([
-              "block",
-              "border",
-              "border-dotted",
-              "border-lightDisabled",
-              "p-4",
-              Cn.on("mt-16", idx === 0),
-              Cn.on("mb-6", idx !== Belt.Array.length(items) - 1),
+              "font-serif",
+              "text-lightPrimary",
+              "text-xl",
             ])}>
+            {React.string("Features")}
+          </h2>
+          <div className={Cn.fromList(["flex", "flex-col", "justify-end"])}>
             <div
               className={Cn.fromList([
                 "flex",
                 "flex-row",
                 "items-center",
-                "justify-between",
+                "mb-2",
               ])}>
-              <div className={Cn.fromList(["flex", "flex-col"])}>
-                <h3
-                  className={Cn.fromList([
-                    "font-serif",
-                    "text-lightPrimary",
-                    "mb-2",
-                  ])}>
-                  {React.string(title)}
-                </h3>
-                <p
-                  className={Cn.fromList([
-                    "font-sans",
-                    "text-lightSecondary",
-                    "leading-tight",
-                  ])}>
-                  {React.string(description)}
-                </p>
-              </div>
-              <Svg
-                icon=Svg.arrowRight
-                className={cn([
-                  "pointer-events-none",
-                  "w-12",
-                  "h-12",
-                  "opacity-75",
-                ])}
-              />
+              <FeatureIndicator enabled=true />
+              <h3 className={Cn.fromList(["font-sans", "text-lightPrimary"])}>
+                {React.string("Available Now")}
+              </h3>
             </div>
-          </a>
-        </Next.Link>
-      )
-    ->React.array;
-};
-
-[@react.component]
-let default = () => {
-  <>
-    <div
-      style={style(~backgroundColor="rgb(229, 229, 229)", ())}
-      className={cn([
-        "w-full",
-        "h-full",
-        "overflow-y-scroll",
-        "flex",
-        "flex-col",
-      ])}>
-      <div
-        className={cn(["p-8", "bg-black", "max-w-lg", "m-auto", "w-full"])}>
-        <Header />
-        <hr
-          className={Cn.fromList([
-            "border-t",
-            "border-dotted",
-            "border-lightDisabled",
-            "mb-16",
-          ])}
-        />
-        <HowItWorks />
-        <hr
-          className={Cn.fromList([
-            "border-t",
-            "border-dotted",
-            "border-lightDisabled",
-            "mb-16",
-          ])}
-        />
-        <WhyLiteral />
-        <hr
-          className={Cn.fromList([
-            "border-t",
-            "border-dotted",
-            "border-lightDisabled",
-            "mb-16",
-          ])}
-        />
-        <Features />
-        <hr
-          className={Cn.fromList([
-            "border-t",
-            "border-dotted",
-            "border-lightDisabled",
-            "mb-16",
-          ])}
-        />
-        <Footer />
-      </div>
-    </div>
+            <div
+              className={Cn.fromList(["flex", "flex-row", "items-center"])}>
+              <FeatureIndicator enabled=false />
+              <h3
+                className={Cn.fromList(["font-sans", "text-lightDisabled"])}>
+                {React.string("Coming Soon")}
+              </h3>
+            </div>
+          </div>
+        </div>
+        <ul>
+          {Content.features
+           ->Belt.Array.mapWithIndex(
+               (idx, {enabled, title, description}: Content.feature) =>
+               <FeatureListItem
+                 key=title
+                 enabled
+                 title
+                 description
+                 className=Cn.(
+                   fromList([
+                     on(
+                       fromList(["mb-8"]),
+                       idx < Js.Array2.length(Content.features) - 1,
+                     ),
+                   ])
+                 )
+               />
+             )
+           ->React.array}
+        </ul>
+      </section>
+      <hr
+        className={Cn.fromList([
+          "border-t",
+          "border-dotted",
+          "border-lightDisabled",
+        ])}
+      />
+      <section className={Cn.fromList(["py-16"])}>
+        <ul>
+          {Content.footerLinks
+           ->Belt.Array.mapWithIndex(
+               (idx, {title, description, href}: Content.footerLink) =>
+               <li
+                 key=title
+                 className=Cn.(
+                   fromList([
+                     on(
+                       fromList(["mb-8"]),
+                       idx < Js.Array2.length(Content.footerLinks),
+                     ),
+                   ])
+                 )>
+                 <FooterLink title description href />
+               </li>
+             )
+           ->React.array}
+        </ul>
+      </section>
+    </main>
   </>;
 };
 

@@ -20,82 +20,68 @@ let default = (~html, ~title, ~subtitle) =>
     <Head>
       {Head.makeMeta(~title=title ++ " / Literal", ~description=subtitle, ())}
     </Head>
-    <div
+    <header
+      style={ReactDOM.Style.make(~maxWidth="750px", ())}
       className={Cn.fromList([
-        "w-full",
-        "h-full",
-        "overflow-y-auto",
-        "bg-backgroundGray",
+        "mt-12",
+        "flex",
+        "flex-col",
+        "px-6",
+        "sm:px-12",
       ])}>
-      <div
-        className={Cn.fromList([
-          "p-8",
-          "bg-black",
-          "max-w-lg",
-          "m-auto",
-          "w-full",
-          "min-h-full",
-        ])}>
-        <header
-          className={Cn.fromList([
-            "mb-12",
-            "flex",
-            "flex-row",
-            "justify-between",
-            "items-center",
-          ])}>
-          <h1
+      <Next.Link _as={Routes.Index.path()} href=Routes.Index.staticPath>
+        <a>
+          <Svg
+            icon=Svg.logo
             className={Cn.fromList([
-              "font-serif",
-              "text-lightPrimary",
-              "text-xl",
-            ])}>
-            {React.string("Writing")}
-          </h1>
-          <Next.Link _as={Routes.Index.path()} href=Routes.Index.staticPath>
-            <a>
-              <Svg
-                icon=Svg.logo
-                className={Cn.fromList([
-                  "pointer-events-none",
-                  "w-12",
-                  "h-12",
-                  "block",
-                ])}
-              />
-            </a>
-          </Next.Link>
-        </header>
-        <main>
-          <h1
-            className={Cn.fromList([
-              "font-serif",
-              "text-lightPrimary",
-              "text-2xl",
-            ])}>
-            {React.string(title)}
-          </h1>
-          <p
-            className={Cn.fromList([
-              "font-sans",
-              "text-lightSecondary",
-              "text-base",
-            ])}>
-            {React.string(subtitle)}
-          </p>
-          <hr
-            className={Cn.fromList([
-              "border-t",
-              "border-dotted",
-              "border-lightDisabled",
-              "mb-14",
-              "mt-6",
+              "pointer-events-none",
+              "w-12",
+              "h-12",
+              "block",
             ])}
           />
-          <article> <Markdown html /> </article>
-        </main>
-      </div>
-    </div>
+        </a>
+      </Next.Link>
+      <h1
+        className={Cn.fromList([
+          "font-serif",
+          "text-lightPrimary",
+          "text-xl",
+          "pt-24",
+          "pb-12",
+        ])}>
+        {React.string("Writing")}
+      </h1>
+      <h1
+        className={Cn.fromList([
+          "font-serif",
+          "text-lightPrimary",
+          "text-2xl",
+        ])}>
+        {React.string(title)}
+      </h1>
+      <p
+        className={Cn.fromList([
+          "font-sans",
+          "text-lightSecondary",
+          "text-base",
+          "mb-16"
+        ])}>
+        {React.string(subtitle)}
+      </p>
+      <hr
+        className={Cn.fromList([
+          "border-t",
+          "border-dotted",
+          "border-lightDisabled",
+        ])}
+      />
+    </header>
+    <main
+      className={Cn.fromList(["px-6", "sm:px-12", "mt-16"])}
+      style={ReactDOM.Style.make(~maxWidth="750px", ())}>
+      <Markdown html />
+    </main>
   </>;
 
 let getStaticProps =

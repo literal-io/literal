@@ -1,6 +1,6 @@
 import "../app.css";
 import "@fontsource/roboto-mono/latin.css";
-import "@fontsource/domine/latin.css";
+import "@fontsource/prata/latin.css";
 
 import Router from "next/router";
 
