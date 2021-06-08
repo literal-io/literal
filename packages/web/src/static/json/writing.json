@@ -1,5 +1,11 @@
 [
   {
+    "title": "Implementing Guest Authentication with AWS Amplify",
+    "subtitle": "A technical walkthrough of Literal's guest authentication implementation.",
+    "date": "2021-06-08",
+    "filename": "implementing-guest-authentication-with-amplify-cognito-appsync"
+  },
+  {
     "title": "Prologue",
     "subtitle": "Introducing Literal, today and tomorrow.",
     "date": "2020-12-26",

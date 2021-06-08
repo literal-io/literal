@@ -5,13 +5,13 @@
   @apply mb-8 font-serif text-xl;
 }
 .md > h2 {
-  @apply pb-2 mt-10 mb-6 font-serif text-lg border-b border-dotted border-lightDisabled;
+  @apply pb-2 mt-12 mb-8 font-serif text-xl border-b border-dotted border-lightDisabled;
 }
 .md > h3 {
-  @apply mt-6 mb-4 font-serif text-base;
+  @apply mt-8 mb-4 font-serif text-xl;
 }
 .md > p {
-  @apply mb-4 font-sans text-base leading-relaxed;
+  @apply mb-8 font-sans text-lg leading-relaxed;
   color: rgba(255, 255, 255, 0.92);
 }
 
@@ -21,20 +21,46 @@
 
 .md ol li,
 .md ul li {
-  @apply mb-4 font-sans text-base leading-relaxed;
+  @apply mb-4 font-sans text-lg leading-relaxed;
   color: rgba(255, 255, 255, 0.92);
 }
 .md a {
   @apply underline;
 }
 .md > ul {
-  @apply list-inside list-square;
+  @apply mb-10 ml-6 list-inside list-square;
 }
 
 .md > blockquote {
-  @apply pl-4 mt-8 mb-8 font-serif text-base leading-relaxed border-l-2 text-lightPrimary;
+  @apply pl-4 mt-8 mb-8 font-serif text-lg leading-relaxed border-l-2 text-lightPrimary;
+}
+
+.md > figure > figcaption {
+  @apply ml-4 italic text-lightSecondary;
+}
+
+.md > figure {
+  @apply mb-10;
 }
 
 .md > iframe {
   @apply w-full mt-8 mb-8;
+}
+
+.md > div {
+  @apply mb-8 !important;
+}
+
+.md > p > code,
+.md > ul > li > code {
+  @apply p-1 rounded-sm bg-lightPrimary;
+  color: rgba(0, 0, 0, .92);
+}
+
+.md > details > summary {
+  @apply mb-4;
+}
+
+.md > details > p  {
+  @apply text-lg text-lightPrimary;
 }
