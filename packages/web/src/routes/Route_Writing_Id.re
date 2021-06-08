@@ -64,8 +64,9 @@ let default = (~html, ~title, ~subtitle) =>
         className={Cn.fromList([
           "font-sans",
           "text-lightSecondary",
-          "text-base",
-          "mb-16"
+          "text-lg",
+          "mb-16",
+          "mt-2"
         ])}>
         {React.string(subtitle)}
       </p>
@@ -78,7 +79,7 @@ let default = (~html, ~title, ~subtitle) =>
       />
     </header>
     <main
-      className={Cn.fromList(["px-6", "sm:px-12", "mt-16"])}
+      className={Cn.fromList(["px-6", "sm:px-12", "py-16"])}
       style={ReactDOM.Style.make(~maxWidth="750px", ())}>
       <Markdown html />
     </main>
@@ -97,6 +98,12 @@ let getStaticProps =
       (
         "prologue",
         [%raw "require('../static/markdown/writing/prologue.md')"]: string,
+      ),
+      (
+        "implementing-guest-authentication-with-amplify-cognito-appsync",
+        [%raw
+          "require('../static/markdown/writing/implementing-guest-authentication-with-amplify-cognito-appsync.md')"
+        ]: string,
       ),
     ]);
   let data: Js.Json.t = [%raw "require('../static/json/writing.json')"];
