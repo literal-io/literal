@@ -47,14 +47,14 @@ module Content = {
           "text-base",
         ])}>
         {React.string(
-           "The web has led to the proliferation of information at a scale never before seen. Literal enables the practice of ",
+           "The web has led to the proliferation of information at a scale never before seen. Literal is a Commonplace Book ",
          )}
         <UnderlineLink
           href="https://en.wikipedia.org/wiki/Commonplace_book"
-          text="commonplacing"
+          text="Commonplace Book"
         />
         {React.string(
-           " through annotation and source capture, and allows you to build a personal knowledgebase of curated information.",
+           " and enables you to build a personal knowledgebase of curated information through annotation and source capture.",
          )}
       </p>,
     ),
