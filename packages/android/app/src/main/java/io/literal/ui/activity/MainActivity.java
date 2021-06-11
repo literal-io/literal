@@ -15,6 +15,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentManager;
+import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -223,6 +224,10 @@ public class MainActivity extends InstrumentedActivity {
     }
 
     private void commitFragments(Bundle savedInstanceState, String initialUrl, User user) {
+        if (getLifecycle().getCurrentState().equals(Lifecycle.State.DESTROYED)) {
+            ErrorRepository.captureWarning(new Exception("Attempted to commitFragments when activity is DESTROYED, noop-ing."));
+        }
+
         if (savedInstanceState != null) {
             appWebViewPrimaryFragment = (AppWebView) getSupportFragmentManager().getFragment(savedInstanceState, APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME);
             appWebViewBottomSheetFragment = (AppWebView) getSupportFragmentManager().getFragment(savedInstanceState, APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME);
@@ -248,7 +253,6 @@ public class MainActivity extends InstrumentedActivity {
                     APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME
             );
         }
-
 
         FrameLayout bottomSheetBehaviorContainer = findViewById(R.id.source_web_view_bottom_sheet_behavior_container);
         sourceWebViewBottomSheetBehavior = BottomSheetBehavior.from(bottomSheetBehaviorContainer);

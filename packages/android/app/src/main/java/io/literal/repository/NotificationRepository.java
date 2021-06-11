@@ -16,6 +16,9 @@ import com.amazonaws.amplify.generated.graphql.GetAnnotationQuery;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.net.URL;
+import java.util.Optional;
+
 import io.literal.R;
 import io.literal.lib.AnnotationLib;
 import io.literal.lib.Constants;
@@ -137,23 +140,28 @@ public class NotificationRepository {
         ));
         intent.setData(uri);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
-        String descriptionText = targetDomainMetadata != null
-                ? context.getString(R.string.source_created_error_notification_description, targetDomainMetadata.getUrl().getHost())
-                : context.getString(R.string.source_created_error_notification_description_default);
+        Optional<URL> domainURL = Optional.ofNullable(targetDomainMetadata).flatMap((metadata) -> Optional.ofNullable(metadata.getUrl()));
+
+        String notificationDescriptionText = domainURL
+                .map((url) -> context.getString(R.string.source_created_error_notification_description, url.getHost()))
+                .orElse(context.getString(R.string.source_created_error_notification_description_default));
+        int notificationId = domainURL
+                .map((url) -> url.getHost().hashCode())
+                .orElse(notificationDescriptionText.hashCode());
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, context.getString(R.string.source_created_notification_channel_id))
                 .setSmallIcon(R.drawable.ic_stat_name)
                 .setColor(Color.BLACK)
                 .setContentTitle(context.getString(R.string.source_created_error_notification_title))
                 .setStyle(
-                        new NotificationCompat.BigTextStyle().bigText(descriptionText)
+                        new NotificationCompat.BigTextStyle().bigText(notificationDescriptionText)
                 )
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
 
-        notificationManager.notify(targetDomainMetadata.getUrl().getHost().hashCode(), builder.build());
+        notificationManager.notify(notificationId, builder.build());
     }
 
     public static void sourceCreatedNotificationStart(Context context, String creatorUsername, @NotNull DomainMetadata targetDomainMetadata, Pair<Integer, Integer> progress) {
