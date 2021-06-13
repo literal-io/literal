@@ -16,8 +16,6 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -30,7 +28,6 @@ import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -39,6 +36,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -58,6 +56,7 @@ import io.literal.lib.WebEvent;
 import io.literal.model.Annotation;
 import io.literal.model.Body;
 import io.literal.model.ExternalTarget;
+import io.literal.model.Format;
 import io.literal.model.SpecificTarget;
 import io.literal.model.State;
 import io.literal.model.StorageObject;
@@ -70,10 +69,10 @@ import io.literal.repository.AnnotationRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.StorageRepository;
 import io.literal.service.AnnotationService;
+import io.literal.ui.view.SourceWebViewClient;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
-import io.sentry.protocol.App;
 import type.DeleteAnnotationInput;
 import type.PatchAnnotationInput;
 import type.PatchAnnotationOperationInput;
@@ -91,12 +90,17 @@ public class SourceWebView extends Fragment {
     private int paramToolbarPrimaryActionResourceId;
 
     private io.literal.ui.view.SourceWebView webView;
+    private SourceWebViewClient sourceWebViewClient;
     private Toolbar toolbar;
     private AppBarLayout appBarLayout;
 
-    /** Triggered when the primary action in the toolbar tapped. **/
+    /**
+     * Triggered when the primary action in the toolbar tapped.
+     **/
     private Callback2<Annotation[], DomainMetadata> onToolbarPrimaryActionCallback;
-    /** Triggered when ShareTargetHandler should be opened to URL **/
+    /**
+     * Triggered when ShareTargetHandler should be opened to URL
+     **/
     private Callback<Void, URL> onCreateAnnotationFromSource;
 
     private ActionMode editAnnotationActionMode;
@@ -104,8 +108,6 @@ public class SourceWebView extends Fragment {
      * Show a different CAB if text is selected while editing annotation
      **/
     private boolean isEditingAnnotation;
-
-    private boolean shouldClearHistoryOnPageFinished;
 
     private SourceWebViewViewModel sourceWebViewViewModel;
     private AuthenticationViewModel authenticationViewModel;
@@ -170,38 +172,9 @@ public class SourceWebView extends Fragment {
             DomainMetadata domainMetadata = sourceWebViewViewModel.getDomainMetadata().getValue();
             sourceWebViewViewModel.setDomainMetadata(DomainMetadata.updateFavicon(domainMetadata, icon));
         });
-        webView.setOnGetWebMessageChannelInitializerScript((_e, _data) -> {
-            sourceWebViewViewModel.setHasInjectedAnnotationRendererScript(true);
-            return getAnnotationRendererScript();
-        });
 
-        webView.setExternalWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                try {
-                    URL newUrl = new URL(url);
-                    DomainMetadata domainMetadata = Optional.ofNullable(sourceWebViewViewModel.getDomainMetadata().getValue())
-                            .map(inst -> DomainMetadata.updateUrl(inst, newUrl))
-                            .orElse(new DomainMetadata(newUrl, null));
-                    sourceWebViewViewModel.setDomainMetadata(domainMetadata);
-                } catch (MalformedURLException ex) {
-                    ErrorRepository.captureException(ex);
-                }
-                sourceWebViewViewModel.setHasInjectedAnnotationRendererScript(false);
-            }
-
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                if (!sourceWebViewViewModel.getHasInjectedAnnotationRendererScript().getValue()) {
-                    sourceWebViewViewModel.setHasInjectedAnnotationRendererScript(true);
-                    webView.evaluateJavascript(getAnnotationRendererScript(), _v -> { /** noop **/});
-                }
-
-                if (shouldClearHistoryOnPageFinished) {
-                    view.clearHistory();
-                }
-            }
-        });
+        sourceWebViewClient = new SourceWebViewClient(getContext(), authenticationViewModel, sourceWebViewViewModel);
+        webView.setWebViewClient(sourceWebViewClient);
 
         webView.setOnAnnotationCreated((e, actionMode) -> {
             if (e != null) {
@@ -351,6 +324,7 @@ public class SourceWebView extends Fragment {
             webView.loadUrl(paramInitialUrl);
         }
     }
+
     private void handleSetBottomSheetState(String state) {
         if (editAnnotationActionMode != null) {
             webView.finishEditAnnotationActionMode(editAnnotationActionMode);
@@ -371,23 +345,6 @@ public class SourceWebView extends Fragment {
         }
     }
 
-    private String getAnnotationRendererScript() {
-        ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
-        String focusedAnnotationId = sourceWebViewViewModel.getFocusedAnnotationId().getValue();
-
-        try {
-            JSONArray paramAnnotations = JsonArrayUtil.stringifyObjectArray(annotations.toArray(new Annotation[0]), Annotation::toJson);
-            return sourceWebViewViewModel.getAnnotationRendererScript(
-                    getActivity().getAssets(),
-                    paramAnnotations,
-                    focusedAnnotationId != null ? focusedAnnotationId : ""
-            );
-        } catch (JSONException ex) {
-            ErrorRepository.captureException(ex);
-        }
-        return null;
-    }
-
     private void handleAnnotationCreated(ActionMode mode) {
         try {
             /**
@@ -406,14 +363,14 @@ public class SourceWebView extends Fragment {
         }
 
         String script = sourceWebViewViewModel.getGetAnnotationScript(getActivity().getAssets());
-        StorageObject archive = new StorageObject(StorageObject.Type.ARCHIVE, UUID.randomUUID().toString(), StorageObject.Status.MEMORY_ONLY, null, null);
+        String key = UUID.randomUUID().toString() + "/archive.mhtml";
+        StorageObject archive = new StorageObject(StorageObject.Type.ARCHIVE, key, StorageObject.Status.MEMORY_ONLY, null, null);
         webView.evaluateJavascript(script, value -> {
             mode.finish();
             webView.saveWebArchive(
                     archive.getFile(getContext()).toURI().getPath(),
                     false,
                     (filePath) -> {
-                        Log.i("SourceWebView", "archive filePath: " + filePath);
                         archive.setStatus(StorageObject.Status.UPLOAD_REQUIRED);
                         String appSyncIdentity = authenticationViewModel.getUser().getValue().getAppSyncIdentity();
                         Annotation annotation = sourceWebViewViewModel.createAnnotation(value, appSyncIdentity, false);
@@ -669,13 +626,13 @@ public class SourceWebView extends Fragment {
                     .findFirst()
                     .get();
             List<TextualBody> body = Arrays.stream(Optional.ofNullable(annotation.getBody()).orElse(new Body[0]))
-                .filter(b -> b.getType().equals(Body.Type.TEXTUAL_BODY))
-                .map(b -> ((TextualBody) b))
-                .collect(Collectors.toList());
+                    .filter(b -> b.getType().equals(Body.Type.TEXTUAL_BODY))
+                    .map(b -> ((TextualBody) b))
+                    .collect(Collectors.toList());
             List<TextualBody> newBody = Arrays.stream(Optional.ofNullable(newAnnotation.getBody()).orElse(new Body[0]))
-                .filter(b -> b.getType().equals(Body.Type.TEXTUAL_BODY))
-                .map(b -> ((TextualBody) b))
-                .collect(Collectors.toList());
+                    .filter(b -> b.getType().equals(Body.Type.TEXTUAL_BODY))
+                    .map(b -> ((TextualBody) b))
+                    .collect(Collectors.toList());
 
             HashSet<String> bodyIds = body.stream().map(TextualBody::getId).collect(Collectors.toCollection((Supplier<HashSet<String>>) HashSet::new));
             HashSet<String> newBodyIds = newBody.stream().map(TextualBody::getId).collect(Collectors.toCollection((Supplier<HashSet<String>>) HashSet::new));
@@ -687,14 +644,14 @@ public class SourceWebView extends Fragment {
 
             ArrayList<PatchAnnotationOperationInput> operations = new ArrayList<>();
             operations.addAll(
-                removedBodyIds.stream()
-                        .map(id -> body.stream().filter(b -> b.getId().equals(id)).findFirst().get().toPatchAnnotationOperationInputRemove())
-                        .collect(Collectors.toList())
+                    removedBodyIds.stream()
+                            .map(id -> body.stream().filter(b -> b.getId().equals(id)).findFirst().get().toPatchAnnotationOperationInputRemove())
+                            .collect(Collectors.toList())
             );
             operations.addAll(
-                addedBodyIds.stream()
-                        .map(id -> newBody.stream().filter(b -> b.getId().equals(id)).findFirst().get().toPatchAnnotationOperationInputAdd())
-                        .collect(Collectors.toList())
+                    addedBodyIds.stream()
+                            .map(id -> newBody.stream().filter(b -> b.getId().equals(id)).findFirst().get().toPatchAnnotationOperationInputAdd())
+                            .collect(Collectors.toList())
             );
 
             User user = authenticationViewModel.getUser().getValue();
@@ -743,7 +700,6 @@ public class SourceWebView extends Fragment {
     }
 
     public void handleViewTargetForAnnotation(Annotation annotation, String targetId, Callback<Exception, Void> onComplete) {
-
         Callback2<String, DomainMetadata> onTargetUrl = (e1, targetUrl, initialDomainMetadata) -> {
             if (e1 != null) {
                 onComplete.invoke(e1, null);
@@ -770,7 +726,7 @@ public class SourceWebView extends Fragment {
             if (currentWebViewUrl == null || !currentWebViewUrl.equals(targetUrl)) {
                 sourceWebViewViewModel.setDomainMetadata(initialDomainMetadata);
                 webView.loadUrl(targetUrl);
-                shouldClearHistoryOnPageFinished = true;
+                sourceWebViewClient.setShouldClearHistoryOnPageFinished(true);
             }
             onComplete.invoke(null, null);
         };
@@ -799,30 +755,42 @@ public class SourceWebView extends Fragment {
                         Optional<StorageObject> cachedStorageObject = Arrays.stream(Optional.ofNullable(((SpecificTarget) t).getState()).orElse(new State[0]))
                                 .filter((s) -> s.getType().equals(State.Type.TIME_STATE))
                                 .findFirst()
-                                .flatMap((s) -> Arrays.stream(((TimeState) s).getCached()).filter(cached -> {
-                                    URI uri = cached.getCanonicalURI(getContext(), authenticationViewModel.getUser().getValue());
-                                    return uri.getScheme().equals("https");
-                                }).findFirst());
+                                .flatMap((s) ->
+                                        Arrays.stream(((TimeState) s).getCached())
+                                                .filter(cached -> {
+                                                    URI uri = cached.getCanonicalURI(getContext(), authenticationViewModel.getUser().getValue());
+                                                    return uri.getScheme().equals("https") || uri.getScheme().equals("s3");
+                                                })
+                                                .min(Comparator.comparingInt((cached) -> {
+                                                    URI uri = cached.getCanonicalURI(getContext(), authenticationViewModel.getUser().getValue());
+                                                    return uri.toString().endsWith(".mhtml") ? 1 : 0;
+                                                }))
+                                );
 
                         if (cachedStorageObject.isPresent()) {
-                            String finalExternalTargetUri = externalTargetUri;
-                            URI cachedStorageObjectURI = cachedStorageObject.get().getCanonicalURI(getContext(), authenticationViewModel.getUser().getValue());
-                            authenticationViewModel.initialize(getActivity()).whenComplete((user, error) -> getActivity().runOnUiThread(() -> {
-                                try {
-                                    onTargetUrl.invoke(
-                                            null,
-                                            cachedStorageObjectURI.toString(),
-                                            finalExternalTargetUri != null
-                                                    ? new DomainMetadata(
-                                                    cachedStorageObjectURI.toURL(),
-                                                    new URL(finalExternalTargetUri),
-                                                    null)
-                                                    : null
-                                    );
-                                } catch (MalformedURLException _e) {
-                                    onTargetUrl.invoke(null, cachedStorageObjectURI.toString(), null);
-                                }
-                            }));
+                            StorageObject storageObject = cachedStorageObject.get();
+
+                            URI storageObjectURI;
+                            Format contentType = storageObject.getContentType(getContext());
+                            if (contentType.equals(Format.APPLICATION_X_MIMEARCHIVE) || contentType.equals(Format.MULTIPART_RELATED)) {
+                                // Chrome does not load application/x-mimearchive on https scheme, use the equivalent file URI.
+                                storageObjectURI = storageObject.getFile(getContext()).toURI();
+                            } else {
+                                // Archive is a parsed HTML document, use https uri directly.
+                                storageObjectURI = storageObject.getCanonicalURI(getContext(), authenticationViewModel.getUser().getValue());
+                            }
+
+                            try {
+                                onTargetUrl.invoke(
+                                        null,
+                                        storageObjectURI.toString(),
+                                        externalTargetUri != null
+                                                ? new DomainMetadata(storageObjectURI.toURL(), new URL(externalTargetUri), null)
+                                                : null
+                                );
+                            } catch (MalformedURLException _e) {
+                                onTargetUrl.invoke(null, storageObjectURI.toString(), null);
+                            }
                             return;
                         }
 

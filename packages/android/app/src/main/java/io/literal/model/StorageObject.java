@@ -9,15 +9,29 @@ import android.webkit.MimeTypeMap;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.annotation.Nullable;
 
 import io.literal.lib.Callback;
 import io.literal.lib.Callback3;
@@ -36,6 +50,8 @@ public class StorageObject {
         DOWNLOAD_REQUIRED,
         MEMORY_ONLY
     }
+    public static final String CACHE_CONTROL = "public, max-age=604800, immutable";
+
     private static final Pattern ARCHIVES_PATH_PATTERN = Pattern.compile(".+/archives/(.+)");
     private static final Pattern SHARED_PUBLIC_READ_PATTERN = Pattern.compile("shared-public-read/onboarding/(.+)");
     private static final Pattern SCREENSHOT_PATH_PATTERN = Pattern.compile(".+/screenshots/(.+)");
@@ -67,7 +83,7 @@ public class StorageObject {
         if (parsedPath == null) {
             return null;
         }
-        return new StorageObject(parsedPath.first, parsedPath.second, status, null, uri);
+       return new StorageObject(parsedPath.first, parsedPath.second, status, null, uri);
     }
 
     public static StorageObject createFromContentResolverURI(Context context, StorageObject.Type type, Uri uri) {
@@ -85,17 +101,51 @@ public class StorageObject {
         return storageObject;
     }
 
-    public static StorageObject create(URI uri) {
-        if (uri.getScheme().equals("file")) {
-            return create(new File(uri), Status.UPLOAD_REQUIRED);
-        } else if (uri.getScheme().equals("https")) {
-            try {
+    public static StorageObject create(@Nullable Context context, URI uri) {
+        try {
+            if (uri.getScheme().equals("file")) {
+                // Ensure file is within the application cache directory.
+                if (context != null && !uri.getPath().startsWith(context.getCacheDir().toURI().getPath())) {
+                    return null;
+                }
+
+                return create(new File(uri), Status.UPLOAD_REQUIRED);
+            } else if (uri.getScheme().equals("https") || uri.getScheme().equals("s3")) {
+                AmazonS3URI amazonS3URI = new AmazonS3URI(uri);
+                // Ensure S3 URI is within the application bucket.
+                if (context != null && !amazonS3URI.getBucket().equals(StorageRepository.getBucketName(context))) {
+                    return null;
+                }
+
                 return create(new AmazonS3URI(uri), Status.DOWNLOAD_REQUIRED);
-            } catch (Exception e) {
+            } else {
                 return null;
             }
+        } catch (Exception e) {
+            return null;
         }
-        return null;
+    }
+
+    public static StorageObject create(URI uri) {
+        return StorageObject.create(null, uri);
+    }
+
+    public static Optional<StorageObject> create(Context context, Uri uri) {
+        StorageObject inst = null;
+        try {
+            inst = StorageObject.create(context, new URI(uri.toString()));
+        } catch (URISyntaxException e) {
+            ErrorRepository.captureException(e);
+        }
+
+        return Optional.ofNullable(inst);
+    }
+
+    public void ensureDownloadRequired(Context context) {
+        if (status.equals(Status.DOWNLOAD_REQUIRED) && getFile(context).exists()) {
+            setStatus(Status.SYNCHRONIZED);
+        }
+        setStatus(Status.DOWNLOAD_REQUIRED);
     }
 
     private static Pair<Type, String> parsePath(String path) {
@@ -125,23 +175,6 @@ public class StorageObject {
     }
 
     public static File getDirectory(Context context, Type type) {
-        String suffix;
-        if (type.equals(Type.ARCHIVE)) {
-            suffix = "archives";
-        } else if (type.equals(Type.SCREENSHOT)) {
-            suffix = "screenshots";
-        } else {
-            return null;
-        }
-
-        File file = new File(context.getCacheDir(), suffix);
-        if (!file.exists()) {
-            file.mkdirs();
-        }
-        return file;
-    }
-
-    public File getDirectory(Context context) {
         String suffix;
         if (type.equals(Type.ARCHIVE)) {
             suffix = "archives";
@@ -221,9 +254,11 @@ public class StorageObject {
 
     public Format getContentType(Context context) {
         if (contentType == null) {
-            if (type.equals(Type.ARCHIVE)) {
-                contentType = Format.APPLICATION_X_MIMEARCHIVE;
-            } else if (type.equals(Type.SCREENSHOT)) {
+            if (type.equals(Type.ARCHIVE) && id.endsWith(".mhtml")) {
+                contentType = Format.MULTIPART_RELATED;
+            } else if (type.equals(Type.ARCHIVE)) {
+                contentType = Format.TEXT_HTML;
+            } if (type.equals(Type.SCREENSHOT)) {
                 String extension = MimeTypeMap.getFileExtensionFromUrl(getFile(context).toURI().toString());
                 String mimeType =  MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
                 if (contentType != null) {
@@ -238,14 +273,13 @@ public class StorageObject {
 
     public ObjectMetadata getObjectMetadata(Context context) {
         ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setCacheControl("public, max-age=604800, immutable");
+        metadata.setCacheControl(CACHE_CONTROL);
         metadata.setContentType(getContentType(context).toMimeType());
         return metadata;
     }
 
     public TransferObserver upload(Context context, User user, Callback<Exception, AmazonS3URI> onUploadComplete, Callback3<Integer, Long, Long> onUploadProgress) {
         AmazonS3URI uri = getAmazonS3URI(context, user);
-        Log.i("StorageObject", "upload uri: " + uri.toString() + ", for path: " + getPath());
         return StorageRepository.upload(
                 context,
                 uri.getKey(),
@@ -259,5 +293,33 @@ public class StorageObject {
                 },
                 onUploadProgress
         );
+    }
+
+    public InputStream downloadAsInputStream(Context context, User user) throws FileNotFoundException {
+        if (status.equals(Status.SYNCHRONIZED) || status.equals(Status.UPLOAD_REQUIRED)) {
+            return new FileInputStream(getFile(context));
+        } else if (status.equals(Status.DOWNLOAD_REQUIRED)) {
+            S3Object s3Object = StorageRepository.getS3Object(context, getAmazonS3URI(context, user));
+            File file = getFile(context);
+            S3ObjectInputStream inputStream = null;
+            try {
+                inputStream = s3Object.getObjectContent();
+                Files.copy(inputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                ErrorRepository.captureException(e);
+            } finally {
+                if (inputStream != null) {
+                    try {
+                        inputStream.close();
+                    } catch (IOException e1) {
+                        ErrorRepository.captureException(e1);
+                    }
+                }
+            }
+            status = Status.SYNCHRONIZED;
+            return new FileInputStream(file);
+        } else {
+            throw new FileNotFoundException("Unable to resolve StorageObject.");
+        }
     }
 }

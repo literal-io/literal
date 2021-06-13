@@ -10,6 +10,7 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
 
 import org.json.JSONObject;
 
@@ -18,6 +19,7 @@ import java.net.URL;
 import java.util.Date;
 
 import io.literal.factory.AWSMobileClientFactory;
+import io.literal.factory.AmazonS3ClientFactory;
 import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.AWSConfigurationLib;
 import io.literal.lib.Callback;
@@ -60,6 +62,10 @@ public class StorageRepository {
         }
 
         return url.getHost().equals(storageHost);
+    }
+
+    public static S3Object getS3Object(Context context, AmazonS3URI uri) {
+        return AmazonS3ClientFactory.getInstance(context).getObject(uri.getBucket(), uri.getKey());
     }
 
     public static TransferObserver upload(

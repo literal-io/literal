@@ -3,6 +3,7 @@ package io.literal.model;
 public enum Format {
     APPLICATION_X_MIMEARCHIVE,
     APPLICATION_OCTET_STREAM,
+    MULTIPART_RELATED,
     IMAGE_PNG,
     TEXT_PLAIN,
     TEXT_HTML;
@@ -17,6 +18,7 @@ public enum Format {
             case "application/x-mimearchive": return APPLICATION_X_MIMEARCHIVE;
             case "text/plain": return TEXT_PLAIN;
             case "text/html": return TEXT_HTML;
+            case "multipart/related": return MULTIPART_RELATED;
             default: return APPLICATION_OCTET_STREAM;
         }
     }
@@ -24,6 +26,7 @@ public enum Format {
     public String toMimeType() {
         switch (this) {
             case APPLICATION_X_MIMEARCHIVE: return "application/x-mimearchive";
+            case MULTIPART_RELATED: return "multipart/related";
             case IMAGE_PNG: return "image/png";
             case TEXT_PLAIN: return "text/plain";
             case TEXT_HTML: return "text/html";

@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.literal.BuildConfig;
 import io.literal.R;
@@ -54,6 +55,7 @@ import io.literal.lib.Callback;
 import io.literal.lib.Callback2;
 import io.literal.lib.ResultCallback;
 import io.literal.lib.WebEvent;
+import io.literal.model.StorageObject;
 import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.StorageRepository;
@@ -64,12 +66,8 @@ public class SourceWebView extends NestedScrollingChildWebView {
     private Callback<Exception, ActionMode> onAnnotationCommitEdit;
     private Callback<Exception, ActionMode> onAnnotationCancelEdit;
     private Callback2<View, Bitmap> onReceivedIcon;
-
-    private ResultCallback<String, Void> onGetWebMessageChannelInitializerScript;
     private ResultCallback<Integer, Void> onGetTextSelectionMenu;
-
     private Callback2<SourceWebView, WebEvent> webEventCallback;
-    private WebViewClient externalWebViewClient;
 
     WebMessagePortCompat[] webMessageChannel;
     Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -91,8 +89,8 @@ public class SourceWebView extends NestedScrollingChildWebView {
         webSettings.setDomStorageEnabled(true);
         webSettings.setBuiltInZoomControls(true);
         webSettings.setDisplayZoomControls(false);
+        webSettings.setAllowFileAccess(true);
         this.addJavascriptInterface(new JavascriptInterface(), "literalWebview");
-        this.setWebViewClient(new SourceWebViewClient(getContext()));
 
         this.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -257,14 +255,6 @@ public class SourceWebView extends NestedScrollingChildWebView {
         this.onReceivedIcon = onReceivedIcon;
     }
 
-    public void setExternalWebViewClient(WebViewClient externalWebViewClient) {
-        this.externalWebViewClient = externalWebViewClient;
-    }
-
-    public void setOnGetWebMessageChannelInitializerScript(ResultCallback<String, Void> onGetWebMessageChannelInitializerScript) {
-        this.onGetWebMessageChannelInitializerScript = onGetWebMessageChannelInitializerScript;
-    }
-
     public void setWebEventCallback(Callback2<SourceWebView, WebEvent> webEventCallback) {
         this.webEventCallback = webEventCallback;
     }
@@ -394,69 +384,4 @@ public class SourceWebView extends NestedScrollingChildWebView {
             originalCallback.onGetContentRect(mode, view, outRect);
         }
     };
-
-    private class SourceWebViewClient extends WebViewClient {
-
-        private final String storageHost;
-        private final String storageBucket;
-
-        public SourceWebViewClient(Context context) {
-            storageBucket = StorageRepository.getBucketName(context);
-            storageHost = storageBucket + ".s3." + StorageRepository.getBucketRegion(context) + ".amazonaws.com";
-        }
-
-        @Nullable
-        @Override
-        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-            if (request == null) {
-                return null;
-            }
-            String host = request.getUrl().getHost();
-            String path = request.getUrl().getPath().substring(1);
-            if (!request.getMethod().equals("GET") || host == null || !host.equals(storageHost) || path == null) {
-                return null;
-            }
-
-            try {
-                S3Object object = AmazonS3ClientFactory.getInstance(getContext()).getObject(storageBucket, request.getUrl().getPath().substring(1));
-                ObjectMetadata metadata = object.getObjectMetadata();
-                WebResourceResponse response = new WebResourceResponse(
-                        metadata.getContentType(),
-                        null,
-                        object.getObjectContent()
-                );
-
-                Map<String, String> responseHeaders = new HashMap<>();
-                responseHeaders.put("Cache-Control", metadata.getCacheControl());
-                responseHeaders.put("ETag", metadata.getETag());
-                response.setResponseHeaders(responseHeaders);
-                return response;
-            } catch (Exception ex) {
-                ErrorRepository.captureException(ex, request.getUrl().getPath().substring(1));
-                return null;
-            }
-        }
-
-        @Override
-        public void onPageFinished(android.webkit.WebView webview, String url) {
-            if (webview.getProgress() == 100) {
-                // Ensure web context is setup to begin the message channel handshake.
-                if (onGetWebMessageChannelInitializerScript != null) {
-                    String script = onGetWebMessageChannelInitializerScript.invoke(null, null);
-                    evaluateJavascript(script, (value -> { /** noop **/}));
-                }
-
-                if (SourceWebView.this.externalWebViewClient != null) {
-                    SourceWebView.this.externalWebViewClient.onPageFinished(webview, url);
-                }
-            }
-        }
-
-        @Override
-        public void onPageStarted(android.webkit.WebView webview, String url, Bitmap favicon) {
-            if (SourceWebView.this.externalWebViewClient != null) {
-                SourceWebView.this.externalWebViewClient.onPageStarted(webview, url, favicon);
-            }
-        }
-    }
 }
