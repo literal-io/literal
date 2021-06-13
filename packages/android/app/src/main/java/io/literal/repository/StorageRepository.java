@@ -9,6 +9,7 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.amazonaws.services.s3.AmazonS3URI;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 
@@ -64,8 +65,8 @@ public class StorageRepository {
         return url.getHost().equals(storageHost);
     }
 
-    public static S3Object getS3Object(Context context, AmazonS3URI uri) {
-        return AmazonS3ClientFactory.getInstance(context).getObject(uri.getBucket(), uri.getKey());
+    public static ObjectMetadata getObject(Context context, AmazonS3URI uri, File destinationFile) {
+        return AmazonS3ClientFactory.getInstance(context).getObject(new GetObjectRequest(uri.getBucket(), uri.getKey()), destinationFile);
     }
 
     public static TransferObserver upload(

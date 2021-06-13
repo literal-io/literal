@@ -55,6 +55,7 @@ public class StorageObject {
     private static final Pattern ARCHIVES_PATH_PATTERN = Pattern.compile(".+/archives/(.+)");
     private static final Pattern SHARED_PUBLIC_READ_PATTERN = Pattern.compile("shared-public-read/onboarding/(.+)");
     private static final Pattern SCREENSHOT_PATH_PATTERN = Pattern.compile(".+/screenshots/(.+)");
+
     private Type type;
     private String id;
     private Status status;
@@ -295,31 +296,14 @@ public class StorageObject {
         );
     }
 
-    public InputStream downloadAsInputStream(Context context, User user) throws FileNotFoundException {
-        if (status.equals(Status.SYNCHRONIZED) || status.equals(Status.UPLOAD_REQUIRED)) {
-            return new FileInputStream(getFile(context));
-        } else if (status.equals(Status.DOWNLOAD_REQUIRED)) {
-            S3Object s3Object = StorageRepository.getS3Object(context, getAmazonS3URI(context, user));
-            File file = getFile(context);
-            S3ObjectInputStream inputStream = null;
-            try {
-                inputStream = s3Object.getObjectContent();
-                Files.copy(inputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                ErrorRepository.captureException(e);
-            } finally {
-                if (inputStream != null) {
-                    try {
-                        inputStream.close();
-                    } catch (IOException e1) {
-                        ErrorRepository.captureException(e1);
-                    }
-                }
-            }
+    public ObjectMetadata download(Context context, User user) {
+        ObjectMetadata objectMetadata = null;
+        try {
+            objectMetadata = StorageRepository.getObject(context, getAmazonS3URI(context, user), getFile(context));
             status = Status.SYNCHRONIZED;
-            return new FileInputStream(file);
-        } else {
-            throw new FileNotFoundException("Unable to resolve StorageObject.");
+        } catch (Exception e) {
+            ErrorRepository.captureException(e);
         }
+        return objectMetadata;
     }
 }

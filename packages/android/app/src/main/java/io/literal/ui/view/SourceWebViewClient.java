@@ -10,9 +10,12 @@ import android.webkit.WebViewClient;
 
 import androidx.annotation.Nullable;
 
+import com.amazonaws.services.s3.model.ObjectMetadata;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import java.io.FileInputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -59,13 +62,17 @@ public class SourceWebViewClient extends WebViewClient {
                 .flatMap((storageObject) -> {
                     storageObject.ensureDownloadRequired(context);
                     try {
+                        ObjectMetadata metadata = storageObject.download(context, authenticationViewModel.getUser().getValue());
                         WebResourceResponse response = new WebResourceResponse(
-                                storageObject.getContentType(context).toMimeType(),
+                                metadata.getContentType(),
                                 null,
-                                storageObject.downloadAsInputStream(context, authenticationViewModel.getUser().getValue())
+                                new FileInputStream(storageObject.getFile(context))
                         );
                         Map<String, String> responseHeaders = new HashMap<>();
-                        responseHeaders.put("Cache-Control", StorageObject.CACHE_CONTROL);
+                        responseHeaders.put("Cache-Control", metadata.getCacheControl());
+                        responseHeaders.put("ETag", metadata.getETag());
+                        responseHeaders.put("Content-Language", metadata.getContentLanguage());
+                        responseHeaders.put("Last-Modified", metadata.getLastModified().toString());
                         response.setResponseHeaders(responseHeaders);
                         return Optional.of(response);
                     } catch (Exception e) {
