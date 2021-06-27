@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Objects;
 
 import io.literal.lib.Crypto;
 import io.literal.lib.JsonArrayUtil;
@@ -66,8 +67,9 @@ public class ExternalTarget extends Target {
             }
         }
 
+        @NotNull
         public String toString() {
-            if (type.equals(Type.IRI)) {
+            if (type.equals(Type.IRI) && iri != null) {
                 return iri;
             }
             return storageObject.getCanonicalURI().toString();
@@ -214,5 +216,82 @@ public class ExternalTarget extends Target {
                                 .build()
                 )
                 .build();
+    }
+
+    public static class Builder {
+        private Id id;
+        private Format format;
+        private Language language;
+        private Language processingLanguage;
+        private TextDirection textDirection;
+        private ResourceType resourceType;
+        private String[] accessibility;
+        private String[] rights;
+
+        public Builder(ExternalTarget base) {
+            this.id = base.getId();
+            this.format = base.getFormat();
+            this.language = base.getLanguage();
+            this.processingLanguage = base.getProcessingLanguage();
+            this.textDirection = base.getTextDirection();
+            this.resourceType = base.getResourceType();
+            this.accessibility = base.getAccessibility();
+            this.rights = base.getRights();
+        }
+
+        public Builder setId(Id id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder setFormat(Format format) {
+            this.format = format;
+            return this;
+        }
+
+        public Builder setLanguage(Language language) {
+            this.language = language;
+            return this;
+        }
+
+        public Builder setProcessingLanguage(Language processingLanguage) {
+            this.processingLanguage = processingLanguage;
+            return this;
+        }
+
+        public Builder setTextDirection(TextDirection textDirection) {
+            this.textDirection = textDirection;
+            return this;
+        }
+
+        public Builder setResourceType(ResourceType resourceType) {
+            this.resourceType = resourceType;
+            return this;
+        }
+
+        public Builder setAccessibility(String[] accessibility) {
+            this.accessibility = accessibility;
+            return this;
+        }
+
+        public Builder setRights(String[] rights) {
+            this.rights = rights;
+            return this;
+        }
+
+        public ExternalTarget build() {
+            Objects.requireNonNull(id);
+
+            return new ExternalTarget(
+                    id,
+                    format,
+                    language,
+                    processingLanguage,
+                    textDirection,
+                    accessibility,
+                    rights,
+                    resourceType
+            );
+        }
     }
 }
