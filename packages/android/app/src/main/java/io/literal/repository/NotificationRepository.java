@@ -5,6 +5,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.util.Pair;
@@ -14,29 +15,17 @@ import androidx.core.app.NotificationManagerCompat;
 
 import com.amazonaws.amplify.generated.graphql.GetAnnotationQuery;
 
-import org.jetbrains.annotations.NotNull;
-
-import java.net.URL;
+import java.net.URI;
 import java.util.Optional;
 
 import io.literal.R;
 import io.literal.lib.AnnotationLib;
 import io.literal.lib.Constants;
-import io.literal.lib.DomainMetadata;
 import io.literal.lib.WebRoutes;
 import io.literal.model.User;
 import io.literal.ui.activity.MainActivity;
 
 public class NotificationRepository {
-    public static void createNewExternalTargetNotificationChannel(Context context) {
-        NotificationRepository.createNotificationChannel(
-                context,
-                context.getString(R.string.source_created_notification_channel_id),
-                context.getString(R.string.source_created_notification_channel_name),
-                context.getString(R.string.source_created_notification_channel_description),
-                NotificationManager.IMPORTANCE_LOW
-        );
-    }
 
     public static void createNewAnnotationNotificationChannel(Context context) {
         NotificationRepository.createNotificationChannel(
@@ -69,70 +58,68 @@ public class NotificationRepository {
         }
     }
 
-    public static void annotationCreatedNotification(Context context, User user, GetAnnotationQuery.GetAnnotation annotation) {
+    public static void annotationCreatedNotification(
+            Context context,
+            int notificationId,
+            Uri notificationUri,
+            String notificationText,
+            Optional<Bitmap> favicon
+    ) {
         Intent intent = new Intent(context, MainActivity.class);
-        Uri annotationUri = Uri.parse(
-                WebRoutes.creatorsIdAnnotationCollectionIdAnnotationId(
-                        user.getAppSyncIdentity(),
-                        Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT,
-                        AnnotationLib.idComponentFromId(annotation.id())
-                )
-        );
-        intent.setData(annotationUri);
+        intent.setData(notificationUri);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
 
-        String textualTargetValue = null;
-        for (GetAnnotationQuery.Target target : annotation.target()) {
-            GetAnnotationQuery.AsTextualTarget textualTarget = target.asTextualTarget();
-            if (textualTarget != null) {
-                textualTargetValue = textualTarget.value();
-                break;
-            }
-        }
-
-        if (textualTargetValue != null) {
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, context.getString(R.string.annotation_created_notification_channel_id))
-                    .setSmallIcon(R.drawable.ic_stat_name)
-                    .setColor(Color.BLACK)
-                    .setContentTitle(context.getString(R.string.annotation_created_notification_title))
-                    .setStyle(
-                            new NotificationCompat.BigTextStyle().bigText(textualTargetValue)
-                    )
-                    .setContentText(textualTargetValue)
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
-                    .setContentIntent(pendingIntent)
-                    .setAutoCancel(true);
-            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-            notificationManager.notify(annotation.id().hashCode(), builder.build());
-        }
-    }
-
-    public static void sourceCreatedNotificationComplete(Context context, String creatorUsername, @NotNull DomainMetadata targetDomainMetadata) {
-        // FIXME: This should link to a source specific view, but none exists currently.
-
-        Intent intent = new Intent(context, MainActivity.class);
-        Uri uri = Uri.parse(WebRoutes.creatorsIdAnnotationCollectionId(
-                creatorUsername,
-                Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT
-        ));
-        intent.setData(uri);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, context.getString(R.string.source_created_notification_channel_id))
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, context.getString(R.string.annotation_created_notification_channel_id))
                 .setSmallIcon(R.drawable.ic_stat_name)
                 .setColor(Color.BLACK)
-                .setContentTitle(context.getString(R.string.source_created_complete_notification_title))
-                .setContentText(context.getString(R.string.source_created_complete_notification_description, targetDomainMetadata.getUrl().getHost()))
-                .setLargeIcon(targetDomainMetadata.getScaledFaviconWithBackground(context))
+                .setContentTitle(context.getString(R.string.annotation_created_notification_title))
+                .setStyle(
+                        new NotificationCompat.BigTextStyle().bigText(notificationText)
+                )
+                .setContentText(notificationText)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
+        favicon.ifPresent(builder::setLargeIcon);
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
 
-        notificationManager.notify(targetDomainMetadata.getUrl().getHost().hashCode(), builder.build());
+        notificationManager.notify(notificationId, builder.build());
     }
 
-    public static void sourceCreatedNotificationError(Context context, String creatorUsername, DomainMetadata targetDomainMetadata) {
+    public static void multipleAnnotationsCreatedNotification(
+            Context context,
+            int notificationId,
+            Uri notificationUri,
+            int annotationCount,
+            Optional<String> annotationHost,
+            Optional<Bitmap> annotationHostFavicon
+    ) {
+        Intent intent = new Intent(context, MainActivity.class);
+        intent.setData(notificationUri);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+
+        String notificationText = annotationHost
+                .map(h -> context.getString(R.string.multiple_annotations_created_with_host_notification_description, annotationCount, h))
+                .orElse(context.getString(R.string.multiple_annotations_created_notification_description, annotationCount));
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, context.getString(R.string.annotation_created_notification_channel_id))
+                .setSmallIcon(R.drawable.ic_stat_name)
+                .setColor(Color.BLACK)
+                .setContentTitle(context.getString(R.string.annotation_created_notification_title))
+                .setStyle(
+                        new NotificationCompat.BigTextStyle().bigText(notificationText)
+                )
+                .setContentText(notificationText)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true);
+        annotationHostFavicon.ifPresent(builder::setLargeIcon);
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
+
+        notificationManager.notify(notificationId, builder.build());
+    }
+
+    public static void annotationCreatedNotificationError(Context context, String creatorUsername, int notificationId) {
         Intent intent = new Intent(context, MainActivity.class);
         Uri uri = Uri.parse(WebRoutes.creatorsIdAnnotationCollectionId(
                 creatorUsername,
@@ -140,21 +127,13 @@ public class NotificationRepository {
         ));
         intent.setData(uri);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
-        Optional<URL> domainURL = Optional.ofNullable(targetDomainMetadata).flatMap((metadata) -> Optional.ofNullable(metadata.getUrl()));
 
-        String notificationDescriptionText = domainURL
-                .map((url) -> context.getString(R.string.source_created_error_notification_description, url.getHost()))
-                .orElse(context.getString(R.string.source_created_error_notification_description_default));
-        int notificationId = domainURL
-                .map((url) -> url.getHost().hashCode())
-                .orElse(notificationDescriptionText.hashCode());
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, context.getString(R.string.source_created_notification_channel_id))
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, context.getString(R.string.annotation_created_notification_channel_id))
                 .setSmallIcon(R.drawable.ic_stat_name)
                 .setColor(Color.BLACK)
-                .setContentTitle(context.getString(R.string.source_created_error_notification_title))
+                .setContentTitle(context.getString(R.string.annotation_created_error_notification_title))
                 .setStyle(
-                        new NotificationCompat.BigTextStyle().bigText(notificationDescriptionText)
+                        new NotificationCompat.BigTextStyle().bigText(context.getString(R.string.annotation_created_error_notification_description))
                 )
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setContentIntent(pendingIntent)
@@ -164,28 +143,28 @@ public class NotificationRepository {
         notificationManager.notify(notificationId, builder.build());
     }
 
-    public static void sourceCreatedNotificationStart(Context context, String creatorUsername, @NotNull DomainMetadata targetDomainMetadata, Pair<Integer, Integer> progress) {
-        // FIXME: This should link to a source specific view, but none exists currently.
-        Intent intent = new Intent(context, MainActivity.class);
-        Uri uri = Uri.parse(WebRoutes.creatorsIdAnnotationCollectionId(
-                creatorUsername,
-                Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT
-        ));
-        intent.setData(uri);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+    public static void annotationsCreatedNotificationStart(
+            Context context,
+            int notificationId,
+            int annotationCount,
+            Optional<Bitmap> annotationHostFavicon,
+            Pair<Integer, Integer> progress
+    ) {
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, context.getString(R.string.source_created_notification_channel_id))
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, context.getString(R.string.annotation_created_notification_channel_id))
                 .setSmallIcon(R.drawable.ic_stat_name)
                 .setColor(Color.BLACK)
-                .setContentTitle(context.getString(R.string.source_created_start_notification_title))
-                .setContentText(context.getString(R.string.source_created_start_notification_description, targetDomainMetadata.getUrl().getHost()))
-                .setLargeIcon(targetDomainMetadata.getScaledFaviconWithBackground(context))
+                .setContentTitle(
+                        annotationCount > 1
+                            ? context.getString(R.string.multiple_annotations_created_start_notification_title)
+                                : context.getString(R.string.annotation_created_start_notification_title)
+                )
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setContentIntent(pendingIntent)
                 .setProgress(progress.first, progress.second, false)
                 .setOngoing(true);
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
+        annotationHostFavicon.ifPresent(builder::setLargeIcon);
 
-        notificationManager.notify(targetDomainMetadata.getUrl().getHost().hashCode(), builder.build());
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
+        notificationManager.notify(notificationId, builder.build());
     }
 }

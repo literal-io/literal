@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentContainerView;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
 import com.amazonaws.amplify.generated.graphql.GetAnnotationQuery;
 import com.amazonaws.mobile.client.UserState;
 import com.amazonaws.mobileconnectors.appsync.ClearCacheException;
@@ -23,6 +24,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.util.Optional;
 import java.util.UUID;
 
 import io.literal.R;
@@ -43,9 +45,11 @@ import io.literal.repository.ErrorRepository;
 import io.literal.repository.NotificationRepository;
 import io.literal.repository.ToastRepository;
 import io.literal.service.AnnotationService;
+import io.literal.service.CreateAnnotationIntent;
 import io.literal.ui.fragment.AppWebView;
 import io.literal.ui.fragment.AppWebViewBottomSheetAnimator;
 import io.literal.ui.fragment.SourceWebView;
+import io.literal.ui.view.SourceWebView.Source;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
@@ -72,7 +76,6 @@ public class ShareTargetHandler extends InstrumentedActivity {
         authenticationViewModel = new ViewModelProvider(this).get(AuthenticationViewModel.class);
 
         NotificationRepository.createNewAnnotationNotificationChannel(this);
-        NotificationRepository.createNewExternalTargetNotificationChannel(this);
 
         authenticationViewModel.initialize(this).whenComplete((user, e) -> runOnUiThread(() -> {
             if (savedInstanceState == null) {
@@ -126,14 +129,15 @@ public class ShareTargetHandler extends InstrumentedActivity {
 
     private void installSourceWebView(String sourceWebViewUri, String appWebViewUri) {
         sourceWebViewViewModel = new ViewModelProvider(this).get(SourceWebViewViewModel.class);
-        sourceWebViewViewModel.getHasFinishedInitializing().observe(this, hasFinishedInitializing -> {
-            ViewGroup splash = findViewById(R.id.share_target_handler_splash);
-            splash.setVisibility(hasFinishedInitializing ? View.INVISIBLE : View.VISIBLE);
 
-            if (hasFinishedInitializing) {
+        sourceWebViewViewModel.getSourceHasFinishedInitializing().observe(this, hasFinishedInitializing -> {
+            ViewGroup splash = findViewById(R.id.share_target_handler_splash);
+            if (hasFinishedInitializing && splash.getVisibility() == View.VISIBLE) {
+                splash.setVisibility(View.INVISIBLE);
                 ToastRepository.show(this, R.string.toast_create_from_source);
             }
         });
+
 
         bottomSheetFragmentContainer = findViewById(R.id.bottom_sheet_fragment_container);
 
@@ -157,7 +161,10 @@ public class ShareTargetHandler extends InstrumentedActivity {
                 null,
                 R.drawable.done_white
         );
-        sourceWebViewFragment.setOnToolbarPrimaryActionCallback((_e, annotations, domainMetadata) -> this.handleCreateFromSourceDone(annotations, domainMetadata));
+        sourceWebViewFragment.setOnToolbarPrimaryActionCallback((annotations, source) -> {
+            this.handleCreateFromSourceDone(annotations);
+            return null;
+        });
 
         appWebViewFragment = AppWebView.newInstance(appWebViewUri, null);
         getSupportFragmentManager()
@@ -199,7 +206,7 @@ public class ShareTargetHandler extends InstrumentedActivity {
         installSourceWebView(sourceWebViewUri, appWebViewUri);
     }
 
-    private void handleCreateFromSourceDone(Annotation[] annotations, DomainMetadata domainMetadata) {
+    private void handleCreateFromSourceDone(Annotation[] annotations) {
         if (annotations != null && annotations.length > 0) {
             String resultAnnotationsJson = "";
             try {
@@ -243,12 +250,14 @@ public class ShareTargetHandler extends InstrumentedActivity {
             appWebViewViewModel.clearReceivedWebEvents();
         });
 
-        Intent serviceIntent = AnnotationService.getCreateAnnotationsIntent(
-                this,
-                new Annotation[]{annotation},
-                null
-        );
-        startService(serviceIntent);
+        (new CreateAnnotationIntent.Builder())
+                .setAnnotations(new Annotation[]{annotation})
+                .setId(UUID.randomUUID().toString())
+                .setDisableNotification(true)
+                .build()
+                .toIntent(this)
+                .ifPresent(this::startService);
+
     }
 
     private void handleCreateFromImage(Intent intent, User user) {
@@ -280,8 +289,13 @@ public class ShareTargetHandler extends InstrumentedActivity {
             appWebViewViewModel.clearReceivedWebEvents();
         });
 
-        Intent serviceIntent = AnnotationService.getCreateAnnotationsIntent(this, new Annotation[]{annotation}, null);
-        startService(serviceIntent);
+        (new CreateAnnotationIntent.Builder())
+                .setAnnotations(new Annotation[]{annotation})
+                .setId(UUID.randomUUID().toString())
+                .setDisableNotification(true)
+                .build()
+                .toIntent(this)
+                .ifPresent(this::startService);
     }
 
     private void displayAnnotationCreatedNotification(User user, Annotation annotation) {
@@ -301,9 +315,31 @@ public class ShareTargetHandler extends InstrumentedActivity {
                         return;
                     }
                     // FIXME: Need to broadcast the updated annotation.
-                    GetAnnotationQuery.GetAnnotation updatedAnnotationData = updatedAnnotation.getAnnotation();
-                    if (updatedAnnotationData != null) {
-                        NotificationRepository.annotationCreatedNotification(this, user, updatedAnnotationData);
+                    Optional<GetAnnotationQuery.GetAnnotation> updatedAnnotationData = Optional.ofNullable(updatedAnnotation.getAnnotation());
+                    Optional<String> notificationText = updatedAnnotationData.flatMap(a ->
+                            a.target().stream()
+                                .filter(t -> t.__typename().equals("TextualTarget"))
+                                .findFirst()
+                                .map(t -> t.asTextualTarget().value())
+                    );
+                    Optional<Uri> notificationUri = updatedAnnotationData.map(a ->
+                            Uri.parse(
+                                    WebRoutes.creatorsIdAnnotationCollectionIdAnnotationId(
+                                            user.getAppSyncIdentity(),
+                                            Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT,
+                                            AnnotationLib.idComponentFromId(a.id())
+                                    )
+                            )
+                    );
+
+                    if (notificationText.isPresent() && notificationUri.isPresent()) {
+                        NotificationRepository.annotationCreatedNotification(
+                                this,
+                                UUID.randomUUID().toString().hashCode(),
+                                notificationUri.get(),
+                                notificationText.get(),
+                                Optional.empty()
+                        );
                     }
                 }
         );
