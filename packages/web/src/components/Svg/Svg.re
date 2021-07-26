@@ -22,6 +22,7 @@ let more: string = [%raw "require('./more.svg')"];
 let article: string = [%raw "require('./article.svg')"];
 let manageAccounts: string = [%raw "require('./manage-accounts.svg')"];
 let highlight: string = [%raw "require('./highlight.svg')"];
+let source: string = [%raw "require('./source.svg')"];
 
 [@react.component]
 let make = (~className=?, ~style=?, ~onClick=?, ~icon) => {

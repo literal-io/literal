@@ -35,7 +35,6 @@ let make =
       ~hideDelete=false,
       ~annotationFragment as annotation=?,
       ~annotationCollectionFragment as annotationCollection=?,
-      ~onCollectionsButtonClick=?,
       ~identityId=?,
     ) => {
   let (deleteAnnotationMutation, _s, _f) =
@@ -119,42 +118,16 @@ let make =
       />
     </MaterialUi.IconButton>;
 
-  let collectionsButton =
-    <MaterialUi.IconButton
-      size=`Small
-      edge=MaterialUi.IconButton.Edge._end
-      onClick={_ => onCollectionsButtonClick->Belt.Option.forEach(cb => cb())}
-      _TouchRippleProps={
-        "classes": {
-          "child": cn(["bg-white"]),
-          "rippleVisible": cn(["opacity-50"]),
-        },
-      }
-      classes={MaterialUi.IconButton.Classes.make(
-        ~root=cn(["p-0", "ml-1"]),
-        (),
-      )}>
-      <Svg
-        className={cn(["pointer-events-none"])}
-        style={ReactDOMRe.Style.make(~width="1.5rem", ~height="1.5rem", ())}
-        icon=Svg.waves
-      />
-    </MaterialUi.IconButton>;
-
   <>
     <Header
       className={cn([
-        "absolute",
-        "left-0",
-        "right-0",
-        "top-0",
         "bg-darkAccent",
         "border-b",
         "border-dotted",
         "border-lightDisabled",
         "flex",
         "flex-row",
-        "flex-1",
+        "flex-shrink-0",
         "justify-between",
         "h-14",
         "px-4",
@@ -167,7 +140,6 @@ let make =
           "flex-shrink",
           "overflow-x-auto",
         ])}>
-        collectionsButton
         {annotationCollection
          ->Belt.Option.map(annotationCollection => {
              let type_ =
@@ -198,7 +170,6 @@ let make =
                  "flex-grow-0",
                  "overflow-hidden",
                  "items-center",
-                 "ml-6",
                ])}>
                <Svg
                  className={Cn.fromList([

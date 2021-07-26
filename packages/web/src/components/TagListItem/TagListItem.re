@@ -34,13 +34,13 @@ module Loading = {
 };
 
 [@react.component]
-let make = (~annotationCollectionFragment as annotationCollection, ~onClick) => {
+let make = (~annotationCollectionFragment as annotationCollection, ~onClick=?) => {
   <Next.Link
     passHref=true
     _as={annotationCollection##id->Webapi.Url.make->Webapi.Url.pathname}
     href=Routes.CreatorsIdAnnotationCollectionsId.staticPath>
     <a
-      onClick
+      ?onClick
       className={Cn.fromList([
         "flex",
         "flex-grow-0",

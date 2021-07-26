@@ -1,8 +1,7 @@
 let collectionTypes = [|`TAG_COLLECTION, `SOURCE_COLLECTION|];
 
 [@react.component]
-let make =
-    (~onActiveCollectionTypeChange, ~activeCollectionType, ~onCloseClicked) => {
+let make = (~onActiveCollectionTypeChange, ~activeCollectionType) => {
   <>
     <Header
       className={Cn.fromList([
@@ -13,37 +12,12 @@ let make =
         "bg-darkAccent",
         "flex-shrink-0",
       ])}>
-      <MaterialUi.IconButton
-        size=`Small
-        edge=MaterialUi.IconButton.Edge._end
-        onClick={_ => onCloseClicked()}
-        _TouchRippleProps={
-          "classes": {
-            "child": Cn.fromList(["bg-white"]),
-            "rippleVisible": Cn.fromList(["opacity-50"]),
-          },
-        }
-        classes={MaterialUi.IconButton.Classes.make(
-          ~root=Cn.fromList(["p-0", "ml-1"]),
-          (),
-        )}>
-        <Svg
-          className={Cn.fromList(["pointer-events-none"])}
-          style={ReactDOMRe.Style.make(
-            ~width="1.75rem",
-            ~height="1.75rem",
-            (),
-          )}
-          icon=Svg.arrowUp
-        />
-      </MaterialUi.IconButton>
       <h1
         className={Cn.fromList([
           "font-sans",
           "font-bold",
           "text-lg",
           "text-lightPrimary",
-          "ml-4",
         ])}>
         {React.string("Collections")}
       </h1>

@@ -1,3 +1,4 @@
+let styles = [%raw "require('./SourceListItem.module.css')"];
 open SourceListItem_GraphQL;
 
 module Loading = {
@@ -34,7 +35,7 @@ module Loading = {
 };
 
 [@react.component]
-let make = (~annotationCollectionFragment as annotationCollection, ~onClick) => {
+let make = (~annotationCollectionFragment as annotationCollection, ~onClick=?) => {
   let url = annotationCollection##label->Webapi.Url.make;
 
   <Next.Link
@@ -42,7 +43,7 @@ let make = (~annotationCollectionFragment as annotationCollection, ~onClick) => 
     _as={annotationCollection##id->Webapi.Url.make->Webapi.Url.pathname}
     href=Routes.CreatorsIdAnnotationCollectionsId.staticPath>
     <a
-      onClick
+      ?onClick
       className={Cn.fromList([
         "flex",
         "border-b",
@@ -89,6 +90,7 @@ let make = (~annotationCollectionFragment as annotationCollection, ~onClick) => 
           </h3>
           <h4
             className={Cn.fromList([
+              styles##pathname,
               "text-lightSecondary",
               "font-sans",
               "leading-none",
