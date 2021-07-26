@@ -20,6 +20,13 @@ let makeActions = identityId => [|
     _as: Routes.CreatorsIdAnnotationCollectionsId.staticPath,
   },
   {
+    label: "Collections",
+    icon: Svg.source,
+    routes: [|Routes.CreatorsIdAnnotationCollections.staticPath|],
+    href: Routes.CreatorsIdAnnotationCollections.path(~identityId),
+    _as: Routes.CreatorsIdAnnotationCollections.staticPath,
+  },
+  {
     label: "Settings",
     icon: Svg.manageAccounts,
     routes: [|Routes.CreatorsIdSettings.staticPath|],
@@ -67,7 +74,7 @@ let make = () => {
   <MaterialUi.Slide _in=visible direction=`Up>
     <MaterialUi.BottomNavigation
       ?value
-      showLabels=true
+      showLabels=false
       classes={MaterialUi.BottomNavigation.Classes.make(
         ~root=
           Cn.fromList([

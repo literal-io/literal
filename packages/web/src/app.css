@@ -24,6 +24,9 @@ html {
   background-color: black;
   position: relative;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 0;
 }
 
 .awsappsync {

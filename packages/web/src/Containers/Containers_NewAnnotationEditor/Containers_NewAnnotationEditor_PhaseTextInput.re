@@ -219,7 +219,7 @@ let make = (~identityId) => {
       "flex-col",
       "overflow-y-auto",
     ])}>
-    <div className={Cn.fromList(["px-4", "py-16"])}>
+    <div className={Cn.fromList(["px-4", "pt-4", "pb-16"])}>
       <TextInput.Annotation
         onChange=handleTextChange
         value=textValue

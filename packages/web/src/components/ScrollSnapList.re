@@ -124,11 +124,18 @@ module Container = {
         });
 
       let onScroll = ev => {
-        debouncedOnScroll.current(.
-          ReactEvent.UI.target(ev)##scrollTop,
-          ReactEvent.UI.target(ev)##scrollLeft,
-          onIdxChange,
-        );
+        let target = ReactEvent.UI.target(ev);
+        let _ =
+          switch (Js.Nullable.toOption(containerRef.current)) {
+          | Some(containerElem) when Raw.unsafeEq(containerElem, target) =>
+            debouncedOnScroll.current(.
+              target##scrollTop,
+              target##scrollLeft,
+              onIdxChange,
+            )
+          | _ => ()
+          };
+        ();
       };
 
       <ul

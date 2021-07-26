@@ -4,13 +4,13 @@ module Apollo = {
   let updateCacheListAnnotationCollectionsItems =
       (~identityId, ~onUpdateItems, ~onCreateAnnotationCollections) => {
     let cacheQuery =
-      QueryRenderers_AnnotationCollectionsDrawer_GraphQL.ListAnnotationCollections.Query.make(
+      QueryRenderers_AnnotationCollections_GraphQL.ListAnnotationCollections.Query.make(
         ~creatorUsername=identityId,
         (),
       );
 
     let _ =
-      QueryRenderers_AnnotationCollectionsDrawer_GraphQL.ListAnnotationCollections.Cache.readCache(
+      QueryRenderers_AnnotationCollections_GraphQL.ListAnnotationCollections.Cache.readCache(
         ~query=cacheQuery,
         ~client=Providers_Apollo_Client.inst^,
         (),
@@ -26,7 +26,7 @@ module Apollo = {
                 ->onUpdateItems;
 
               newItems->Belt.Option.map(newItems => {
-                QueryRenderers_AnnotationCollectionsDrawer_GraphQL.ListAnnotationCollections.Cache.setItems(
+                QueryRenderers_AnnotationCollections_GraphQL.ListAnnotationCollections.Cache.setItems(
                   data,
                   Js.Null.return(newItems),
                 )
@@ -36,7 +36,7 @@ module Apollo = {
 
           let _ =
             newData->Belt.Option.forEach(newData =>
-              QueryRenderers_AnnotationCollectionsDrawer_GraphQL.ListAnnotationCollections.Cache.writeCache(
+              QueryRenderers_AnnotationCollections_GraphQL.ListAnnotationCollections.Cache.writeCache(
                 ~query=cacheQuery,
                 ~client=Providers_Apollo_Client.inst^,
                 ~data=newData,
@@ -180,7 +180,7 @@ module Apollo = {
         | Some(idx) =>
           let item = Belt.Array.getExn(items, idx);
           let newItem =
-            QueryRenderers_AnnotationCollectionsDrawer_GraphQL.ListAnnotationCollections.CacheConfig.makeCacheItem(
+            QueryRenderers_AnnotationCollections_GraphQL.ListAnnotationCollections.CacheConfig.makeCacheItem(
               ~type_=item##type_,
               ~id=item##id,
               ~label=item##label,
@@ -197,7 +197,7 @@ module Apollo = {
           newItems->Js.Option.some;
         | None =>
           let newItem =
-            QueryRenderers_AnnotationCollectionsDrawer_GraphQL.ListAnnotationCollections.CacheConfig.makeCacheItem(
+            QueryRenderers_AnnotationCollections_GraphQL.ListAnnotationCollections.CacheConfig.makeCacheItem(
               ~type_=[|"ANNOTATION_COLLECTION", annotationCollectionType|],
               ~id=annotationCollectionId,
               ~label=annotationCollectionLabel,
@@ -207,7 +207,7 @@ module Apollo = {
         };
 
       let onCreateAnnotationCollections = () =>
-        QueryRenderers_AnnotationCollectionsDrawer_GraphQL.ListAnnotationCollections.CacheConfig.makeCache(
+        QueryRenderers_AnnotationCollections_GraphQL.ListAnnotationCollections.CacheConfig.makeCache(
           ~items=onUpdateItems([||])->Belt.Option.getWithDefault([||]),
         )
         ->Js.Option.some;
@@ -262,7 +262,7 @@ module Apollo = {
         | Some(idx) =>
           let item = Belt.Array.getExn(items, idx);
           let newItem =
-            QueryRenderers_AnnotationCollectionsDrawer_GraphQL.ListAnnotationCollections.CacheConfig.makeCacheItem(
+            QueryRenderers_AnnotationCollections_GraphQL.ListAnnotationCollections.CacheConfig.makeCacheItem(
               ~type_=item##type_,
               ~id=item##id,
               ~label=item##label,
@@ -279,7 +279,7 @@ module Apollo = {
           newItems->Js.Option.some;
         | None =>
           let newItem =
-            QueryRenderers_AnnotationCollectionsDrawer_GraphQL.ListAnnotationCollections.CacheConfig.makeCacheItem(
+            QueryRenderers_AnnotationCollections_GraphQL.ListAnnotationCollections.CacheConfig.makeCacheItem(
               ~type_=[|"ANNOTATION_COLLECTION", annotationCollectionType|],
               ~id=annotationCollectionId,
               ~label=annotationCollectionLabel,
@@ -289,7 +289,7 @@ module Apollo = {
         };
 
       let onCreateAnnotationCollections = () =>
-        QueryRenderers_AnnotationCollectionsDrawer_GraphQL.ListAnnotationCollections.CacheConfig.makeCache(
+        QueryRenderers_AnnotationCollections_GraphQL.ListAnnotationCollections.CacheConfig.makeCache(
           ~items=onUpdateItems([||])->Belt.Option.getWithDefault([||]),
         )
         ->Js.Option.some;
@@ -337,7 +337,7 @@ module Apollo = {
             let item = Belt.Array.getExn(items, idx);
             if (item##total > 1) {
               let newItem =
-                QueryRenderers_AnnotationCollectionsDrawer_GraphQL.ListAnnotationCollections.CacheConfig.makeCacheItem(
+                QueryRenderers_AnnotationCollections_GraphQL.ListAnnotationCollections.CacheConfig.makeCacheItem(
                   ~type_=item##type_,
                   ~id=item##id,
                   ~label=item##label,

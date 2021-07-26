@@ -3,7 +3,7 @@ open QueryRenderers_AnnotationCollection_GraphQL;
 module MainLoading = {
   [@react.component]
   let make = () =>
-    <TextInput_Loading className={Cn.fromList(["px-6", "pb-4", "pt-16"])} />;
+    <TextInput_Loading className={Cn.fromList(["py-4"])} />;
 };
 
 module Loading = {
@@ -16,9 +16,7 @@ module Loading = {
         "bg-black",
         "overflow-y-scroll",
       ])}>
-      <Containers_AnnotationCollectionHeader
-        onCollectionsButtonClick={() => ()}
-      />
+      <Containers_AnnotationCollectionHeader />
       <MainLoading />
     </div>;
 };
@@ -167,8 +165,7 @@ module Data = {
     <ScrollSnapList.Container
       direction=ScrollSnapList.Horizontal
       onIdxChange=handleIdxChange
-      initialIdx=activeIdx
-      className={Cn.fromList(["pt-14", "w-full", "h-full"])}>
+      initialIdx=activeIdx>
       {annotations->Belt.Array.map(annotation =>
          <ScrollSnapList.Item
            key={annotation##id} direction=ScrollSnapList.Horizontal>
@@ -239,7 +236,6 @@ module Empty = {
 let make =
     (
       ~annotationCollectionIdComponent,
-      ~onOpenCollectionsDrawer,
       ~onAnnotationIdChange,
       ~user: Providers_Authentication_User.t,
       ~annotationId,
@@ -455,7 +451,6 @@ let make =
       ?annotationFragment
       ?identityId
       hideDelete=isEmpty
-      onCollectionsButtonClick=onOpenCollectionsDrawer
     />;
   };
 

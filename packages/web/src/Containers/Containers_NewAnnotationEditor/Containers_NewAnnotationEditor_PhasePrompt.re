@@ -46,13 +46,18 @@ let make = (~onCreateFromText, ~onCreateFromFile, ~onCreateFromWeb) => {
   };
 
   <div
-    className={Cn.fromList(["flex", "flex-col", "justify-between", "flex-1"])}>
+    className={Cn.fromList([
+      "flex",
+      "flex-col",
+      "justify-between",
+      "flex-1"
+    ])}>
     <div
       className={Cn.fromList([
         "flex",
         "flex-row",
         "justify-center",
-        "items-center",
+        "items-stretch",
         "flex-auto",
       ])}>
       <div
@@ -63,6 +68,7 @@ let make = (~onCreateFromText, ~onCreateFromFile, ~onCreateFromWeb) => {
           "items-center",
           "pb-4",
           "mx-6",
+          "overflow-y-auto"
         ])}>
         <PromptIconButton
           label="web"

@@ -1,7 +1,4 @@
-open QueryRenderers_AnnotationCollectionsDrawer_GraphQL;
-let styles = [%raw
-  "require('./QueryRenderers_AnnotationCollectionsDrawer.module.css')"
-];
+open QueryRenderers_AnnotationCollections_GraphQL;
 
 [@bs.deriving jsConverter]
 type collectionType = [ | `TAG_COLLECTION | `SOURCE_COLLECTION];
@@ -65,7 +62,7 @@ module Main = {
         [|activeIdx|],
       );
 
-    let handleIdxChange = newIdx => {
+    let handleIdxChange = newIdx =>
       if (newIdx != activeIdx) {
         didChangeIdxViaScroll.current = true;
         let _ =
@@ -74,7 +71,6 @@ module Main = {
           ->Belt.Option.forEach(onActiveCollectionTypeChange);
         ();
       };
-    };
 
     <ScrollSnapList.Container
       ref=scrollSnapListRef
@@ -104,7 +100,7 @@ module Loading = {
       renderSourcesCollection={() =>
         <SourceList
           data={Belt.Array.make(20, ())}
-          className={Cn.fromList(["p-4"])}
+          className={Cn.fromList(["p-4", "pb-16"])}
           itemKey={(~item, ~idx) => string_of_int(idx)}
           itemClassName={(~item, ~idx) => Cn.fromList(["mb-4"])}
           renderItem={(~item, ~idx) => <SourceListItem.Loading />}
@@ -114,7 +110,7 @@ module Loading = {
         <TagList
           data={Belt.Array.make(30, ())}
           itemKey={(~item, ~idx) => string_of_int(idx)}
-          className={Cn.fromList(["p-4", "flex", "flex-wrap"])}
+          className={Cn.fromList(["p-4", "flex", "flex-wrap", "pb-16"])}
           itemClassName={(~item, ~idx) => Cn.fromList(["mb-4", "mr-4"])}
           renderItem={(~item, ~idx) => <TagListItem.Loading />}
         />
@@ -130,7 +126,6 @@ module Data = {
         ~annotationCollections,
         ~activeCollectionType,
         ~onActiveCollectionTypeChange,
-        ~onClose,
       ) => {
     let scrollSnapListRef = React.useRef(Js.Nullable.null);
     let didChangeIdxViaScroll = React.useRef(false);
@@ -190,13 +185,12 @@ module Data = {
       renderSourcesCollection={() => {
         <SourceList
           data={getItems(`SOURCE_COLLECTION)}
-          className={Cn.fromList(["p-4"])}
+          className={Cn.fromList(["p-4", "pb-16"])}
           itemKey={(~item, ~idx) => item##id}
           itemClassName={(~item, ~idx) => Cn.fromList(["mb-4"])}
           renderItem={(~item, ~idx) =>
             <SourceListItem
               annotationCollectionFragment={item##sourceListItem}
-              onClick={_ => onClose()}
             />
           }
         />
@@ -204,14 +198,11 @@ module Data = {
       renderTagsCollection={() => {
         <TagList
           data={getItems(`TAG_COLLECTION)}
-          className={Cn.fromList(["p-4", "flex", "flex-wrap"])}
+          className={Cn.fromList(["p-4", "flex", "flex-wrap", "pb-16"])}
           itemKey={(~item, ~idx) => item##id}
           itemClassName={(~item, ~idx) => Cn.fromList(["mb-4", "mr-4"])}
           renderItem={(~item, ~idx) =>
-            <TagListItem
-              annotationCollectionFragment={item##tagListItem}
-              onClick={_ => onClose()}
-            />
+            <TagListItem annotationCollectionFragment={item##tagListItem} />
           }
         />
       }}
@@ -220,7 +211,7 @@ module Data = {
 };
 
 [@react.component]
-let make = (~isVisible, ~onClose, ~rehydrated, ~user) => {
+let make = (~rehydrated, ~user) => {
   let (activeCollectionType, setActiveCollectionType) =
     React.useState(() => `TAG_COLLECTION);
 
@@ -268,27 +259,17 @@ let make = (~isVisible, ~onClose, ~rehydrated, ~user) => {
         annotationCollections
         activeCollectionType
         onActiveCollectionTypeChange=handleActiveCollectionTypeChange
-        onClose
       />;
     | ({error: Some(error)}, _, _) => <Error error />
     | ({error: None, data: None, loading: false}, _, _)
     | _ => <Error />
     };
 
-  <MaterialUi.Drawer
-    anchor=`Top
-    _open=isVisible
-    onClose={_ => onClose()}
-    classes={MaterialUi.Drawer.Classes.make(
-      ~paper=
-        Cn.fromList(["bg-lightAccent", "rounded-b-lg", styles##drawerPaper]),
-      (),
-    )}>
+  <>
     <Containers_AnnotationCollectionsHeader
       onActiveCollectionTypeChange=handleActiveCollectionTypeChange
       activeCollectionType
-      onCloseClicked={() => onClose()}
     />
     main
-  </MaterialUi.Drawer>;
+  </>;
 };

@@ -12,8 +12,7 @@ let make = (~className=?, ~lineCount=8) => {
     });
 
   <div
-    className={Cn.fromList(["mx-4"])}
-    style={ReactDOM.Style.make(~paddingTop="4.5rem", ())}>
+    className={Cn.fromList(["mx-4", Cn.take(className)])}>
     <div className={Cn.fromList(["p-4", "bg-darkAccent", "rounded-t-sm"])}>
       {Belt.Array.make(lineCount, 0)
        ->Belt.Array.mapWithIndex((idx, _) => {

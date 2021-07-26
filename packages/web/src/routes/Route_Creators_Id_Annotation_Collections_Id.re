@@ -7,8 +7,6 @@ let default = (~rehydrated) => {
     );
   let Providers_Authentication.{user} =
     React.useContext(Providers_Authentication.authenticationContext);
-  let (isCollectionsDrawerVisible, setIsCollectionsDrawerVisible) =
-    React.useState(_ => false);
 
   let _ =
     React.useEffect1(
@@ -69,35 +67,24 @@ let default = (~rehydrated) => {
   | (SignedInUser(_), Ok(routeParams))
   | (GuestUser(_), Ok(routeParams))
   | (SignedInUserMergingIdentites(_), Ok(routeParams)) =>
-    <>
-      <QueryRenderers_AnnotationCollectionsDrawer
-        onClose={() => setIsCollectionsDrawerVisible(_ => false)}
-        isVisible=isCollectionsDrawerVisible
-        user
-        rehydrated
-      />
-      <QueryRenderers_AnnotationCollection
-        annotationCollectionIdComponent={
-                                          routeParams.
-                                            annotationCollectionIdComponent
-                                        }
-        onOpenCollectionsDrawer={() =>
-          setIsCollectionsDrawerVisible(_ => true)
-        }
-        onAnnotationIdChange=handleAnnotationIdChange
-        annotationId={
-          searchParams.annotationId
-          ->Belt.Option.map(annotationIdComponent =>
-              Lib_GraphQL.Annotation.makeIdFromComponent(
-                ~annotationIdComponent,
-                ~identityId=routeParams.identityId,
-              )
+    <QueryRenderers_AnnotationCollection
+      annotationCollectionIdComponent={
+                                        routeParams.
+                                          annotationCollectionIdComponent
+                                      }
+      onAnnotationIdChange=handleAnnotationIdChange
+      annotationId={
+        searchParams.annotationId
+        ->Belt.Option.map(annotationIdComponent =>
+            Lib_GraphQL.Annotation.makeIdFromComponent(
+              ~annotationIdComponent,
+              ~identityId=routeParams.identityId,
             )
-        }
-        user
-        rehydrated
-      />
-    </>
+          )
+      }
+      user
+      rehydrated
+    />
   | (Unknown, Error(_)) => <Loading />
   | (GuestUser({identityId}), Error(_))
   | (SignedInUser({identityId}), Error(_))
