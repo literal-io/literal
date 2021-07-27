@@ -7,10 +7,12 @@ let make = (~onActiveCollectionTypeChange, ~activeCollectionType) => {
       className={Cn.fromList([
         "flex",
         "flex-row",
+        "py-2",
         "px-4",
         "items-center",
         "bg-darkAccent",
         "flex-shrink-0",
+        "h-14",
       ])}>
       <h1
         className={Cn.fromList([

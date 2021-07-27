@@ -130,6 +130,7 @@ let make =
         "flex-shrink-0",
         "justify-between",
         "h-14",
+        "py-2",
         "px-4",
         "max-w-full",
       ])}>
