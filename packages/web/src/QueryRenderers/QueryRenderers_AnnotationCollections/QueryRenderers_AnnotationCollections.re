@@ -4,7 +4,8 @@ open QueryRenderers_AnnotationCollections_GraphQL;
 type collectionType = [ | `TAG_COLLECTION | `SOURCE_COLLECTION];
 
 let collectionTypes = [|`TAG_COLLECTION, `SOURCE_COLLECTION|];
-
+let defaultCollectionType = `TAG_COLLECTION;
+ 
 module Error = {
   [@react.component]
   let make = (~error=?) => {
@@ -213,7 +214,7 @@ module Data = {
 [@react.component]
 let make = (~rehydrated, ~user) => {
   let (activeCollectionType, setActiveCollectionType) =
-    React.useState(() => `TAG_COLLECTION);
+    React.useState(() => defaultCollectionType);
 
   let identityId =
     switch (user) {
@@ -224,6 +225,14 @@ let make = (~rehydrated, ~user) => {
 
   let (_, query) =
     ApolloHooks.useQuery(
+      ~skip=
+        switch (user) {
+        | GuestUser(_) when rehydrated => false
+        | SignedInUser(_) when rehydrated => false
+        | Unknown
+        | SignedOutPromptAuthentication
+        | _ => true
+        },
       ~variables=
         identityId
         ->Belt.Option.map(identityId =>
