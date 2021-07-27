@@ -137,10 +137,11 @@ public class WebArchiveRepository {
             }
 
             @Override
-            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+            public void onResponse(@NotNull Call call, @NotNull Response response) {
                 try (ResponseBody responseBody = response.body()) {
-                    if (!response.isSuccessful())
-                        throw new IOException("Unexpected code: " + response);
+                    if (!response.isSuccessful()) {
+                        future.completeExceptionally(new IOException("Unexpected code: " + response));
+                    }
 
                     future.complete(responseBody);
                 }
