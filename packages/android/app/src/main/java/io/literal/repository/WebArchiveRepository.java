@@ -19,7 +19,10 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -41,8 +44,13 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 public class WebArchiveRepository {
-
     private static final OkHttpClient client = new OkHttpClient();
+
+    /**
+     * When supplementing a WebArchive with previously excluded resources, don't include headers
+     * that trigger a conditional request in the HTTP requests.
+     */
+    private static final String[] WEB_REQUEST_PURGED_HEADER_NAMES = new String[] { "If-Modified-Since", "If-None-Match" };
 
     public static CompletableFuture<WebArchive> capture(Context context, SourceWebView webView, ArrayList<HTMLScriptElement> scriptElements) {
         StorageObject archive = WebArchiveRepository.createArchiveStorageObject();
@@ -106,9 +114,20 @@ public class WebArchiveRepository {
     }
 
     public static CompletableFuture<ResponseBody> executeWebResourceRequest(WebResourceRequest webResourceRequest) {
+        Map<String, String> filteredHeaders = webResourceRequest.getRequestHeaders().entrySet().stream()
+                .collect(
+                        HashMap::new,
+                        (agg, entry) -> {
+                            if (Arrays.stream(WEB_REQUEST_PURGED_HEADER_NAMES).noneMatch(entry.getKey()::equalsIgnoreCase)) {
+                                agg.put(entry.getKey(), entry.getValue());
+                            }
+                        },
+                        HashMap::putAll
+                );
+
         Request request = new Request.Builder()
                 .url(webResourceRequest.getUrl().toString())
-                .headers(Headers.of(webResourceRequest.getRequestHeaders()))
+                .headers(Headers.of(filteredHeaders))
                 .build();
         CompletableFuture<ResponseBody> future = new CompletableFuture<>();
         client.newCall(request).enqueue(new Callback() {
