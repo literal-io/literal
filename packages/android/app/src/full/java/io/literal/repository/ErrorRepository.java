@@ -1,14 +1,16 @@
 package io.literal.repository;
 
-import android.provider.Telephony;
 import android.util.Log;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.UserState;
 import com.amazonaws.mobile.client.UserStateListener;
 
+import java.util.Map;
+
 import io.literal.BuildConfig;
 import io.literal.lib.Thunk;
+import io.literal.model.ErrorRepositoryLevel;
 import io.sentry.Breadcrumb;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
@@ -19,7 +21,6 @@ public class ErrorRepository {
     public static String CATEGORY_AUTHENTICATION = "Authentication";
 
     public static UserStateListener userStateListener = details -> {
-        Log.d("ErrorRepository", "userStateListener: " + details.getUserState().name());
         if (details.getUserState().equals(UserState.SIGNED_IN)) {
             User user = new User();
             user.setUsername(AWSMobileClient.getInstance().getUsername());
@@ -28,6 +29,8 @@ public class ErrorRepository {
         } else {
             Sentry.configureScope(scope -> scope.setUser(null));
         }
+
+        Log.d("userStateListener",  details.getUserState().name());
     };
 
     public static Thunk initialize() {
@@ -42,14 +45,24 @@ public class ErrorRepository {
         if (!BuildConfig.DEBUG) {
             Sentry.captureException(exception);
         }
-        Log.d("ErrorRepository", "Capture Exception", exception);
+        Log.d("captureException", "", exception);
+    }
+
+    public static void captureException(Exception exception, Map<String, Object> context) {
+        if (!BuildConfig.DEBUG) {
+            Sentry.pushScope();
+            Sentry.configureScope((scope) -> context.forEach(scope::setContexts));
+            Sentry.captureException(exception);
+            Sentry.popScope();
+        }
+        Log.d("captureException", context.toString(), exception);
     }
 
     public static void captureException(Throwable exception) {
         if (!BuildConfig.DEBUG) {
             Sentry.captureException(exception);
         }
-        Log.d("ErrorRepository", "Capture Exception", exception);
+        Log.d("captureException", "", exception);
     }
 
     public static void captureException(Exception exception, String message) {
@@ -62,21 +75,21 @@ public class ErrorRepository {
                 scope.setContexts("message", (String) null);
             });
         }
-        Log.d("ErrorRepository", message, exception);
+        Log.d("captureException", message, exception);
     }
 
     public static void captureWarning(Exception exception) {
-        Log.d("ErrorRepository", "warning", exception);
+        Log.d("captureWarning", "", exception);
     }
 
-    public static void captureBreadcrumb(String category, String message, SentryLevel level) {
+    public static void captureBreadcrumb(String category, String message, ErrorRepositoryLevel level) {
         if (!BuildConfig.DEBUG) {
             Breadcrumb breadcrumb = new Breadcrumb();
             breadcrumb.setCategory(category);
             breadcrumb.setMessage(message);
-            breadcrumb.setLevel(level);
+            breadcrumb.setLevel(SentryLevel.valueOf(level.name()));
             Sentry.addBreadcrumb(breadcrumb);
         }
-        Log.i(category, message);
+        Log.d("captureBreadcrumb", category + ", " + message);
     }
 }

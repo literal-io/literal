@@ -3,41 +3,26 @@ package io.literal.repository;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.net.Uri;
-import android.os.NetworkOnMainThreadException;
-import android.util.Log;
 
-import com.amazonaws.auth.AwsChunkedEncodingInputStream;
 import com.amazonaws.mobile.client.AWSMobileClient;
-import com.amazonaws.mobile.client.Callback;
 import com.amazonaws.mobile.client.HostedUIOptions;
 import com.amazonaws.mobile.client.SignInUIOptions;
 import com.amazonaws.mobile.client.SignOutOptions;
 import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.mobile.client.results.SignInResult;
 import com.amazonaws.mobile.client.results.SignUpResult;
-import com.amazonaws.mobile.client.results.Token;
 import com.amazonaws.mobile.client.results.Tokens;
 
-import net.jodah.failsafe.AsyncExecution;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import net.jodah.failsafe.Timeout;
-import net.jodah.failsafe.function.AsyncSupplier;
 
 import java.net.UnknownHostException;
-import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.function.BiConsumer;
 
-import io.literal.lib.Crypto;
-import io.sentry.SentryLevel;
+import io.literal.model.ErrorRepositoryLevel;
 
 public class AuthenticationRepository {
 
@@ -71,9 +56,9 @@ public class AuthenticationRepository {
     public static CompletableFuture<Tokens> getTokensWithRetry() {
         return Failsafe.with(retryPolicy).getStageAsyncExecution(execution -> getTokens().whenComplete((tokens, throwable) -> {
             if (execution.complete(tokens, throwable)) {
-                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Tokens retrieved successfully.", SentryLevel.INFO);
+                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Tokens retrieved successfully.", ErrorRepositoryLevel.INFO);
             } else if (!execution.retryFor(tokens, throwable)) {
-                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Failed to retrieve tokens.", SentryLevel.ERROR);
+                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Failed to retrieve tokens.", ErrorRepositoryLevel.ERROR);
             }
         }));
     }
@@ -97,9 +82,9 @@ public class AuthenticationRepository {
     public static CompletableFuture<Map<String, String>> getUserAttributesWithRetry() {
         return Failsafe.with(retryPolicy).getStageAsyncExecution(execution -> getUserAttributes().whenComplete((userAttributes, throwable) -> {
             if (execution.complete(userAttributes, throwable)) {
-                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "User attributes retrieved successfully.", SentryLevel.INFO);
+                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "User attributes retrieved successfully.", ErrorRepositoryLevel.INFO);
             } else if (!execution.retryFor(userAttributes, throwable)) {
-                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Failed to retrieve user attributes.", SentryLevel.ERROR);
+                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Failed to retrieve user attributes.", ErrorRepositoryLevel.ERROR);
             }
         }));
     }
@@ -111,9 +96,9 @@ public class AuthenticationRepository {
     public static CompletableFuture<String> getUsernameWithRetry() {
         return Failsafe.with(retryPolicy).getStageAsyncExecution(execution -> getUsername().whenComplete((username, throwable) -> {
             if (execution.complete(username, throwable)) {
-                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Username retrieved successfully: " + username, SentryLevel.INFO);
+                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Username retrieved successfully: " + username, ErrorRepositoryLevel.INFO);
             } else if (!execution.retryFor(username, throwable)) {
-                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Failed to retrieve username.", SentryLevel.ERROR);
+                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Failed to retrieve username.", ErrorRepositoryLevel.ERROR);
             }
         }));
     }
@@ -132,9 +117,9 @@ public class AuthenticationRepository {
     public static CompletableFuture<String> getIdentityIdWithRetry() {
         return Failsafe.with(retryPolicy).getStageAsyncExecution(execution -> getIdentityId().whenComplete((identityId, throwable) -> {
             if (execution.complete(identityId, throwable)) {
-                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Identity ID retrieved successfully: " + identityId, SentryLevel.INFO);
+                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Identity ID retrieved successfully: " + identityId, ErrorRepositoryLevel.INFO);
             } else if (!execution.retryFor(identityId, throwable)) {
-                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Failed to retrieve Identity ID.", SentryLevel.ERROR);
+                ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "Failed to retrieve Identity ID.", ErrorRepositoryLevel.ERROR);
 
             }
         }));

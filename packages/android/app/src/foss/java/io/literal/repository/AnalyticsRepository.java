@@ -1,13 +1,11 @@
 package io.literal.repository;
+
 import android.app.Application;
-
-import com.amplitude.api.Amplitude;
-
+import android.util.Log;
 import org.json.JSONObject;
 
-public class AnalyticsRepository {
 
-    private static final String AMPLITUDE_API_KEY = "8f1701d791829e62f64f1c680c3f78d1";
+public class AnalyticsRepository {
 
     public static final String TYPE_GRAPH_QL_OPERATION = "GRAPH_QL_OPERATION";
     public static final String TYPE_ACTIVITY_START = "ACTIVITY_START";
@@ -15,15 +13,14 @@ public class AnalyticsRepository {
     public static final String TYPE_RECEIVED_WEB_EVENT = "RECEIVED_WEB_EVENT";
 
     public static void initialize(Application application) {
-        Amplitude.getInstance().initialize(application.getApplicationContext(), AMPLITUDE_API_KEY)
-                .enableForegroundTracking(application);
+        Log.d("AnalyticsRepository", "initialize");
     }
 
     public static void logEvent(String type, JSONObject data) {
-        Amplitude.getInstance().logEvent(type, data);
+        Log.d("AnalyticsRepository", "logEvent: " + type + ", " + data.toString());
     }
 
     public static void setUserId(String userId) {
-        Amplitude.getInstance().setUserId(userId);
+        Log.d("AnalyticsRepository", "setUserId: " + userId);
     }
 }

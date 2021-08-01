@@ -2,7 +2,6 @@ package io.literal.ui.view.SourceWebView;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.util.Log;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
@@ -11,46 +10,23 @@ import android.webkit.WebViewClient;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.amazonaws.services.s3.model.ObjectMetadata;
-
 import org.apache.james.mime4j.dom.SingleBody;
-import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
-import org.json.JSONException;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.security.cert.PKIXRevocationChecker;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import io.literal.lib.DomainMetadata;
-import io.literal.lib.JsonArrayUtil;
-import io.literal.model.Annotation;
 import io.literal.model.StorageObject;
 import io.literal.model.User;
 import io.literal.model.WebArchive;
 import io.literal.repository.ErrorRepository;
-import io.literal.repository.StorageRepository;
-import io.literal.viewmodel.AuthenticationViewModel;
-import io.literal.viewmodel.SourceWebViewViewModel;
-import io.sentry.Sentry;
-import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
-import kotlin.jvm.functions.Function2;
-import kotlin.jvm.functions.Function3;
 
 public class Client extends WebViewClient {
     private final Context context;
@@ -119,13 +95,13 @@ public class Client extends WebViewClient {
                     });
 
             if (!response.isPresent()) {
-                Sentry.pushScope();
-                Sentry.configureScope((scope) -> {
-                    scope.setContexts("WebResourceRequest URL", request.getUrl());
-                    scope.setContexts("WebArchive URI", webArchive.getStorageObject().getAmazonS3URI(context, user).toString());
-                });
-                ErrorRepository.captureException(new Exception("Unable to find content location in archive: " + request.getUrl()));
-                Sentry.popScope();
+                ErrorRepository.captureException(
+                        new Exception("Unable to find content location in archive: " + request.getUrl()),
+                        Map.of(
+                                "WebResourceRequest URL", request.getUrl().toString(),
+                                "WebArchive URI", webArchive.getStorageObject().getAmazonS3URI(context, user).toString()
+                        )
+                );
             }
 
             return response.orElse(null);

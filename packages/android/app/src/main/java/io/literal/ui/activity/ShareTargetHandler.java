@@ -3,7 +3,6 @@ package io.literal.ui.activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +12,6 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentContainerView;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
 import com.amazonaws.amplify.generated.graphql.GetAnnotationQuery;
 import com.amazonaws.mobile.client.UserState;
 import com.amazonaws.mobileconnectors.appsync.ClearCacheException;
@@ -23,7 +21,6 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,12 +28,11 @@ import io.literal.R;
 import io.literal.factory.AppSyncClientFactory;
 import io.literal.lib.AnnotationLib;
 import io.literal.lib.Constants;
-import io.literal.lib.ContentResolverLib;
-import io.literal.lib.DomainMetadata;
 import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
+import io.literal.model.ErrorRepositoryLevel;
 import io.literal.model.StorageObject;
 import io.literal.model.User;
 import io.literal.repository.AnalyticsRepository;
@@ -44,16 +40,13 @@ import io.literal.repository.AnnotationRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.NotificationRepository;
 import io.literal.repository.ToastRepository;
-import io.literal.service.AnnotationService;
 import io.literal.service.CreateAnnotationIntent;
 import io.literal.ui.fragment.AppWebView;
 import io.literal.ui.fragment.AppWebViewBottomSheetAnimator;
 import io.literal.ui.fragment.SourceWebView;
-import io.literal.ui.view.SourceWebView.Source;
 import io.literal.viewmodel.AppWebViewViewModel;
 import io.literal.viewmodel.AuthenticationViewModel;
 import io.literal.viewmodel.SourceWebViewViewModel;
-import io.sentry.SentryLevel;
 
 public class ShareTargetHandler extends InstrumentedActivity {
     public static final String RESULT_EXTRA_ANNOTATIONS = "RESULT_EXTRA_ANNOTATIONS";
@@ -350,7 +343,7 @@ public class ShareTargetHandler extends InstrumentedActivity {
     }
 
     private void handleSignedOut() {
-        ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "User is signed out, prompting Sign in.", SentryLevel.INFO);
+        ErrorRepository.captureBreadcrumb(ErrorRepository.CATEGORY_AUTHENTICATION, "User is signed out, prompting Sign in.", ErrorRepositoryLevel.INFO);
         Intent intent = new Intent(this, MainActivity.class);
         intent.setData(Uri.parse(WebRoutes.authenticate() + "?forResult=true"));
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
