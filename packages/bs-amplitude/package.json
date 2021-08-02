@@ -1,9 +1,8 @@
 {
   "name": "@literal-io/bs-amplitude",
   "version": "1.0.0",
-  "description": "BuckleScript bindings to amplitude-js.",
-  "repository": "https://github.com/javamonn/trashed/tree/master/packages/bs-amplitude",
-  "homepage": "https://literal.io",
+  "description": "BuckleScript bindings for amplitude-js.",
+  "repository": "https://github.com/literal-io/literal/tree/master/packages/apollo-link-analytics",
   "keywords": [
     "bucklescript",
     "reason",
@@ -21,12 +20,12 @@
   "author": "Daniel Ramirez <javamonn@gmail.com>",
   "license": "MIT - Hippocratic 1.2",
   "peerDependencies": {
-    "bs-platform": "^8.2.0"
+    "bs-platform": "^8.4.2"
   },
   "devDependencies": {
-    "bs-platform": "^8.2.0"
+    "bs-platform": "^8.4.2"
   },
   "dependencies": {
-    "amplitude-js": "^5.9.0"
+    "amplitude-js": "^7.2.2"
   }
 }

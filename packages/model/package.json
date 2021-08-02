@@ -2,16 +2,21 @@
   "name": "@literal-io/model",
   "version": "1.0.0",
   "description": "BuckleScript bindings for the Web Annotation data model as implemented by Literal.",
+  "repository": "https://github.com/literal-io/literal/tree/master/packages/model",
   "main": "index.js",
   "scripts": {
     "bsb:build": "bsb -make-world",
     "bsb:start": "bsb -make-world -w",
     "bsb:clean": "bsb -clean-world"
   },
-  "author": "",
-  "license": "ISC",
+  "author": {
+    "name": "Daniel Ramirez",
+    "email": "javamonn@hey.com",
+    "url": "https://javamonn.com"
+  },
+  "license": "MIT - Hippocratic 1.2",
   "devDependencies": {
-    "bs-platform": "8.2.0",
-    "decco": "1.3.0"
+    "bs-platform": "^8.4.2",
+    "decco": "^1.3.0"
   }
 }

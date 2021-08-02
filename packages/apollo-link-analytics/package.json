@@ -9,9 +9,12 @@
     "bsb:clean": "bsb -clean-world",
     "start": "npm run bsb:start"
   },
-  "author": "Daniel Ramirez <javamonn@gmail.com>",
-  "homepage": "https://trashed.today",
-  "repository": "https://github.com/javamonn/trashed/tree/master/packages/apollo-link-analytics",
+  "author": {
+    "name": "Daniel Ramirez",
+    "email": "javamonn@hey.com",
+    "url": "https://javamonn.com"
+  },
+  "repository": "https://github.com/literal-io/literal/tree/chore-fdroid/packages/apollo-link-analytics",
   "description": "Automatic product analytics derived from GraphQL operations executed by Apollo.",
   "keywords": [
     "bucklescript",
@@ -23,12 +26,12 @@
   "license": "MIT - Hippocratic 1.2",
   "dependencies": {
     "apollo-link": "1.2.3",
-    "reason-apollo": "^0.18.0"
+    "reason-apollo": "^0.20.0"
   },
   "peerDependencies": {
-    "bs-platform": "^7.0.1"
+    "bs-platform": "^8.4.2"
   },
   "devDependencies": {
-    "bs-platform": "^7.0.1"
+    "bs-platform": "^8.4.2"
   }
 }

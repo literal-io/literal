@@ -1,7 +1,7 @@
 {
   "name": "@literal-io/bs-aws-appsync",
   "version": "1.0.1",
-  "main": "index.js",
+  "main": "src/AwsAppSync.bs.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "bsb:build": "bsb -make-world",
@@ -9,9 +9,12 @@
     "bsb:clean": "bsb -clean-world",
     "start": "npm run bsb:start"
   },
-  "author": "Daniel Ramirez <javamonn@gmail.com>",
-  "homepage": "https://literal.io",
-  "repository": "https://github.com/javamonn/literal/tree/master/packages/bs-aws-appsync",
+  "author": {
+    "name": "Daniel Ramirez",
+    "email": "javamonn@hey.com",
+    "url": "https://javamonn.com"
+  },
+  "repository": "https://github.com/literal-io/literal/tree/master/packages/bs-aws-appsync",
   "description": "BuckleScript bindings to aws-appsync.",
   "keywords": [
     "bucklescript",
@@ -28,9 +31,9 @@
     "@literal-io/bs-amazon-cognito-identity-js": "1.0.0"
   },
   "peerDependencies": {
-    "bs-platform": "^8.2.0"
+    "bs-platform": "^8.4.2"
   },
   "devDependencies": {
-    "bs-platform": "^8.2.0"
+    "bs-platform": "^8.4.2"
   }
 }
