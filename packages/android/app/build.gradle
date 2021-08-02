@@ -3,7 +3,9 @@ apply plugin: 'com.amazonaws.appsync'
 
 def signingPropertiesFile = rootProject.file('./signing.properties')
 def signingProperties = new Properties()
-signingProperties.load(new FileInputStream(signingPropertiesFile))
+if (signingPropertiesFile.exists()) {
+  signingProperties.load(new FileInputStream(signingPropertiesFile))
+}
 
 android {
     signingConfigs {
