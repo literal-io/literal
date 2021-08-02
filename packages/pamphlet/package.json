@@ -7,8 +7,13 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "ts-node index.ts"
   },
-  "author": "",
-  "license": "ISC",
+  "repository": "https://github.com/literal-io/literal/tree/master/packages/pamphlet",
+  "author": {
+    "name": "Daniel Ramirez",
+    "email": "javamonn@hey.com",
+    "url": "https://javamonn.com"
+  },
+  "license": "MIT - Hippocratic 1.2",
   "dependencies": {
     "mjml": "^4.8.0",
     "ts-node": "^9.1.1",

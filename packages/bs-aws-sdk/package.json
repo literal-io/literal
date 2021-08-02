@@ -1,7 +1,7 @@
 {
   "name": "@literal-io/bs-aws-sdk",
   "version": "1.0.0",
-  "main": "src/Index.bs.js",
+  "main": "src/AWSSDK.bs.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "bsb:build": "bsb -make-world",
@@ -10,10 +10,13 @@
     "start": "npm run bsb:start",
     "build": "npm run bsb:build"
   },
-  "author": "Daniel Ramirez <javamonn@gmail.com>",
-  "homepage": "https://literal-io",
-  "repository": "https://github.com/javamonn/literal/tree/master/packages/bs-aws-sdk",
-  "description": "BuckleScript bindings to aws-sdk.",
+  "author": {
+    "name": "Daniel Ramirez",
+    "email": "javamonn@hey.com",
+    "url": "https://javamonn.com"
+  },
+  "repository": "https://github.com/literal-io/literal/tree/master/packages/bs-aws-sdk",
+  "description": "BuckleScript bindings for aws-sdk.",
   "keywords": [
     "bucklescript",
     "reason",
@@ -22,10 +25,10 @@
   "license": "MIT - Hippocratic 1.2",
   "peerDependencies": {
     "aws-sdk": "^2.541.0",
-    "bs-platform": "8.2.0"
+    "bs-platform": "^8.4.2"
   },
   "devDependencies": {
     "aws-sdk": "^2.541.0",
-    "bs-platform": "8.2.0"
+    "bs-platform": "^8.4.2"
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@literal-io/bs-aws-amplify",
   "version": "1.0.1",
-  "description": "BuckleScript bindings to aws-amplify.",
+  "description": "BuckleScript bindings for aws-amplify.",
   "keywords": [
     "bucklescript",
     "reason",
@@ -15,9 +15,12 @@
     "bsb:clean": "bsb -clean-world",
     "start": "npm run bsb:start"
   },
-  "author": "Daniel Ramirez <javamonn@gmail.com>",
-  "homepage": "https://literal.io",
-  "repository": "https://github.com/javamonn/literal/tree/master/packages/bs-aws-amplify",
+  "author": {
+    "name": "Daniel Ramirez",
+    "email": "javamonn@hey.com",
+    "url": "https://javamonn.com"
+  },
+  "repository": "https://github.com/literal-io/literal/tree/master/packages/apollo-link-analytics",
   "license": "MIT - Hippocratic 1.2",
   "dependencies": {
     "@aws-amplify/api": "^3.1.23",
@@ -30,9 +33,9 @@
     "bs-webapi": "^0.19.1"
   },
   "peerDependencies": {
-    "bs-platform": "8.2.0"
+    "bs-platform": "^8.4.2"
   },
   "devDependencies": {
-    "bs-platform": "8.2.0"
+    "bs-platform": "^8.4.2"
   }
 }

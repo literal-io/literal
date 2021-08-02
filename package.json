@@ -7,16 +7,23 @@
     "lerna": "lerna",
     "lerna:bootstrap": "lerna bootstrap --hoist -- --legacy-peer-deps"
   },
+  "engines": {
+    "node": "^15"
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/javamonn/literal.git"
+    "url": "git+https://github.com/literal-io/literal.git"
   },
-  "author": "",
-  "license": "MIT - Hippocratic 1.2",
+  "author": {
+    "name": "Daniel Ramirez",
+    "email": "javamonn@hey.com",
+    "url": "https://javamonn.com"
+  },
+  "license": "GPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/javamonn/literal/issues"
+    "url": "https://github.com/literal-io/literal/issues"
   },
-  "homepage": "https://github.com/javamonn/literal#readme",
+  "homepage": "https://literal.io",
   "devDependencies": {
     "lerna": "^3.20.2",
     "prettier": "^1.19.1"

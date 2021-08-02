@@ -17,8 +17,12 @@
     "amplify:graphql-sync-schema:production": "API_ID=rkihsloeqbdabdpebem3fqqjuy ./scripts/graphql-sync-schema.sh && ./scripts/generate-fragment-types.js && npm run bsb:clean",
     "amplify:graphql-sync-schema:staging": "API_ID=to6hgjbvbjb7roq46jyzhxr2my ./scripts/graphql-sync-schema.sh && ./scripts/generate-fragment-types.js && npm run bsb:clean"
   },
-  "author": "",
-  "license": "ISC",
+  "author": {
+    "name": "Daniel Ramirez",
+    "email": "javamonn@hey.com",
+    "url": "https://javamonn.com"
+  },
+  "license": "GPL-3.0-or-later",
   "dependencies": {
     "@apollo/react-hooks": "^3.1.3",
     "@aws-amplify/api": "^3.1.23",
@@ -48,7 +52,7 @@
     "aws-appsync-react": "^4.0.0",
     "bowser": "^2.10.0",
     "bs-fetch": "^0.6.2",
-    "bs-platform": "8.2.0",
+    "bs-platform": "^8.4.2",
     "bs-webapi": "^0.19.1",
     "decco": "^1.3.0",
     "graphql": "^14.3.1",

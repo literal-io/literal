@@ -1,15 +1,25 @@
 {
   "name": "@literal-io/bs-amazon-cognito-identity-js",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "main": "src/AmazonCognitoIdentity.bs.js",
+  "description": "BuckleScript bindings for amazon-cognito-identity-js.",
+  "keywords": [
+    "bucklescript", 
+    "reason",
+    "amazon-cognito-identity-js"
+  ],
+  "repository": "https://github.com/literal-io/literal/tree/master/packages/apollo-link-analytics",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
+  "author": {
+    "name": "Daniel Ramirez",
+    "email": "javamonn@hey.com",
+    "url": "https://javamonn.com"
+  },
+  "license": "MIT - Hippocratic 1.2",
   "devDependencies": {
     "amazon-cognito-identity-js": "^4.5.0",
-    "bs-platform": "^8.3.1"
+    "bs-platform": "^8.4.2"
   }
 }
