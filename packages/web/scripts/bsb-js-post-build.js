@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const { readFileSync, mkdirSync, writeFileSync } = require("fs");
-const { resolve, dirname } = require("path");
+const { resolve, dirname, relative } = require("path");
 
 if (process.argv.length === 2) {
   return;
@@ -21,8 +21,11 @@ if (path.includes("src/routes/Route_")) {
       /^exports\.getStaticPaths/m.test(file) && "getStaticPaths",
     ].filter(Boolean);
 
+    const pathRelativeToOutput = relative(dirname(absPagePath), resolve(path));
+    const output = `export { ${reExports.join(
+      ","
+    )} } from "${pathRelativeToOutput}"`;
     mkdirSync(dirname(absPagePath), { recursive: true });
-    const output = `export { ${reExports.join(",")} } from "${path}"`;
     writeFileSync(absPagePath, output);
   } else {
     throw new Error(

@@ -25,7 +25,7 @@ let make = (~annotationFragment as annotation=?, ~identityId=?) => {
           ~annotation,
           ~identityId,
         );
-      if (!Webview.isWebview()) {
+      if (!Webview.JavascriptInterface.isWebview()) {
         Next.Router.back();
       };
       let _ =

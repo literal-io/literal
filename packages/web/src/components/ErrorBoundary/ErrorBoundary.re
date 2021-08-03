@@ -1,5 +1,3 @@
-let _ = SentryBrowser.(init(config(~dsn=Constants.Env.sentryDsn, ~normalizeDepth=10)));
-
 module RawErrorBoundary = {
   [@bs.module "./raw-error-boundary.js"] [@react.component]
   external make:

@@ -180,7 +180,7 @@ let make = (~annotationFragment as annotation, ~identityId) => {
              );
 
            let _ =
-             if (!Webview.isWebview()) {
+             if (!Webview.JavascriptInterface.isWebview()) {
                Routes.CreatorsIdAnnotationCollectionsId.(
                  Next.Router.pushWithAs(
                    staticPath,

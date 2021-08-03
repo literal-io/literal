@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -105,6 +106,22 @@ public class AppWebView extends Fragment {
     }
 
     private void handleSignInGoogle(MessagingWebView view) {
+
+        if (BuildConfig.FLAVOR.equals("foss")) {
+            ErrorRepository.captureWarning(new Exception("\"Sign in with Google\" is disabled within the foss flavor build."));
+            try {
+                JSONObject result = new JSONObject();
+                String errorCode = "SIGN_IN_FAILED";
+                result.put("error", errorCode);
+                getActivity().runOnUiThread(() -> view.postWebEvent(
+                        new WebEvent(WebEvent.TYPE_AUTH_SIGN_IN_GOOGLE_RESULT, UUID.randomUUID().toString(), result)
+                ));
+            } catch (JSONException e) {
+                ErrorRepository.captureException(e);
+            }
+            return;
+        }
+
         authenticationViewModel.signInGoogle(getActivity(), (e, user) -> {
             if (e != null) {
                 ErrorRepository.captureException(e);
