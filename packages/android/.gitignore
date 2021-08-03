@@ -12,8 +12,9 @@
 /captures
 .externalNativeBuild
 .cxx
-app/release
 app/beta
+app/foss
+app/full
 
 # Signing
 app/release-keystore.jks
