@@ -107,17 +107,28 @@ let default = () => {
   };
   let handleAuthenticateGoogle = () => {
     setIsMenuOpen(_ => false);
-    setIsAuthenticating(_ => true);
 
-    let _ =
-      Webview.(
-        postMessageForResult(WebEvent.make(~type_="AUTH_SIGN_IN_GOOGLE", ()))
-      )
-      |> Js.Promise.then_(result => {
-           let _ = handleSignInResult(result);
-           Js.Promise.resolve();
-         });
-    ();
+    if (Webview.JavascriptInterface.isFlavorFoss()
+        ->Belt.Option.getWithDefault(false)) {
+      Error.(
+        report(
+          InvalidState("Google Sign-In is not supported within FOSS builds."),
+        )
+      );
+    } else {
+      setIsAuthenticating(_ => true);
+      let _ =
+        Webview.(
+          postMessageForResult(
+            WebEvent.make(~type_="AUTH_SIGN_IN_GOOGLE", ()),
+          )
+        )
+        |> Js.Promise.then_(result => {
+             let _ = handleSignInResult(result);
+             Js.Promise.resolve();
+           });
+      ();
+    };
   };
   let handleToggleIsMenuOpen = () => setIsMenuOpen(open_ => !open_);
 
@@ -225,14 +236,18 @@ let default = () => {
                 {React.string("Reset Password")}
               </a>
             </MaterialUi.MenuItem>
-            <MaterialUi.MenuItem
-              classes={MaterialUi.MenuItem.Classes.make(
-                ~root=Cn.fromList(["font-sans"]),
-                (),
-              )}
-              onClick={_ => handleAuthenticateGoogle()}>
-              {React.string("Sign in with Google")}
-            </MaterialUi.MenuItem>
+            {!
+               Webview.JavascriptInterface.isFlavorFoss()
+               ->Belt.Option.getWithDefault(false)
+               ? <MaterialUi.MenuItem
+                   classes={MaterialUi.MenuItem.Classes.make(
+                     ~root=Cn.fromList(["font-sans"]),
+                     (),
+                   )}
+                   onClick={_ => handleAuthenticateGoogle()}>
+                   {React.string("Sign in with Google")}
+                 </MaterialUi.MenuItem>
+               : React.null}
           </MaterialUi.Menu>
         </MaterialUi.NoSsr>
       </div>

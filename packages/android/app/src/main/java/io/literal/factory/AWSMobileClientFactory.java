@@ -18,6 +18,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 
@@ -136,31 +137,35 @@ public class AWSMobileClientFactory {
     private static AWSConfiguration getConfiguration(Context context) {
         InputStream inputStream = context.getResources().openRawResource(R.raw.awsconfiguration);
         JSONObject configuration = parseInputStream(inputStream);
-        if (configuration == null) { return new AWSConfiguration(context); }
-
-        try {
-            JSONObject authJson = configuration.getJSONObject("Auth");
-            JSONObject defaultJson = authJson.getJSONObject("Default");
-            JSONObject oauthJson = defaultJson.getJSONObject("OAuth");
-
-            // Prune OAuth URIs used by other environments, we only care about the literal://
-            // protocol.
-            String signInRedirectURIs = oauthJson.getString("SignInRedirectURI");
-            String signOutRedirectURIs = oauthJson.getString("SignOutRedirectURI");
-            oauthJson.put("SignInRedirectURI", parseUrisToProtocol(signInRedirectURIs));
-            oauthJson.put("SignOutRedirectURI", parseUrisToProtocol(signOutRedirectURIs));
-
-            // Parse the Amplify environment from the hosted OAuth sub domain.
-            String webDomain = oauthJson.getString("WebDomain");
-            if (webDomain.startsWith("literal-staging")) {
-                amplifyEnvironment = AmplifyEnvironment.STAGING;
-            } else {
-                amplifyEnvironment = AmplifyEnvironment.PRODUCTION;
-            }
-        } catch (JSONException ex) {
-            ErrorRepository.captureException(ex);
-            return new AWSConfiguration(configuration);
+        if (configuration == null) {
+            return new AWSConfiguration(context);
         }
+
+        Optional<JSONObject> oauthJson = Optional.ofNullable(configuration.optJSONObject("Auth"))
+                .flatMap((json) -> Optional.ofNullable(json.optJSONObject("Default")))
+                .flatMap((json) -> Optional.ofNullable(json.optJSONObject("OAuth")));
+
+        // Prune OAuth URIs used by other environments, we only care about the literal:// protocol.
+        oauthJson.ifPresent((json) -> {
+            try {
+                String signInRedirectURIs = json.getString("SignInRedirectURI");
+                String signOutRedirectURIs = json.getString("SignOutRedirectURI");
+                json.put("SignInRedirectURI", parseUrisToProtocol(signInRedirectURIs));
+                json.put("SignOutRedirectURI", parseUrisToProtocol(signOutRedirectURIs));
+            } catch (JSONException e) {
+                ErrorRepository.captureException(e);
+            }
+        });
+
+        amplifyEnvironment = Optional.ofNullable(configuration.optJSONObject("AppSync"))
+                .flatMap((json) -> Optional.ofNullable(json.optJSONObject("Default")))
+                .flatMap((json) -> Optional.ofNullable(json.optString("ApiUrl")))
+                .map((apiUrl) ->
+                        apiUrl.contains("bmxw7qjae5bwrh2ponhutmos6e")
+                                ? AmplifyEnvironment.STAGING
+                                : AmplifyEnvironment.PRODUCTION
+                )
+                .orElse(AmplifyEnvironment.STAGING);
 
         return new AWSConfiguration(configuration);
     }

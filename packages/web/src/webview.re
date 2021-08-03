@@ -90,11 +90,28 @@ module WebEvent = {
   let decode = t_decode;
 };
 
-let isWebview = () =>
-  Raw.global()
-  ->Belt.Option.flatMap(LiteralWebview.inst)
-  ->Belt.Option.map(LiteralWebview.isWebview)
-  ->Belt.Option.getWithDefault(false);
+module JavascriptInterface = {
+  let isWebview = () =>
+    Raw.global()
+    ->Belt.Option.flatMap(LiteralWebview.inst)
+    ->Belt.Option.map(LiteralWebview.isWebview)
+    ->Belt.Option.getWithDefault(false);
+
+  let getVersionName = () =>
+    Raw.global()
+    ->Belt.Option.flatMap(LiteralWebview.inst)
+    ->Belt.Option.map(LiteralWebview.getVersionName);
+
+  let isFlavorFoss = () =>
+    Raw.global()
+    ->Belt.Option.flatMap(LiteralWebview.inst)
+    ->Belt.Option.map(LiteralWebview.isFlavorFoss);
+
+  let sendMessagePort = () =>
+    Raw.global()
+    ->Belt.Option.flatMap(LiteralWebview.inst)
+    ->Belt.Option.forEach(LiteralWebview.sendMessagePort);
+};
 
 let port: ref(option(MessagePort.t)) = ref(None);
 
@@ -161,7 +178,7 @@ let postMessage = webEvent => {
       webEvent->WebEvent.encode->Js.Json.stringify,
     );
     true;
-  | None when isWebview() =>
+  | None when JavascriptInterface.isWebview() =>
     let _ = Js.Array.push(webEvent, pendingMessageQueue^);
     true;
   | None =>
@@ -227,9 +244,7 @@ let initialize = () => {
 
   let _ =
     if (Belt.Option.isNone(port^)) {
-      Raw.global()
-      ->Belt.Option.flatMap(LiteralWebview.inst)
-      ->Belt.Option.forEach(LiteralWebview.sendMessagePort);
+      JavascriptInterface.sendMessagePort();
     };
   ();
 };

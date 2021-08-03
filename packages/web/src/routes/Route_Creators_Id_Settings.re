@@ -3,25 +3,6 @@ let default = () => {
   let Providers_Authentication.{user, setUser} =
     React.useContext(Providers_Authentication.authenticationContext);
   let router = Next.Router.useRouter();
-  let (nativeAppVersion, setNativeAppVersion) = React.useState(_ => None);
-  let _ =
-    React.useEffect0(() => {
-      let _ =
-        Webview.(
-          postMessageForResult(WebEvent.make(~type_="GET_APP_VERSION", ()))
-        )
-        |> Js.Promise.then_(result => {
-             let _ =
-               result
-               ->Belt.Option.flatMap(Js.Json.decodeObject)
-               ->Belt.Option.flatMap(d => Js.Dict.get(d, "versionName"))
-               ->Belt.Option.flatMap(v => Js.Json.decodeString(v))
-               ->Belt.Option.forEach(v => setNativeAppVersion(_ => Some(v)));
-
-             Js.Promise.resolve();
-           });
-      None;
-    });
   let _ =
     React.useEffect2(
       () => {
@@ -48,6 +29,11 @@ let default = () => {
       },
       (user, router.query),
     );
+  let nativeAppVersion =
+    Webview.JavascriptInterface.getVersionName()
+    ->Belt.Option.flatMap(versionName =>
+        versionName->Js.String2.split("-")->Belt.Array.get(0)
+      );
 
   let viewURI = url => {
     let _ =
@@ -65,14 +51,14 @@ let default = () => {
       );
     ();
   };
-  let handleClickChangelog = () => {
-    nativeAppVersion->Belt.Option.forEach(nativeAppVersion =>
+
+  let handleClickChangelog = () =>
+    nativeAppVersion->Belt.Option.forEach(versionCode => {
       viewURI(
-        "https://github.com/literal-io/literal/releases/tag/v"
-        ++ nativeAppVersion,
+        "https://github.com/literal-io/literal/releases/tag/v" ++ versionCode,
       )
-    );
-  };
+    });
+
   let handleClickPrivacyPolicy = () => {
     viewURI("https://literal.io/policies/privacy");
   };
@@ -166,6 +152,7 @@ let default = () => {
       <ProfileCard user onClickSignOut=handleSignOut />
       <AppCard
         labelClassName={Cn.fromList(["mt-12"])}
+        isFlavorFoss=?{Webview.JavascriptInterface.isFlavorFoss()}
         ?nativeAppVersion
         webAppVersion=Constants.Env.webAppVersion
         onClickChangelog=handleClickChangelog

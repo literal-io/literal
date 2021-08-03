@@ -6,6 +6,19 @@ exception AuthenticationRequired;
 exception DeccoDecodeError(Decco.decodeError);
 exception GenericErrorWithExtra((string, Js.Json.t));
 
+let isEnabled = () =>
+  Constants.Env.nodeEnv == "production"
+  && !
+       Webview.JavascriptInterface.isFlavorFoss()
+       ->Belt.Option.getWithDefault(false);
+
+let initialize = () =>
+  if (isEnabled()) {
+    SentryBrowser.(
+      init(config(~dsn=Constants.Env.sentryDsn, ~normalizeDepth=10))
+    );
+  };
+
 let report = exn => {
   let (error, errorContext) =
     switch (exn) {
@@ -81,8 +94,7 @@ let report = exn => {
 
   let _ =
     switch (error, errorContext) {
-    | _ when Constants.Env.nodeEnv != "production" =>
-      Js.log2(error, errorContext)
+    | _ when !isEnabled() => Js.log3("[Service_Error]", error, errorContext)
     | (Some(error), Some(errorContext)) =>
       SentryBrowser.captureExceptionWithContext(error, errorContext)
     | (Some(error), None) => SentryBrowser.captureException(error)
@@ -90,7 +102,7 @@ let report = exn => {
     };
   let _ =
     switch (error) {
-    | _ when Constants.Env.nodeEnv != "production" => ()
+    | _ when !isEnabled() => ()
     | Some(_) =>
       Service_Analytics.(
         {sentryEventId: SentryBrowser.lastEventId(), type_: "ErrorService"}

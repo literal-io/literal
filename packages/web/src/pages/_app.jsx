@@ -11,6 +11,9 @@ import BottomNavigationProvider from "../Providers/Providers_BottomNavigation/Pr
 import ErrorBoundary from "../components/ErrorBoundary/ErrorBoundary.js";
 import Head from "../components/Head.js";
 import BottomNavigation from "../components/BottomNavigation/BottomNavigation.js";
+import ErrorService from "../services/error.js"
+import AnalyticsService from "../services/Service_Analytics.js"
+
 import { page, track } from "../services/Service_Analytics.js";
 
 import * as React from "react";
@@ -18,6 +21,9 @@ import * as React from "react";
 if (global.window) {
   require("../webview.js").initialize();
 }
+
+ErrorService.initialize()
+AnalyticsService.initialize()
 
 export default function App({
   Component,

@@ -3,11 +3,18 @@ let make =
     (
       ~labelClassName=?,
       ~nativeAppVersion=?,
+      ~isFlavorFoss=false,
       ~webAppVersion,
       ~onClickChangelog,
       ~onClickPrivacyPolicy,
       ~onClickRateThisApp,
     ) => {
+  let versionSeparator = isFlavorFoss ? "-foss-" : "-";
+  let displayVersion =
+    nativeAppVersion->Belt.Option.map(nativeAppVersion =>
+      "(v" ++ nativeAppVersion ++ versionSeparator ++ webAppVersion ++ ")"
+    );
+
   <>
     <h2
       className={Cn.fromList([
@@ -30,8 +37,8 @@ let make =
           ~root=Cn.fromList(["flex", "flex-col", "p-0", "items-stretch"]),
           (),
         )}>
-        {nativeAppVersion
-         ->Belt.Option.map(nativeAppVersion =>
+        {displayVersion
+         ->Belt.Option.map(displayVersion =>
              <MaterialUi.Button
                fullWidth=true
                size=`Medium
@@ -42,8 +49,10 @@ let make =
                  ~label=
                    Cn.fromList([
                      "font-sans",
-                     "text-lightSecondary",
                      "normal-case",
+                     "flex",
+                     "justify-between",
+                     "flex-row",
                    ]),
                  (),
                )}
@@ -53,14 +62,13 @@ let make =
                    "rippleVisible": Cn.fromList(["opacity-75"]),
                  },
                }>
-               {React.string(
-                  "CHANGELOG "
-                  ++ "(v"
-                  ++ nativeAppVersion
-                  ++ "-"
-                  ++ webAppVersion
-                  ++ ")",
-                )}
+               <span className={Cn.fromList(["text-lightSecondary"])}>
+                 {React.string("CHANGELOG")}
+               </span>
+               <span
+                 className={Cn.fromList(["text-lightDisabled", "text-xs"])}>
+                 {React.string(displayVersion)}
+               </span>
              </MaterialUi.Button>
            )
          ->Belt.Option.getWithDefault(

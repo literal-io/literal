@@ -1,6 +1,13 @@
-let _ =
+let isEnabled = () =>
   Raw.isBrowser()
-    ? Amplitude.(getInstance()->init(Constants.Env.amplitudeApiKey)) : ();
+  && !
+       Webview.JavascriptInterface.isFlavorFoss()
+       ->Belt.Option.getWithDefault(false);
+
+let initialize = () =>
+  if (isEnabled()) {
+    Amplitude.(getInstance()->init(Constants.Env.amplitudeApiKey));
+  };
 
 [@decco.encode]
 type graphqlOperation = {
@@ -47,6 +54,7 @@ let track = event => {
     | Error(p) => ("ERROR", error_encode(p))
     };
 
+  let handled = ref(false);
   if (Raw.isBrowser()) {
     let data =
       Js.Json.object_(
@@ -55,23 +63,29 @@ let track = event => {
           ("properties", properties),
         ]),
       );
-    let dispatched =
+    handled :=
       Webview.(
         postMessage(WebEvent.make(~type_="ANALYTICS_LOG_EVENT", ~data, ()))
       );
     let _ =
-      if (!dispatched) {
+      if (! handled^
+          && !
+               Webview.JavascriptInterface.isFlavorFoss()
+               ->Belt.Option.getWithDefault(false)) {
         Amplitude.(getInstance()->logEventWithProperties(name, properties));
       };
     ();
-  } else {
-    Js.log3("amplitude event noop:", name, properties);
+  };
+
+  if (! handled^) {
+    Js.log3("[Service_Analytics]", "track", event);
   };
 };
 
 let setUserId = userId => {
+  let handled = ref(false);
   if (Raw.isBrowser()) {
-    let dispatched =
+    handled :=
       Webview.(
         postMessage(
           WebEvent.make(
@@ -93,10 +107,18 @@ let setUserId = userId => {
       );
 
     let _ =
-      if (!dispatched) {
+      if (! handled^
+          && !
+               Webview.JavascriptInterface.isFlavorFoss()
+               ->Belt.Option.getWithDefault(false)) {
         Amplitude.(getInstance()->setUserId(userId));
+        handled := true;
       };
     ();
+  };
+
+  if (! handled^) {
+    Js.log3("[Service_Analytics]", "setUserId", userId);
   };
   ();
 };

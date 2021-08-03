@@ -129,6 +129,12 @@ public class MessagingWebView extends WebView {
         public void sendMessagePort() {
             mainHandler.post(() -> initializeWebMessageChannel());
         }
+
+        @android.webkit.JavascriptInterface
+        public String getVersionName() { return BuildConfig.VERSION_NAME; }
+
+        @android.webkit.JavascriptInterface
+        public boolean isFlavorFoss() { return BuildConfig.FLAVOR.equals("foss"); }
     }
 
 }

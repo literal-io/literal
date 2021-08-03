@@ -91,7 +91,9 @@ let make = (~children) => {
   };
 
   let refreshUser = () => {
-    let userP = Webview.isWebview() ? getUserWebview() : getUserWeb();
+    let userP =
+      Webview.JavascriptInterface.isWebview()
+        ? getUserWebview() : getUserWeb();
     userP
     |> Js.Promise.then_(newUser => {
          let _ = setUser(_ => newUser);
