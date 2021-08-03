@@ -1,0 +1,18 @@
+Literal is a textual information browser for augmenting your reading experience; capture sources, annotations, and knowledge.
+
+CAPTURE ANNOTATIONS
+Share URLs, text, and images to Literal to annotate and highlight.
+
+COLLECT INFORMATION
+Over time, Literal becomes a personal knowledge base containing information and knowledge along with their source.
+
+VIEW ANNOTATIONS IN CONTEXT
+Quickly view the annotation's source context by tapping it.
+
+ORGANIZE BY TAG AND SOURCE
+Go beyond folders with a tag-based organization system, or view annotations by their shared source. 
+
+OPEN SOURCE, OPEN STANDARDS
+Literal is open source (https://github.com/literal-io/literal) and implements the W3C Web Annotation standard (https://www.w3.org/TR/annotation-model/) to ensure that your data is portable.
+
+View https://literal.io/ for more information.

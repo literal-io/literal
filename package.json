@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "lerna": "lerna",
-    "lerna:bootstrap": "lerna bootstrap --hoist -- --legacy-peer-deps"
+    "lerna:bootstrap": "lerna bootstrap --hoist -- --legacy-peer-deps",
+    "fastlane:supply:init": "fastlane supply init --json_key secret/fastlane-gcp-service-account.json"
   },
   "engines": {
     "node": "^15"
