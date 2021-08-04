@@ -81,7 +81,7 @@ task buildSourceWebViewScripts(type: Exec) {
 }
 
 tasks.whenTaskAdded { task ->
-    if (task.name == 'assembleFossRelease' || task.name == 'assembleFossDebug' || task.name == "assembleFullRelease" || task.name == "assembleFullDebug") {
+    if (task.name.startsWith('assemble') || task.name.startsWith('bundle')) {
         task.dependsOn buildSourceWebViewScripts
     }
 }
