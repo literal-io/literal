@@ -64,7 +64,7 @@ public class MessagingWebView extends WebView {
                     ),
                     Uri.parse("*")
             );
-            
+
             try {
                 JSONObject loggedEvent = webEvent.toJSON(!webEvent.getType().startsWith("AUTH"));
                 JSONObject properties = new JSONObject();

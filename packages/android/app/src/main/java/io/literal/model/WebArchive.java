@@ -25,21 +25,34 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.WebArchiveRepository;
 
 public class WebArchive implements Parcelable {
+    public static final Creator<WebArchive> CREATOR = new Creator<WebArchive>() {
+        @Override
+        public WebArchive createFromParcel(Parcel in) {
+            return new WebArchive(in);
+        }
+
+        @Override
+        public WebArchive[] newArray(int size) {
+            return new WebArchive[size];
+        }
+    };
     public static String KEY_WEB_REQUESTS = "WEB_REQUESTS";
     public static String KEY_SCRIPT_ELEMENTS = "SCRIPT_ELEMENTS";
     public static String KEY_STORAGE_OBJECT = "STORAGE_OBJECT";
     public static String KEY_ID = "ID";
-
     private final StorageObject storageObject;
     private final ArrayList<ParcelableWebResourceRequest> webRequests;
     private final ArrayList<HTMLScriptElement> scriptElements;
@@ -93,24 +106,14 @@ public class WebArchive implements Parcelable {
         return 0;
     }
 
-    public static final Creator<WebArchive> CREATOR = new Creator<WebArchive>() {
-        @Override
-        public WebArchive createFromParcel(Parcel in) {
-            return new WebArchive(in);
-        }
-
-        @Override
-        public WebArchive[] newArray(int size) {
-            return new WebArchive[size];
-        }
-    };
-
     public StorageObject getStorageObject() {
         return storageObject;
     }
+
     public List<ParcelableWebResourceRequest> getWebRequests() {
         return webRequests;
     }
+
     public List<HTMLScriptElement> getScriptElements() {
         return scriptElements;
     }
@@ -130,13 +133,13 @@ public class WebArchive implements Parcelable {
                     } catch (Exception innerException) {
                         future.completeExceptionally(innerException);
                     } finally {
-                       if (fileInputStream != null) {
-                           try {
-                               fileInputStream.close();
-                           } catch (IOException ioException) {
-                               ErrorRepository.captureException(ioException);
-                           }
-                       }
+                        if (fileInputStream != null) {
+                            try {
+                                fileInputStream.close();
+                            } catch (IOException ioException) {
+                                ErrorRepository.captureException(ioException);
+                            }
+                        }
                     }
                     return future;
                 });
@@ -169,6 +172,7 @@ public class WebArchive implements Parcelable {
                 (BodyPart) bodyParts.get(0)
         );
     }
+
     public CompletableFuture<WebArchive> compile(Context context, User user) {
         if (this.getScriptElements().size() == 0 && this.getWebRequests().size() == 0) {
             return CompletableFuture.completedFuture(this);
@@ -178,19 +182,27 @@ public class WebArchive implements Parcelable {
                 .thenCompose(_file -> {
                     // For each web request not currently within the archive, execute it and build a BodyPart
                     HashMap<String, BodyPart> bodyPartByContentLocation = getBodyPartByContentLocation();
+                    Supplier<List<CompletableFuture<Optional<BodyPart>>>> supplier = () -> new LinkedList<>();
                     List<CompletableFuture<Optional<BodyPart>>> webRequestBodyPartFutures = getWebRequests()
                             .stream()
                             .filter(webResourceRequest -> !bodyPartByContentLocation.containsKey(webResourceRequest.getUrl().toString()))
                             .map(webResourceRequest ->
                                     WebArchiveRepository.executeWebResourceRequest(webResourceRequest)
                                             .thenApply((responseBody) -> WebArchiveRepository.createBodyPart(webResourceRequest, responseBody))
+                                            .<Optional<BodyPart>>handle((bodyPart, e) -> {
+                                                // Tolerate any errors that occurred when replaying the web request - the asset we attempted to fetch may not be required.
+                                                if (e != null) {
+                                                    ErrorRepository.captureException(e, Map.of("headers", WebArchiveRepository.getIdempotentRequestHeaders(webResourceRequest.getRequestHeaders())));
+                                                    return Optional.empty();
+                                                }
+                                                return bodyPart;
+                                            })
                             )
                             .collect(Collectors.toList());
-
                     return CompletableFuture.allOf(webRequestBodyPartFutures.toArray(new CompletableFuture[0]))
                             .thenApply(_void -> webRequestBodyPartFutures.stream()
                                     .map((f) -> f.getNow(Optional.empty()).orElse(null))
-                                    .filter(f -> !Objects.isNull(f))
+                                    .filter(Objects::nonNull)
                                     .collect(Collectors.toList()));
                 })
                 .thenCompose((bodyParts) -> {
