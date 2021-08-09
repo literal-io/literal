@@ -1,0 +1,3 @@
+Various stability improvements to annotation creation and capture.
+
+See the full release notes and source code for this release here: https://github.com/literal-io/literal/releases/tag/v1.1.26
