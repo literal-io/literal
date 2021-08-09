@@ -82,7 +82,6 @@ public class StorageRepository {
             Function3<Integer, Long, Long, Void> onUploadProgress
     ) {
         TransferUtility transferUtility = AWSMobileClientFactory.getTransferUtility(context);
-
         TransferObserver transferObserver = transferUtility.upload(key, inputFile, metadata);
         transferObserver.setTransferListener(new TransferListener() {
             @Override
@@ -90,6 +89,8 @@ public class StorageRepository {
                 if (TransferState.COMPLETED == state) {
                     AmazonS3URI s3URI = new AmazonS3URI("s3://" + transferObserver.getBucket() + "/" + transferObserver.getKey());
                     onUploadComplete.invoke(null, s3URI);
+                } else if (TransferState.FAILED == state) {
+                    onUploadComplete.invoke(new Exception("Upload failed."), null);
                 }
             }
 

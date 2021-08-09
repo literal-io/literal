@@ -340,7 +340,9 @@ public class StorageObject implements Parcelable {
                 getFile(context),
                 getObjectMetadata(context),
                 (e, uri1) -> {
-                    if (e != null) {
+                    if (future.isDone()) {
+                        ErrorRepository.captureWarning(new Exception("Attempted to complete a future more than once."));
+                    } else if (e != null) {
                         future.completeExceptionally(e);
                     } else {
                         setStatus(Status.SYNCHRONIZED);
@@ -352,24 +354,6 @@ public class StorageObject implements Parcelable {
         );
 
         return future;
-    }
-
-    public TransferObserver upload(Context context, User user, Callback<Exception, AmazonS3URI> onUploadComplete, Function3<Integer, Long, Long, Void> onUploadProgress) {
-        AmazonS3URI uri = getAmazonS3URI(context, user);
-        return StorageRepository.upload(
-                context,
-                uri.getKey(),
-                getFile(context),
-                getObjectMetadata(context),
-                (e, uri1) -> {
-                    if (e == null) {
-                        setStatus(Status.SYNCHRONIZED);
-                    }
-                    onUploadComplete.invoke(e, uri1);
-                    return null;
-                },
-                onUploadProgress
-        );
     }
 
     public CompletableFuture<Void> download(Context context, User user) {
