@@ -228,6 +228,17 @@ public class AppWebView extends Fragment {
         }
     }
 
+    private void handleActionShare(String text, String contentType) {
+        Intent sendIntent = new Intent();
+        sendIntent.setAction(Intent.ACTION_SEND);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, text);
+        sendIntent.setType(contentType);
+
+        Intent shareIntent = Intent.createChooser(sendIntent, null);
+        startActivity(shareIntent);
+    }
+
+
     private void handleGetAppVersion(MessagingWebView view) {
         try {
             JSONObject result = new JSONObject();
@@ -354,6 +365,16 @@ public class AppWebView extends Fragment {
                     try {
                         String uri = event.getData().getString("uri");
                         this.handleActionViewURI(webView, uri);
+                    } catch (JSONException e) {
+                        ErrorRepository.captureException(e);
+                    }
+                    return null;
+                case WebEvent.TYPE_ACTION_SHARE:
+                    try {
+                        String text = event.getData().getString("text");
+                        String contentType = event.getData().getString("contentType");
+
+                        this.handleActionShare(text, contentType);
                     } catch (JSONException e) {
                         ErrorRepository.captureException(e);
                     }

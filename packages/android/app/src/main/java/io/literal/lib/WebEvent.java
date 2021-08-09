@@ -27,9 +27,10 @@ public class WebEvent {
     public static final String TYPE_ANALYTICS_SET_USER_ID = "ANALYTICS_SET_USER_ID";
     public static final String TYPE_AUTH_SIGN_OUT = "AUTH_SIGN_OUT";
     public static final String TYPE_AUTH_SIGN_OUT_RESULT = "AUTH_SIGN_OUT_RESULT";
-    public static final String TYPE_ACTION_VIEW_URI = "ACTION_VIEW_URI";
     public static final String TYPE_GET_APP_VERSION = "GET_APP_VERSION";
     public static final String TYPE_GET_APP_VERSION_RESULT = "GET_APP_VERSION_RESULT";
+    public static final String TYPE_ACTION_VIEW_URI = "ACTION_VIEW_URI";
+    public static final String TYPE_ACTION_SHARE = "ACTION_SHARE";
 
     // Source WebView
     public static final String TYPE_VIEW_STATE_EDIT_ANNOTATION_TAGS = "VIEW_STATE_EDIT_ANNOTATION_TAGS";

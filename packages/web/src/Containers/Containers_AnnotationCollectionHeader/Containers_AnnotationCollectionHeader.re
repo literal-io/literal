@@ -29,6 +29,123 @@ let fragmentFromCache = (~annotationCollectionIdComponent, ~identityId=?, ()) =>
       );
   };
 
+let getTextToShare = (~format, ~annotation) => {
+  let targetText =
+    annotation
+    ->Belt.Option.flatMap(a =>
+        a##target
+        ->Belt.Array.getBy(t =>
+            switch (t) {
+            | `TextualTarget(_) => true
+            | _ => false
+            }
+          )
+      )
+    ->Belt.Option.flatMap(t =>
+        switch (t) {
+        | `TextualTarget(t) => Some(t##value)
+        | _ => None
+        }
+      );
+
+  let sourceUrl =
+    annotation
+    ->Belt.Option.flatMap(a => {
+        let specificTarget =
+          a##target
+          ->Belt.Array.getBy(t =>
+              switch (t) {
+              | `SpecificTarget(t) => true
+              | _ => false
+              }
+            );
+        switch (specificTarget) {
+        | Some(_) => specificTarget
+        | None =>
+          a##target
+          ->Belt.Array.getBy(t =>
+              switch (t) {
+              | `ExternalTarget(t) => true
+              | _ => false
+              }
+            )
+        };
+      })
+    ->Belt.Option.flatMap(t => {
+        switch (t) {
+        | `SpecificTarget(st) =>
+          switch (st##source) {
+          | `ExternalTarget(et) => Some(et##externalTargetId)
+          | _ => None
+          }
+        | `ExternalTarget(et) => Some(et##externalTargetId)
+        | _ => None
+        }
+      })
+    ->Belt.Option.map(url =>
+        targetText
+        ->Belt.Option.map(targetText => {
+            let textFragment =
+              if (Js.String2.length(targetText) < 300) {
+                targetText->Js.Global.encodeURIComponent;
+              } else {
+                let encodeTextPart = (s, ~offset, ~len) => {
+                  let part =
+                    s
+                    ->Belt.Array.slice(~offset, ~len)
+                    ->Belt.Array.joinWith(" ", i => i);
+
+                  if (Js.String2.length(part) < 150) {
+                    Js.Global.encodeURIComponent(part);
+                  } else {
+                    part
+                    ->Js.String2.slice(~from=0, ~to_=150)
+                    ->Js.Global.encodeURIComponent;
+                  };
+                };
+
+                let splitBody = targetText->Js.String2.split(" ");
+                let textStart = encodeTextPart(splitBody, ~offset=0, ~len=5);
+                let textEnd =
+                  encodeTextPart(
+                    splitBody,
+                    ~offset=Belt.Array.length(splitBody) - 5,
+                    ~len=5,
+                  );
+                textStart ++ "," ++ textEnd;
+              };
+
+            let u = Webapi.Url.make(url);
+            Webapi.Url.setHash(u, ":~:text=" ++ textFragment);
+            Webapi.Url.href(u);
+          })
+        ->Belt.Option.getWithDefault(url)
+      );
+
+  switch (format, targetText, sourceUrl) {
+  | (`Text, Some(targetText), None) => Some(targetText)
+  | (`Markdown, Some(targetText), None) => Some("> " ++ targetText)
+  | (`Text, Some(targetText), Some(sourceUrl)) =>
+    Some(targetText ++ "(" ++ sourceUrl ++ ")")
+  | (`Markdown, Some(targetText), Some(sourceUrl)) =>
+    let url = Webapi.Url.make(sourceUrl);
+    let displayHost = url->Webapi.Url.host;
+    let displayPath = url->Webapi.Url.pathname;
+    Some(
+      "> "
+      ++ targetText
+      ++ "\n\n"
+      ++ "["
+      ++ displayHost
+      ++ displayPath
+      ++ "]("
+      ++ sourceUrl
+      ++ ")",
+    );
+  | _ => None
+  };
+};
+
 [@react.component]
 let make =
     (
@@ -42,21 +159,57 @@ let make =
       Containers_AnnotationCollectionHeader_GraphQL.DeleteAnnotationMutation.definition,
     );
 
-  let handleDelete = (~annotation, ~identityId) => {
-    let input =
-      Lib_GraphQL_DeleteAnnotationMutation.Input.make(
-        ~creatorUsername=identityId,
-        ~id=annotation##id,
-      );
+  let handleDelete = () =>
+    switch (annotation, identityId) {
+    | (Some(annotation), Some(identityId)) =>
+      let input =
+        Lib_GraphQL_DeleteAnnotationMutation.Input.make(
+          ~creatorUsername=identityId,
+          ~id=annotation##id,
+        );
 
-    let variables = DeleteAnnotationMutation.makeVariables(~input, ());
+      let variables = DeleteAnnotationMutation.makeVariables(~input, ());
 
-    let _ = deleteAnnotationMutation(~variables, ());
-    let _ =
-      Lib_GraphQL_DeleteAnnotationMutation.Apollo.updateCache(
-        ~annotation,
-        ~identityId,
-      );
+      let _ = deleteAnnotationMutation(~variables, ());
+      let _ =
+        Lib_GraphQL_DeleteAnnotationMutation.Apollo.updateCache(
+          ~annotation,
+          ~identityId,
+        );
+      ();
+    | _ => ()
+    };
+  let handleShare = (~format) => {
+    let text = getTextToShare(~format, ~annotation);
+    let contentType =
+      switch (format) {
+      | `Text => "text/plain"
+      | `Markdown => "text/markdown"
+      };
+
+    let handled = ref(false);
+    switch (text) {
+    | Some(text) =>
+      handled :=
+        Webview.(
+          postMessage(
+            WebEvent.make(
+              ~type_="ACTION_SHARE",
+              ~data=
+                Js.Json.object_(
+                  Js.Dict.fromList([
+                    ("text", Js.Json.string(text)),
+                    ("contentType", Js.Json.string(contentType)),
+                  ]),
+                ),
+              (),
+            ),
+          )
+        )
+    | _ => ()
+    };
+
+    // TODO: show error on handled == false
     ();
   };
 
@@ -76,47 +229,73 @@ let make =
         },
       }
       classes={MaterialUi.IconButton.Classes.make(
-        ~root=cn(["p-0", "ml-4"]),
+        ~root=cn(["p-0", "mr-6"]),
         (),
       )}>
       <Svg
         className={cn(["pointer-events-none", "opacity-75"])}
-        style={ReactDOMRe.Style.make(~width="1.5rem", ~height="1.5rem", ())}
+        style={ReactDOMRe.Style.make(~width="1.75rem", ~height="1.75rem", ())}
         icon=Svg.add
       />
     </MaterialUi.IconButton>;
 
-  let deleteButton =
-    <MaterialUi.IconButton
-      size=`Small
-      edge=MaterialUi.IconButton.Edge._end
-      onClick={_ => {
-        switch (annotation, identityId) {
-        | (Some(annotation), Some(identityId)) =>
-          let _ =
-            Service_Analytics.(
-              track(Click({action: "delete", label: None}))
-            );
-          handleDelete(~annotation, ~identityId);
-        | _ => ()
-        };
-      }}
-      _TouchRippleProps={
-        "classes": {
-          "child": cn(["bg-white"]),
-          "rippleVisible": cn(["opacity-50"]),
-        },
-      }
-      classes={MaterialUi.IconButton.Classes.make(
-        ~root=cn(["p-0", "ml-1"]),
-        (),
-      )}>
-      <Svg
-        className={cn(["pointer-events-none", "opacity-75"])}
-        style={ReactDOMRe.Style.make(~width="1.5rem", ~height="1.5rem", ())}
-        icon=Svg.delete
-      />
-    </MaterialUi.IconButton>;
+  let title =
+    annotationCollection
+    ->Belt.Option.map(annotationCollection => {
+        let type_ =
+          annotationCollection##type_
+          ->Belt.Array.getBy(t =>
+              switch (t) {
+              | `TAG_COLLECTION
+              | `SOURCE_COLLECTION => true
+              | _ => false
+              }
+            )
+          ->Belt.Option.getWithDefault(`TAG_COLLECTION);
+
+        let (label, icon) =
+          switch (type_) {
+          | `SOURCE_COLLECTION => (
+              annotationCollection##label->Webapi.Url.make->Webapi.Url.host,
+              Svg.article,
+            )
+          | _ => (annotationCollection##label, Svg.label)
+          };
+
+        <div
+          className={Cn.fromList([
+            "flex",
+            "flex-grow-0",
+            "overflow-hidden",
+            "items-center",
+          ])}>
+          <Svg
+            className={Cn.fromList(["pointer-events-none", "opacity-75"])}
+            style={ReactDOMRe.Style.make(~width="1rem", ~height="1rem", ())}
+            icon
+          />
+          <span
+            className={Cn.fromList([
+              "ml-2",
+              "block",
+              "font-sans",
+              "text-lightPrimary",
+              "whitespace-no-wrap",
+              "overflow-x-hidden",
+              "truncate",
+              "font-bold",
+              "text-lg",
+            ])}>
+            {React.string(label)}
+          </span>
+        </div>;
+      })
+    ->Belt.Option.getWithDefault(
+        <Skeleton
+          variant=`text
+          className={Cn.fromList(["h-4", "w-32", "ml-6", "transform-none"])}
+        />,
+      );
 
   <>
     <Header
@@ -141,79 +320,9 @@ let make =
           "flex-shrink",
           "overflow-x-auto",
         ])}>
-        {annotationCollection
-         ->Belt.Option.map(annotationCollection => {
-             let type_ =
-               annotationCollection##type_
-               ->Belt.Array.getBy(t =>
-                   switch (t) {
-                   | `TAG_COLLECTION
-                   | `SOURCE_COLLECTION => true
-                   | _ => false
-                   }
-                 )
-               ->Belt.Option.getWithDefault(`TAG_COLLECTION);
-
-             let (label, icon) =
-               switch (type_) {
-               | `SOURCE_COLLECTION => (
-                   annotationCollection##label
-                   ->Webapi.Url.make
-                   ->Webapi.Url.host,
-                   Svg.article,
-                 )
-               | _ => (annotationCollection##label, Svg.label)
-               };
-
-             <div
-               className={Cn.fromList([
-                 "flex",
-                 "flex-grow-0",
-                 "overflow-hidden",
-                 "items-center",
-               ])}>
-               <Svg
-                 className={Cn.fromList([
-                   "pointer-events-none",
-                   "opacity-75",
-                 ])}
-                 style={ReactDOMRe.Style.make(
-                   ~width="1rem",
-                   ~height="1rem",
-                   (),
-                 )}
-                 icon
-               />
-               <span
-                 className={Cn.fromList([
-                   "ml-2",
-                   "block",
-                   "font-sans",
-                   "text-lightPrimary",
-                   "whitespace-no-wrap",
-                   "overflow-x-hidden",
-                   "truncate",
-                   "font-bold",
-                   "text-lg",
-                 ])}>
-                 {React.string(label)}
-               </span>
-             </div>;
-           })
-         ->Belt.Option.getWithDefault(
-             <Skeleton
-               variant=`text
-               className={Cn.fromList([
-                 "h-4",
-                 "w-32",
-                 "ml-6",
-                 "transform-none",
-               ])}
-             />,
-           )}
+        title
       </div>
       <div className={Cn.fromList(["flex", "items-center", "flex-shrink-0"])}>
-        {hideDelete ? React.null : deleteButton}
         {switch (identityId) {
          | Some(identityId) =>
            <Next.Link
@@ -223,6 +332,11 @@ let make =
            </Next.Link>
          | _ => createButton
          }}
+        <AnnotationCollectionHeader_OverflowMenu
+          hideDelete
+          onDelete=handleDelete
+          onShare=handleShare
+        />
       </div>
     </Header>
   </>;

@@ -48,6 +48,12 @@ module GetAnnotationFragment = [%graphql
             }
           }
         }
+        ... on TextualTarget {
+          value
+          __typename
+
+          textualTargetId: id
+        }
       }
     }
   |}

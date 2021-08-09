@@ -70,6 +70,9 @@ module.exports = {
         lightPrimary: "rgba(255, 255, 255, .92)",
         lightSecondary: "rgba(255, 255, 255, .72)",
         lightDisabled: "rgba(255, 255, 255, .50)",
+        darkPrimary: "rgba(0, 0, 0, .92)",
+        darkSecondary: "rgba(0, 0, 0, .72)",
+        darkDisabled: "rgba(0, 0, 0, .50)"
       },
       zIndex: {
         "-10": "-10",
