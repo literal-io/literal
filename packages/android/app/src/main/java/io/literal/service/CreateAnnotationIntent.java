@@ -5,12 +5,14 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Parcelable;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -165,6 +167,34 @@ public class CreateAnnotationIntent {
         } catch (JSONException e) {
             ErrorRepository.captureException(e);
             return Optional.empty();
+        }
+    }
+
+    public JSONObject toJSON() {
+        try {
+            JSONObject data = new JSONObject();
+            data.put("action", ACTION);
+            data.put(EXTRA_ID, id);
+            data.put(EXTRA_ANNOTATIONS, JsonArrayUtil.stringifyObjectArray(annotations, Annotation::toJson).toString());
+            data.put(EXTRA_DISABLE_NOTIFICATION, disableNotification);
+
+            // FIXME: include web archives
+
+            favicon.ifPresent((f) -> {
+                try {
+                    data.put(EXTRA_FAVICON, f.getAbsolutePath());
+                } catch (JSONException ignored) {}
+            });
+            displayUri.ifPresent(d -> {
+                try {
+                    data.put(EXTRA_DISPLAY_URI, d.toString());
+                } catch (JSONException ignored) {}
+            });
+
+            return data;
+        } catch (JSONException e) {
+            ErrorRepository.captureException(e);
+            return null;
         }
     }
 

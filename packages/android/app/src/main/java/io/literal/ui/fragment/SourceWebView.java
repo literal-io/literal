@@ -67,6 +67,7 @@ import io.literal.model.TextualTarget;
 import io.literal.model.TimeState;
 import io.literal.model.User;
 import io.literal.model.WebArchive;
+import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.AnnotationRepository;
 import io.literal.repository.BitmapRepository;
 import io.literal.repository.ErrorRepository;
@@ -910,6 +911,23 @@ public class SourceWebView extends Fragment {
     }
 
     private void handleToolbarPrimaryAction() {
+        try {
+            JSONObject data = new JSONObject();
+            String primaryActionResource;
+            if (paramToolbarPrimaryActionResourceId == R.drawable.done_white) {
+                primaryActionResource = "done_white";
+            } else if (paramToolbarPrimaryActionResourceId == R.drawable.arrow_drop_down_white) {
+                primaryActionResource = "arrow_drop_down_white";
+            } else {
+                primaryActionResource = (Integer.valueOf(paramToolbarPrimaryActionResourceId)).toString();
+            }
+            data.put("action", "toolbar primary action");
+            data.put("toolbar primary action resource", primaryActionResource);
+            AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_CLICK, data);
+        } catch (JSONException e) {
+            ErrorRepository.captureException(e);
+        }
+
         ArrayList<Annotation> annotations = sourceWebViewViewModel.getAnnotations().getValue();
         ArrayList<String> createdAnnotationIds = sourceWebViewViewModel.getNewAnnotationIds();
         Annotation[] createdAnnotations = new Annotation[0];

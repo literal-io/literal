@@ -17,6 +17,7 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.services.s3.AmazonS3URI;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
@@ -52,6 +53,7 @@ import io.literal.model.TextualTarget;
 import io.literal.model.TimeState;
 import io.literal.model.User;
 import io.literal.model.WebArchive;
+import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.AnnotationRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.NotificationRepository;
@@ -123,12 +125,23 @@ public class AnnotationService extends Service {
         CompletableFuture<Void> future = new CompletableFuture<>();
         Optional<CreateAnnotationIntent> createAnnotationIntentOpt = CreateAnnotationIntent.fromIntent(getBaseContext(), intent);
         if (createAnnotationIntentOpt.isPresent()) {
+            CreateAnnotationIntent createAnnotationIntent = createAnnotationIntentOpt.get();
+
+            try {
+                JSONObject data = new JSONObject();
+                data.put("handler", AnnotationService.class.getName());
+                data.put("data", createAnnotationIntent.toJSON());
+                AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_HANDLE_INTENT_START, data);
+            } catch (JSONException e) {
+                ErrorRepository.captureException(e);
+            }
+
             ((MainApplication) getApplication()).getThreadPoolExecutor().execute(() -> initialize(getBaseContext())
                     .thenCompose((user) ->
                             handleCreateAnnotation(
                                     getBaseContext(),
                                     user,
-                                    createAnnotationIntentOpt.get()
+                                    createAnnotationIntent
                             )
                     ).whenComplete((_void, ex) -> {
                         if (ex != null) {
@@ -145,6 +158,18 @@ public class AnnotationService extends Service {
             if (e != null) {
                 ErrorRepository.captureException(e);
             }
+
+            try {
+                JSONObject data = new JSONObject();
+                data.put("result", e != null ? "error" : "success");
+                if (createAnnotationIntentOpt.isPresent()) {
+                    CreateAnnotationIntent createAnnotationIntent = createAnnotationIntentOpt.get();
+                    data.put("data", createAnnotationIntent.toJSON());
+                }
+                AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_HANDLE_INTENT_COMPLETE, data);
+            } catch (JSONException ex) {
+                ErrorRepository.captureException(ex);
+            }
             stopSelfResult(startId);
         });
 
@@ -155,7 +180,7 @@ public class AnnotationService extends Service {
         if (user != null) {
             return CompletableFuture.completedFuture(user);
         }
-
+        AnalyticsRepository.initialize(getApplication());
         CompletableFuture<User> userFuture = AWSMobileClientFactory.initializeClient(getApplicationContext()).thenCompose(User::getInstance);
 
         userFuture.whenComplete((instance, error) -> {
@@ -208,13 +233,25 @@ public class AnnotationService extends Service {
             return future.thenApply((storageObjectURI) -> new Pair<>(annotationId, storageObjectURI));
 
         }).collect(Collectors.toList());
-        onUploadProgress.invoke(0);
 
-        return CompletableFuture.allOf(storageObjectUploadFutures.toArray(new CompletableFuture[0])).thenApply((_void) -> storageObjectUploadFutures.stream().map((f) -> f.getNow(null)).collect(
-                HashMap::new,
-                (agg, pair) -> agg.put(pair.first, pair.second),
-                HashMap::putAll
-        ));
+        if (storageObjectUploadFutures.size() > 0) {
+            onUploadProgress.invoke(0);
+        }
+
+        return CompletableFuture.allOf(storageObjectUploadFutures.toArray(new CompletableFuture[0]))
+                    .thenApply((_void) -> {
+                        if (storageObjectUploadFutures.size() > 0) {
+                            onUploadProgress.invoke(100);
+                        }
+
+                        return storageObjectUploadFutures.stream()
+                                .map((f) -> f.getNow(null))
+                                .collect(
+                                        HashMap::new,
+                                        (agg, pair) -> agg.put(pair.first, pair.second),
+                                        HashMap::putAll
+                                );
+                    });
     }
 
     private CompletableFuture<HashMap<String, AmazonS3URI>> uploadScreenshots(
@@ -263,18 +300,26 @@ public class AnnotationService extends Service {
                 .map(o -> o.orElse(null))
                 .collect(Collectors.toList());
 
-        onUploadProgress.invoke(0);
+        if (storageObjectUploadFutures.size() > 0) {
+            onUploadProgress.invoke(0);
+        }
 
-        return CompletableFuture.allOf(storageObjectUploadFutures.toArray(new CompletableFuture[0])).thenApply((_void) -> storageObjectUploadFutures.stream().map((f) -> f.getNow(null)).collect(
-                HashMap::new,
-                (agg, pair) -> agg.put(pair.first, pair.second),
-                HashMap::putAll
-        ));
+        return CompletableFuture.allOf(storageObjectUploadFutures.toArray(new CompletableFuture[0]))
+                .thenApply((_void) -> {
+                    if (storageObjectUploadFutures.size() > 0) {
+                        onUploadProgress.invoke(100);
+                    }
+
+                    return storageObjectUploadFutures.stream().map((f) -> f.getNow(null)).collect(
+                            HashMap::new,
+                            (agg, pair) -> agg.put(pair.first, pair.second),
+                            HashMap::putAll
+                    );
+                });
     }
 
     private CompletableFuture<Void> handleCreateAnnotation(Context context, User user, CreateAnnotationIntent createAnnotationIntent) {
         Function1<Integer, Void> onDisplayNotificationProgress = (Integer uploadProgress) -> {
-
             if (!createAnnotationIntent.getFaviconBitmap().isPresent() || !createAnnotationIntent.getDisplayURI().isPresent()) {
                 return null;
             }
@@ -298,6 +343,9 @@ public class AnnotationService extends Service {
                 .thenApply(_void -> {
                    HashMap<String, AmazonS3URI> uploadedWebArchives = uploadedWebArchivesFuture.getNow(new HashMap<>());
                    HashMap<String, AmazonS3URI> uploadedScreenshots = uploadedScreenshotFuture.getNow(new HashMap<>());
+                   if (uploadedWebArchives.size() == 0 && uploadedScreenshots.size() == 0) {
+                       onDisplayNotificationProgress.invoke(100);
+                   }
 
                    List<Annotation> updatedAnnotations = Arrays.stream(createAnnotationIntent.getAnnotations())
                             .map(annotation -> {

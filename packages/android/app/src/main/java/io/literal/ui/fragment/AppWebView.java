@@ -190,7 +190,7 @@ public class AppWebView extends Fragment {
 
     private void handleSignOut(MessagingWebView view) {
         authenticationViewModel.signOut()
-                .whenComplete((e, _void) -> {
+                .whenComplete((_void, e) -> {
                     try {
                         JSONObject result = new JSONObject();
                         if (e != null) {

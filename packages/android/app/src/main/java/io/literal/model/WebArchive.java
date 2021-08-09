@@ -4,10 +4,6 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
-import android.webkit.WebResourceRequest;
-
-import androidx.annotation.NonNull;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.james.mime4j.Charsets;
@@ -20,16 +16,12 @@ import org.apache.james.mime4j.message.BodyPart;
 import org.apache.james.mime4j.message.BodyPartBuilder;
 import org.apache.james.mime4j.message.DefaultMessageBuilder;
 import org.apache.james.mime4j.message.DefaultMessageWriter;
-import org.apache.james.mime4j.message.SingleBodyBuilder;
-import org.apache.james.mime4j.stream.Field;
 import org.apache.james.mime4j.stream.MimeConfig;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -134,9 +126,9 @@ public class WebArchive implements Parcelable {
                         messageBuilder.setMimeEntityConfig(new MimeConfig.Builder().setMaxLineLen(-1).setMaxHeaderLen(-1).setMaxHeaderCount(-1).build());
                         mimeMessage = messageBuilder.parseMessage(fileInputStream);
                         buildMimeBodyPartIndex(context, user);
+                        future.complete(null);
                     } catch (Exception innerException) {
                         future.completeExceptionally(innerException);
-                        return future;
                     } finally {
                        if (fileInputStream != null) {
                            try {
@@ -146,7 +138,6 @@ public class WebArchive implements Parcelable {
                            }
                        }
                     }
-                    future.complete(null);
                     return future;
                 });
     }
@@ -180,7 +171,7 @@ public class WebArchive implements Parcelable {
     }
     public CompletableFuture<WebArchive> compile(Context context, User user) {
         if (this.getScriptElements().size() == 0 && this.getWebRequests().size() == 0) {
-            return CompletableFuture.completedFuture(null);
+            return CompletableFuture.completedFuture(this);
         }
 
         return this.open(context, user)
@@ -202,7 +193,7 @@ public class WebArchive implements Parcelable {
                                     .filter(f -> !Objects.isNull(f))
                                     .collect(Collectors.toList()));
                 })
-                .thenApply((bodyParts) -> {
+                .thenCompose((bodyParts) -> {
                     // Add the constructed web request body parts into the mime message, and update the primary
                     // index body part with built script elements
                     Multipart multipart = (Multipart) mimeMessage.getBody();
@@ -213,15 +204,16 @@ public class WebArchive implements Parcelable {
                     // Write the updated mime message to disk
                     StorageObject updatedWebArchive = WebArchiveRepository.createArchiveStorageObject();
                     FileOutputStream updatedWebArchiveOutputStream = null;
+                    CompletableFuture<WebArchive> future = new CompletableFuture<>();
                     try {
                         updatedWebArchiveOutputStream = new FileOutputStream(updatedWebArchive.getFile(context));
                         DefaultMessageWriter writer = new DefaultMessageWriter();
                         writer.writeMessage(mimeMessage, updatedWebArchiveOutputStream);
                         storageObject.setStatus(StorageObject.Status.UPLOAD_REQUIRED);
 
-                        return new WebArchive(updatedWebArchive);
+                        future.complete(new WebArchive(updatedWebArchive));
                     } catch (Exception e) {
-                        ErrorRepository.captureException(e);
+                        future.completeExceptionally(e);
                     } finally {
                         if (updatedWebArchiveOutputStream != null) {
                             try {
@@ -231,7 +223,7 @@ public class WebArchive implements Parcelable {
                             }
                         }
                     }
-                    return null;
+                    return future;
                 });
     }
 
@@ -266,15 +258,6 @@ public class WebArchive implements Parcelable {
             ErrorRepository.captureException(e);
             return bodyPart;
         }
-    }
-
-    public static WebArchive fromURI(URI uri) {
-        StorageObject storageObject = StorageObject.create(uri);
-        if (storageObject == null) {
-            return null;
-        }
-
-        return new WebArchive(storageObject);
     }
 
     public HashMap<String, BodyPart> getBodyPartByContentLocation() {

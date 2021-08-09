@@ -138,13 +138,17 @@ public class WebArchiveRepository {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) {
-                try (ResponseBody responseBody = response.body()) {
-                    if (!response.isSuccessful()) {
-                        future.completeExceptionally(new IOException("Unexpected code: " + response));
-                    }
-
-                    future.complete(responseBody);
+                if (!response.isSuccessful()) {
+                    future.completeExceptionally(new IOException("Unexpected code: " + response));
+                    return;
                 }
+
+                ResponseBody responseBody = response.body();
+                if (responseBody == null) {
+                    future.completeExceptionally(new Exception("Response Body is null."));
+                    return;
+                }
+                future.complete(responseBody);
             }
         });
 
