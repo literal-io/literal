@@ -27,6 +27,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import io.literal.BuildConfig;
@@ -280,17 +281,22 @@ public class AppWebView extends Fragment {
                 fileActivityResultCallback.setFilePathCallback(new ValueCallback<Uri[]>() {
                     @Override
                     public void onReceiveValue(Uri[] value) {
-                        Uri[] absoluteUrls = new Uri[value.length];
+                        ArrayList<Uri> absoluteUrls = new ArrayList<>();
                         for (int idx = 0; idx < value.length; idx++) {
-                            File file = value[idx] != null ? ContentResolverLib.toFile(
-                                    getActivity(),
-                                    StorageObject.getDirectory(getContext(), StorageObject.Type.SCREENSHOT),
-                                    value[idx],
-                                    UUID.randomUUID().toString()
-                            ) : null;
-                            absoluteUrls[idx] = Uri.fromFile(file);
+                            if (value[idx] != null) {
+                                File file = ContentResolverLib.toFile(
+                                        getActivity(),
+                                        StorageObject.getDirectory(getContext(), StorageObject.Type.SCREENSHOT),
+                                        value[idx],
+                                        UUID.randomUUID().toString()
+                                );
+                                absoluteUrls.add(Uri.fromFile(file));
+                            }
                         }
-                        filePathCallback.onReceiveValue(absoluteUrls);
+
+                        if (absoluteUrls.size() > 0) {
+                            filePathCallback.onReceiveValue(absoluteUrls.toArray(new Uri[0]));
+                        }
                     }
                 });
                 getFileContent.launch("image/*");
