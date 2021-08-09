@@ -64,10 +64,12 @@ public class MessagingWebView extends WebView {
                     ),
                     Uri.parse("*")
             );
+            
             try {
+                JSONObject loggedEvent = webEvent.toJSON(!webEvent.getType().startsWith("AUTH"));
                 JSONObject properties = new JSONObject();
                 properties.put("target", "SourceWebView");
-                properties.put("event", webEvent.toJSON());
+                properties.put("event", loggedEvent);
                 AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_DISPATCHED_WEB_EVENT, properties);
             } catch (JSONException e) {
                 ErrorRepository.captureException(e);
