@@ -89,10 +89,10 @@ public class MainActivity extends InstrumentedActivity {
             }
         }
     };
+    private final ActivityResultLauncher<Intent> createAnnotationFromSourceLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), MainActivity.this::handleCreateAnnotationFromSourceResult);
     private SourceWebView sourceWebViewBottomSheetFragment = null;
     private AppWebView appWebViewBottomSheetFragment = null;
     private Observer<SourceInitializationStatus> sourceInitializationStatusObserver;
-    private final ActivityResultLauncher<Intent> createAnnotationFromSourceLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), MainActivity.this::handleCreateAnnotationFromSourceResult);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -189,50 +189,14 @@ public class MainActivity extends InstrumentedActivity {
                                 Annotation annotation = Annotation.fromJson(data.getJSONObject("annotation"));
                                 boolean displayBottomSheet = data.getBoolean("displayBottomSheet");
 
-                                sourceWebViewBottomSheetFragment.handleViewTargetForAnnotation(annotation, targetId)
-                                        .ifPresent((s) -> {
-                                            if (displayBottomSheet) {
-                                                sourceWebViewViewModelBottomSheet.getBottomSheetBehavior().ifPresent(b -> b.setState(BottomSheetBehavior.STATE_EXPANDED));
-
-                                                SourceInitializationStatus sourceInitializationStatus = sourceWebViewViewModelBottomSheet.getSourceInitializationStatus().getValue();
-                                                // Source wil already be initialized if it was previously accessed or it may have loaded in a previous call where `displayBottomSheet` was false.
-                                                if (sourceInitializationStatus.equals(SourceInitializationStatus.INITIALIZED)) {
-                                                    appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
-                                                    boolean javascriptEnabled = Optional.ofNullable(sourceWebViewViewModelBottomSheet).map((vm) -> vm.getSourceJavaScriptConfig().getValue().isEnabled()).orElse(true);
-                                                    if (!javascriptEnabled) {
-                                                        ToastRepository.show(this, R.string.toast_javascript_disabled, ToastRepository.STYLE_DARK_ACCENT);
-                                                    }
-                                                } else if (sourceInitializationStatus.equals(SourceInitializationStatus.FAILED)) {
-                                                    ToastRepository.show(this, R.string.toast_annotation_renderer_failed_to_initialize, ToastRepository.STYLE_DARK_ACCENT);
-                                                } else {
-                                                    if (sourceInitializationStatusObserver != null) {
-                                                        sourceWebViewViewModelBottomSheet.getSourceInitializationStatus().removeObserver(sourceInitializationStatusObserver);
-                                                    }
-                                                    sourceInitializationStatusObserver = new Observer<SourceInitializationStatus>() {
-                                                        @Override
-                                                        public void onChanged(SourceInitializationStatus sourceInitializationStatus) {
-                                                            int sourceWebViewBottomSheetState = sourceWebViewViewModelBottomSheet.getBottomSheetBehavior()
-                                                                    .map(BottomSheetBehavior::getState)
-                                                                    .orElse(BottomSheetBehavior.STATE_HIDDEN);
-
-                                                            if (sourceInitializationStatus.equals(SourceInitializationStatus.INITIALIZED) && sourceWebViewBottomSheetState != BottomSheetBehavior.STATE_HIDDEN) {
-                                                                appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
-                                                            }
-
-                                                            if (sourceInitializationStatus.equals(SourceInitializationStatus.INITIALIZED) || sourceInitializationStatus.equals(SourceInitializationStatus.FAILED)) {
-                                                                sourceWebViewViewModelBottomSheet.getSourceInitializationStatus().removeObserver(this);
-                                                            }
-                                                        }
-                                                    };
-                                                    sourceWebViewViewModelBottomSheet.getSourceInitializationStatus().observe(this, sourceInitializationStatusObserver);
-                                                }
-                                            }
-                                        });
+                                this.handleViewTargetForAnnotation(targetId, annotation, displayBottomSheet);
                             } catch (JSONException e) {
-                                ErrorRepository.captureException(e, webEvent.toString());
+                                ErrorRepository.captureException(e);
                             }
                         } else if (webEvent.getType().equals(WebEvent.TYPE_CREATE_ANNOTATION_FROM_SOURCE)) {
                             this.handleCreateAnnotationFromSource(null);
+                        } else if (webEvent.getType().equals(WebEvent.TYPE_ACTION_SHARE)) {
+
                         }
                     });
                     appWebViewModelPrimary.clearReceivedWebEvents();
@@ -337,26 +301,65 @@ public class MainActivity extends InstrumentedActivity {
         createAnnotationFromSourceLauncher.launch(intent);
     }
 
+    private void handleViewTargetForAnnotation(String targetId, Annotation annotation, boolean displayBottomSheet) {
+            sourceWebViewBottomSheetFragment.handleViewTargetForAnnotation(annotation, targetId)
+                    .ifPresent((s) -> {
+                        if (displayBottomSheet) {
+                            sourceWebViewViewModelBottomSheet.getBottomSheetBehavior().ifPresent(b -> b.setState(BottomSheetBehavior.STATE_EXPANDED));
+
+                            SourceInitializationStatus sourceInitializationStatus = sourceWebViewViewModelBottomSheet.getSourceInitializationStatus().getValue();
+                            // Source wil already be initialized if it was previously accessed or it may have loaded in a previous call where `displayBottomSheet` was false.
+                            if (sourceInitializationStatus.equals(SourceInitializationStatus.INITIALIZED)) {
+                                appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+                                boolean javascriptEnabled = Optional.ofNullable(sourceWebViewViewModelBottomSheet).map((vm) -> vm.getSourceJavaScriptConfig().getValue().isEnabled()).orElse(true);
+                                if (!javascriptEnabled) {
+                                    ToastRepository.show(this, R.string.toast_javascript_disabled, ToastRepository.STYLE_DARK_ACCENT);
+                                }
+                            } else if (sourceInitializationStatus.equals(SourceInitializationStatus.FAILED)) {
+                                ToastRepository.show(this, R.string.toast_annotation_renderer_failed_to_initialize, ToastRepository.STYLE_DARK_ACCENT);
+                            } else {
+                                if (sourceInitializationStatusObserver != null) {
+                                    sourceWebViewViewModelBottomSheet.getSourceInitializationStatus().removeObserver(sourceInitializationStatusObserver);
+                                }
+                                sourceInitializationStatusObserver = new Observer<SourceInitializationStatus>() {
+                                    @Override
+                                    public void onChanged(SourceInitializationStatus sourceInitializationStatus) {
+                                        int sourceWebViewBottomSheetState = sourceWebViewViewModelBottomSheet.getBottomSheetBehavior()
+                                                .map(BottomSheetBehavior::getState)
+                                                .orElse(BottomSheetBehavior.STATE_HIDDEN);
+
+                                        if (sourceInitializationStatus.equals(SourceInitializationStatus.INITIALIZED) && sourceWebViewBottomSheetState != BottomSheetBehavior.STATE_HIDDEN) {
+                                            appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+                                        }
+
+                                        if (sourceInitializationStatus.equals(SourceInitializationStatus.INITIALIZED) || sourceInitializationStatus.equals(SourceInitializationStatus.FAILED)) {
+                                            sourceWebViewViewModelBottomSheet.getSourceInitializationStatus().removeObserver(this);
+                                        }
+                                    }
+                                };
+                                sourceWebViewViewModelBottomSheet.getSourceInitializationStatus().observe(this, sourceInitializationStatusObserver);
+                            }
+                        }
+                    });
+    }
+
     private void handleSourceWebViewBottomSheetHidden(Annotation[] createdAnnotations) {
         sourceWebViewViewModelBottomSheet.getBottomSheetBehavior().ifPresent(b -> b.setState(BottomSheetBehavior.STATE_HIDDEN));
         try {
-            String json = JsonArrayUtil.stringifyObjectArray(createdAnnotations, Annotation::toJson).toString();
-            JSONObject addCacheAnnotationsData = new JSONObject();
-            addCacheAnnotationsData.put("annotations", json);
-            appWebViewPrimaryFragment.postWebEvent(new WebEvent(
-                    WebEvent.TYPE_ADD_CACHE_ANNOTATIONS,
-                    UUID.randomUUID().toString(),
-                    addCacheAnnotationsData
-            ));
-            Annotation[] annotations;
-            try {
-                annotations = JsonArrayUtil.parseJsonObjectArray(new JSONArray(json), new Annotation[0], Annotation::fromJson);
-            } catch (JSONException e) {
-                annotations = new Annotation[0];
+            if (createdAnnotations.length > 0) {
+                String json = JsonArrayUtil.stringifyObjectArray(createdAnnotations, Annotation::toJson).toString();
+                JSONObject addCacheAnnotationsData = new JSONObject();
+                addCacheAnnotationsData.put("annotations", json);
+                appWebViewPrimaryFragment.postWebEvent(new WebEvent(
+                        WebEvent.TYPE_ADD_CACHE_ANNOTATIONS,
+                        UUID.randomUUID().toString(),
+                        addCacheAnnotationsData
+                ));
             }
-            if (annotations.length == 1) {
+
+            if (createdAnnotations.length == 1) {
                 ToastRepository.show(this, R.string.toast_annotation_created, ToastRepository.STYLE_DARK_ACCENT);
-            } else if (annotations.length > 1) {
+            } else if (createdAnnotations.length > 1) {
                 ToastRepository.show(this, R.string.toast_annotations_created, ToastRepository.STYLE_DARK_ACCENT);
             }
         } catch (JSONException e) {
