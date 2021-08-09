@@ -48,7 +48,7 @@ public class ErrorRepository {
         Log.d("captureException", "", exception);
     }
 
-    public static void captureException(Exception exception, Map<String, Object> context) {
+    public static void captureException(Throwable exception, Map<String, Object> context) {
         if (!BuildConfig.DEBUG) {
             Sentry.pushScope();
             Sentry.configureScope((scope) -> context.forEach(scope::setContexts));

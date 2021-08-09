@@ -150,7 +150,6 @@ public class NotificationRepository {
             Optional<Bitmap> annotationHostFavicon,
             Pair<Integer, Integer> progress
     ) {
-
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, context.getString(R.string.annotation_created_notification_channel_id))
                 .setSmallIcon(R.drawable.ic_stat_name)
                 .setColor(Color.BLACK)

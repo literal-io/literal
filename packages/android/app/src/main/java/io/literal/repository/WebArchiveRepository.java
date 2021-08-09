@@ -113,8 +113,8 @@ public class WebArchiveRepository {
         }
     }
 
-    public static CompletableFuture<ResponseBody> executeWebResourceRequest(WebResourceRequest webResourceRequest) {
-        Map<String, String> filteredHeaders = webResourceRequest.getRequestHeaders().entrySet().stream()
+    public static Map<String, String> getIdempotentRequestHeaders(Map<String, String> headers) {
+        return headers.entrySet().stream()
                 .collect(
                         HashMap::new,
                         (agg, entry) -> {
@@ -124,10 +124,12 @@ public class WebArchiveRepository {
                         },
                         HashMap::putAll
                 );
+    }
 
+    public static CompletableFuture<ResponseBody> executeWebResourceRequest(WebResourceRequest webResourceRequest) {
         Request request = new Request.Builder()
                 .url(webResourceRequest.getUrl().toString())
-                .headers(Headers.of(filteredHeaders))
+                .headers(Headers.of(getIdempotentRequestHeaders(webResourceRequest.getRequestHeaders())))
                 .build();
         CompletableFuture<ResponseBody> future = new CompletableFuture<>();
         client.newCall(request).enqueue(new Callback() {
@@ -138,17 +140,19 @@ public class WebArchiveRepository {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) {
-                if (!response.isSuccessful()) {
-                    future.completeExceptionally(new IOException("Unexpected code: " + response));
-                    return;
+                try (ResponseBody responseBody = response.body()) {
+                    if (!response.isSuccessful()) {
+                        future.completeExceptionally(new IOException("Unexpected code: " + response));
+                        return;
+                    }
+                    if (responseBody == null) {
+                        future.completeExceptionally(new Exception("Response Body is null."));
+                        return;
+                    }
+                    future.complete(responseBody);
+                } catch (Exception e) {
+                    future.completeExceptionally(e);
                 }
-
-                ResponseBody responseBody = response.body();
-                if (responseBody == null) {
-                    future.completeExceptionally(new Exception("Response Body is null."));
-                    return;
-                }
-                future.complete(responseBody);
             }
         });
 
