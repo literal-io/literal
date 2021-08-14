@@ -12,6 +12,7 @@ public class AnalyticsRepository {
     public static final String TYPE_DISPATCHED_WEB_EVENT = "DISPATCHED_WEB_EVENT";
     public static final String TYPE_RECEIVED_WEB_EVENT = "RECEIVED_WEB_EVENT";
     public static final String TYPE_CLICK = "CLICK";
+    public static final String TYPE_DISPATCH_SERVICE_INTENT = "DISPATCH_SERVICE_INTENT";
     public static final String TYPE_HANDLE_INTENT_START = "HANDLE_INTENT_START";
     public static final String TYPE_HANDLE_INTENT_COMPLETE = "HANDLE_INTENT_COMPLETE";
 

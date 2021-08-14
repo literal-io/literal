@@ -33,6 +33,7 @@ import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
 import io.literal.model.ErrorRepositoryLevel;
+import io.literal.model.SourceWebViewAnnotation;
 import io.literal.model.StorageObject;
 import io.literal.model.User;
 import io.literal.repository.AnalyticsRepository;
@@ -139,7 +140,7 @@ public class ShareTargetHandler extends InstrumentedActivity {
         appWebViewViewModel.getBottomSheetState().observe(this, bottomSheetState -> {
             AppWebViewBottomSheetAnimator.handleBottomSheetStateChange(
                     bottomSheetFragmentContainer,
-                    sourceWebViewViewModel.getFocusedAnnotation().orElse(null),
+                    sourceWebViewViewModel.getFocusedAnnotation().map(SourceWebViewAnnotation::getAnnotation).orElse(null),
                     getResources(),
                     bottomSheetState,
                     (_e, webEvent) -> appWebViewFragment.postWebEvent(webEvent)
@@ -244,7 +245,7 @@ public class ShareTargetHandler extends InstrumentedActivity {
         });
 
         (new CreateAnnotationIntent.Builder())
-                .setAnnotations(new Annotation[]{annotation})
+                .setAnnotation(annotation)
                 .setId(UUID.randomUUID().toString())
                 .setDisableNotification(true)
                 .build()
@@ -283,7 +284,7 @@ public class ShareTargetHandler extends InstrumentedActivity {
         });
 
         (new CreateAnnotationIntent.Builder())
-                .setAnnotations(new Annotation[]{annotation})
+                .setAnnotation(annotation)
                 .setId(UUID.randomUUID().toString())
                 .setDisableNotification(true)
                 .build()

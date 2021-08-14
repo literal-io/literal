@@ -121,6 +121,43 @@ public class AnnotationRepository {
                 });
     }
 
+    public static CompletableFuture<CreateAnnotationMutation.Data> createAnnotationMutation(AWSAppSyncClient appSyncClient, CreateAnnotationInput input) {
+        try {
+            JSONObject properties = new JSONObject();
+            JSONObject operationVariables = new JSONObject();
+            operationVariables.put("id", input.id());
+            properties.put("operationName", "CreateAnnotation");
+            properties.put("operationVariables", operationVariables);
+
+            AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_GRAPH_QL_OPERATION, properties);
+        } catch (JSONException e) {
+            ErrorRepository.captureException(e);
+        }
+
+        CompletableFuture<CreateAnnotationMutation.Data> future = new CompletableFuture<>();
+        appSyncClient
+                .mutate(CreateAnnotationMutation.builder().input(input).build())
+                .enqueue(new GraphQLCall.Callback<CreateAnnotationMutation.Data>() {
+                    @Override
+                    public void onResponse(@Nonnull Response<CreateAnnotationMutation.Data> response) {
+                        if (response.hasErrors()) {
+                            response.errors().forEach((error -> {
+                                ErrorRepository.captureException(new Exception(error.message()));
+                            }));
+                            future.completeExceptionally((new ApolloException("Server Error")));
+                        } else {
+                            future.complete(response.data());
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@Nonnull ApolloException e) {
+                        future.completeExceptionally(e);
+                    }
+                });
+        return future;
+    }
+
     public static CompletableFuture<List<CreateAnnotationMutation.Data>> createAnnotations(AWSAppSyncClient appSyncClient, Annotation[] annotations) {
         List<CompletableFuture<CreateAnnotationMutation.Data>> results = Arrays.stream(annotations).map((annotation) -> {
             CreateAnnotationInput input = annotation.toCreateAnnotationInput();
