@@ -2,6 +2,7 @@ package io.literal.viewmodel;
 
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
@@ -25,6 +26,7 @@ import io.literal.model.Body;
 import io.literal.model.Format;
 import io.literal.model.Language;
 import io.literal.model.Motivation;
+import io.literal.model.SourceWebViewAnnotation;
 import io.literal.model.Target;
 import io.literal.model.TextDirection;
 import io.literal.model.TextualBody;
@@ -32,50 +34,16 @@ import io.literal.model.TextualTarget;
 import io.literal.model.WebArchive;
 import io.literal.repository.ErrorRepository;
 import io.literal.ui.view.SourceWebView.Source;
+import io.literal.ui.view.SourceWebView.SourceWebView;
 
 public class SourceWebViewViewModel extends ViewModel {
-    private final MutableLiveData<ArrayList<Annotation>> annotations = new MutableLiveData<>(new ArrayList<>());
-    private final MutableLiveData<String> focusedAnnotationId = new MutableLiveData<>(null);
-    private final MutableLiveData<ArrayDeque<WebEvent>> webEvents = new MutableLiveData<>(null);
     private final MutableLiveData<Boolean> sourceHasFinishedInitializing = new MutableLiveData<>(false);
-    private final ArrayList<String> newAnnotationIds = new ArrayList<>();
-    private final HashMap<String, WebArchive> webArchives = new HashMap<>();
 
-    public MutableLiveData<ArrayList<Annotation>> getAnnotations() {
-        return annotations;
-    }
-    public void setAnnotations(ArrayList<Annotation> annotations) {
-        this.annotations.setValue(annotations);
-    }
+    private final HashMap<String, SourceWebViewAnnotation> annotations = new HashMap<>();
+    private final MutableLiveData<SourceWebViewAnnotation[]> annotationsLiveData = new MutableLiveData<>(new SourceWebViewAnnotation[0]);
 
-    public MutableLiveData<String> getFocusedAnnotationId() {
-        return focusedAnnotationId;
-    }
-
-    public Optional<Annotation> getFocusedAnnotation() {
-        if (focusedAnnotationId.getValue() == null) {
-            return Optional.empty();
-        }
-
-        return annotations.getValue().stream()
-                .filter(a -> a.getId().equals(focusedAnnotationId.getValue()))
-                .findFirst();
-    }
-
-    public void setFocusedAnnotationId(String annotationId) {
-        focusedAnnotationId.setValue(annotationId);
-    }
-
-    public ArrayList<String> getNewAnnotationIds() {
-        return newAnnotationIds;
-    }
-
-    public void addWebArchive(String annotationId, WebArchive webArchive) {
-        this.webArchives.put(annotationId, webArchive);
-    }
-
-    public HashMap<String, WebArchive> getWebArchives() {
-        return webArchives;
+    public MutableLiveData<SourceWebViewAnnotation[]> getAnnotations() {
+        return annotationsLiveData;
     }
 
     public MutableLiveData<Boolean> getSourceHasFinishedInitializing() {
@@ -87,17 +55,28 @@ public class SourceWebViewViewModel extends ViewModel {
     }
 
     public void reset() {
-        this.annotations.setValue(new ArrayList<>());
-        this.focusedAnnotationId.setValue(null);
-        this.webEvents.setValue(new ArrayDeque<>());
+        this.annotations.clear();
         this.sourceHasFinishedInitializing.setValue(false);
-        this.newAnnotationIds.clear();
-        this.webArchives.clear();
+        this.annotationsLiveData.setValue(new SourceWebViewAnnotation[0]);
     }
 
-    public Annotation createAnnotation(String json, String creatorUsername) {
+    public Optional<SourceWebViewAnnotation> getFocusedAnnotation() {
+        return this.annotations.values().stream()
+                .filter((annotation) -> annotation.getFocusStatus().equals(SourceWebViewAnnotation.FocusStatus.FOCUSED))
+                .findFirst();
+    }
+
+    public Optional<SourceWebViewAnnotation> getAnnotation(String annotationId) {
+        return Optional.ofNullable(this.annotations.get(annotationId));
+    }
+
+    public void setFocusedAnnotationId(String annotationId) {
+        annotations.values().forEach((sourceWebViewAnnotation -> sourceWebViewAnnotation.setFocusStatus(SourceWebViewAnnotation.FocusStatus.NOT_FOCUSED)));
+        Optional.ofNullable(annotations.get(annotationId)).ifPresent((sourceWebViewAnnotation -> sourceWebViewAnnotation.setFocusStatus(SourceWebViewAnnotation.FocusStatus.FOCUSED)));
+    }
+
+    public Annotation createAnnotation(String json, String creatorUsername, WebArchive webArchive) {
         try {
-            ArrayList<Annotation> newAnnotations = (ArrayList<Annotation>) annotations.getValue().clone();
             Annotation annotation = Annotation.fromJson(new JSONObject(json));
 
             boolean needsRecentTag =
@@ -161,9 +140,16 @@ public class SourceWebViewViewModel extends ViewModel {
 
             }
 
-            newAnnotations.add(annotation);
-            annotations.setValue(newAnnotations);
-            newAnnotationIds.add(annotation.getId());
+            annotations.put(
+                    annotation.getId(),
+                    new SourceWebViewAnnotation(
+                            annotation,
+                            webArchive,
+                            SourceWebViewAnnotation.CreationStatus.REQUIRES_CREATION,
+                            SourceWebViewAnnotation.FocusStatus.NOT_FOCUSED
+                    )
+            );
+            annotationsLiveData.setValue(annotations.values().toArray(new SourceWebViewAnnotation[0]));
 
             return annotation;
         } catch (Exception e) {
@@ -173,66 +159,65 @@ public class SourceWebViewViewModel extends ViewModel {
     }
 
     public void createAnnotation(Annotation annotation) {
-        ArrayList<Annotation> newAnnotations = (ArrayList<Annotation>) annotations.getValue().clone();
-        newAnnotations.add(annotation);
-        annotations.setValue(newAnnotations);
-        newAnnotationIds.add(annotation.getId());
+        annotations.put(
+                annotation.getId(),
+                new SourceWebViewAnnotation(
+                        annotation,
+                        null,
+                        SourceWebViewAnnotation.CreationStatus.REQUIRES_CREATION,
+                        SourceWebViewAnnotation.FocusStatus.NOT_FOCUSED
+                )
+        );
+        annotationsLiveData.setValue(annotations.values().toArray(new SourceWebViewAnnotation[0]));
     }
 
     public void addAnnotation(Annotation annotation, boolean focusAnnotation) {
-        ArrayList<Annotation> newAnnotations = (ArrayList<Annotation>) annotations.getValue().clone();
-        newAnnotations.add(annotation);
-        annotations.setValue(newAnnotations);
-        if (focusAnnotation) {
-            focusedAnnotationId.setValue(annotation.getId());
-        }
+        annotations.put(
+                annotation.getId(),
+                new SourceWebViewAnnotation(
+                        annotation,
+                        null,
+                        SourceWebViewAnnotation.CreationStatus.CREATED,
+                        focusAnnotation ? SourceWebViewAnnotation.FocusStatus.FOCUSED : SourceWebViewAnnotation.FocusStatus.NOT_FOCUSED
+                )
+        );
+        annotationsLiveData.setValue(annotations.values().toArray(new SourceWebViewAnnotation[0]));
     }
 
-    public boolean updateAnnotation(Annotation annotation) {
-        if (annotation.getId() != null) {
-            ArrayList<Annotation> newAnnotations = (ArrayList<Annotation>) annotations.getValue().clone();
-            int idx = -1;
-            for (int i = 0; i < newAnnotations.size(); i++) {
-                if (newAnnotations.get(i).getId().equals(annotation.getId())) {
-                    idx = i;
-                    break;
-                }
-            }
+    public void addAnnotations(Annotation[] annotationsToAdd) {
+        Arrays.stream(annotationsToAdd).forEach((annotation) -> {
+            annotations.put(
+                    annotation.getId(),
+                    new SourceWebViewAnnotation(
+                            annotation,
+                            null,
+                            SourceWebViewAnnotation.CreationStatus.CREATED,
+                            SourceWebViewAnnotation.FocusStatus.NOT_FOCUSED
+                    )
+            );
+        });
+        annotationsLiveData.setValue(annotations.values().toArray(new SourceWebViewAnnotation[0]));
+    }
 
-            if (idx != -1) {
-                newAnnotations.set(idx, annotation);
-                annotations.setValue(newAnnotations);
-                return true;
-            }
+    public boolean updateAnnotation(@NonNull Annotation annotation) {
+        if (annotation.getId() == null) {
+            return false;
         }
-        return false;
+
+        Optional<SourceWebViewAnnotation> sourceWebViewAnnotation = Optional.ofNullable(annotations.get(annotation.getId()));
+        if (sourceWebViewAnnotation.isPresent()) {
+            sourceWebViewAnnotation.get().setAnnotation(annotation);
+            annotationsLiveData.setValue(annotations.values().toArray(new SourceWebViewAnnotation[0]));
+        }
+
+        return sourceWebViewAnnotation.isPresent();
     }
 
     public boolean removeAnnotation(String annotationId) {
-        ArrayList<Annotation> updatedAnnotations = (ArrayList<Annotation>) annotations.getValue().clone();
-        boolean updated = updatedAnnotations.removeIf((annotation) -> annotation.getId().equals(annotationId));
-        if (updated) {
-            annotations.setValue(updatedAnnotations);
+        boolean didRemove = Optional.ofNullable(annotations.remove(annotationId)).isPresent();
+        if (didRemove) {
+            annotationsLiveData.setValue(annotations.values().toArray(new SourceWebViewAnnotation[0]));
         }
-        return updated;
-    }
-
-    public void dispatchWebEvent(WebEvent webEvent) {
-        ArrayDeque<WebEvent> newWebEvents;
-        if (webEvents.getValue() == null) {
-            newWebEvents = new ArrayDeque<>();
-        } else {
-            newWebEvents = webEvents.getValue().clone();
-        }
-        newWebEvents.add(webEvent);
-        webEvents.setValue(newWebEvents);
-    }
-
-    public void clearWebEvents() {
-        webEvents.setValue(null);
-    }
-
-    public MutableLiveData<ArrayDeque<WebEvent>> getWebEvents() {
-        return webEvents;
+        return didRemove;
     }
 }

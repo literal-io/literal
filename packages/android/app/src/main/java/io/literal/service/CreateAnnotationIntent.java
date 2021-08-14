@@ -33,34 +33,31 @@ import io.literal.repository.ErrorRepository;
 public class CreateAnnotationIntent {
     public static String ACTION = "ACTION_CREATE_ANNOTATIONS";
     public static String EXTRA_ID = "EXTRA_ID";
-    public static String EXTRA_ANNOTATIONS = "EXTRA_ANNOTATIONS";
+    public static String EXTRA_ANNOTATION = "EXTRA_ANNOTATION";
     public static String EXTRA_FAVICON = "EXTRA_FAVICON";
     public static String EXTRA_DISPLAY_URI = "EXTRA_DISPLAY_URI";
     public static String EXTRA_WEB_ARCHIVES = "EXTRA_WEB_ARCHIVES";
     public static String EXTRA_DISABLE_NOTIFICATION = "EXTRA_DISABLE_NOTIFICATION";
 
-    private final Annotation[] annotations;
+    private final Annotation annotation;
     private final Optional<File> favicon;
     private final Optional<URI> displayUri;
     private final String id;
-    private final Optional<HashMap<String, WebArchive>> webArchives;
     private final boolean disableNotification;
 
     private Optional<Bitmap> faviconBitmap;
 
     public CreateAnnotationIntent(
-            @NonNull Annotation[] annotations,
-            @NonNull Optional<HashMap<String, WebArchive>> webArchives,
+            @NonNull Annotation annotation,
             @NonNull Optional<File> favicon,
             @NonNull Optional<URI> displayUri,
             @NonNull boolean disableNotification,
             @NonNull String id
     ) {
-        this.annotations = annotations;
+        this.annotation = annotation;
         this.favicon = favicon;
         this.id = id;
         this.displayUri = displayUri;
-        this.webArchives = webArchives;
         this.disableNotification = disableNotification;
         this.faviconBitmap = Optional.empty();
     }
@@ -69,11 +66,9 @@ public class CreateAnnotationIntent {
         return id;
     }
 
-    public Annotation[] getAnnotations() {
-        return annotations;
+    public Annotation getAnnotation() {
+        return annotation;
     }
-
-    public Optional<HashMap<String, WebArchive>> getWebArchives() { return webArchives; }
 
     public Optional<File> getFavicon() {
         return favicon;
@@ -95,7 +90,7 @@ public class CreateAnnotationIntent {
             return Optional.empty();
         }
 
-        String extraAnnotations = intent.getStringExtra(EXTRA_ANNOTATIONS);
+        String extraAnnotation = intent.getStringExtra(EXTRA_ANNOTATION);
         String extraId = intent.getStringExtra(EXTRA_ID);
         boolean extraDisableNotification = intent.getBooleanExtra(EXTRA_DISABLE_NOTIFICATION, false);
 
@@ -104,7 +99,7 @@ public class CreateAnnotationIntent {
         Optional<ArrayList<WebArchive>> extraWebArchives = Optional.ofNullable(intent.getParcelableArrayListExtra(EXTRA_WEB_ARCHIVES));
 
         try {
-            Annotation[] annotations = JsonArrayUtil.parseJsonObjectArray(new JSONArray(extraAnnotations), new Annotation[0], Annotation::fromJson);
+            Annotation annotation = Annotation.fromJson(new JSONObject(extraAnnotation));
             Optional<File> favicon = extraFavicon.map(File::new);
             Optional<URI> displayURI = extraDisplayURI.flatMap(u -> {
                 try {
@@ -125,10 +120,9 @@ public class CreateAnnotationIntent {
             CreateAnnotationIntent.Builder builder = new CreateAnnotationIntent.Builder();
             return Optional.of(
                     builder
-                            .setAnnotations(annotations)
+                            .setAnnotation(annotation)
                             .setFavicon(favicon)
                             .setDisplayURI(displayURI)
-                            .setWebArchives(webArchives)
                             .setId(extraId)
                             .setDisableNotification(extraDisableNotification)
                             .build()
@@ -144,21 +138,8 @@ public class CreateAnnotationIntent {
             Intent serviceIntent = new Intent(context, AnnotationService.class);
             serviceIntent.setAction(ACTION);
             serviceIntent.putExtra(EXTRA_ID, id);
-            serviceIntent.putExtra(EXTRA_ANNOTATIONS, JsonArrayUtil.stringifyObjectArray(annotations, Annotation::toJson).toString());
+            serviceIntent.putExtra(EXTRA_ANNOTATION, annotation.toJson().toString());
             serviceIntent.putExtra(EXTRA_DISABLE_NOTIFICATION, disableNotification);
-
-            webArchives.ifPresent((w) -> serviceIntent.putParcelableArrayListExtra(
-                    EXTRA_WEB_ARCHIVES,
-                    new ArrayList<>(
-                            w.entrySet().stream()
-                                    .map((entry) -> {
-                                        WebArchive value = entry.getValue();
-                                        value.setId(entry.getKey());
-                                        return value;
-                                    })
-                                    .collect(Collectors.toList())
-                    )
-            ));
 
             favicon.ifPresent((f) -> serviceIntent.putExtra(EXTRA_FAVICON, f.getAbsolutePath()));
             displayUri.ifPresent(d -> serviceIntent.putExtra(EXTRA_DISPLAY_URI, d.toString()));
@@ -175,10 +156,8 @@ public class CreateAnnotationIntent {
             JSONObject data = new JSONObject();
             data.put("action", ACTION);
             data.put(EXTRA_ID, id);
-            data.put(EXTRA_ANNOTATIONS, JsonArrayUtil.stringifyObjectArray(annotations, Annotation::toJson).toString());
+            data.put(EXTRA_ANNOTATION, annotation.toJson());
             data.put(EXTRA_DISABLE_NOTIFICATION, disableNotification);
-
-            // FIXME: include web archives
 
             favicon.ifPresent((f) -> {
                 try {
@@ -203,19 +182,17 @@ public class CreateAnnotationIntent {
     }
 
     public static class Builder {
-        private Annotation[] annotations;
-        private Optional<HashMap<String, WebArchive>> webArchives = Optional.empty();
+        private Annotation annotation;
         private Optional<File> favicon = Optional.empty();
         private Optional<URI> displayURI = Optional.empty();
         private boolean disableNotification = false;
-        private Context context;
         private String id;
 
         public Builder() {
         }
 
-        public Builder setAnnotations(Annotation[] annotations) {
-            this.annotations = annotations;
+        public Builder setAnnotation(Annotation annotation) {
+            this.annotation = annotation;
             return this;
         }
 
@@ -234,11 +211,6 @@ public class CreateAnnotationIntent {
             return this;
         }
 
-        public Builder setWebArchives(Optional<HashMap<String, WebArchive>> webArchives) {
-            this.webArchives = webArchives;
-            return this;
-        }
-
 
         public Builder setDisableNotification(boolean disableNotification) {
             this.disableNotification = disableNotification;
@@ -246,12 +218,11 @@ public class CreateAnnotationIntent {
         }
 
         public CreateAnnotationIntent build() {
-            Objects.requireNonNull(annotations);
+            Objects.requireNonNull(annotation);
             Objects.requireNonNull(id);
 
             return new CreateAnnotationIntent(
-                    annotations,
-                    webArchives,
+                    annotation,
                     favicon,
                     displayURI,
                     disableNotification,

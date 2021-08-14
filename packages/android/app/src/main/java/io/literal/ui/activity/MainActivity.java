@@ -38,6 +38,7 @@ import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
+import io.literal.model.SourceWebViewAnnotation;
 import io.literal.model.User;
 import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.ErrorRepository;
@@ -207,7 +208,7 @@ public class MainActivity extends InstrumentedActivity {
             }
             AppWebViewBottomSheetAnimator.handleBottomSheetStateChange(
                     findViewById(R.id.app_web_view_bottom_sheet_fragment_container),
-                    sourceWebViewViewModelBottomSheet.getFocusedAnnotation().orElse(null),
+                    sourceWebViewViewModelBottomSheet.getFocusedAnnotation().map(SourceWebViewAnnotation::getAnnotation).orElse(null),
                     getResources(),
                     bottomSheetState,
                     (_e, webEvent) -> appWebViewBottomSheetFragment.postWebEvent(webEvent)
@@ -252,7 +253,7 @@ public class MainActivity extends InstrumentedActivity {
         sourceWebViewBottomSheetBehavior = BottomSheetBehavior.from(bottomSheetBehaviorContainer);
         sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
         sourceWebViewBottomSheetBehavior.addBottomSheetCallback(new SourceWebViewBottomSheetCallback((_e, _d) -> {
-            if (sourceWebViewViewModelBottomSheet.getFocusedAnnotationId().getValue() != null) {
+            if (sourceWebViewViewModelBottomSheet.getFocusedAnnotation().isPresent()) {
                 sourceWebViewBottomSheetFragment.handleAnnotationBlur();
             }
         }));

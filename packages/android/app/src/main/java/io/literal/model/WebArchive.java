@@ -59,6 +59,7 @@ public class WebArchive implements Parcelable {
     private String id;
     private Message mimeMessage;
     private HashMap<String, BodyPart> bodyPartByContentLocation;
+    private CompletableFuture<WebArchive> compilationFuture;
 
     public WebArchive(
             @NotNull StorageObject storageObject,
@@ -173,12 +174,20 @@ public class WebArchive implements Parcelable {
         );
     }
 
+    public boolean needsCompilation() {
+        return this.getScriptElements().size() != 0 || this.getWebRequests().size() != 0;
+    }
+
     public CompletableFuture<WebArchive> compile(Context context, User user) {
-        if (this.getScriptElements().size() == 0 && this.getWebRequests().size() == 0) {
+        if (!this.needsCompilation()) {
             return CompletableFuture.completedFuture(this);
         }
 
-        return this.open(context, user)
+        if (this.compilationFuture != null) {
+            return this.compilationFuture;
+        }
+
+        this.compilationFuture = this.open(context, user)
                 .thenCompose(_file -> {
                     // For each web request not currently within the archive, execute it and build a BodyPart
                     HashMap<String, BodyPart> bodyPartByContentLocation = getBodyPartByContentLocation();
@@ -221,7 +230,7 @@ public class WebArchive implements Parcelable {
                         updatedWebArchiveOutputStream = new FileOutputStream(updatedWebArchive.getFile(context));
                         DefaultMessageWriter writer = new DefaultMessageWriter();
                         writer.writeMessage(mimeMessage, updatedWebArchiveOutputStream);
-                        storageObject.setStatus(StorageObject.Status.UPLOAD_REQUIRED);
+                        updatedWebArchive.setStatus(StorageObject.Status.UPLOAD_REQUIRED);
 
                         future.complete(new WebArchive(updatedWebArchive));
                     } catch (Exception e) {
@@ -237,6 +246,8 @@ public class WebArchive implements Parcelable {
                     }
                     return future;
                 });
+
+        return this.compilationFuture;
     }
 
     private BodyPart addScriptsToBodyPart(BodyPart bodyPart, List<HTMLScriptElement> scriptElements) {
