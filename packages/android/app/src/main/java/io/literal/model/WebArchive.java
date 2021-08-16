@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -175,15 +176,10 @@ public class WebArchive implements Parcelable {
     }
 
     public CompletableFuture<WebArchive> compile(Context context, User user) {
-        if (this.compilationFuture != null) {
-            return this.compilationFuture;
-        }
-
-        this.compilationFuture = this.open(context, user)
+        return this.open(context, user)
                 .thenCompose(_file -> {
                     // For each web request not currently within the archive, execute it and build a BodyPart
                     HashMap<String, BodyPart> bodyPartByContentLocation = getBodyPartByContentLocation();
-                    Supplier<List<CompletableFuture<Optional<BodyPart>>>> supplier = () -> new LinkedList<>();
                     List<CompletableFuture<Optional<BodyPart>>> webRequestBodyPartFutures = getWebRequests()
                             .stream()
                             .filter(webResourceRequest -> !bodyPartByContentLocation.containsKey(webResourceRequest.getUrl().toString()))
@@ -238,8 +234,6 @@ public class WebArchive implements Parcelable {
                     }
                     return future;
                 });
-
-        return this.compilationFuture;
     }
 
     private BodyPart addScriptsToBodyPart(BodyPart bodyPart, List<HTMLScriptElement> scriptElements) {
