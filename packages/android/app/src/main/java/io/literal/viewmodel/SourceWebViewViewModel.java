@@ -75,7 +75,7 @@ public class SourceWebViewViewModel extends ViewModel {
         Optional.ofNullable(annotations.get(annotationId)).ifPresent((sourceWebViewAnnotation -> sourceWebViewAnnotation.setFocusStatus(SourceWebViewAnnotation.FocusStatus.FOCUSED)));
     }
 
-    public Annotation createAnnotation(String json, String creatorUsername, WebArchive webArchive) {
+    public SourceWebViewAnnotation createAnnotation(String json, String creatorUsername, WebArchive webArchive) {
         try {
             Annotation annotation = Annotation.fromJson(new JSONObject(json));
 
@@ -140,18 +140,16 @@ public class SourceWebViewViewModel extends ViewModel {
 
             }
 
-            annotations.put(
-                    annotation.getId(),
-                    new SourceWebViewAnnotation(
-                            annotation,
-                            webArchive,
-                            SourceWebViewAnnotation.CreationStatus.REQUIRES_CREATION,
-                            SourceWebViewAnnotation.FocusStatus.NOT_FOCUSED
-                    )
+            SourceWebViewAnnotation sourceWebViewAnnotation = new SourceWebViewAnnotation(
+                    annotation,
+                    webArchive,
+                    SourceWebViewAnnotation.CreationStatus.REQUIRES_CREATION,
+                    SourceWebViewAnnotation.FocusStatus.NOT_FOCUSED
             );
+            annotations.put(annotation.getId(), sourceWebViewAnnotation);
             annotationsLiveData.setValue(annotations.values().toArray(new SourceWebViewAnnotation[0]));
 
-            return annotation;
+            return sourceWebViewAnnotation;
         } catch (Exception e) {
             ErrorRepository.captureException(e);
             return null;
