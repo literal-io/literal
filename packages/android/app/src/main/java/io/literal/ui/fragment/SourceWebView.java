@@ -68,6 +68,7 @@ import io.literal.repository.ToastRepository;
 import io.literal.repository.WebArchiveRepository;
 import io.literal.repository.WebViewRepository;
 import io.literal.service.CreateAnnotationIntent;
+import io.literal.ui.MainApplication;
 import io.literal.ui.view.SourceWebView.Client;
 import io.literal.ui.view.SourceWebView.Source;
 import io.literal.viewmodel.AppWebViewViewModel;
@@ -395,13 +396,16 @@ public class SourceWebView extends Fragment {
 
                     try {
                         String annotationsJSON = annotationsFuture.get();
-                        String appSyncIdentity = authenticationViewModel.getUser().getValue().getAppSyncIdentity();
+                        User user = authenticationViewModel.getUser().getValue();
 
                         Optional.ofNullable(getActivity()).ifPresent((activity) -> activity.runOnUiThread(() -> {
-                            Annotation annotation = sourceWebViewViewModel.createAnnotation(annotationsJSON, appSyncIdentity, webArchive);
-                            sourceWebViewViewModel.setFocusedAnnotationId(annotation.getId());
+                            SourceWebViewAnnotation sourceWebViewAnnotation = sourceWebViewViewModel.createAnnotation(annotationsJSON, user.getAppSyncIdentity(), webArchive);
+                            sourceWebViewViewModel.setFocusedAnnotationId(sourceWebViewAnnotation.getAnnotation().getId());
                             bottomSheetAppWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
+                            ((MainApplication) activity.getApplication()).getThreadPoolExecutor().execute(() -> sourceWebViewAnnotation.compileWebArchive(getContext(), user));
                         }));
+
+
                     } catch (Exception e) {
                         ErrorRepository.captureException(e);
                         Optional.ofNullable(getActivity()).ifPresent(activity -> ToastRepository.show(activity, R.string.toast_error_annotation_created));
@@ -915,8 +919,6 @@ public class SourceWebView extends Fragment {
                 if (e != null) {
                     return;
                 }
-
-                Log.i("handleToolbarPrimaryAction", "web archives compiled");
 
                 String id = UUID.randomUUID().toString();
                 Arrays.stream(annotationsToCreate).forEach(annotationToCreate -> {

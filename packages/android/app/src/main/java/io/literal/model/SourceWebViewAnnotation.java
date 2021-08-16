@@ -10,6 +10,7 @@ import java.util.concurrent.CompletableFuture;
 
 import io.literal.lib.AmazonS3URILib;
 import io.literal.lib.DateUtil;
+import io.literal.ui.view.SourceWebView.Source;
 
 public class SourceWebViewAnnotation {
     private Annotation annotation;
@@ -25,29 +26,27 @@ public class SourceWebViewAnnotation {
     }
 
     public CompletableFuture<Void> compileWebArchive(Context context, User user) {
-        if (!webArchive.needsCompilation()) {
-            return CompletableFuture.completedFuture(null);
-        }
-
         return webArchive.compile(context, user)
                 .thenApply((updatedWebArchive) -> {
-                    this.annotation = Arrays.stream(annotation.getTarget())
-                            .filter(t -> t instanceof SpecificTarget)
-                            .findFirst()
-                            .map((specificTarget) -> {
-                                SpecificTarget updatedSpecifcTarget = new SpecificTarget.Builder((SpecificTarget) specificTarget)
-                                        .setState(new State[]{
-                                                new TimeState(
-                                                        new URI[]{updatedWebArchive.getStorageObject().getCanonicalURI(context, user)},
-                                                        new String[]{DateUtil.toISO8601UTC(new Date())}
-                                                )
-                                        })
-                                        .build();
+                    if (this.webArchive != updatedWebArchive) {
+                        this.annotation = Arrays.stream(annotation.getTarget())
+                                .filter(t -> t instanceof SpecificTarget)
+                                .findFirst()
+                                .map((specificTarget) -> {
+                                    SpecificTarget updatedSpecifcTarget = new SpecificTarget.Builder((SpecificTarget) specificTarget)
+                                            .setState(new State[]{
+                                                    new TimeState(
+                                                            new URI[]{updatedWebArchive.getStorageObject().getCanonicalURI(context, user)},
+                                                            new String[]{DateUtil.toISO8601UTC(new Date())}
+                                                    )
+                                            })
+                                            .build();
 
-                                return annotation.updateTarget(updatedSpecifcTarget);
-                            })
-                            .orElse(annotation);
-                    this.webArchive = updatedWebArchive;
+                                    return annotation.updateTarget(updatedSpecifcTarget);
+                                })
+                                .orElse(annotation);
+                        this.webArchive = updatedWebArchive;
+                    }
                     return null;
                 });
     }

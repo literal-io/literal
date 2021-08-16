@@ -174,15 +174,7 @@ public class WebArchive implements Parcelable {
         );
     }
 
-    public boolean needsCompilation() {
-        return this.getScriptElements().size() != 0 || this.getWebRequests().size() != 0;
-    }
-
     public CompletableFuture<WebArchive> compile(Context context, User user) {
-        if (!this.needsCompilation()) {
-            return CompletableFuture.completedFuture(this);
-        }
-
         if (this.compilationFuture != null) {
             return this.compilationFuture;
         }

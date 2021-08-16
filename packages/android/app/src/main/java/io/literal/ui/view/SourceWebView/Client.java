@@ -145,7 +145,8 @@ public class Client extends WebViewClient {
         }
 
         return source.getWebArchive().map(w -> {
-            boolean containsContentLocation = w.getBodyPartByContentLocation().containsKey(uri.toString());
+            boolean containsContentLocation = Optional.ofNullable(w.getBodyPartByContentLocation())
+                    .map(bodyPartByContentLocation -> bodyPartByContentLocation.containsKey(uri.toString())).orElse(false);
             boolean isPrimaryURI = getSourceURI().map(u -> u.equals(uri)).orElse(false);
 
             return containsContentLocation || isPrimaryURI;
