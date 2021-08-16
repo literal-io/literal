@@ -7,6 +7,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import io.literal.lib.AmazonS3URILib;
 import io.literal.lib.DateUtil;
@@ -25,30 +26,33 @@ public class SourceWebViewAnnotation {
         this.webArchive = webArchive;
     }
 
-    public CompletableFuture<Void> compileWebArchive(Context context, User user) {
-        return webArchive.compile(context, user)
-                .thenApply((updatedWebArchive) -> {
-                    if (this.webArchive != updatedWebArchive) {
-                        this.annotation = Arrays.stream(annotation.getTarget())
-                                .filter(t -> t instanceof SpecificTarget)
-                                .findFirst()
-                                .map((specificTarget) -> {
-                                    SpecificTarget updatedSpecifcTarget = new SpecificTarget.Builder((SpecificTarget) specificTarget)
-                                            .setState(new State[]{
-                                                    new TimeState(
-                                                            new URI[]{updatedWebArchive.getStorageObject().getCanonicalURI(context, user)},
-                                                            new String[]{DateUtil.toISO8601UTC(new Date())}
-                                                    )
-                                            })
-                                            .build();
-
-                                    return annotation.updateTarget(updatedSpecifcTarget);
-                                })
-                                .orElse(annotation);
-                        this.webArchive = updatedWebArchive;
+    public CompletableFuture<Annotation> compileWebArchive(Context context, User user, Executor executor) {
+        CompletableFuture<Annotation> future = new CompletableFuture<>();
+        executor.execute(() -> webArchive.compile(context, user)
+                .whenComplete((compiledWebArchive, e) -> {
+                    if (e != null) {
+                        future.completeExceptionally(e);
                     }
-                    return null;
-                });
+                    Annotation updatedAnnotation = Arrays.stream(annotation.getTarget())
+                            .filter(t -> t instanceof SpecificTarget)
+                            .findFirst()
+                            .map((specificTarget) -> {
+                                SpecificTarget updatedSpecifcTarget = new SpecificTarget.Builder((SpecificTarget) specificTarget)
+                                        .setState(new State[]{
+                                                new TimeState(
+                                                        new URI[]{compiledWebArchive.getStorageObject().getCanonicalURI(context, user)},
+                                                        new String[]{DateUtil.toISO8601UTC(new Date())}
+                                                )
+                                        })
+                                        .build();
+
+                                return annotation.updateTarget(updatedSpecifcTarget);
+                            })
+                            .orElse(annotation);
+
+                    future.complete(updatedAnnotation);
+                }));
+        return future;
     }
 
     public FocusStatus getFocusStatus() {

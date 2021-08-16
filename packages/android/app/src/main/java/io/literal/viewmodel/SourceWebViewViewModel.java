@@ -1,5 +1,6 @@
 package io.literal.viewmodel;
 
+import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -13,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import io.literal.lib.AnnotationCollectionLib;
 import io.literal.lib.AnnotationLib;
@@ -31,6 +34,7 @@ import io.literal.model.Target;
 import io.literal.model.TextDirection;
 import io.literal.model.TextualBody;
 import io.literal.model.TextualTarget;
+import io.literal.model.User;
 import io.literal.model.WebArchive;
 import io.literal.repository.ErrorRepository;
 import io.literal.ui.view.SourceWebView.Source;
@@ -40,6 +44,7 @@ public class SourceWebViewViewModel extends ViewModel {
     private final MutableLiveData<Boolean> sourceHasFinishedInitializing = new MutableLiveData<>(false);
 
     private final HashMap<String, SourceWebViewAnnotation> annotations = new HashMap<>();
+    private final HashMap<String, CompletableFuture<Annotation>> compiledAnnotations = new HashMap<>();
     private final MutableLiveData<SourceWebViewAnnotation[]> annotationsLiveData = new MutableLiveData<>(new SourceWebViewAnnotation[0]);
 
     public MutableLiveData<SourceWebViewAnnotation[]> getAnnotations() {
@@ -56,6 +61,7 @@ public class SourceWebViewViewModel extends ViewModel {
 
     public void reset() {
         this.annotations.clear();
+        this.compiledAnnotations.clear();
         this.sourceHasFinishedInitializing.setValue(false);
         this.annotationsLiveData.setValue(new SourceWebViewAnnotation[0]);
     }
@@ -217,5 +223,24 @@ public class SourceWebViewViewModel extends ViewModel {
             annotationsLiveData.setValue(annotations.values().toArray(new SourceWebViewAnnotation[0]));
         }
         return didRemove;
+    }
+
+    public Optional<CompletableFuture<Annotation>> compileAnnotation(Context context, User user, Executor executor, String annotationId) {
+        if (!compiledAnnotations.containsKey(annotationId)) {
+            Optional<SourceWebViewAnnotation> annotation = Optional.ofNullable(annotations.get(annotationId));
+            if (!annotation.isPresent()) {
+                ErrorRepository.captureWarning(new Exception("Tried to compile annotation where no SourceWebViewAnnotation exists."));
+                return Optional.empty();
+            }
+
+            CompletableFuture<Annotation> compiledAnnotation = annotation.get().compileWebArchive(context, user, executor);
+            compiledAnnotations.put(annotationId, compiledAnnotation);
+        }
+
+        return Optional.ofNullable(compiledAnnotations.get(annotationId));
+    }
+
+    public Optional<CompletableFuture<Annotation>> getCompiledAnnotation(String annotationId) {
+        return Optional.ofNullable(compiledAnnotations.get(annotationId));
     }
 }

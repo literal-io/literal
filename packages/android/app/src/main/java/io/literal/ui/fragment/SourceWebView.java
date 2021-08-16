@@ -37,11 +37,15 @@ import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 
 import io.literal.R;
@@ -402,7 +406,12 @@ public class SourceWebView extends Fragment {
                             SourceWebViewAnnotation sourceWebViewAnnotation = sourceWebViewViewModel.createAnnotation(annotationsJSON, user.getAppSyncIdentity(), webArchive);
                             sourceWebViewViewModel.setFocusedAnnotationId(sourceWebViewAnnotation.getAnnotation().getId());
                             bottomSheetAppWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
-                            ((MainApplication) activity.getApplication()).getThreadPoolExecutor().execute(() -> sourceWebViewAnnotation.compileWebArchive(getContext(), user));
+                            sourceWebViewViewModel.compileAnnotation(
+                                    getContext(),
+                                    user,
+                                    ((MainApplication) activity.getApplication()).getThreadPoolExecutor(),
+                                    sourceWebViewAnnotation.getAnnotation().getId()
+                            );
                         }));
 
 
@@ -904,42 +913,63 @@ public class SourceWebView extends Fragment {
                     .filter(sourceWebViewAnnotation -> sourceWebViewAnnotation.getCreationStatus().equals(SourceWebViewAnnotation.CreationStatus.REQUIRES_CREATION))
                     .toArray(SourceWebViewAnnotation[]::new);
         if (annotationsToCreate.length > 0) {
-            // update toolbar primary action to be loader
+            User user = authenticationViewModel.getUser().getValue();
+            Executor executor = Optional.ofNullable(getActivity())
+                    .map(a -> (Executor) ((MainApplication) a.getApplication()).getThreadPoolExecutor())
+                    .orElse(ForkJoinPool.commonPool());
+            CompletableFuture[] compiledAnnotationFutures = Arrays.stream(annotationsToCreate)
+                    .map((a) -> {
+                        Optional<CompletableFuture<Annotation>> compiledAnnotation = sourceWebViewViewModel.getCompiledAnnotation(a.getAnnotation().getId());
+                        return compiledAnnotation
+                                .orElseGet(() ->
+                                        sourceWebViewViewModel.compileAnnotation(
+                                                getContext(),
+                                                user,
+                                                executor,
+                                                a.getAnnotation().getId()
+                                        ).orElse(null)
+                                );
+                    })
+                    .filter(Objects::nonNull)
+                    .toArray(CompletableFuture[]::new);
 
-            creationFuture = CompletableFuture.allOf(
-                Arrays.stream(annotationsToCreate)
-                    .map((sourcewWebViewAnnotation) ->
-                            sourcewWebViewAnnotation.compileWebArchive(
-                                    getContext(),
-                                    authenticationViewModel.getUser().getValue()
-                            )
-                    )
-                    .toArray(CompletableFuture[]::new)
-            ).whenComplete((_void, e) -> {
+            creationFuture = CompletableFuture.allOf(compiledAnnotationFutures).whenComplete((_void, e) -> {
                 if (e != null) {
                     return;
                 }
 
+                HashMap<String, Annotation> compiledAnnotationsById = Arrays.stream(compiledAnnotationFutures)
+                        .collect(
+                                HashMap::new,
+                                (agg, compiledAnnotationFuture) -> {
+                                    Optional<Annotation> annotation = Optional.ofNullable((Annotation) compiledAnnotationFuture.getNow(null));
+                                    annotation.ifPresent(value -> agg.put(value.getId(), value));
+                                },
+                                HashMap::putAll
+                        );
+
                 String id = UUID.randomUUID().toString();
-                Arrays.stream(annotationsToCreate).forEach(annotationToCreate -> {
-                    CreateAnnotationIntent intent = (new CreateAnnotationIntent.Builder())
-                            .setAnnotation(annotationToCreate.getAnnotation())
-                            .setDisplayURI(webView.getSource().map(Source::getDisplayURI))
-                            .setFavicon(webView.getSource().flatMap(Source::getFavicon).flatMap(f -> BitmapRepository.toFile(getContext(), f)))
-                            .setId(id)
-                            .build();
+                Arrays.stream(annotationsToCreate)
+                        .filter(annotationToCreate -> compiledAnnotationsById.containsKey(annotationToCreate.getAnnotation().getId()))
+                        .forEach(annotationToCreate -> {
+                            CreateAnnotationIntent intent = (new CreateAnnotationIntent.Builder())
+                                    .setAnnotation(compiledAnnotationsById.get(annotationToCreate.getAnnotation().getId()))
+                                    .setDisplayURI(webView.getSource().map(Source::getDisplayURI))
+                                    .setFavicon(webView.getSource().flatMap(Source::getFavicon).flatMap(f -> BitmapRepository.toFile(getContext(), f)))
+                                    .setId(id)
+                                    .build();
 
-                    try {
-                        JSONObject data = new JSONObject();
-                        data.put("type", CreateAnnotationIntent.class.getName());
-                        data.put("data", intent.toJSON());
-                        AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_DISPATCH_SERVICE_INTENT, data);
-                    } catch (JSONException err) {
-                        ErrorRepository.captureException(err);
-                    }
+                            try {
+                                JSONObject data = new JSONObject();
+                                data.put("type", CreateAnnotationIntent.class.getName());
+                                data.put("data", intent.toJSON());
+                                AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_DISPATCH_SERVICE_INTENT, data);
+                            } catch (JSONException err) {
+                                ErrorRepository.captureException(err);
+                            }
 
-                    intent.toIntent(getContext()).ifPresent((i) -> getActivity().startService(i));
-                });
+                            intent.toIntent(getContext()).ifPresent((i) -> getActivity().startService(i));
+                        });
             });
 
         } else {
