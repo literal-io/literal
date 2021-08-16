@@ -35,7 +35,6 @@ public class SourceWebViewAnnotation {
                             .filter(t -> t instanceof SpecificTarget)
                             .findFirst()
                             .map((specificTarget) -> {
-                                Log.i("compileWebArchive", "setting uri: " + updatedWebArchive.getStorageObject().getCanonicalURI(context, user));
                                 SpecificTarget updatedSpecifcTarget = new SpecificTarget.Builder((SpecificTarget) specificTarget)
                                         .setState(new State[]{
                                                 new TimeState(

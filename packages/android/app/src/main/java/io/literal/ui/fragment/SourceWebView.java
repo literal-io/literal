@@ -991,8 +991,7 @@ public class SourceWebView extends Fragment {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
             case R.id.primary:
-                CircularProgressIndicator progressIndicator = new CircularProgressIndicator(getContext());
-                item.setActionView(progressIndicator);
+                item.setActionView(R.layout.webview_toolbar_indeterminate_progress);
                 this.handleToolbarPrimaryAction()
                         .whenComplete((_void, _err) -> item.setActionView(null));
                 return true;

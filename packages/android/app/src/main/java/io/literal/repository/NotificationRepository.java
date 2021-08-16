@@ -62,7 +62,7 @@ public class NotificationRepository {
             Context context,
             int notificationId,
             Uri notificationUri,
-            String notificationText,
+            Optional<String> notificationText,
             Optional<Bitmap> favicon
     ) {
         Intent intent = new Intent(context, MainActivity.class);
@@ -73,14 +73,16 @@ public class NotificationRepository {
                 .setSmallIcon(R.drawable.ic_stat_name)
                 .setColor(Color.BLACK)
                 .setContentTitle(context.getString(R.string.annotation_created_notification_title))
-                .setStyle(
-                        new NotificationCompat.BigTextStyle().bigText(notificationText)
-                )
-                .setContentText(notificationText)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
         favicon.ifPresent(builder::setLargeIcon);
+        notificationText.ifPresent((text) -> {
+            builder.setContentText(text);
+            builder.setStyle(
+                    new NotificationCompat.BigTextStyle().bigText(text)
+            );
+        });
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
 
         notificationManager.notify(notificationId, builder.build());

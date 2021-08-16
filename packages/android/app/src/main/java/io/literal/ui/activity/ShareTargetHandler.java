@@ -331,7 +331,7 @@ public class ShareTargetHandler extends InstrumentedActivity {
                                 this,
                                 UUID.randomUUID().toString().hashCode(),
                                 notificationUri.get(),
-                                notificationText.get(),
+                                notificationText,
                                 Optional.empty()
                         );
                     }
