@@ -9,6 +9,7 @@ import android.util.Pair;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import com.amazonaws.amplify.generated.graphql.CreateAnnotationMutation;
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.UserStateListener;
 import com.amazonaws.services.s3.AmazonS3URI;
@@ -46,6 +47,7 @@ import io.literal.repository.AnnotationRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.NotificationRepository;
 import io.literal.ui.MainApplication;
+import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
 import kotlin.jvm.functions.Function2;
 import kotlin.jvm.functions.Function3;
@@ -221,6 +223,42 @@ public class AnnotationService extends Service {
                 }).orElse(CompletableFuture.completedFuture(null));
     }
 
+    private void onDisplayAggregateNotification(Context context, CreateAnnotationIntent intent) {
+        if (intent.getDisableNotification()) {
+            return;
+        }
+
+        Optional<CreateAnnotationNotification> aggregateNotification = CreateAnnotationNotification.aggregate(
+                createAnnotationNotificationsByAnnotationId.values().stream()
+                        .filter((notification) -> notification.getId() == intent.getId().hashCode())
+                        .collect(Collectors.toList())
+        );
+
+        aggregateNotification.ifPresent((n) -> n.dispatch(context, user, intent));
+    }
+
+    private void onUpdateAggregateNotificationProgress(Context context, CreateAnnotationIntent intent, Long bytesCurrent, Long bytesTotal) {
+        if (!intent.getDisableNotification()) {
+            String annotationId = intent.getAnnotation().getId();
+            if (createAnnotationNotificationsByAnnotationId.containsKey(annotationId)) {
+                CreateAnnotationNotification notification = createAnnotationNotificationsByAnnotationId.get(annotationId);
+                notification.setBytesCurrent(bytesCurrent);
+            } else {
+                createAnnotationNotificationsByAnnotationId.put(
+                        annotationId,
+                        new CreateAnnotationNotification(
+                                intent.getId().hashCode(),
+                                bytesTotal,
+                                bytesCurrent
+                        )
+                );
+            }
+
+            this.onDisplayAggregateNotification(context, intent);
+        }
+    }
+
+
     private CompletableFuture<AmazonS3URI> uploadScreenshots(
             Context context,
             User user,
@@ -254,46 +292,36 @@ public class AnnotationService extends Service {
     }
 
     private CompletableFuture<Void> handleCreateAnnotation(Context context, User user, CreateAnnotationIntent createAnnotationIntent) {
-        Function2<Long, Long, Void> onDisplayNotificationProgress = (Long bytesCurrent, Long bytesTotal) -> {
-            if (!createAnnotationIntent.getFaviconBitmap().isPresent() || !createAnnotationIntent.getDisplayURI().isPresent()) {
-                return null;
-            }
-
-            if (!createAnnotationIntent.getDisableNotification()) {
-                String annotationId = createAnnotationIntent.getAnnotation().getId();
-                if (createAnnotationNotificationsByAnnotationId.containsKey(annotationId)) {
-                    CreateAnnotationNotification notification = createAnnotationNotificationsByAnnotationId.get(annotationId);
-                    notification.setBytesCurrent(bytesCurrent);
-                } else {
-                    createAnnotationNotificationsByAnnotationId.put(
-                            annotationId,
-                            new CreateAnnotationNotification(
-                                    createAnnotationIntent.getId().hashCode(),
-                                    false,
-                                    bytesTotal,
-                                    bytesCurrent
-                            )
-                    );
+        CompletableFuture<AmazonS3URI> uploadedWebArchiveFuture = uploadWebArchives(
+                context,
+                user,
+                createAnnotationIntent,
+                (currentBytesUploaded, totalBytesUploaded) -> {
+                    this.onUpdateAggregateNotificationProgress(context, createAnnotationIntent, currentBytesUploaded, totalBytesUploaded);
+                    return null;
                 }
-
-                Optional<CreateAnnotationNotification> aggregateNotification = CreateAnnotationNotification.aggregate(
-                        createAnnotationNotificationsByAnnotationId.values().stream()
-                                .filter((notification) -> notification.getId() == createAnnotationIntent.getId().hashCode())
-                                .collect(Collectors.toList())
-                );
-
-                aggregateNotification.ifPresent((n) -> n.dispatch(context, createAnnotationIntent.getFaviconBitmap()));
-            }
-
-            return null;
-        };
-
-        CompletableFuture<AmazonS3URI> uploadedWebArchiveFuture = uploadWebArchives(context, user, createAnnotationIntent, onDisplayNotificationProgress);
-        CompletableFuture<AmazonS3URI> uploadedScreenshotFuture = uploadScreenshots(context, user, createAnnotationIntent, onDisplayNotificationProgress);
+        );
+        CompletableFuture<AmazonS3URI> uploadedScreenshotFuture = uploadScreenshots(
+                context,
+                user,
+                createAnnotationIntent,
+                (currentBytesUploaded, totalBytesUploaded) -> {
+                    this.onUpdateAggregateNotificationProgress(context, createAnnotationIntent, currentBytesUploaded, totalBytesUploaded);
+                    return null;
+                }
+        );
         return CompletableFuture.allOf(uploadedWebArchiveFuture, uploadedScreenshotFuture)
                 .thenApply(_void -> {
                     AmazonS3URI uploadedWebArchive = uploadedWebArchiveFuture.getNow(null);
                     AmazonS3URI uploadedScreenshot = uploadedScreenshotFuture.getNow(null);
+
+                    Optional<CreateAnnotationNotification> notification = Optional.ofNullable(createAnnotationNotificationsByAnnotationId.get(createAnnotationIntent.getAnnotation().getId()));
+                    notification.ifPresent((n) -> {
+                        if (!n.getBytesCurrent().equals(n.getBytesTotal())) {
+                            n.setBytesCurrent(n.getBytesTotal());
+                            this.onDisplayAggregateNotification(context, createAnnotationIntent);
+                        }
+                    });
 
                     Annotation annotation = createAnnotationIntent.getAnnotation();
                     if (uploadedWebArchive != null) {
@@ -332,53 +360,40 @@ public class AnnotationService extends Service {
 
                     return annotation;
                 })
-                .thenCompose((annotation) -> {
-                    // FIXME: may not be complete, need to wait for other annotations for this source
-                    return AnnotationRepository.createAnnotationMutation(
-                            AppSyncClientFactory.getInstanceForUser(context, user),
-                            annotation.toCreateAnnotationInput()
-                    );
-                })
+                .thenCompose((annotation) -> AnnotationRepository.createAnnotationMutation(
+                        AppSyncClientFactory.getInstanceForUser(context, user),
+                        annotation.toCreateAnnotationInput()
+                ))
                 .thenApply(_result -> (Void) null)
                 .whenComplete((_void, e) -> {
+                    Optional<CreateAnnotationNotification> notification = Optional.ofNullable(createAnnotationNotificationsByAnnotationId.get(createAnnotationIntent.getAnnotation().getId()));
                     if (e != null) {
                         ErrorRepository.captureException(e);
                         if (!createAnnotationIntent.getDisableNotification()) {
-                            NotificationRepository.annotationCreatedNotificationError(
-                                    context,
-                                    user.getAppSyncIdentity(),
-                                    createAnnotationIntent.getId().hashCode()
-                            );
+                            notification.ifPresent(n -> {
+                                n.setDidError(true);
+                                this.onDisplayAggregateNotification(context, createAnnotationIntent);
+                            });
                         }
-                    } else {
-                        broadcastCreatedAnnotation(context, createAnnotationIntent.getId(), createAnnotationIntent.getAnnotation());
-
-                        if (createAnnotationIntent.getDisableNotification()) {
-                            return;
-                        }
-
-                        Annotation annotation = createAnnotationIntent.getAnnotation();
-                        Uri annotationUri = Uri.parse(
-                                WebRoutes.creatorsIdAnnotationCollectionId(
-                                        user.getAppSyncIdentity(),
-                                        Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT
-                                )
-                        );
-                        Arrays.stream(annotation.getTarget())
-                                .filter(t -> t instanceof TextualTarget)
-                                .findFirst()
-                                .flatMap(target -> {
-                                    String value = ((TextualTarget) target).getValue();
-                                    return value != null && value.length() > 0 ? Optional.of(value) : Optional.empty();
-                                })
-                                .ifPresent((annotationTargetText) -> NotificationRepository.annotationCreatedNotification(
-                                        context,
-                                        createAnnotationIntent.getId().hashCode(),
-                                        annotationUri,
-                                        annotationTargetText,
-                                        createAnnotationIntent.getFaviconBitmap()
-                                ));
+                        return;
                     }
+                    notification.ifPresent(n -> {
+                        n.setDidCompleteMutation(true);
+                        this.onDisplayAggregateNotification(context, createAnnotationIntent);
+                    });
+                    broadcastCreatedAnnotation(context, createAnnotationIntent.getId(), createAnnotationIntent.getAnnotation());
+
+                    if (createAnnotationIntent.getDisableNotification()) {
+                        return;
+                    }
+
+                    Annotation annotation = createAnnotationIntent.getAnnotation();
+                    Uri annotationUri = Uri.parse(
+                            WebRoutes.creatorsIdAnnotationCollectionId(
+                                    user.getAppSyncIdentity(),
+                                    Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT
+                            )
+                    );
                 });
     }
 
