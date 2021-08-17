@@ -2,6 +2,8 @@ package io.literal.ui.view.SourceWebView;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.net.Uri;
+import android.util.Log;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
@@ -41,9 +43,11 @@ public class Client extends WebViewClient {
     private boolean shouldClearHistoryOnPageFinished = false;
     private boolean hasInjectedAnnotationRendererScript = false;
 
+    // WebView as param, get source?
     public Client(
             @NonNull Context context,
-            @NonNull Source source, User user,
+            @NonNull Source source,
+            @NonNull User user,
             @NonNull Function1<Source, Void> onSourceChanged,
             @NonNull Function1<WebResourceRequest, Void> onWebResourceRequest,
             @NonNull Function1<WebView, CompletableFuture<Void>> onInjectAnnotationRendererScript,
@@ -77,8 +81,6 @@ public class Client extends WebViewClient {
 
             Optional<BodyPart> optionalBodyPart = webArchive.resolveWebResourceRequest(request);
 
-
-
             Optional<WebResourceResponse> response = optionalBodyPart.flatMap((bodyPart) -> {
                 try {
                     WebResourceResponse webResourceResponse = new WebResourceResponse(
@@ -89,6 +91,15 @@ public class Client extends WebViewClient {
 
                     Map<String, String> responseHeaders = new HashMap<>();
                     responseHeaders.put("Cache-Control", StorageObject.CACHE_CONTROL);
+
+                    Optional.ofNullable(request.getRequestHeaders().get("Origin")).ifPresent((requestOrigin) -> {
+                        boolean isCrossOrigin = !requestOrigin.equals(request.getUrl().getHost());
+                        boolean isHTTP = request.getUrl().getScheme().equals("http") || request.getUrl().getScheme().equals("https");
+                        if (isCrossOrigin && isHTTP) {
+                            responseHeaders.put("Access-Control-Allow-Origin", requestOrigin);
+                        }
+                    });
+
                     webResourceResponse.setResponseHeaders(responseHeaders);
 
                     return Optional.of(webResourceResponse);
@@ -181,6 +192,7 @@ public class Client extends WebViewClient {
     }
 
     public static class Builder {
+        private WebView webView;
         private Context context;
         private User user;
         private Source source;
@@ -227,6 +239,11 @@ public class Client extends WebViewClient {
             return this;
         }
 
+        public Builder setWebView(WebView webView) {
+            this.webView = webView;
+            return this;
+        }
+
 
         public Client build() {
             Objects.requireNonNull(context);
@@ -247,6 +264,5 @@ public class Client extends WebViewClient {
                     onReceivedIcon
             );
         }
-
     }
 }

@@ -15,7 +15,7 @@ const waitForXPath = (value) => {
         return false;
       }
     },
-    { interval: 50, timeout: 5000 }
+    { interval: 50, timeout: 10 * 1000 }
   ).then(() => evaluateXPath(value));
 };
 

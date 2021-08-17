@@ -42,26 +42,11 @@ import java.util.stream.Collectors;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.WebArchiveRepository;
 
-public class WebArchive implements Parcelable {
-    public static final Creator<WebArchive> CREATOR = new Creator<WebArchive>() {
-        @Override
-        public WebArchive createFromParcel(Parcel in) {
-            return new WebArchive(in);
-        }
-
-        @Override
-        public WebArchive[] newArray(int size) {
-            return new WebArchive[size];
-        }
-    };
-    public static String KEY_WEB_REQUESTS = "WEB_REQUESTS";
-    public static String KEY_SCRIPT_ELEMENTS = "SCRIPT_ELEMENTS";
-    public static String KEY_STORAGE_OBJECT = "STORAGE_OBJECT";
-    public static String KEY_ID = "ID";
+public class WebArchive {
     public static Pattern CONTENT_ID_FIELD_PATTERN = Pattern.compile("<frame-(.+)>");
 
     private final StorageObject storageObject;
-    private final ArrayList<ParcelableWebResourceRequest> webRequests;
+    private final ArrayList<WebResourceRequest> webRequests;
     private final ArrayList<HTMLScriptElement> scriptElements;
     private String id;
     private Message mimeMessage;
@@ -70,7 +55,7 @@ public class WebArchive implements Parcelable {
 
     public WebArchive(
             @NotNull StorageObject storageObject,
-            @NotNull ArrayList<ParcelableWebResourceRequest> webRequests,
+            @NotNull ArrayList<WebResourceRequest> webRequests,
             @NotNull ArrayList<HTMLScriptElement> scriptElements
     ) {
         this.storageObject = storageObject;
@@ -86,39 +71,11 @@ public class WebArchive implements Parcelable {
         this.mimeMessage = null;
     }
 
-    protected WebArchive(Parcel in) {
-        Bundle input = new Bundle();
-        input.setClassLoader(getClass().getClassLoader());
-        input.readFromParcel(in);
-
-        this.scriptElements = input.getParcelableArrayList(KEY_SCRIPT_ELEMENTS);
-        this.webRequests = input.getParcelableArrayList(KEY_WEB_REQUESTS);
-        this.storageObject = input.getParcelable(KEY_STORAGE_OBJECT);
-        this.id = input.getString(KEY_ID);
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        Bundle output = new Bundle();
-        output.putParcelableArrayList(KEY_WEB_REQUESTS, webRequests);
-        output.putParcelableArrayList(KEY_SCRIPT_ELEMENTS, scriptElements);
-        output.putParcelable(KEY_STORAGE_OBJECT, storageObject);
-        if (id != null) {
-            output.putString(KEY_ID, id);
-        }
-        output.writeToParcel(dest, flags);
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
     public StorageObject getStorageObject() {
         return storageObject;
     }
 
-    public List<ParcelableWebResourceRequest> getWebRequests() {
+    public List<WebResourceRequest> getWebRequests() {
         return webRequests;
     }
 

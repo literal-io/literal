@@ -36,7 +36,6 @@ public class CreateAnnotationIntent {
     public static String EXTRA_ANNOTATION = "EXTRA_ANNOTATION";
     public static String EXTRA_FAVICON = "EXTRA_FAVICON";
     public static String EXTRA_DISPLAY_URI = "EXTRA_DISPLAY_URI";
-    public static String EXTRA_WEB_ARCHIVES = "EXTRA_WEB_ARCHIVES";
     public static String EXTRA_DISABLE_NOTIFICATION = "EXTRA_DISABLE_NOTIFICATION";
 
     private final Annotation annotation;
@@ -96,7 +95,6 @@ public class CreateAnnotationIntent {
 
         Optional<String> extraFavicon = Optional.ofNullable(intent.getStringExtra(EXTRA_FAVICON));
         Optional<String> extraDisplayURI = Optional.ofNullable(intent.getStringExtra(EXTRA_DISPLAY_URI));
-        Optional<ArrayList<WebArchive>> extraWebArchives = Optional.ofNullable(intent.getParcelableArrayListExtra(EXTRA_WEB_ARCHIVES));
 
         try {
             Annotation annotation = Annotation.fromJson(new JSONObject(extraAnnotation));
@@ -109,14 +107,7 @@ public class CreateAnnotationIntent {
                     return Optional.empty();
                 }
             });
-            Optional<HashMap<String, WebArchive>> webArchives = extraWebArchives.map((w) ->
-                    w.stream()
-                    .collect(
-                            HashMap::new,
-                            (agg, webArchive) -> agg.put(webArchive.getId(), webArchive),
-                            HashMap::putAll
-                    )
-            );
+
             CreateAnnotationIntent.Builder builder = new CreateAnnotationIntent.Builder();
             return Optional.of(
                     builder
