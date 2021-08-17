@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.IBinder;
+import android.util.Log;
 import android.util.Pair;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -234,10 +235,14 @@ public class AnnotationService extends Service {
                         .collect(Collectors.toList())
         );
 
-        aggregateNotification.ifPresent((n) -> n.dispatch(context, user, intent));
+        aggregateNotification.ifPresent((n) -> {
+            Log.i("dispatch aggregate", "id: " + intent.getAnnotation().getId() + ", current/total: " + n.getBytesCurrent() + "/" + n.getBytesTotal());
+            n.dispatch(context, user, intent);
+        });
     }
 
     private void onUpdateAggregateNotificationProgress(Context context, CreateAnnotationIntent intent, Long bytesCurrent, Long bytesTotal) {
+        Log.i("onUpdateAggregateNotificationProgress", "id: " + intent.getAnnotation().getId() + ", current/total: " + bytesCurrent + "/" + bytesTotal);
         if (!intent.getDisableNotification()) {
             String annotationId = intent.getAnnotation().getId();
             if (createAnnotationNotificationsByAnnotationId.containsKey(annotationId)) {
