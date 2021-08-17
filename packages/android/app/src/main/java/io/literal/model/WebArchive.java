@@ -52,6 +52,7 @@ public class WebArchive {
     private Message mimeMessage;
     private HashMap<String, BodyPart> bodyPartByContentLocation;
     private HashMap<String, BodyPart> bodyPartByContentID;
+    private CompletableFuture<Void> openCompletableFuture;
 
     public WebArchive(
             @NotNull StorageObject storageObject,
@@ -84,7 +85,15 @@ public class WebArchive {
     }
 
     public CompletableFuture<Void> open(Context context, User user) {
-        return storageObject.download(context, user)
+        if (mimeMessage != null) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        if (this.openCompletableFuture != null) {
+            return this.openCompletableFuture;
+        }
+
+        this.openCompletableFuture = storageObject.download(context, user)
                 .thenCompose((_void) -> {
                     CompletableFuture<Void> future = new CompletableFuture<>();
                     FileInputStream fileInputStream = null;
@@ -108,6 +117,17 @@ public class WebArchive {
                     }
                     return future;
                 });
+
+        return this.openCompletableFuture;
+    }
+
+    public void dispose() {
+        if (mimeMessage != null) {
+            this.bodyPartByContentLocation.clear();
+            this.bodyPartByContentID.clear();
+            this.mimeMessage.dispose();
+            this.mimeMessage = null;
+        }
     }
 
     private List<Entity> getBodyParts() {
@@ -141,7 +161,7 @@ public class WebArchive {
                 (agg, bodyPart) -> {
                     ContentIdField contentID = (ContentIdField) bodyPart.getHeader().getField("Content-ID");
 
-                    if (contentID != null) {
+                    if (contentID != null && contentID.getId() != null) {
                         Matcher contentIDMatcher = CONTENT_ID_FIELD_PATTERN.matcher(contentID.getId());
                         if (contentIDMatcher.find()) {
                             String parsedContentID = "cid:frame-" + contentIDMatcher.group(1);

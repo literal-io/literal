@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import io.literal.lib.Callback;
 import io.literal.lib.ResultCallback;
+import io.literal.model.WebArchive;
 import io.literal.repository.ErrorRepository;
 import io.literal.ui.view.MessagingWebView;
 import kotlin.jvm.functions.Function1;
@@ -77,6 +78,7 @@ public class SourceWebView extends MessagingWebView implements NestedScrollingCh
     }
 
     public void setSource(@NonNull Source source, boolean forceNavigate) {
+        Optional<Source> oldSource = this.source;
         this.source = Optional.of(source);
 
         if (!clientBuilder.isPresent()) {
@@ -91,7 +93,11 @@ public class SourceWebView extends MessagingWebView implements NestedScrollingCh
                     return null;
                 })
                 .setOnWebResourceRequest((webResourceRequest) -> {
-                    getSource().ifPresent(s -> s.getPageWebResourceRequests().add(webResourceRequest));
+                    getSource().ifPresent(s -> {
+                        if (s.getType().equals(Source.Type.EXTERNAL_SOURCE)) {
+                            s.getPageWebResourceRequests().add(webResourceRequest);
+                        }
+                    });
                     return null;
                 })
                 .setOnSourceChanged((newSource) -> {
@@ -111,6 +117,7 @@ public class SourceWebView extends MessagingWebView implements NestedScrollingCh
             this.setWebViewClient(client);
             this.loadUrl(sourceURI.get().toString());
             onSourceChanged.ifPresent(cb -> cb.invoke(source));
+            oldSource.flatMap(Source::getWebArchive).ifPresent(WebArchive::dispose);
         }
     }
 
