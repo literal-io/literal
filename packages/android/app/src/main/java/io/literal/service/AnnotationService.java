@@ -236,13 +236,11 @@ public class AnnotationService extends Service {
         );
 
         aggregateNotification.ifPresent((n) -> {
-            Log.i("dispatch aggregate", "id: " + intent.getAnnotation().getId() + ", current/total: " + n.getBytesCurrent() + "/" + n.getBytesTotal());
             n.dispatch(context, user, intent);
         });
     }
 
     private void onUpdateAggregateNotificationProgress(Context context, CreateAnnotationIntent intent, Long bytesCurrent, Long bytesTotal) {
-        Log.i("onUpdateAggregateNotificationProgress", "id: " + intent.getAnnotation().getId() + ", current/total: " + bytesCurrent + "/" + bytesTotal);
         if (!intent.getDisableNotification()) {
             String annotationId = intent.getAnnotation().getId();
             if (createAnnotationNotificationsByAnnotationId.containsKey(annotationId)) {
@@ -391,14 +389,6 @@ public class AnnotationService extends Service {
                     if (createAnnotationIntent.getDisableNotification()) {
                         return;
                     }
-
-                    Annotation annotation = createAnnotationIntent.getAnnotation();
-                    Uri annotationUri = Uri.parse(
-                            WebRoutes.creatorsIdAnnotationCollectionId(
-                                    user.getAppSyncIdentity(),
-                                    Constants.RECENT_ANNOTATION_COLLECTION_ID_COMPONENT
-                            )
-                    );
                 });
     }
 
