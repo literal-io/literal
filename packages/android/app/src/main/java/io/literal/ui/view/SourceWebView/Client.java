@@ -97,6 +97,7 @@ public class Client extends WebViewClient {
                         boolean isHTTP = request.getUrl().getScheme().equals("http") || request.getUrl().getScheme().equals("https");
                         if (isCrossOrigin && isHTTP) {
                             responseHeaders.put("Access-Control-Allow-Origin", requestOrigin);
+                            responseHeaders.put("Access-Control-Allow-Credentials", "true");
                         }
                     });
 
