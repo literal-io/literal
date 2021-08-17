@@ -15,6 +15,9 @@ public class AnalyticsRepository {
     public static final String TYPE_DISPATCH_SERVICE_INTENT = "DISPATCH_SERVICE_INTENT";
     public static final String TYPE_HANDLE_INTENT_START = "HANDLE_INTENT_START";
     public static final String TYPE_HANDLE_INTENT_COMPLETE = "HANDLE_INTENT_COMPLETE";
+    public static final String TYPE_ERROR_REPOSITORY_BREADCRUMB = "ERROR_REPOSITORY_BREADCRUMB";
+    public static final String TYPE_ERROR_REPOSITORY_EXCEPTION = "ERROR_REPOSITORY_EXCEPTION";
+    public static final String TYPE_ERROR_REPOSITORY_WARNING = "ERROR_REPOSITORY_WARNING";
 
     public static void initialize(Application application) {
         Amplitude.getInstance().initialize(application.getApplicationContext(), AMPLITUDE_API_KEY)

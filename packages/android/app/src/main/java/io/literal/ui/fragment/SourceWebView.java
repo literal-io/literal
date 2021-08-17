@@ -55,6 +55,7 @@ import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.model.Annotation;
 import io.literal.model.Body;
+import io.literal.model.ErrorRepositoryLevel;
 import io.literal.model.ExternalTarget;
 import io.literal.model.HTMLScriptElement;
 import io.literal.model.SourceWebViewAnnotation;
@@ -209,6 +210,18 @@ public class SourceWebView extends Fragment {
                         )
                 );
             }
+
+            Optional<String> uri;
+            if (source.getType().equals(Source.Type.WEB_ARCHIVE)) {
+                uri = source.getWebArchive().map(w -> w.getStorageObject().getCanonicalURI().toString());
+            } else {
+                uri = source.getURI().map(URI::toString);
+            }
+            uri.ifPresent(u -> ErrorRepository.captureBreadcrumb(
+                    ErrorRepository.CATEGORY_NAVIGATION,
+                    "SourceWebView source changed: " + u,
+                    ErrorRepositoryLevel.INFO
+            ));
             return null;
         });
         webView.setOnReceivedIcon((icon) -> {

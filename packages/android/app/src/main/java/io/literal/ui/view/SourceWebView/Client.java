@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.apache.james.mime4j.dom.SingleBody;
+import org.apache.james.mime4j.message.BodyPart;
 
 import java.io.IOException;
 import java.net.URI;
@@ -74,25 +75,28 @@ public class Client extends WebViewClient {
         try {
             webArchive.open(context, user).get();
 
-            Optional<WebResourceResponse> response = Optional.ofNullable(webArchive.getBodyPartByContentLocation().get(request.getUrl().toString()))
-                    .flatMap((bodyPart) -> {
-                        try {
-                            WebResourceResponse webResourceResponse = new WebResourceResponse(
-                                    bodyPart.getMimeType(),
-                                    StandardCharsets.UTF_8.toString(),
-                                    ((SingleBody) bodyPart.getBody()).getInputStream()
-                            );
+            Optional<BodyPart> optionalBodyPart = webArchive.resolveWebResourceRequest(request);
 
-                            Map<String, String> responseHeaders = new HashMap<>();
-                            responseHeaders.put("Cache-Control", StorageObject.CACHE_CONTROL);
-                            webResourceResponse.setResponseHeaders(responseHeaders);
 
-                            return Optional.of(webResourceResponse);
-                        } catch (IOException e) {
-                            ErrorRepository.captureException(e);
-                            return Optional.empty();
-                        }
-                    });
+
+            Optional<WebResourceResponse> response = optionalBodyPart.flatMap((bodyPart) -> {
+                try {
+                    WebResourceResponse webResourceResponse = new WebResourceResponse(
+                            bodyPart.getMimeType(),
+                            StandardCharsets.UTF_8.toString(),
+                            ((SingleBody) bodyPart.getBody()).getInputStream()
+                    );
+
+                    Map<String, String> responseHeaders = new HashMap<>();
+                    responseHeaders.put("Cache-Control", StorageObject.CACHE_CONTROL);
+                    webResourceResponse.setResponseHeaders(responseHeaders);
+
+                    return Optional.of(webResourceResponse);
+                } catch (IOException e) {
+                    ErrorRepository.captureException(e);
+                    return Optional.empty();
+                }
+            });
 
             if (!response.isPresent()) {
                 ErrorRepository.captureException(
