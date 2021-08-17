@@ -3,7 +3,6 @@ package io.literal.repository;
 import android.content.Context;
 import android.util.Log;
 import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 
 import org.apache.james.mime4j.codec.DecodeMonitor;
 import org.apache.james.mime4j.dom.field.ContentLocationField;
@@ -21,19 +20,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import io.literal.model.HTMLScriptElement;
-import io.literal.model.ParcelableWebResourceRequest;
 import io.literal.model.StorageObject;
 import io.literal.model.WebArchive;
 import io.literal.ui.view.SourceWebView.SourceWebView;
-import io.literal.ui.view.SourceWebView.Client;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Headers;
@@ -54,14 +49,7 @@ public class WebArchiveRepository {
 
     public static CompletableFuture<WebArchive> capture(Context context, SourceWebView webView, ArrayList<HTMLScriptElement> scriptElements) {
         StorageObject archive = WebArchiveRepository.createArchiveStorageObject();
-        ArrayList<ParcelableWebResourceRequest> webResourceRequests = new ArrayList<>(
-                webView
-                        .getSource()
-                        .map(s ->
-                                s.getPageWebResourceRequests().stream().map(ParcelableWebResourceRequest::new).collect(Collectors.toList())
-                        )
-                        .orElse(new ArrayList<>())
-        );
+        ArrayList<WebResourceRequest> webResourceRequests = webView.getSource().map(s -> s.getPageWebResourceRequests()).orElse(new ArrayList<>());
 
         return WebViewRepository.saveWebArchive(webView, archive.getFile(context).toURI().getPath(), false)
                 .thenApply(_archive -> {
@@ -93,6 +81,8 @@ public class WebArchiveRepository {
 
             RawField rawField = new RawField(FieldName.CONTENT_LOCATION, webResourceRequest.getUrl().toString());
             ContentLocationField contentLocationField = ContentLocationFieldImpl.PARSER.parse(rawField, DecodeMonitor.SILENT);
+
+            Log.i("createBodyPart", webResourceRequest.getUrl().toString());
 
             return Optional.of(
                     BodyPartBuilder.create()

@@ -27,7 +27,7 @@ export class Messenger {
         this.handlers.get(data.type).forEach((handler) => handler(data));
       }
     } catch (e) {
-      console.error("[Literal] Unable to parse message", e, ev.data);
+      console.log("[Literal] Unable to parse message", ev.data);
     }
   }
 
