@@ -21,7 +21,6 @@ public class CreateAnnotationNotification {
     private boolean didCompleteMutation;
     private Long bytesTotal;
     private Long bytesCurrent;
-
     private int count;
 
     public CreateAnnotationNotification(int id, boolean didError, boolean didCompleteMutation, Long bytesTotal, Long bytesCurrent, int count) {
@@ -57,11 +56,12 @@ public class CreateAnnotationNotification {
         Long progressOutOf100 = progress.second.compareTo(0L) == 0 || progress.first.compareTo(0L) == 0
                 ? 0L
                 : (int) (((double) progress.first / progress.second) * 100);
+        boolean didCompleteMutation = notifications.stream().allMatch(CreateAnnotationNotification::getDidCompleteMutation);
 
         return notificationId.map(id -> new CreateAnnotationNotification(
                         id,
                         false,
-                        false,
+                        didCompleteMutation,
                         100L,
                         progressOutOf100,
                         notifications.size()
@@ -120,7 +120,11 @@ public class CreateAnnotationNotification {
                 progressCurrent = bytesCurrent.intValue();
             }
 
-            NotificationRepository.annotationsCreatedNotificationStart(context, id, count, intent.getFaviconBitmap(), new Pair<>(progressCurrent, progressTotal));
+            if (!didCompleteMutation) {
+                progressCurrent = Math.max(0, progressCurrent - 5);
+            }
+
+            NotificationRepository.annotationsCreatedNotificationStart(context, id, count, intent.getFaviconBitmap(), new Pair<>(progressTotal, progressCurrent));
             return Status.PROGRESS;
         }
     }
@@ -154,7 +158,7 @@ public class CreateAnnotationNotification {
         this.didError = didError;
     }
 
-    public boolean isDidCompleteMutation() {
+    public boolean getDidCompleteMutation() {
         return didCompleteMutation;
     }
 
