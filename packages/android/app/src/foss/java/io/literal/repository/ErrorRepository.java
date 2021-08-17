@@ -10,6 +10,7 @@ import io.literal.model.ErrorRepositoryLevel;
 public class ErrorRepository {
 
     public static String CATEGORY_AUTHENTICATION = "Authentication";
+    public static String CATEGORY_NAVIGATION = "Navigation";
 
     public static Thunk initialize() {
         Log.d("initialize", "");

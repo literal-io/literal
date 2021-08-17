@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.webkit.WebResourceRequest;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.james.mime4j.Charsets;
@@ -11,6 +12,7 @@ import org.apache.james.mime4j.dom.Entity;
 import org.apache.james.mime4j.dom.Message;
 import org.apache.james.mime4j.dom.Multipart;
 import org.apache.james.mime4j.dom.SingleBody;
+import org.apache.james.mime4j.dom.field.ContentIdField;
 import org.apache.james.mime4j.dom.field.ContentLocationField;
 import org.apache.james.mime4j.message.BodyPart;
 import org.apache.james.mime4j.message.BodyPartBuilder;
@@ -33,6 +35,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.literal.repository.ErrorRepository;
@@ -54,13 +58,15 @@ public class WebArchive implements Parcelable {
     public static String KEY_SCRIPT_ELEMENTS = "SCRIPT_ELEMENTS";
     public static String KEY_STORAGE_OBJECT = "STORAGE_OBJECT";
     public static String KEY_ID = "ID";
+    public static Pattern CONTENT_ID_FIELD_PATTERN = Pattern.compile("<frame-(.+)>");
+
     private final StorageObject storageObject;
     private final ArrayList<ParcelableWebResourceRequest> webRequests;
     private final ArrayList<HTMLScriptElement> scriptElements;
     private String id;
     private Message mimeMessage;
     private HashMap<String, BodyPart> bodyPartByContentLocation;
-    private CompletableFuture<WebArchive> compilationFuture;
+    private HashMap<String, BodyPart> bodyPartByContentID;
 
     public WebArchive(
             @NotNull StorageObject storageObject,
@@ -147,23 +153,47 @@ public class WebArchive implements Parcelable {
                 });
     }
 
-    private void buildMimeBodyPartIndex(Context context, User user) {
+    private List<Entity> getBodyParts() {
         if (mimeMessage == null) {
             ErrorRepository.captureException(new Exception("Invalid state: attempted to build mime body part index, but mimeMessage is null."));
-            return;
+            return null;
         }
 
         Multipart multipart = (Multipart) mimeMessage.getBody();
-        List<Entity> bodyParts = multipart.getBodyParts();
+        return multipart.getBodyParts();
+    }
+
+    private void buildMimeBodyPartIndex(Context context, User user) {
+        List<Entity> bodyParts = this.getBodyParts();
+
         bodyPartByContentLocation = bodyParts.stream().collect(
                 HashMap::new,
                 (agg, bodyPart) -> {
                     ContentLocationField contentLocation = (ContentLocationField) bodyPart.getHeader().getField("Content-Location");
-                    if (contentLocation == null) {
-                        ErrorRepository.captureWarning(new Exception("Invalid state: unable to find content-location header in body part."));
-                        return;
+
+                    // Not all body parts will have a Content-Location header, e.g. subframes are keyed on Content-ID instead.
+                    if (contentLocation != null) {
+                        agg.put(contentLocation.getLocation(), (BodyPart) bodyPart);
                     }
-                    agg.put(contentLocation.getLocation(), (BodyPart) bodyPart);
+                },
+                HashMap::putAll
+        );
+
+        bodyPartByContentID = bodyParts.stream().collect(
+                HashMap::new,
+                (agg, bodyPart) -> {
+                    ContentIdField contentID = (ContentIdField) bodyPart.getHeader().getField("Content-ID");
+
+                    if (contentID != null) {
+                        Matcher contentIDMatcher = CONTENT_ID_FIELD_PATTERN.matcher(contentID.getId());
+                        if (contentIDMatcher.find()) {
+                            String parsedContentID = "cid:frame-" + contentIDMatcher.group(1);
+                            agg.put(parsedContentID, (BodyPart) bodyPart);
+                        } else {
+                            // Bare CIDs exist, e.g. "cid:css-"
+                            agg.put(contentID.getId(), (BodyPart) bodyPart);
+                        }
+                    }
                 },
                 HashMap::putAll
         );
@@ -269,6 +299,29 @@ public class WebArchive implements Parcelable {
         }
     }
 
+    public Optional<BodyPart> resolveWebResourceRequest(WebResourceRequest request) {
+        Optional<BodyPart> optionalBodyPart = Optional.empty();
+
+        // Sub-documents appear with the same Content-Location as the main document, so pull the first
+        // body part from the archive to ensure we receive the main document content.
+        if (request.isForMainFrame()) {
+            optionalBodyPart = Optional.ofNullable(this.getBodyParts()).flatMap(bodyParts -> Optional.ofNullable((BodyPart) bodyParts.get(0)));
+        }
+
+        // Chrome appears to use CID URIs within Content-Location sometimes (e.g. "cid:css-"), fallback to checking
+        // primary content location index after checking Content-ID index.
+        if (!optionalBodyPart.isPresent() && request.getUrl().getScheme().equals("cid")) {
+            optionalBodyPart = Optional.ofNullable(bodyPartByContentID.get(request.getUrl().toString()));
+        }
+
+        // Fallback to attempting to resolve by Content-Location.
+        if (!optionalBodyPart.isPresent()) {
+            optionalBodyPart = Optional.ofNullable(bodyPartByContentLocation.get(request.getUrl().toString()));
+        }
+
+        return optionalBodyPart;
+    }
+
     public HashMap<String, BodyPart> getBodyPartByContentLocation() {
         return bodyPartByContentLocation;
     }
@@ -279,5 +332,9 @@ public class WebArchive implements Parcelable {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public HashMap<String, BodyPart> getBodyPartByContentID() {
+        return bodyPartByContentID;
     }
 }
