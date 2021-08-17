@@ -13,6 +13,6 @@ ORGANIZE BY TAG AND SOURCE
 Go beyond folders with a tag-based organization system, or view annotations by their shared source. 
 
 OPEN SOURCE, OPEN STANDARDS
-Literal is open source (https://github.com/literal-io/literal) and implements the W3C Web Annotation standard (https://www.w3.org/TR/annotation-model/) to ensure that your data is portable.
+Literal is open source (https://github.com/literal-io/literal) and implements the W3C Web Annotation standard (https://www.w3.org/TR/annotation-model/) to ensure that your data is portable. The application currently interfaces with proprietary network services hosted on Amazon Web Services, though local-only functionality may be supported in the future (https://github.com/literal-io/literal/issues/123).
 
 View https://literal.io/ for more information.

@@ -27,7 +27,7 @@ Releases are regularly published on [Github](https://github.com/literal-io/liter
 
 ## Architecture
 
-Literal is a client for the [W3C Web Annotation Data Model](https://www.w3.org/TR/annotation-model/), and uses this model for all data storage and transmission. A closed-source GraphQL API implementing this data model is used for data persistance, though in the future alternate APIs (including local-only APIs) may be supported. There are some application specific extensions to the model that are annotated appropriately, but the intent is to hew as close as possible to the original specification.
+Literal is a client for the [W3C Web Annotation Data Model](https://www.w3.org/TR/annotation-model/), and uses this model for all data storage and transmission. A closed-source GraphQL API implementing this data model is used for data persistance, though in the future alternate APIs (including local-only APIs: see [#123](https://github.com/literal-io/literal/issues/123)) may be supported. There are some application specific extensions to the model that are annotated appropriately, but the intent is to hew as close as possible to the original specification.
 
 ## Philosophy
 
