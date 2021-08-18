@@ -20,7 +20,7 @@
     "email": "javamonn@hey.com",
     "url": "https://javamonn.com"
   },
-  "license": "GPL-3.0-or-later",
+  "license": "GPL-3.0-only",
   "bugs": {
     "url": "https://github.com/literal-io/literal/issues"
   },
