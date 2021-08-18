@@ -11,7 +11,7 @@ export const makeXPathSelectorFromRange = ({
   endPosition,
 }) => ({
   type: "XPATH_SELECTOR",
-  value: xPath(container),
+  value: xPath(container, true),
   refinedBy: [
     {
       type: "TEXT_POSITION_SELECTOR",
