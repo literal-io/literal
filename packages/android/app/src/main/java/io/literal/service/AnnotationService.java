@@ -235,9 +235,7 @@ public class AnnotationService extends Service {
                         .collect(Collectors.toList())
         );
 
-        aggregateNotification.ifPresent((n) -> {
-            n.dispatch(context, user, intent);
-        });
+        aggregateNotification.ifPresent((n) -> n.dispatch(context, user, intent));
     }
 
     private void onUpdateAggregateNotificationProgress(Context context, CreateAnnotationIntent intent, Long bytesCurrent, Long bytesTotal) {
