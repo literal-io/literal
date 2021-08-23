@@ -42,6 +42,7 @@ import io.literal.ui.view.SourceWebView.SourceWebView;
 
 public class SourceWebViewViewModel extends ViewModel {
     private final MutableLiveData<Boolean> sourceHasFinishedInitializing = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> sourceJavascriptEnabled = new MutableLiveData<>(true);
 
     private final HashMap<String, SourceWebViewAnnotation> annotations = new HashMap<>();
     private final HashMap<String, CompletableFuture<Annotation>> compiledAnnotations = new HashMap<>();
@@ -57,6 +58,14 @@ public class SourceWebViewViewModel extends ViewModel {
 
     public void setSourceHasFinishedInitializing(boolean sourceHasFinishedInitializing) {
         this.sourceHasFinishedInitializing.setValue(sourceHasFinishedInitializing);
+    }
+
+    public MutableLiveData<Boolean> getSourceJavascriptEnabled() {
+        return sourceJavascriptEnabled;
+    }
+
+    public void setSourceJavascriptEnabled(boolean sourceJavascriptEnabled) {
+        this.sourceJavascriptEnabled.setValue(sourceJavascriptEnabled);
     }
 
     public void reset() {

@@ -43,6 +43,7 @@ public class WebEvent {
     public static final String TYPE_EDIT_ANNOTATION = "EDIT_ANNOTATION";
     public static final String TYPE_SELECTION_CREATED = "SELECTION_CREATED";
     public static final String TYPE_ANNOTATION_RENDERER_INITIALIZED = "ANNOTATION_RENDERER_INITIALIZED";
+    public static final String TYPE_ANNOTATION_RENDERER_FAILED_TO_INITIALIZE = "ANNOTATION_RENDERER_FAILED_TO_INITIALIZE";
     public static final String TYPE_SELECTION_CHANGE = "SELECTION_CHANGE";
 
     private String type;

@@ -151,9 +151,9 @@ public class ShareTargetHandler extends InstrumentedActivity {
 
         sourceWebViewFragment = SourceWebView.newInstance(
                 sourceWebViewUri,
+                SourceWebView.SourceContext.CREATE_SOURCE,
                 null,
-                null,
-                R.drawable.done_white
+                null
         );
         sourceWebViewFragment.setOnToolbarPrimaryActionCallback((annotations, source) -> {
             this.handleCreateFromSourceDone(annotations);

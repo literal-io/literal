@@ -36,6 +36,7 @@ export class Messenger {
       this.eventQueue.push(ev);
       return;
     }
+    console.log("[Literal] postMessage: " + JSON.stringify(ev))
     window.literalMessagePort.postMessage(JSON.stringify(ev));
   }
 

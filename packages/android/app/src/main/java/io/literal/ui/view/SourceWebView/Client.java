@@ -43,7 +43,6 @@ public class Client extends WebViewClient {
     private boolean shouldClearHistoryOnPageFinished = false;
     private boolean hasInjectedAnnotationRendererScript = false;
 
-    // WebView as param, get source?
     public Client(
             @NonNull Context context,
             @NonNull Source source,
@@ -79,7 +78,7 @@ public class Client extends WebViewClient {
         try {
             webArchive.open(context, user).get();
 
-            Optional<BodyPart> optionalBodyPart = webArchive.resolveWebResourceRequest(request);
+            Optional<BodyPart> optionalBodyPart = webArchive.resolveWebResourceRequest(request, source.getJavaScriptEnabled());
 
             Optional<WebResourceResponse> response = optionalBodyPart.flatMap((bodyPart) -> {
                 try {
@@ -186,6 +185,10 @@ public class Client extends WebViewClient {
                 onSourceChanged.invoke(new Source(newSourceURI, Optional.empty()));
             }
         });
+    }
+
+    public void setHasInjectedAnnotationRendererScript(boolean hasInjectedAnnotationRendererScript) {
+        this.hasInjectedAnnotationRendererScript = hasInjectedAnnotationRendererScript;
     }
 
     public void setShouldClearHistoryOnPageFinished(boolean shouldClearHistoryOnPageFinished) {

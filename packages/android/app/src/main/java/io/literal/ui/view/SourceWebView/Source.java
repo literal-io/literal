@@ -41,6 +41,7 @@ public class Source {
     // Metadata
     private Optional<Bitmap> favicon;
     private final ArrayList<WebResourceRequest> pageWebResourceRequests;
+    private boolean javaScriptEnabled;
 
     public Source(@NotNull WebArchive webArchive, Optional<URI> displayURI) {
         this.webArchive = Optional.of(webArchive);
@@ -49,6 +50,7 @@ public class Source {
         this.favicon = Optional.empty();
         this.type = Type.WEB_ARCHIVE;
         this.pageWebResourceRequests = new ArrayList<>();
+        this.javaScriptEnabled = true;
     }
 
     public Source(@NotNull URI uri, Optional<URI> displayURI) {
@@ -58,6 +60,7 @@ public class Source {
         this.favicon = Optional.empty();
         this.type = Type.EXTERNAL_SOURCE;
         this.pageWebResourceRequests = new ArrayList<>();
+        this.javaScriptEnabled = true;
     }
 
     public URI getDisplayURI() {
@@ -147,6 +150,14 @@ public class Source {
 
     public void setFavicon(Optional<Bitmap> favicon) {
         this.favicon = favicon;
+    }
+
+    public void setJavaScriptEnabled(boolean javaScriptEnabled) {
+        this.javaScriptEnabled = javaScriptEnabled;
+    }
+
+    public boolean getJavaScriptEnabled() {
+        return this.javaScriptEnabled;
     }
 
     public enum Type {

@@ -4,9 +4,13 @@
     <string name="annotate">Annotate</string>
     <string name="edit">Edit</string>
     <string name="remove">Remove</string>
-    <string name="done">Done</string>
     <string name="commit">Commit</string>
     <string name="cancel">Cancel</string>
+
+    <string name="toolbar_create_annotations">Create Annotations</string>
+    <string name="toolbar_view_more_options">View More Options</string>
+    <string name="toolbar_close_source">Close Source</string>
+    <string name="toolbar_javascript_enabled">JavaScript Enabled</string>
 
     <string name="toast_create_from_source">Highlight text to annotate</string>
     <string name="toast_annotation_created">Annotation created</string>
