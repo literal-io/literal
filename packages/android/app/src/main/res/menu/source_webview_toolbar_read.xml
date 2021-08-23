@@ -12,10 +12,8 @@
         android:title="@string/toolbar_close_source"
         app:showAsAction="ifRoom" />
     <item
-        android:id="@+id/javascript_enabled"
-        android:checkable="true"
-        android:checked="true"
+        android:id="@+id/javascript_toggle"
         android:icon="@drawable/ic_baseline_build_24"
-        android:title="@string/toolbar_javascript_enabled"
+        android:title="@string/toolbar_enable_javascript"
         app:showAsAction="never" />
 </menu>
