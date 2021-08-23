@@ -307,12 +307,15 @@ public class SourceWebView extends Fragment {
                     break;
                 case WebEvent.TYPE_ANNOTATION_RENDERER_INITIALIZED:
                     sourceWebViewViewModel.setSourceHasFinishedInitializing(true);
+                    if (!this.sourceWebViewViewModel.getSourceJavascriptEnabled().getValue()) {
+                        ToastRepository.show(getActivity(), R.string.toast_javascript_disabled, ToastRepository.STYLE_DARK_ACCENT);
+                    }
                     break;
                 case WebEvent.TYPE_ANNOTATION_RENDERER_FAILED_TO_INITIALIZE:
                     if (this.sourceWebViewViewModel.getSourceJavascriptEnabled().getValue()) {
                         this.sourceWebViewViewModel.setSourceJavascriptEnabled(false);
                     } else {
-                        // FIXME: failed to initialize annotation with javascript disabled, show error
+                        ToastRepository.show(getActivity(), R.string.toast_annotation_renderer_failed_to_initialize, ToastRepository.STYLE_DARK_ACCENT);
                     }
                     break;
                 case WebEvent.TYPE_SELECTION_CHANGE:
@@ -476,8 +479,6 @@ public class SourceWebView extends Fragment {
         if (!annotation.getFocusStatus().equals(SourceWebViewAnnotation.FocusStatus.FOCUSED)) {
             sourceWebViewViewModel.setFocusedAnnotationId(annotation.getAnnotation().getId());
         }
-
-        bottomSheetAppWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
 
         if (editAnnotationActionMode != null) {
             webView.finishEditAnnotationActionMode(editAnnotationActionMode);
