@@ -29,6 +29,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -185,15 +186,24 @@ public class MainActivity extends InstrumentedActivity {
                                         .ifPresent((s) -> {
                                             if (displayBottomSheet) {
                                                 sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
-                                                sourceWebViewViewModelBottomSheet.getSourceHasFinishedInitializing().observe(this, new Observer<Boolean>() {
-                                                    @Override
-                                                    public void onChanged(Boolean sourceHasFinishedInitializing) {
-                                                        if (sourceHasFinishedInitializing) {
-                                                            sourceWebViewViewModelBottomSheet.getSourceHasFinishedInitializing().removeObserver(this);
-                                                            appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
-                                                        }
+                                                // Source wil already be initialized if it was previously accessed or it may have loaded in a previous call where `displayBottomSheet` was false.
+                                                if (sourceWebViewViewModelBottomSheet.getSourceHasFinishedInitializing().getValue()) {
+                                                    appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+                                                    boolean javascriptEnabled = Optional.ofNullable(sourceWebViewViewModelBottomSheet).map((vm) -> vm.getSourceJavascriptEnabled().getValue()).orElse(true);
+                                                    if (!javascriptEnabled) {
+                                                        ToastRepository.show(this, R.string.toast_javascript_disabled, ToastRepository.STYLE_DARK_ACCENT);
                                                     }
-                                                });
+                                                } else {
+                                                    sourceWebViewViewModelBottomSheet.getSourceHasFinishedInitializing().observe(this, new Observer<Boolean>() {
+                                                        @Override
+                                                        public void onChanged(Boolean sourceHasFinishedInitializing) {
+                                                            if (sourceHasFinishedInitializing) {
+                                                                sourceWebViewViewModelBottomSheet.getSourceHasFinishedInitializing().removeObserver(this);
+                                                                appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+                                                            }
+                                                        }
+                                                    });
+                                                }
                                             }
                                         });
                             } catch (JSONException e) {

@@ -307,7 +307,12 @@ public class SourceWebView extends Fragment {
                     break;
                 case WebEvent.TYPE_ANNOTATION_RENDERER_INITIALIZED:
                     sourceWebViewViewModel.setSourceHasFinishedInitializing(true);
-                    if (!this.sourceWebViewViewModel.getSourceJavascriptEnabled().getValue()) {
+                    boolean javascriptEnabled = Optional.ofNullable(this.sourceWebViewViewModel).map((vm) -> vm.getSourceJavascriptEnabled().getValue()).orElse(true);
+                    boolean sourceVisible = Optional.ofNullable(this.primaryAppWebViewViewModel)
+                            .flatMap((vm) -> Optional.ofNullable(vm.getBottomSheetState().getValue()))
+                            .map((s) -> s.equals(BottomSheetBehavior.STATE_EXPANDED))
+                            .orElse(false);
+                    if (!javascriptEnabled && sourceVisible) {
                         ToastRepository.show(getActivity(), R.string.toast_javascript_disabled, ToastRepository.STYLE_DARK_ACCENT);
                     }
                     break;
@@ -353,7 +358,6 @@ public class SourceWebView extends Fragment {
 
             bottomSheetAppWebViewViewModel.clearReceivedWebEvents();
         });
-
         bottomSheetAppWebViewViewModel.getBottomSheetState().observe(requireActivity(), (bottomSheetState) -> {
             switch (bottomSheetState) {
                 case BottomSheetBehavior.STATE_COLLAPSED:
