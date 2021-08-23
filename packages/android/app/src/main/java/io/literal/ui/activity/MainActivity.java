@@ -16,6 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -184,7 +185,15 @@ public class MainActivity extends InstrumentedActivity {
                                         .ifPresent((s) -> {
                                             if (displayBottomSheet) {
                                                 sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
-                                                appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+                                                sourceWebViewViewModelBottomSheet.getSourceHasFinishedInitializing().observe(this, new Observer<Boolean>() {
+                                                    @Override
+                                                    public void onChanged(Boolean sourceHasFinishedInitializing) {
+                                                        if (sourceHasFinishedInitializing) {
+                                                            sourceWebViewViewModelBottomSheet.getSourceHasFinishedInitializing().removeObserver(this);
+                                                            appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
+                                                        }
+                                                    }
+                                                });
                                             }
                                         });
                             } catch (JSONException e) {

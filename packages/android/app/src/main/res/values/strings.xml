@@ -16,6 +16,8 @@
     <string name="toast_annotation_created">Annotation created</string>
     <string name="toast_annotations_created">Annotations created</string>
     <string name="toast_error_annotation_created">Unable to capture annotation, try again.</string>
+    <string name="toast_javascript_disabled">JavaScript disabled, some source functionality may not work.</string>
+    <string name="toast_annotation_renderer_failed_to_initialize">There was an issue rendering this annotation.</string>
 
     <string name="annotation_created_notification_channel_id">ANNOTATION_CREATED</string>
     <string name="annotation_created_notification_channel_name">Annotation Created</string>
