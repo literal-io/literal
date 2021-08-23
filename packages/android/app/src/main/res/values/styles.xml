@@ -14,7 +14,6 @@
         <item name="android:spotShadowAlpha">0.5</item>
         <item name="fontFamily">@font/roboto_mono</item>
         <item name="actionModeStyle">@style/ActionModeStyle</item>
-        <item name="popupMenuStyle">@style/ActionModeStyle</item>
     </style>
 
     <style name="AppWebViewTheme" parent="AppTheme">
@@ -27,6 +26,7 @@
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/colorTextLightPrimary</item>
         <item name="android:fontFamily">@font/roboto_mono_italic</item>
+        <item name="android:fontStyle">italic</item>
     </style>
 
     <style name="BottomSheetWithKeyboard" parent="@style/Widget.MaterialComponents.BottomSheet">
@@ -46,19 +46,48 @@
         <item name="android:fontFamily">@font/roboto_mono</item>
     </style>
 
+    <style name="PopupMenuTextAppearance">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/colorTextLightPrimary</item>
+        <item name="android:fontFamily">@font/roboto_mono</item>
+    </style>
+
     <style name="ActionModeStyle">
         <item name="background">@color/colorPrimary</item>
         <item name="titleTextStyle">@style/ActionMenuTextAppearance</item>
         <item name="subtitleTextStyle">@style/ActionMenuTextAppearance</item>
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/colorTextLightPrimary</item>
+        <item name="android:textColorSecondary">@color/colorTextLightSecondary</item>
         <item name="android:fontFamily">@font/roboto_mono</item>
+        <item name="colorAccent">@color/colorTextLightSecondary</item>
+    </style>
+
+    <style name="ThemeOverlay.AppCompat.SourceWebViewToolbar">
+        <item name="colorPrimary">@color/colorTextLightPrimary</item>
+        <item name="colorAccent">@color/colorTextLightSecondary</item>
+        <item name="colorControlHighlight">@color/colorTextLightSecondary</item>
+        <item name="fontFamily">@font/roboto_mono_italic</item>
+        <item name="fontStyle">italic</item>
+    </style>
+
+    <style name="ThemeOverlay.AppCompat.SourceWebViewToolbarPopup">
+        <item name="colorPrimary">@color/colorTextLightPrimary</item>
+        <item name="colorAccent">@color/colorTextLightSecondary</item>
+        <item name="colorControlHighlight">@color/colorTextLightSecondary</item>
+        <item name="android:textSize">12sp</item>
+        <item name="fontFamily">@font/roboto_mono</item>
+        <item name="fontStyle">normal</item>
     </style>
 
     <style name="LightActionMenuTextAppearance">
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/colorPrimaryDark</item>
         <item name="android:fontFamily">@font/roboto_mono</item>
+    </style>
+
+    <style name="ToolbarPopupMenuText">
+        <item name="android:layout_marginHorizontal">16dp</item>
     </style>
 
     <style name="LightActionModeStyle">

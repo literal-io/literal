@@ -258,8 +258,10 @@ public class SourceWebView extends Fragment {
             this.webView.getSource().ifPresent(s -> {
                 if (sourceJavaScriptEnabled != s.getJavaScriptEnabled()) {
                     Optional.ofNullable(toolbar)
-                            .flatMap(toolbar -> toolbar.getMenu().hasVisibleItems() ? Optional.ofNullable(toolbar.getMenu().findItem(R.id.javascript_enabled)) : Optional.empty())
-                            .ifPresent(menuItem -> menuItem.setChecked(sourceJavaScriptEnabled));
+                            .flatMap(toolbar -> toolbar.getMenu().hasVisibleItems()
+                                    ? Optional.ofNullable(toolbar.getMenu().findItem(R.id.javascript_toggle))
+                                    : Optional.empty())
+                            .ifPresent(menuItem -> menuItem.setTitle(sourceJavaScriptEnabled ? R.string.toolbar_disable_javascript : R.string.toolbar_enable_javascript));
                     sourceWebViewViewModel.setSourceHasFinishedInitializing(false);
                     s.setJavaScriptEnabled(sourceJavaScriptEnabled);
                     this.webView.reload();
@@ -1060,16 +1062,18 @@ public class SourceWebView extends Fragment {
         );
 
         if (paramSourceContext.equals(SourceContext.READ_SOURCE)) {
-            MenuItem menuItem = menu.getItem(1);
-            boolean hasFinishedInitializing = Optional.ofNullable(sourceWebViewViewModel)
-                    .map(SourceWebViewViewModel::getSourceHasFinishedInitializing)
-                    .map(LiveData::getValue)
-                    .orElse(false);
-            if (hasFinishedInitializing) {
-                menuItem.setActionView(R.layout.webview_toolbar_indeterminate_progress);
-            } else {
-                menuItem.setActionView(null);
-            }
+            Optional.ofNullable(menu.findItem(R.id.loading_indicator))
+                    .ifPresent((menuItem) -> {
+                        boolean hasFinishedInitializing = Optional.ofNullable(sourceWebViewViewModel)
+                                .map(SourceWebViewViewModel::getSourceHasFinishedInitializing)
+                                .map(LiveData::getValue)
+                                .orElse(false);
+                        if (hasFinishedInitializing) {
+                            menuItem.setActionView(R.layout.webview_toolbar_indeterminate_progress);
+                        } else {
+                            menuItem.setActionView(null);
+                        }
+                    });
         }
         super.onCreateOptionsMenu(menu, inflater);
     }
@@ -1085,8 +1089,9 @@ public class SourceWebView extends Fragment {
             case R.id.close_source:
                 this.handleToolbarPrimaryAction();
                 return true;
-            case R.id.javascript_enabled:
-                sourceWebViewViewModel.setSourceJavascriptEnabled(!sourceWebViewViewModel.getSourceJavascriptEnabled().getValue());
+            case R.id.javascript_toggle:
+                boolean shouldEnabledJavaScript = item.getTitle().equals(getString(R.string.toolbar_enable_javascript));
+                sourceWebViewViewModel.setSourceJavascriptEnabled(shouldEnabledJavaScript);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

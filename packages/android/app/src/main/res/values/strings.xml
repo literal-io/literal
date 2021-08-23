@@ -10,7 +10,8 @@
     <string name="toolbar_create_annotations">Create Annotations</string>
     <string name="toolbar_view_more_options">View More Options</string>
     <string name="toolbar_close_source">Close Source</string>
-    <string name="toolbar_javascript_enabled">JavaScript Enabled</string>
+    <string name="toolbar_enable_javascript">Enable JavaScript</string>
+    <string name="toolbar_disable_javascript">Disable JavaScript</string>
 
     <string name="toast_create_from_source">Highlight text to annotate</string>
     <string name="toast_annotation_created">Annotation created</string>

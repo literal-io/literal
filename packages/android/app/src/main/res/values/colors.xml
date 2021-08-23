@@ -5,4 +5,5 @@
     <color name="colorDarkAccent">#1A1A1A</color>
     <color name="colorAccent">#1A1A1A</color>
     <color name="colorTextLightPrimary">#F2FFFFFF</color>
+    <color name="colorTextLightSecondary">#99FFFFFF</color>
 </resources>
