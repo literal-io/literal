@@ -2,7 +2,8 @@
 <menu xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/primary"
-        android:title="@string/done"
+        android:id="@+id/create_annotations"
+        android:title="@string/toolbar_create_annotations"
+        android:icon="@drawable/done_white"
         app:showAsAction="ifRoom" />
 </menu>

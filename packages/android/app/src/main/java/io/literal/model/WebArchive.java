@@ -18,7 +18,9 @@ import org.apache.james.mime4j.message.BodyPart;
 import org.apache.james.mime4j.message.BodyPartBuilder;
 import org.apache.james.mime4j.message.DefaultMessageBuilder;
 import org.apache.james.mime4j.message.DefaultMessageWriter;
+import org.apache.james.mime4j.stream.FieldBuilder;
 import org.apache.james.mime4j.stream.MimeConfig;
+import org.apache.james.mime4j.stream.RawField;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileInputStream;
@@ -44,6 +46,8 @@ import io.literal.repository.WebArchiveRepository;
 
 public class WebArchive {
     public static Pattern CONTENT_ID_FIELD_PATTERN = Pattern.compile("<frame-(.+)>");
+    private static String FALLBACK_INDEX_FIELD_NAME = "Literal-Fallback-Index-Document";
+    private static String FALLBACK_INDEX_FIELD_VALUE = "Literal-Fallback-Index-Document";
 
     private final StorageObject storageObject;
     private final ArrayList<WebResourceRequest> webRequests;
@@ -211,11 +215,16 @@ public class WebArchive {
                 })
                 .thenCompose((bodyParts) -> {
                     // Add the constructed web request body parts into the mime message, and update the primary
-                    // index body part with built script elements
+                    // index body part with built script elements.
                     Multipart multipart = (Multipart) mimeMessage.getBody();
                     bodyParts.forEach(multipart::addBodyPart);
                     BodyPart updatedIndexBodyPart = addScriptsToBodyPart((BodyPart) multipart.getBodyParts().get(0), getScriptElements());
-                    multipart.replaceBodyPart(updatedIndexBodyPart, 0);
+                    multipart.addBodyPart(updatedIndexBodyPart, 0);
+
+                    // Update the old primary index body part with a header to identify it, in certain instances
+                    // we'll fallback to this document.
+                    BodyPart updatedOriginalIndexBodyPart = addOriginalIndexDocumentHeaderToBodyPart((BodyPart) multipart.getBodyParts().get(1));
+                   // multipart.replaceBodyPart(updatedOriginalIndexBodyPart, 0);
 
                     // Write the updated mime message to disk
                     StorageObject updatedWebArchive = WebArchiveRepository.createArchiveStorageObject();
@@ -241,6 +250,11 @@ public class WebArchive {
                     }
                     return future;
                 });
+    }
+
+    private BodyPart addOriginalIndexDocumentHeaderToBodyPart(BodyPart bodyPart) {
+        bodyPart.getHeader().addField(new RawField(FALLBACK_INDEX_FIELD_NAME, FALLBACK_INDEX_FIELD_VALUE));
+        return bodyPart;
     }
 
     private BodyPart addScriptsToBodyPart(BodyPart bodyPart, List<HTMLScriptElement> scriptElements) {
@@ -276,12 +290,27 @@ public class WebArchive {
         }
     }
 
-    public Optional<BodyPart> resolveWebResourceRequest(WebResourceRequest request) {
+    public Optional<BodyPart> resolveWebResourceRequest(WebResourceRequest request, boolean isJavaScriptEnabled) {
+
         Optional<BodyPart> optionalBodyPart = Optional.empty();
+
+        // If JavaScript is disabled, attempt to find the original index document using a custom header added
+        // during archive creation.
+        if (request.isForMainFrame() && !isJavaScriptEnabled) {
+            optionalBodyPart = Optional.ofNullable(this.getBodyParts())
+                    .flatMap((bodyParts) -> bodyParts.stream()
+                            .filter(bodyPart ->
+                                    bodyPart.getHeader().getFields().stream().anyMatch((field -> field.getName().equals(FALLBACK_INDEX_FIELD_NAME)))
+                            )
+                            .findFirst()
+                            .map((entity) -> (BodyPart) entity)
+                    );
+        }
+
 
         // Sub-documents appear with the same Content-Location as the main document, so pull the first
         // body part from the archive to ensure we receive the main document content.
-        if (request.isForMainFrame()) {
+        if (request.isForMainFrame() && isJavaScriptEnabled) {
             optionalBodyPart = Optional.ofNullable(this.getBodyParts()).flatMap(bodyParts -> Optional.ofNullable((BodyPart) bodyParts.get(0)));
         }
 

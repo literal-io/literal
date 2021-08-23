@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/loading_indicator"
+        app:actionLayout="@layout/webview_toolbar_indeterminate_progress"
+        android:visible="false"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/close_source"
+        android:icon="@drawable/ic_baseline_keyboard_arrow_down_24"
+        android:title="@string/toolbar_close_source"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/javascript_enabled"
+        android:checkable="true"
+        android:checked="true"
+        android:icon="@drawable/ic_baseline_build_24"
+        android:title="@string/toolbar_javascript_enabled"
+        app:showAsAction="never" />
+</menu>

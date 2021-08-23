@@ -6,7 +6,6 @@ import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.SystemClock;
-import android.util.Log;
 import android.view.ActionMode;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -26,9 +25,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.progressindicator.CircularProgressIndicator;
 
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -88,18 +85,15 @@ public class SourceWebView extends Fragment {
 
     private static final String PARAM_INITIAL_URL = "PARAM_INITIAL_URL";
     private static final String PARAM_BOTTOM_SHEET_APP_WEB_VIEW_VIEW_MODEL_KEY = "PARAM_BOTTOM_SHEET_APP_WEB_VIEW_VIEW_MODEL_KEY";
-    private static final String PARAM_TOOLBAR_PRIMARY_ACTION_ICON_RESOURCE_ID = "PARAM_PRIMARY_TOOLBAR_ACTION_ICON_RESOURCE_ID";
+    private static final String PARAM_SOURCE_CONTEXT = "PARAM_SOURCE_CONTEXT";
     private static final String PARAM_PRIMARY_APP_WEB_VIEW_VIEW_MODEL_KEY = "PARAM_PRIMARY_APP_WEB_VIEW_VIEW_MODEL_KEY";
-
     private String paramInitialUrl;
+    private SourceContext paramSourceContext;
     private String paramPrimaryAppWebViewViewModelKey;
     private String paramBottomSheetAppWebViewViewModelKey;
-    private int paramToolbarPrimaryActionResourceId;
-
     private io.literal.ui.view.SourceWebView.SourceWebView webView;
     private Toolbar toolbar;
     private AppBarLayout appBarLayout;
-
     /**
      * Triggered when the primary action in the toolbar tapped.
      **/
@@ -108,25 +102,28 @@ public class SourceWebView extends Fragment {
      * Triggered when ShareTargetHandler should be opened to URL
      **/
     private Callback<Void, URL> onCreateAnnotationFromSource;
-
     private ActionMode editAnnotationActionMode;
     /**
      * Show a different CAB if text is selected while editing annotation
      **/
     private boolean isEditingAnnotation;
-
     private SourceWebViewViewModel sourceWebViewViewModel;
     private AuthenticationViewModel authenticationViewModel;
     private AppWebViewViewModel bottomSheetAppWebViewViewModel;
     private AppWebViewViewModel primaryAppWebViewViewModel;
 
-    public static SourceWebView newInstance(@NotNull String initialUrl, String bottomSheetAppWebViewViewModelKey, String primaryAppWebViewViewModelKey, @NotNull int toolbarPrimaryActionResourceId) {
+    public static SourceWebView newInstance(
+            String initialUrl,
+            @NonNull SourceContext sourceContext,
+            String bottomSheetAppWebViewViewModelKey,
+            String primaryAppWebViewViewModelKey
+    ) {
         SourceWebView fragment = new SourceWebView();
         Bundle args = new Bundle();
         args.putString(PARAM_INITIAL_URL, initialUrl);
         args.putString(PARAM_BOTTOM_SHEET_APP_WEB_VIEW_VIEW_MODEL_KEY, bottomSheetAppWebViewViewModelKey);
         args.putString(PARAM_PRIMARY_APP_WEB_VIEW_VIEW_MODEL_KEY, primaryAppWebViewViewModelKey);
-        args.putInt(PARAM_TOOLBAR_PRIMARY_ACTION_ICON_RESOURCE_ID, toolbarPrimaryActionResourceId);
+        args.putSerializable(PARAM_SOURCE_CONTEXT, sourceContext);
         fragment.setArguments(args);
         return fragment;
     }
@@ -138,13 +135,12 @@ public class SourceWebView extends Fragment {
             paramInitialUrl = getArguments().getString(PARAM_INITIAL_URL);
             paramBottomSheetAppWebViewViewModelKey = getArguments().getString(PARAM_BOTTOM_SHEET_APP_WEB_VIEW_VIEW_MODEL_KEY);
             paramPrimaryAppWebViewViewModelKey = getArguments().getString(PARAM_PRIMARY_APP_WEB_VIEW_VIEW_MODEL_KEY);
-            paramToolbarPrimaryActionResourceId = getArguments().getInt(PARAM_TOOLBAR_PRIMARY_ACTION_ICON_RESOURCE_ID);
+            paramSourceContext = (SourceContext) getArguments().getSerializable(PARAM_SOURCE_CONTEXT);
         }
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_source_web_view, container, false);
         setHasOptionsMenu(true);
         return v;
@@ -191,9 +187,9 @@ public class SourceWebView extends Fragment {
                                     return WebViewRepository.evaluateJavascript(webview, script).thenApply(_result -> ((Void) null));
                                 })
                                 .orElseGet(() -> {
-                                   CompletableFuture<Void> future = new CompletableFuture<>();
-                                   future.completeExceptionally(new Exception("Activity is null, unable to get AssetManager."));
-                                   return future;
+                                    CompletableFuture<Void> future = new CompletableFuture<>();
+                                    future.completeExceptionally(new Exception("Activity is null, unable to get AssetManager."));
+                                    return future;
                                 })));
         webView.setOnSourceChanged((source) -> {
             sourceWebViewViewModel.setSourceHasFinishedInitializing(false);
@@ -246,6 +242,31 @@ public class SourceWebView extends Fragment {
             this.handleRenderAnnotations(annotations);
         });
 
+        sourceWebViewViewModel.getSourceHasFinishedInitializing().observe(getActivity(), (sourceHasFinishedInitializing) -> {
+            if (paramSourceContext.equals(SourceContext.READ_SOURCE) && toolbar.getMenu().hasVisibleItems()) {
+                Optional.ofNullable(toolbar.getMenu().findItem(R.id.loading_indicator)).ifPresent((menuItem -> {
+                    if (sourceHasFinishedInitializing) {
+                        menuItem.setVisible(false);
+                    } else {
+                        menuItem.setVisible(true);
+                    }
+                }));
+            }
+        });
+
+        sourceWebViewViewModel.getSourceJavascriptEnabled().observe(getActivity(), (sourceJavaScriptEnabled) -> {
+            this.webView.getSource().ifPresent(s -> {
+                if (sourceJavaScriptEnabled != s.getJavaScriptEnabled()) {
+                    Optional.ofNullable(toolbar)
+                            .flatMap(toolbar -> toolbar.getMenu().hasVisibleItems() ? Optional.ofNullable(toolbar.getMenu().findItem(R.id.javascript_enabled)) : Optional.empty())
+                            .ifPresent(menuItem -> menuItem.setChecked(sourceJavaScriptEnabled));
+                    sourceWebViewViewModel.setSourceHasFinishedInitializing(false);
+                    s.setJavaScriptEnabled(sourceJavaScriptEnabled);
+                    this.webView.reload();
+                }
+            });
+        });
+
         webView.setWebEventCallback((webView, event) -> {
             switch (event.getType()) {
                 case WebEvent.TYPE_FOCUS_ANNOTATION:
@@ -286,6 +307,13 @@ public class SourceWebView extends Fragment {
                     break;
                 case WebEvent.TYPE_ANNOTATION_RENDERER_INITIALIZED:
                     sourceWebViewViewModel.setSourceHasFinishedInitializing(true);
+                    break;
+                case WebEvent.TYPE_ANNOTATION_RENDERER_FAILED_TO_INITIALIZE:
+                    if (this.sourceWebViewViewModel.getSourceJavascriptEnabled().getValue()) {
+                        this.sourceWebViewViewModel.setSourceJavascriptEnabled(false);
+                    } else {
+                        // FIXME: failed to initialize annotation with javascript disabled, show error
+                    }
                     break;
                 case WebEvent.TYPE_SELECTION_CHANGE:
                     this.handleSelectionChange(event.getData().optBoolean("isCollapsed", true));
@@ -905,16 +933,9 @@ public class SourceWebView extends Fragment {
     private CompletableFuture<Void> handleToolbarPrimaryAction() {
         try {
             JSONObject data = new JSONObject();
-            String primaryActionResource;
-            if (paramToolbarPrimaryActionResourceId == R.drawable.done_white) {
-                primaryActionResource = "done_white";
-            } else if (paramToolbarPrimaryActionResourceId == R.drawable.arrow_drop_down_white) {
-                primaryActionResource = "arrow_drop_down_white";
-            } else {
-                primaryActionResource = (Integer.valueOf(paramToolbarPrimaryActionResourceId)).toString();
-            }
+
             data.put("action", "toolbar primary action");
-            data.put("toolbar primary action resource", primaryActionResource);
+            data.put("sourceContext", paramSourceContext.name());
             AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_CLICK, data);
         } catch (JSONException e) {
             ErrorRepository.captureException(e);
@@ -922,9 +943,9 @@ public class SourceWebView extends Fragment {
 
         CompletableFuture<Void> creationFuture;
         SourceWebViewAnnotation[] annotationsToCreate =
-            Arrays.stream(sourceWebViewViewModel.getAnnotations().getValue())
-                    .filter(sourceWebViewAnnotation -> sourceWebViewAnnotation.getCreationStatus().equals(SourceWebViewAnnotation.CreationStatus.REQUIRES_CREATION))
-                    .toArray(SourceWebViewAnnotation[]::new);
+                Arrays.stream(sourceWebViewViewModel.getAnnotations().getValue())
+                        .filter(sourceWebViewAnnotation -> sourceWebViewAnnotation.getCreationStatus().equals(SourceWebViewAnnotation.CreationStatus.REQUIRES_CREATION))
+                        .toArray(SourceWebViewAnnotation[]::new);
         if (annotationsToCreate.length > 0) {
             User user = authenticationViewModel.getUser().getValue();
             Executor executor = Optional.ofNullable(getActivity())
@@ -1026,19 +1047,41 @@ public class SourceWebView extends Fragment {
 
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        inflater.inflate(R.menu.source_webview_toolbar, menu);
+        inflater.inflate(
+                paramSourceContext.equals(SourceContext.CREATE_SOURCE)
+                        ? R.menu.source_webview_toolbar_create
+                        : R.menu.source_webview_toolbar_read,
+                menu
+        );
 
-        menu.getItem(0).setIcon(paramToolbarPrimaryActionResourceId);
+        if (paramSourceContext.equals(SourceContext.READ_SOURCE)) {
+            MenuItem menuItem = menu.getItem(1);
+            boolean hasFinishedInitializing = Optional.ofNullable(sourceWebViewViewModel)
+                    .map(SourceWebViewViewModel::getSourceHasFinishedInitializing)
+                    .map(LiveData::getValue)
+                    .orElse(false);
+            if (hasFinishedInitializing) {
+                menuItem.setActionView(R.layout.webview_toolbar_indeterminate_progress);
+            } else {
+                menuItem.setActionView(null);
+            }
+        }
         super.onCreateOptionsMenu(menu, inflater);
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.primary:
+            case R.id.create_annotations:
                 item.setActionView(R.layout.webview_toolbar_indeterminate_progress);
                 this.handleToolbarPrimaryAction()
                         .whenComplete((_void, _err) -> item.setActionView(null));
+                return true;
+            case R.id.close_source:
+                this.handleToolbarPrimaryAction();
+                return true;
+            case R.id.javascript_enabled:
+                sourceWebViewViewModel.setSourceJavascriptEnabled(!sourceWebViewViewModel.getSourceJavascriptEnabled().getValue());
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -1047,5 +1090,10 @@ public class SourceWebView extends Fragment {
 
     public void setOnCreateAnnotationFromSource(Callback<Void, URL> onCreateAnnotationFromSource) {
         this.onCreateAnnotationFromSource = onCreateAnnotationFromSource;
+    }
+
+    public enum SourceContext {
+        CREATE_SOURCE,
+        READ_SOURCE
     }
 }

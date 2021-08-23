@@ -55,21 +55,27 @@ export default () =>
 
     if (storageGet("hasInitialized")) {
       console.log(
-        "[Literal] Expeted uninitialized DOM, but found it already initialized: noop-ing."
+        "[Literal] Expected uninitialized DOM, but found it already initialized: noop-ing."
       );
       return;
     }
     storageSet("hasInitialized", true);
 
-    await renderer.render(ANNOTATIONS);
-    renderer.onInitialAnnotationsRendered();
-    annotationFocusManager.onAnnotationsRendered({
-      annotations: ANNOTATIONS,
-      focusedAnnotationId: FOCUSED_ANNOTATION_ID,
-      initialRender: true,
-    });
+    try {
+      await renderer.render(ANNOTATIONS);
+      renderer.onInitialAnnotationsRendered();
+      annotationFocusManager.onAnnotationsRendered({
+        annotations: ANNOTATIONS,
+        focusedAnnotationId: FOCUSED_ANNOTATION_ID,
+        initialRender: true,
+      });
 
-    messenger.postMessage({
-      type: "ANNOTATION_RENDERER_INITIALIZED",
-    });
+      messenger.postMessage({
+        type: "ANNOTATION_RENDERER_INITIALIZED",
+      });
+    } catch (ex) {
+      messenger.postMessage({
+        type: "ANNOTATION_RENDERER_FAILED_TO_INITIALIZE",
+      });
+    }
   });

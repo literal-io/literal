@@ -235,9 +235,9 @@ public class MainActivity extends InstrumentedActivity {
         if (sourceWebViewBottomSheetFragment == null) {
             sourceWebViewBottomSheetFragment = SourceWebView.newInstance(
                     null,
+                    SourceWebView.SourceContext.READ_SOURCE,
                     APP_WEB_VIEW_BOTTOM_SHEET_FRAGMENT_NAME,
-                    APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME,
-                    R.drawable.arrow_drop_down_white
+                    APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME
             );
         }
         if (appWebViewBottomSheetFragment == null) {

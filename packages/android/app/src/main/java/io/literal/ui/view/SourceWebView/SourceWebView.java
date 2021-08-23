@@ -40,6 +40,7 @@ public class SourceWebView extends MessagingWebView implements NestedScrollingCh
     private Optional<Source> source;
     private Optional<Function1<Source, Void>> onSourceChanged;
     private Optional<Function1<Bitmap, Void>> onReceivedIcon;
+    private Client client;
 
     // NestedScrollingChild
     private int mLastY;
@@ -86,7 +87,7 @@ public class SourceWebView extends MessagingWebView implements NestedScrollingCh
             return;
         }
 
-        Client client = clientBuilder.get()
+        this.client = clientBuilder.get()
                 .setSource(source)
                 .setOnReceivedIcon((icon) -> {
                     webChromeClient.onReceivedIcon(this, icon);
@@ -117,10 +118,11 @@ public class SourceWebView extends MessagingWebView implements NestedScrollingCh
             this.setWebViewClient(client);
             this.loadUrl(sourceURI.get().toString());
             onSourceChanged.ifPresent(cb -> cb.invoke(source));
-            oldSource.flatMap(Source::getWebArchive).ifPresent(WebArchive::dispose);
+            if (oldSource.isPresent() && oldSource.get() != source) {
+                oldSource.get().getWebArchive().ifPresent(WebArchive::dispose);
+            }
         }
     }
-
 
     public Optional<Source> getSource() {
         return source;
@@ -128,6 +130,15 @@ public class SourceWebView extends MessagingWebView implements NestedScrollingCh
 
     public void setOnSourceChanged(Function1<Source, Void> onSourceChanged) {
         this.onSourceChanged = Optional.of(onSourceChanged);
+    }
+
+    @Override
+    public void reload() {
+        if (this.client != null) {
+            this.client.setHasInjectedAnnotationRendererScript(false);
+            this.client.setShouldClearHistoryOnPageFinished(true);
+        }
+        super.reload();
     }
 
     @Override
