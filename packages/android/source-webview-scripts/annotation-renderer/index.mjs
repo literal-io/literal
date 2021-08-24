@@ -17,7 +17,7 @@ const HIGHLIGHT_CLASS_NAME = "literal-highlight";
 
 // Initial parameters set during script injection. Note that effective values may change over the
 // course of script execution due to message handling.
-const ANNOTATIONS = process.env.PARAM_ANNOTATIONS;
+const ANNOTATIONS = JSON.parse(process.env.PARAM_ANNOTATIONS);
 const FOCUSED_ANNOTATION_ID = process.env.PARAM_FOCUSED_ANNOTATION_ID;
 
 const messenger = new Messenger({
@@ -62,7 +62,14 @@ export default () =>
     storageSet("hasInitialized", true);
 
     try {
-      await renderer.render(ANNOTATIONS);
+      const rangeByAnnotationId = await renderer.render(ANNOTATIONS);
+      if (Object.values(rangeByAnnotationId).length !== ANNOTATIONS.length) {
+        messenger.postMessage({
+          type: "ANNOTATION_RENDERER_FAILED_TO_INITIALIZE",
+        });
+        return;
+      }
+
       renderer.onInitialAnnotationsRendered();
       annotationFocusManager.onAnnotationsRendered({
         annotations: ANNOTATIONS,

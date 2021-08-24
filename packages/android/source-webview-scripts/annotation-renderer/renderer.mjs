@@ -109,6 +109,8 @@ export class Renderer {
           console.error("[Literal] Unable to highlight range.", range, e);
         }
       });
+
+      return storageGet("annotationRanges");
     });
   }
 }

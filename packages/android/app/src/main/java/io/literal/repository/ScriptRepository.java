@@ -1,6 +1,7 @@
 package io.literal.repository;
 
 import android.content.res.AssetManager;
+import android.util.Log;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
@@ -10,6 +11,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.regex.Matcher;
 
 import io.literal.lib.JsonArrayUtil;
 import io.literal.model.Annotation;
@@ -70,7 +72,7 @@ public class ScriptRepository {
             return scriptOutput
                     .replaceAll(
                             "process\\.env\\.PARAM_ANNOTATIONS",
-                            paramAnnotations.substring(1, paramAnnotations.length() - 1)
+                            Matcher.quoteReplacement(paramAnnotations)
                     )
                     .replaceAll(
                             "process\\.env\\.PARAM_FOCUSED_ANNOTATION_ID",
@@ -80,8 +82,6 @@ public class ScriptRepository {
             ErrorRepository.captureException(e);
             return null;
         }
-
-
     }
 
     public static String getGetAnnotationBoundingBoxScript(AssetManager assetManager, JSONObject paramAnnotation) {
@@ -100,7 +100,7 @@ public class ScriptRepository {
         return scriptOutput
                 .replaceAll(
                         "process\\.env\\.PARAM_ANNOTATION",
-                        stringifiedParamAnnotation.substring(1, stringifiedParamAnnotation.length() - 1)
+                        Matcher.quoteReplacement(stringifiedParamAnnotation)
                 );
     }
 }

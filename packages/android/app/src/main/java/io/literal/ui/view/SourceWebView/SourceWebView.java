@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.ActionMode;
 import android.view.MotionEvent;
 import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 
 import androidx.annotation.NonNull;
@@ -16,6 +17,7 @@ import androidx.core.view.MotionEventCompat;
 import androidx.core.view.NestedScrollingChild;
 import androidx.core.view.NestedScrollingChildHelper;
 import androidx.core.view.ViewCompat;
+import androidx.webkit.ServiceWorkerWebSettingsCompat;
 
 import org.json.JSONException;
 import org.json.JSONObject;

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 import android.webkit.WebResourceRequest;
 
 import org.apache.commons.io.IOUtils;
@@ -291,7 +292,6 @@ public class WebArchive {
     }
 
     public Optional<BodyPart> resolveWebResourceRequest(WebResourceRequest request, boolean isJavaScriptEnabled) {
-
         Optional<BodyPart> optionalBodyPart = Optional.empty();
 
         // If JavaScript is disabled, attempt to find the original index document using a custom header added

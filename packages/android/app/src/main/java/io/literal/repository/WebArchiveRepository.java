@@ -82,7 +82,6 @@ public class WebArchiveRepository {
             RawField rawField = new RawField(FieldName.CONTENT_LOCATION, webResourceRequest.getUrl().toString());
             ContentLocationField contentLocationField = ContentLocationFieldImpl.PARSER.parse(rawField, DecodeMonitor.SILENT);
 
-            Log.i("createBodyPart", webResourceRequest.getUrl().toString());
 
             return Optional.of(
                     BodyPartBuilder.create()

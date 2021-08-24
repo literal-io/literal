@@ -32,6 +32,7 @@ import io.literal.model.Body;
 import io.literal.model.Format;
 import io.literal.model.Language;
 import io.literal.model.Motivation;
+import io.literal.model.SourceInitializationStatus;
 import io.literal.model.SourceJavaScriptConfig;
 import io.literal.model.SourceWebViewAnnotation;
 import io.literal.model.Target;
@@ -45,7 +46,7 @@ import io.literal.ui.view.SourceWebView.Source;
 import io.literal.ui.view.SourceWebView.SourceWebView;
 
 public class SourceWebViewViewModel extends ViewModel {
-    private final MutableLiveData<Boolean> sourceHasFinishedInitializing = new MutableLiveData<>(false);
+    private final MutableLiveData<SourceInitializationStatus> sourceInitializationStatus = new MutableLiveData<>(SourceInitializationStatus.UNINITIALIZED);
     private final MutableLiveData<SourceJavaScriptConfig> sourceJavaScriptConfig = new MutableLiveData<>(new SourceJavaScriptConfig(true, SourceJavaScriptConfig.Reason.AUTOMATIC));
     private final MutableLiveData<SourceWebViewAnnotation[]> annotationsLiveData = new MutableLiveData<>(new SourceWebViewAnnotation[0]);
 
@@ -57,12 +58,12 @@ public class SourceWebViewViewModel extends ViewModel {
         return annotationsLiveData;
     }
 
-    public MutableLiveData<Boolean> getSourceHasFinishedInitializing() {
-        return sourceHasFinishedInitializing;
+    public MutableLiveData<SourceInitializationStatus> getSourceInitializationStatus() {
+        return sourceInitializationStatus;
     }
 
-    public void setSourceHasFinishedInitializing(boolean sourceHasFinishedInitializing) {
-        this.sourceHasFinishedInitializing.setValue(sourceHasFinishedInitializing);
+    public void setSourceInitializationStatus(@NonNull SourceInitializationStatus sourceInitializationStatus) {
+        this.sourceInitializationStatus.setValue(sourceInitializationStatus);
     }
 
     public MutableLiveData<SourceJavaScriptConfig> getSourceJavaScriptConfig() {
@@ -76,7 +77,7 @@ public class SourceWebViewViewModel extends ViewModel {
     public void reset() {
         this.annotations.clear();
         this.compiledAnnotations.clear();
-        this.sourceHasFinishedInitializing.setValue(false);
+        this.sourceInitializationStatus.setValue(SourceInitializationStatus.UNINITIALIZED);
         this.annotationsLiveData.setValue(new SourceWebViewAnnotation[0]);
         this.sourceJavaScriptConfig.setValue(new SourceJavaScriptConfig(true, SourceJavaScriptConfig.Reason.AUTOMATIC));
     }
