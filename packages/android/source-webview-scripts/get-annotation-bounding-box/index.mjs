@@ -5,7 +5,7 @@ import {
   get as storageGet,
   initialize as storageInitialize,
 } from "../shared/storage.mjs";
-const ANNOTATION = process.env.PARAM_ANNOTATION;
+const ANNOTATION = JSON.parse(process.env.PARAM_ANNOTATION);
 
 export default () => {
   storageInitialize();

@@ -15,6 +15,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -40,6 +41,7 @@ import io.literal.lib.JsonArrayUtil;
 import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
+import io.literal.model.SourceInitializationStatus;
 import io.literal.model.SourceWebViewAnnotation;
 import io.literal.model.User;
 import io.literal.repository.AnalyticsRepository;
@@ -63,6 +65,7 @@ public class MainActivity extends InstrumentedActivity {
     private SourceWebViewViewModel sourceWebViewViewModelBottomSheet;
     private AuthenticationViewModel authenticationViewModel;
     private AppWebView appWebViewPrimaryFragment = null;
+
     private final BroadcastReceiver annotationCreatedBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -84,6 +87,7 @@ public class MainActivity extends InstrumentedActivity {
     };
     private SourceWebView sourceWebViewBottomSheetFragment = null;
     private AppWebView appWebViewBottomSheetFragment = null;
+    private Observer<SourceInitializationStatus> sourceInitializationStatusObserver;
     private final ActivityResultLauncher<Intent> createAnnotationFromSourceLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), MainActivity.this::handleCreateAnnotationFromSourceResult);
 
     @Override
@@ -185,23 +189,38 @@ public class MainActivity extends InstrumentedActivity {
                                         .ifPresent((s) -> {
                                             if (displayBottomSheet) {
                                                 sourceWebViewViewModelBottomSheet.getBottomSheetBehavior().ifPresent(b -> b.setState(BottomSheetBehavior.STATE_EXPANDED));
+
+                                                SourceInitializationStatus sourceInitializationStatus = sourceWebViewViewModelBottomSheet.getSourceInitializationStatus().getValue();
                                                 // Source wil already be initialized if it was previously accessed or it may have loaded in a previous call where `displayBottomSheet` was false.
-                                                if (sourceWebViewViewModelBottomSheet.getSourceHasFinishedInitializing().getValue()) {
+                                                if (sourceInitializationStatus.equals(SourceInitializationStatus.INITIALIZED)) {
                                                     appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
                                                     boolean javascriptEnabled = Optional.ofNullable(sourceWebViewViewModelBottomSheet).map((vm) -> vm.getSourceJavaScriptConfig().getValue().isEnabled()).orElse(true);
                                                     if (!javascriptEnabled) {
                                                         ToastRepository.show(this, R.string.toast_javascript_disabled, ToastRepository.STYLE_DARK_ACCENT);
                                                     }
+                                                } else if (sourceInitializationStatus.equals(SourceInitializationStatus.FAILED)) {
+                                                    ToastRepository.show(this, R.string.toast_annotation_renderer_failed_to_initialize, ToastRepository.STYLE_DARK_ACCENT);
                                                 } else {
-                                                    sourceWebViewViewModelBottomSheet.getSourceHasFinishedInitializing().observe(this, new Observer<Boolean>() {
+                                                    if (sourceInitializationStatusObserver != null) {
+                                                        sourceWebViewViewModelBottomSheet.getSourceInitializationStatus().removeObserver(sourceInitializationStatusObserver);
+                                                    }
+                                                    sourceInitializationStatusObserver = new Observer<SourceInitializationStatus>() {
                                                         @Override
-                                                        public void onChanged(Boolean sourceHasFinishedInitializing) {
-                                                            if (sourceHasFinishedInitializing) {
-                                                                sourceWebViewViewModelBottomSheet.getSourceHasFinishedInitializing().removeObserver(this);
+                                                        public void onChanged(SourceInitializationStatus sourceInitializationStatus) {
+                                                            int sourceWebViewBottomSheetState = sourceWebViewViewModelBottomSheet.getBottomSheetBehavior()
+                                                                    .map(BottomSheetBehavior::getState)
+                                                                    .orElse(BottomSheetBehavior.STATE_HIDDEN);
+
+                                                            if (sourceInitializationStatus.equals(SourceInitializationStatus.INITIALIZED) && sourceWebViewBottomSheetState != BottomSheetBehavior.STATE_HIDDEN) {
                                                                 appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
                                                             }
+
+                                                            if (sourceInitializationStatus.equals(SourceInitializationStatus.INITIALIZED) || sourceInitializationStatus.equals(SourceInitializationStatus.FAILED)) {
+                                                                sourceWebViewViewModelBottomSheet.getSourceInitializationStatus().removeObserver(this);
+                                                            }
                                                         }
-                                                    });
+                                                    };
+                                                    sourceWebViewViewModelBottomSheet.getSourceInitializationStatus().observe(this, sourceInitializationStatusObserver);
                                                 }
                                             }
                                         });
@@ -286,13 +305,23 @@ public class MainActivity extends InstrumentedActivity {
             this.handleCreateAnnotationFromSource(sourceUrl.toString());
         });
 
-        getSupportFragmentManager()
+        FragmentTransaction fragmentTransaction = getSupportFragmentManager()
                 .beginTransaction()
-                .setReorderingAllowed(true)
-                .add(R.id.fragment_container, appWebViewPrimaryFragment)
-                .add(R.id.source_web_view_bottom_sheet_fragment_container, sourceWebViewBottomSheetFragment)
-                .add(R.id.app_web_view_bottom_sheet_fragment_container, appWebViewBottomSheetFragment)
-                .commit();
+                .setReorderingAllowed(true);
+
+        if (!appWebViewPrimaryFragment.isAdded()) {
+            fragmentTransaction.add(R.id.fragment_container, appWebViewPrimaryFragment);
+        }
+        if (!sourceWebViewBottomSheetFragment.isAdded()) {
+            fragmentTransaction.add(R.id.source_web_view_bottom_sheet_fragment_container, sourceWebViewBottomSheetFragment);
+        }
+        if (!appWebViewBottomSheetFragment.isAdded()) {
+            fragmentTransaction.add(R.id.app_web_view_bottom_sheet_fragment_container, appWebViewBottomSheetFragment);
+        }
+
+        if (!fragmentTransaction.isEmpty()) {
+            fragmentTransaction.commit();
+        }
     }
 
     private void handleCreateAnnotationFromSource(String sourceUrl) {

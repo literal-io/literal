@@ -7,6 +7,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.ActionMode;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -56,6 +57,7 @@ import io.literal.model.Body;
 import io.literal.model.ErrorRepositoryLevel;
 import io.literal.model.ExternalTarget;
 import io.literal.model.HTMLScriptElement;
+import io.literal.model.SourceInitializationStatus;
 import io.literal.model.SourceJavaScriptConfig;
 import io.literal.model.SourceWebViewAnnotation;
 import io.literal.model.SpecificTarget;
@@ -96,7 +98,10 @@ public class SourceWebView extends Fragment {
     private io.literal.ui.view.SourceWebView.SourceWebView webView;
     private Toolbar toolbar;
     private AppBarLayout appBarLayout;
+
     private CountDownTimer toolbarOverflowMenuTitleTextUpdater;
+    private CountDownTimer sourceInitializationStatusTimeout;
+
     /**
      * Triggered when the primary action in the toolbar tapped.
      **/
@@ -195,7 +200,7 @@ public class SourceWebView extends Fragment {
                                     return future;
                                 })));
         webView.setOnSourceChanged((source) -> {
-            sourceWebViewViewModel.setSourceHasFinishedInitializing(false);
+            sourceWebViewViewModel.setSourceInitializationStatus(SourceInitializationStatus.IN_PROGRESS);
             toolbar.setTitle(source.getDisplayURI().getHost());
 
             Optional<Activity> activity = Optional.ofNullable(getActivity());
@@ -245,15 +250,46 @@ public class SourceWebView extends Fragment {
             this.handleRenderAnnotations(annotations);
         });
 
-        sourceWebViewViewModel.getSourceHasFinishedInitializing().observe(getActivity(), (sourceHasFinishedInitializing) -> {
+        sourceWebViewViewModel.getSourceInitializationStatus().observe(getActivity(), (sourceInitializationStatus) -> {
             if (paramSourceContext.equals(SourceContext.READ_SOURCE) && toolbar.getMenu().hasVisibleItems()) {
                 Optional.ofNullable(toolbar.getMenu().findItem(R.id.loading_indicator)).ifPresent((menuItem -> {
-                    if (sourceHasFinishedInitializing) {
+                    if (sourceInitializationStatus.equals(SourceInitializationStatus.INITIALIZED) || sourceInitializationStatus.equals(SourceInitializationStatus.FAILED)) {
                         menuItem.setVisible(false);
                     } else {
                         menuItem.setVisible(true);
                     }
                 }));
+            }
+
+            if (sourceInitializationStatusTimeout != null) {
+                sourceInitializationStatusTimeout.cancel();
+                sourceInitializationStatusTimeout = null;
+            }
+
+            /**
+             * Set a timer to automatically fail initialization if 10 seconds elapse from IN_PROGRESS status.
+             * In normal paths, this should get canceled from an ANNOTATION_RENDERER_FAILED_TO_INITIALIZE event
+             * coming from the renderer script, but errors within the JS context may prevent that from being dispatched.
+             */
+            if (sourceInitializationStatus.equals(SourceInitializationStatus.IN_PROGRESS) && paramSourceContext.equals(SourceContext.READ_SOURCE)) {
+                sourceInitializationStatusTimeout = new CountDownTimer(1000 * 7 , 1000 * 7) {
+                    @Override
+                    public void onTick(long millisUntilFinished) {
+                        // noop, we only care about finish
+                    }
+
+                    @Override
+                    public void onFinish() {
+                        SourceInitializationStatus sourceInitializationStatus = Optional.ofNullable(
+                                sourceWebViewViewModel.getSourceInitializationStatus().getValue()
+                        ).orElse(SourceInitializationStatus.UNINITIALIZED);
+                        if (sourceInitializationStatus.equals(SourceInitializationStatus.IN_PROGRESS)) {
+                            handleAnnotationRendererFailedToInitialize();
+                            sourceInitializationStatusTimeout = null;
+                        }
+                    }
+                };
+                sourceInitializationStatusTimeout.start();
             }
         });
 
@@ -293,7 +329,7 @@ public class SourceWebView extends Fragment {
                             toolbarOverflowMenuTitleTextUpdater.start();
                         });
 
-                sourceWebViewViewModel.setSourceHasFinishedInitializing(false);
+                sourceWebViewViewModel.setSourceInitializationStatus(SourceInitializationStatus.IN_PROGRESS);
                 s.setJavaScriptEnabled(sourceJavaScriptConfig.isEnabled());
                 this.webView.reload();
             }
@@ -503,6 +539,8 @@ public class SourceWebView extends Fragment {
         if (!annotation.getFocusStatus().equals(SourceWebViewAnnotation.FocusStatus.FOCUSED)) {
             sourceWebViewViewModel.setFocusedAnnotationId(annotation.getAnnotation().getId());
         }
+
+        bottomSheetAppWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
 
         if (editAnnotationActionMode != null) {
             webView.finishEditAnnotationActionMode(editAnnotationActionMode);
@@ -828,7 +866,11 @@ public class SourceWebView extends Fragment {
     }
 
     private void handleRenderAnnotations(SourceWebViewAnnotation[] annotations) {
-        if (!Optional.ofNullable(sourceWebViewViewModel.getSourceHasFinishedInitializing()).map(LiveData::getValue).orElse(false)) {
+        if (
+                !Optional.ofNullable(sourceWebViewViewModel.getSourceInitializationStatus().getValue())
+                    .orElse(SourceInitializationStatus.UNINITIALIZED)
+                    .equals(SourceInitializationStatus.INITIALIZED)
+        ) {
             ErrorRepository.captureWarning(new Exception("handleRenderAnnotations: expected webview to be initialized, nooping."));
             return;
         }
@@ -952,7 +994,7 @@ public class SourceWebView extends Fragment {
     }
 
     private void handleAnnotationRendererInitialized() {
-        sourceWebViewViewModel.setSourceHasFinishedInitializing(true);
+        sourceWebViewViewModel.setSourceInitializationStatus(SourceInitializationStatus.INITIALIZED);
         SourceJavaScriptConfig sourceJavaScriptConfig = Optional.ofNullable(this.sourceWebViewViewModel)
                 .flatMap(vm -> Optional.ofNullable(vm.getSourceJavaScriptConfig().getValue()))
                 .orElse(new SourceJavaScriptConfig(true, SourceJavaScriptConfig.Reason.AUTOMATIC));
@@ -1008,6 +1050,9 @@ public class SourceWebView extends Fragment {
             Optional.ofNullable(getActivity()).ifPresent((activity) -> {
                 ToastRepository.show(activity, R.string.toast_annotation_renderer_failed_to_initialize, ToastRepository.STYLE_DARK_ACCENT);
             });
+            sourceWebViewViewModel.setSourceInitializationStatus(SourceInitializationStatus.FAILED);
+        } else {
+            sourceWebViewViewModel.setSourceInitializationStatus(SourceInitializationStatus.FAILED);
         }
 
         try {
@@ -1168,11 +1213,11 @@ public class SourceWebView extends Fragment {
         if (paramSourceContext.equals(SourceContext.READ_SOURCE)) {
             Optional.ofNullable(menu.findItem(R.id.loading_indicator))
                     .ifPresent((menuItem) -> {
-                        boolean hasFinishedInitializing = Optional.ofNullable(sourceWebViewViewModel)
-                                .map(SourceWebViewViewModel::getSourceHasFinishedInitializing)
+                        SourceInitializationStatus sourceInitializationStatus = Optional.ofNullable(sourceWebViewViewModel)
+                                .map(SourceWebViewViewModel::getSourceInitializationStatus)
                                 .map(LiveData::getValue)
-                                .orElse(false);
-                        if (hasFinishedInitializing) {
+                                .orElse(SourceInitializationStatus.UNINITIALIZED);
+                        if (sourceInitializationStatus.equals(SourceInitializationStatus.UNINITIALIZED) || sourceInitializationStatus.equals(SourceInitializationStatus.IN_PROGRESS)) {
                             menuItem.setActionView(R.layout.webview_toolbar_indeterminate_progress);
                         } else {
                             menuItem.setActionView(null);

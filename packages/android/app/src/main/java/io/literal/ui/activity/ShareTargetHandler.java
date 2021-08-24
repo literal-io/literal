@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentContainerView;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.amazonaws.amplify.generated.graphql.GetAnnotationQuery;
@@ -33,6 +34,7 @@ import io.literal.lib.WebEvent;
 import io.literal.lib.WebRoutes;
 import io.literal.model.Annotation;
 import io.literal.model.ErrorRepositoryLevel;
+import io.literal.model.SourceInitializationStatus;
 import io.literal.model.SourceWebViewAnnotation;
 import io.literal.model.StorageObject;
 import io.literal.model.User;
@@ -124,11 +126,15 @@ public class ShareTargetHandler extends InstrumentedActivity {
     private void installSourceWebView(String sourceWebViewUri, String appWebViewUri) {
         sourceWebViewViewModel = new ViewModelProvider(this).get(SourceWebViewViewModel.class);
 
-        sourceWebViewViewModel.getSourceHasFinishedInitializing().observe(this, hasFinishedInitializing -> {
-            ViewGroup splash = findViewById(R.id.share_target_handler_splash);
-            if (hasFinishedInitializing && splash.getVisibility() == View.VISIBLE) {
-                splash.setVisibility(View.INVISIBLE);
-                ToastRepository.show(this, R.string.toast_create_from_source);
+        sourceWebViewViewModel.getSourceInitializationStatus().observe(this, new Observer<SourceInitializationStatus>() {
+            @Override
+            public void onChanged(SourceInitializationStatus sourceInitializationStatus) {
+                ViewGroup splash = ShareTargetHandler.this.findViewById(R.id.share_target_handler_splash);
+                if (sourceInitializationStatus.equals(SourceInitializationStatus.INITIALIZED) && splash.getVisibility() == View.VISIBLE) {
+                    splash.setVisibility(View.INVISIBLE);
+                    ToastRepository.show(ShareTargetHandler.this, R.string.toast_create_from_source);
+                    sourceWebViewViewModel.getSourceInitializationStatus().removeObserver(this);
+                }
             }
         });
 
