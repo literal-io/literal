@@ -257,49 +257,47 @@ public class SourceWebView extends Fragment {
             }
         });
 
-        sourceWebViewViewModel.getSourceJavaScriptConfig().observe(getActivity(), (sourceJavaScriptConfig) -> {
-            this.webView.getSource().ifPresent(s -> {
-                if (sourceJavaScriptConfig.isEnabled() != s.getJavaScriptEnabled()) {
-                    if (toolbarOverflowMenuTitleTextUpdater != null) {
-                        toolbarOverflowMenuTitleTextUpdater.cancel();
-                    }
-
-                    Optional.ofNullable(toolbar)
-                            .flatMap(toolbar -> toolbar.getMenu().hasVisibleItems()
-                                    ? Optional.ofNullable(toolbar.getMenu().findItem(R.id.javascript_toggle))
-                                    : Optional.empty())
-                            .ifPresent(menuItem -> {
-                                int resId = sourceJavaScriptConfig.isEnabled() ? R.string.toolbar_disable_javascript : R.string.toolbar_enable_javascript;
-
-                                // Wait until overflow menu is no longer visible to update the toggle text.
-                                toolbarOverflowMenuTitleTextUpdater = new CountDownTimer(5000, 500) {
-                                    boolean hasUpdated = false;
-
-                                    @Override
-                                    public void onTick(long millisUntilFinished) {
-                                        if (!toolbar.isOverflowMenuShowing() && !hasUpdated) {
-                                            hasUpdated = true;
-                                            menuItem.setTitle(resId);
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onFinish() {
-                                        if (!hasUpdated) {
-                                            hasUpdated = true;
-                                            menuItem.setTitle(resId);
-                                        }
-                                    }
-                                };
-                                toolbarOverflowMenuTitleTextUpdater.start();
-                            });
-
-                    sourceWebViewViewModel.setSourceHasFinishedInitializing(false);
-                    s.setJavaScriptEnabled(sourceJavaScriptConfig.isEnabled());
-                    this.webView.reload();
+        sourceWebViewViewModel.getSourceJavaScriptConfig().observe(getActivity(), (sourceJavaScriptConfig) -> this.webView.getSource().ifPresent(s -> {
+            if (sourceJavaScriptConfig.isEnabled() != s.getJavaScriptEnabled()) {
+                if (toolbarOverflowMenuTitleTextUpdater != null) {
+                    toolbarOverflowMenuTitleTextUpdater.cancel();
                 }
-            });
-        });
+
+                Optional.ofNullable(toolbar)
+                        .flatMap(toolbar -> toolbar.getMenu().hasVisibleItems()
+                                ? Optional.ofNullable(toolbar.getMenu().findItem(R.id.javascript_toggle))
+                                : Optional.empty())
+                        .ifPresent(menuItem -> {
+                            int resId = sourceJavaScriptConfig.isEnabled() ? R.string.toolbar_disable_javascript : R.string.toolbar_enable_javascript;
+
+                            // Wait until overflow menu is no longer visible to update the toggle text.
+                            toolbarOverflowMenuTitleTextUpdater = new CountDownTimer(5000, 500) {
+                                boolean hasUpdated = false;
+
+                                @Override
+                                public void onTick(long millisUntilFinished) {
+                                    if (!toolbar.isOverflowMenuShowing() && !hasUpdated) {
+                                        hasUpdated = true;
+                                        menuItem.setTitle(resId);
+                                    }
+                                }
+
+                                @Override
+                                public void onFinish() {
+                                    if (!hasUpdated) {
+                                        hasUpdated = true;
+                                        menuItem.setTitle(resId);
+                                    }
+                                }
+                            };
+                            toolbarOverflowMenuTitleTextUpdater.start();
+                        });
+
+                sourceWebViewViewModel.setSourceHasFinishedInitializing(false);
+                s.setJavaScriptEnabled(sourceJavaScriptConfig.isEnabled());
+                this.webView.reload();
+            }
+        }));
 
         webView.setWebEventCallback((webView, event) -> {
             switch (event.getType()) {
@@ -955,20 +953,47 @@ public class SourceWebView extends Fragment {
 
     private void handleAnnotationRendererInitialized() {
         sourceWebViewViewModel.setSourceHasFinishedInitializing(true);
-        boolean javascriptEnabled = Optional.ofNullable(this.sourceWebViewViewModel)
-                .map((vm) -> vm.getSourceJavaScriptConfig().getValue().isEnabled())
-                .orElse(true);
+        SourceJavaScriptConfig sourceJavaScriptConfig = Optional.ofNullable(this.sourceWebViewViewModel)
+                .flatMap(vm -> Optional.ofNullable(vm.getSourceJavaScriptConfig().getValue()))
+                .orElse(new SourceJavaScriptConfig(true, SourceJavaScriptConfig.Reason.AUTOMATIC));
         boolean sourceVisible = Optional.ofNullable(this.sourceWebViewViewModel)
                 .flatMap(SourceWebViewViewModel::getBottomSheetBehavior)
                 .map((s) -> s.getState() == BottomSheetBehavior.STATE_EXPANDED)
                 .orElse(false);
-        if (!javascriptEnabled && sourceVisible) {
-            ToastRepository.show(getActivity(), R.string.toast_javascript_disabled, ToastRepository.STYLE_DARK_ACCENT);
+        if (!sourceJavaScriptConfig.isEnabled() && sourceVisible) {
+            Optional.ofNullable(getActivity()).ifPresent((activity) -> ToastRepository.show(activity, R.string.toast_javascript_disabled, ToastRepository.STYLE_DARK_ACCENT));
+        }
+
+        try {
+            JSONObject data = new JSONObject();
+            data.put("isJavaScriptEnabled", sourceJavaScriptConfig.isEnabled());
+            data.put("javaScriptConfigReason", sourceJavaScriptConfig.getReason().name());
+            data.put("sourceVisible", sourceVisible);
+            webView.getSource()
+                    .flatMap(source -> {
+                        if (source.getType().equals(Source.Type.WEB_ARCHIVE)) {
+                            return source.getWebArchive().map(w -> w.getStorageObject().getCanonicalURI());
+                        } else {
+                            return source.getURI();
+                        }
+                    })
+                    .ifPresent(uri -> {
+                        try {
+                            data.put("sourceUri", uri.toString());
+                        } catch (JSONException e) {
+                            ErrorRepository.captureException(e);
+                        }
+                    });
+            AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_ANNOTATION_RENDERER_INITIALIZED, data);
+        } catch (JSONException e) {
+            ErrorRepository.captureException(e);
         }
     }
 
     private void handleAnnotationRendererFailedToInitialize() {
-        SourceJavaScriptConfig sourceJavaScriptConfig = this.sourceWebViewViewModel.getSourceJavaScriptConfig().getValue();
+        SourceJavaScriptConfig sourceJavaScriptConfig = Optional.ofNullable(this.sourceWebViewViewModel)
+                .flatMap(s -> Optional.ofNullable(s.getSourceJavaScriptConfig().getValue()))
+                .orElse(new SourceJavaScriptConfig(true, SourceJavaScriptConfig.Reason.AUTOMATIC));
         boolean sourceVisible = Optional.ofNullable(this.sourceWebViewViewModel)
                 .flatMap(SourceWebViewViewModel::getBottomSheetBehavior)
                 .map((s) -> s.getState() == BottomSheetBehavior.STATE_EXPANDED)
@@ -980,7 +1005,35 @@ public class SourceWebView extends Fragment {
                     SourceJavaScriptConfig.Reason.AUTOMATIC
             ));
         } else if (sourceVisible) {
-            ToastRepository.show(getActivity(), R.string.toast_annotation_renderer_failed_to_initialize, ToastRepository.STYLE_DARK_ACCENT);
+            Optional.ofNullable(getActivity()).ifPresent((activity) -> {
+                ToastRepository.show(activity, R.string.toast_annotation_renderer_failed_to_initialize, ToastRepository.STYLE_DARK_ACCENT);
+            });
+        }
+
+        try {
+            JSONObject data = new JSONObject();
+            data.put("isJavaScriptEnabled", sourceJavaScriptConfig.isEnabled());
+            data.put("javaScriptConfigReason", sourceJavaScriptConfig.getReason().name());
+            data.put("sourceVisible", sourceVisible);
+            webView.getSource()
+                    .flatMap(source -> {
+                        if (source.getType().equals(Source.Type.WEB_ARCHIVE)) {
+                            return source.getWebArchive().map(w -> w.getStorageObject().getCanonicalURI());
+                        } else {
+                            return source.getURI();
+                        }
+                    })
+                    .ifPresent(uri -> {
+                        try {
+                            data.put("sourceUri", uri.toString());
+                        } catch (JSONException e) {
+                            ErrorRepository.captureException(e);
+                        }
+                    });
+
+            AnalyticsRepository.logEvent(AnalyticsRepository.TYPE_ANNOTATION_RENDERER_FAILED_TO_INITIALIZE, data);
+        } catch (JSONException e) {
+            ErrorRepository.captureException(e);
         }
     }
 

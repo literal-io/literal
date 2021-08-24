@@ -15,6 +15,8 @@ public class AnalyticsRepository {
     public static final String TYPE_DISPATCH_SERVICE_INTENT = "DISPATCH_SERVICE_INTENT";
     public static final String TYPE_HANDLE_INTENT_START = "HANDLE_INTENT_START";
     public static final String TYPE_HANDLE_INTENT_COMPLETE = "HANDLE_INTENT_COMPLETE";
+    public static final String TYPE_ANNOTATION_RENDERER_INITIALIZED = "ANNOTATION_RENDERER_INITIALIZED";
+    public static final String TYPE_ANNOTATION_RENDERER_FAILED_TO_INITIALIZE = "ANNOTATION_RENDERER_FAILED_TO_INITIALIZE";
 
     public static void initialize(Application application) {
         Log.d("AnalyticsRepository", "initialize");
