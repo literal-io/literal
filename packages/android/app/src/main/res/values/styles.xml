@@ -75,7 +75,7 @@
         <item name="colorPrimary">@color/colorTextLightPrimary</item>
         <item name="colorAccent">@color/colorTextLightSecondary</item>
         <item name="colorControlHighlight">@color/colorTextLightSecondary</item>
-        <item name="android:textSize">12sp</item>
+        <item name="android:textSize">14sp</item>
         <item name="fontFamily">@font/roboto_mono</item>
         <item name="fontStyle">normal</item>
     </style>

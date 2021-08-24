@@ -84,7 +84,6 @@ public class MainActivity extends InstrumentedActivity {
     };
     private SourceWebView sourceWebViewBottomSheetFragment = null;
     private AppWebView appWebViewBottomSheetFragment = null;
-    private BottomSheetBehavior<FrameLayout> sourceWebViewBottomSheetBehavior;
     private final ActivityResultLauncher<Intent> createAnnotationFromSourceLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), MainActivity.this::handleCreateAnnotationFromSourceResult);
 
     @Override
@@ -185,11 +184,11 @@ public class MainActivity extends InstrumentedActivity {
                                 sourceWebViewBottomSheetFragment.handleViewTargetForAnnotation(annotation, targetId)
                                         .ifPresent((s) -> {
                                             if (displayBottomSheet) {
-                                                sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                                                sourceWebViewViewModelBottomSheet.getBottomSheetBehavior().ifPresent(b -> b.setState(BottomSheetBehavior.STATE_EXPANDED));
                                                 // Source wil already be initialized if it was previously accessed or it may have loaded in a previous call where `displayBottomSheet` was false.
                                                 if (sourceWebViewViewModelBottomSheet.getSourceHasFinishedInitializing().getValue()) {
                                                     appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_COLLAPSED);
-                                                    boolean javascriptEnabled = Optional.ofNullable(sourceWebViewViewModelBottomSheet).map((vm) -> vm.getSourceJavascriptEnabled().getValue()).orElse(true);
+                                                    boolean javascriptEnabled = Optional.ofNullable(sourceWebViewViewModelBottomSheet).map((vm) -> vm.getSourceJavaScriptConfig().getValue().isEnabled()).orElse(true);
                                                     if (!javascriptEnabled) {
                                                         ToastRepository.show(this, R.string.toast_javascript_disabled, ToastRepository.STYLE_DARK_ACCENT);
                                                     }
@@ -223,7 +222,8 @@ public class MainActivity extends InstrumentedActivity {
         appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
         appWebViewViewModelBottomSheet.getBottomSheetState().observe(this, bottomSheetState -> {
             if (bottomSheetState == BottomSheetBehavior.STATE_EXPANDED) {
-                sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                sourceWebViewViewModelBottomSheet.getBottomSheetBehavior()
+                        .ifPresent(b -> b.setState(BottomSheetBehavior.STATE_EXPANDED));
             }
             AppWebViewBottomSheetAnimator.handleBottomSheetStateChange(
                     findViewById(R.id.app_web_view_bottom_sheet_fragment_container),
@@ -269,13 +269,14 @@ public class MainActivity extends InstrumentedActivity {
         }
 
         FrameLayout bottomSheetBehaviorContainer = findViewById(R.id.source_web_view_bottom_sheet_behavior_container);
-        sourceWebViewBottomSheetBehavior = BottomSheetBehavior.from(bottomSheetBehaviorContainer);
+        BottomSheetBehavior<FrameLayout> sourceWebViewBottomSheetBehavior = BottomSheetBehavior.from(bottomSheetBehaviorContainer);
         sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
         sourceWebViewBottomSheetBehavior.addBottomSheetCallback(new SourceWebViewBottomSheetCallback((_e, _d) -> {
             if (sourceWebViewViewModelBottomSheet.getFocusedAnnotation().isPresent()) {
                 sourceWebViewBottomSheetFragment.handleAnnotationBlur();
             }
         }));
+        sourceWebViewViewModelBottomSheet.setBottomSheetBehavior(Optional.of(sourceWebViewBottomSheetBehavior));
 
         sourceWebViewBottomSheetFragment.setOnToolbarPrimaryActionCallback((createdAnnotations, _source) -> {
             this.handleSourceWebViewBottomSheetHidden(createdAnnotations);
@@ -304,7 +305,7 @@ public class MainActivity extends InstrumentedActivity {
     }
 
     private void handleSourceWebViewBottomSheetHidden(Annotation[] createdAnnotations) {
-        sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+        sourceWebViewViewModelBottomSheet.getBottomSheetBehavior().ifPresent(b -> b.setState(BottomSheetBehavior.STATE_HIDDEN));
         try {
             String json = JsonArrayUtil.stringifyObjectArray(createdAnnotations, Annotation::toJson).toString();
             JSONObject addCacheAnnotationsData = new JSONObject();
@@ -333,7 +334,7 @@ public class MainActivity extends InstrumentedActivity {
     private void handleCreateAnnotationFromSourceResult(ActivityResult result) {
         Intent data = result.getData();
         if (result.getResultCode() == ShareTargetHandler.RESULT_OK && data != null) {
-            sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+            sourceWebViewViewModelBottomSheet.getBottomSheetBehavior().ifPresent(b -> b.setState(BottomSheetBehavior.STATE_HIDDEN));
             appWebViewViewModelBottomSheet.setBottomSheetState(BottomSheetBehavior.STATE_HIDDEN);
             String json = data.getStringExtra(ShareTargetHandler.RESULT_EXTRA_ANNOTATIONS);
             try {
@@ -388,16 +389,19 @@ public class MainActivity extends InstrumentedActivity {
 
     @Override
     public void onBackPressed() {
-        if (sourceWebViewBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED ||
-                sourceWebViewBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
-            if (sourceWebViewBottomSheetFragment.getWebView().handleBackPressed()) {
+        Optional<BottomSheetBehavior<FrameLayout>> bottomSheetBehavior = sourceWebViewViewModelBottomSheet.getBottomSheetBehavior();
+        if (bottomSheetBehavior.isPresent()) {
+            if (bottomSheetBehavior.get().getState() == BottomSheetBehavior.STATE_EXPANDED ||
+                    bottomSheetBehavior.get().getState() == BottomSheetBehavior.STATE_COLLAPSED) {
+                if (sourceWebViewBottomSheetFragment.getWebView().handleBackPressed()) {
+                    return;
+                }
+                bottomSheetBehavior.get().setState(BottomSheetBehavior.STATE_HIDDEN);
                 return;
             }
-            sourceWebViewBottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
-            return;
-        }
-        if (appWebViewPrimaryFragment.getWebView().handleBackPressed()) {
-            return;
+            if (appWebViewPrimaryFragment.getWebView().handleBackPressed()) {
+                return;
+            }
         }
         super.onBackPressed();
     }

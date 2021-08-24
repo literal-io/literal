@@ -2,10 +2,13 @@ package io.literal.viewmodel;
 
 import android.content.Context;
 import android.util.Log;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
+
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import org.json.JSONObject;
 
@@ -29,6 +32,7 @@ import io.literal.model.Body;
 import io.literal.model.Format;
 import io.literal.model.Language;
 import io.literal.model.Motivation;
+import io.literal.model.SourceJavaScriptConfig;
 import io.literal.model.SourceWebViewAnnotation;
 import io.literal.model.Target;
 import io.literal.model.TextDirection;
@@ -42,11 +46,12 @@ import io.literal.ui.view.SourceWebView.SourceWebView;
 
 public class SourceWebViewViewModel extends ViewModel {
     private final MutableLiveData<Boolean> sourceHasFinishedInitializing = new MutableLiveData<>(false);
-    private final MutableLiveData<Boolean> sourceJavascriptEnabled = new MutableLiveData<>(true);
+    private final MutableLiveData<SourceJavaScriptConfig> sourceJavaScriptConfig = new MutableLiveData<>(new SourceJavaScriptConfig(true, SourceJavaScriptConfig.Reason.AUTOMATIC));
+    private final MutableLiveData<SourceWebViewAnnotation[]> annotationsLiveData = new MutableLiveData<>(new SourceWebViewAnnotation[0]);
 
     private final HashMap<String, SourceWebViewAnnotation> annotations = new HashMap<>();
     private final HashMap<String, CompletableFuture<Annotation>> compiledAnnotations = new HashMap<>();
-    private final MutableLiveData<SourceWebViewAnnotation[]> annotationsLiveData = new MutableLiveData<>(new SourceWebViewAnnotation[0]);
+    private Optional<BottomSheetBehavior<FrameLayout>> bottomSheetBehavior = Optional.empty();
 
     public MutableLiveData<SourceWebViewAnnotation[]> getAnnotations() {
         return annotationsLiveData;
@@ -60,12 +65,12 @@ public class SourceWebViewViewModel extends ViewModel {
         this.sourceHasFinishedInitializing.setValue(sourceHasFinishedInitializing);
     }
 
-    public MutableLiveData<Boolean> getSourceJavascriptEnabled() {
-        return sourceJavascriptEnabled;
+    public MutableLiveData<SourceJavaScriptConfig> getSourceJavaScriptConfig() {
+        return sourceJavaScriptConfig;
     }
 
-    public void setSourceJavascriptEnabled(boolean sourceJavascriptEnabled) {
-        this.sourceJavascriptEnabled.setValue(sourceJavascriptEnabled);
+    public void setSourceJavaScriptConfig(SourceJavaScriptConfig sourceJavaScriptConfig) {
+        this.sourceJavaScriptConfig.setValue(sourceJavaScriptConfig);
     }
 
     public void reset() {
@@ -73,6 +78,7 @@ public class SourceWebViewViewModel extends ViewModel {
         this.compiledAnnotations.clear();
         this.sourceHasFinishedInitializing.setValue(false);
         this.annotationsLiveData.setValue(new SourceWebViewAnnotation[0]);
+        this.sourceJavaScriptConfig.setValue(new SourceJavaScriptConfig(true, SourceJavaScriptConfig.Reason.AUTOMATIC));
     }
 
     public Optional<SourceWebViewAnnotation> getFocusedAnnotation() {
@@ -251,5 +257,13 @@ public class SourceWebViewViewModel extends ViewModel {
 
     public Optional<CompletableFuture<Annotation>> getCompiledAnnotation(String annotationId) {
         return Optional.ofNullable(compiledAnnotations.get(annotationId));
+    }
+
+    public Optional<BottomSheetBehavior<FrameLayout>> getBottomSheetBehavior() {
+        return this.bottomSheetBehavior;
+    }
+
+    public void setBottomSheetBehavior(Optional<BottomSheetBehavior<FrameLayout>> bottomSheetBehavior) {
+        this.bottomSheetBehavior = bottomSheetBehavior;
     }
 }
