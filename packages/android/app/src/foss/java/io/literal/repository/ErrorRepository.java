@@ -37,6 +37,10 @@ public class ErrorRepository {
         Log.d("captureWarning", "", exception);
     }
 
+    public static void captureWarning(Exception exception, Map<String, Object> context) {
+        Log.d("captureWarning", context.toString(), exception);
+    }
+
     public static void captureBreadcrumb(String category, String message, ErrorRepositoryLevel level) {
         Log.d("captureBreadcrumb", level.name() + ", " + category + ", " + message);
     }

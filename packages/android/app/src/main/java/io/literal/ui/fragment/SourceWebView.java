@@ -27,6 +27,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.gson.JsonObject;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,6 +40,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -431,7 +433,7 @@ public class SourceWebView extends Fragment {
 
         if (paramInitialUrl != null) {
             try {
-                webView.setSource(new Source(new URI(paramInitialUrl), Optional.empty()), false);
+                webView.setSource(new Source(new URI(paramInitialUrl), Optional.empty()));
             } catch (Exception e) {
                 ErrorRepository.captureException(e);
             }
@@ -848,7 +850,7 @@ public class SourceWebView extends Fragment {
 
             if (shouldLoadSource) {
                 sourceWebViewViewModel.reset();
-                webView.setSource(source, true);
+                webView.setSource(source, io.literal.ui.view.SourceWebView.SourceWebView.SourceLoadBehavior.FORCE_NAVIGATE);
             }
 
             SourceWebViewAnnotation[] annotations = sourceWebViewViewModel.getAnnotations().getValue();
@@ -861,6 +863,22 @@ public class SourceWebView extends Fragment {
                 sourceWebViewViewModel.setFocusedAnnotationId(annotation.getId());
             }
         });
+
+        if (!optionalSource.isPresent()) {
+            Map<String, Object> context = new HashMap<>();
+            try {
+                context.put("annotation", annotation.toJson().toString());
+                context.put("targetId", targetId);
+            } catch (JSONException e) {
+                ErrorRepository.captureException(e);
+            }
+
+            ErrorRepository.captureMessage(
+                    "handleViewTargetForAnnotation was unable to resolve source for annotation.",
+                    ErrorRepositoryLevel.INFO,
+                    context
+            );
+        }
 
         return optionalSource;
     }
@@ -1098,6 +1116,7 @@ public class SourceWebView extends Fragment {
         }
 
         CompletableFuture<Void> creationFuture;
+        final HashMap<String, Annotation> compiledAnnotationsById = new HashMap<>();
         SourceWebViewAnnotation[] annotationsToCreate =
                 Arrays.stream(sourceWebViewViewModel.getAnnotations().getValue())
                         .filter(sourceWebViewAnnotation -> sourceWebViewAnnotation.getCreationStatus().equals(SourceWebViewAnnotation.CreationStatus.REQUIRES_CREATION))
@@ -1128,9 +1147,9 @@ public class SourceWebView extends Fragment {
                     return;
                 }
 
-                HashMap<String, Annotation> compiledAnnotationsById = Arrays.stream(compiledAnnotationFutures)
+                Arrays.stream(compiledAnnotationFutures)
                         .collect(
-                                HashMap::new,
+                                () -> compiledAnnotationsById,
                                 (agg, compiledAnnotationFuture) -> {
                                     Optional<Annotation> annotation = Optional.ofNullable((Annotation) compiledAnnotationFuture.getNow(null));
                                     annotation.ifPresent(value -> agg.put(value.getId(), value));
@@ -1174,7 +1193,11 @@ public class SourceWebView extends Fragment {
 
             if (onToolbarPrimaryActionCallback != null && webView.getSource().isPresent()) {
                 onToolbarPrimaryActionCallback.invoke(
-                        Arrays.stream(annotationsToCreate).map(SourceWebViewAnnotation::getAnnotation).toArray(Annotation[]::new),
+                        Arrays.stream(annotationsToCreate).map((annotationToCreate) -> {
+                            Annotation intentAnnotation = annotationToCreate.getAnnotation();
+                            return Optional.ofNullable(compiledAnnotationsById.getOrDefault(intentAnnotation.getId(), null))
+                                    .orElse(intentAnnotation);
+                        }).toArray(Annotation[]::new),
                         webView.getSource().get()
                 );
             } else {

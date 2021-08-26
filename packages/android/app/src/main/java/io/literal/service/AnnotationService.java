@@ -58,7 +58,6 @@ public class AnnotationService extends Service {
     public static String ACTION_BROADCAST_UPDATED_ANNOTATION = Constants.NAMESPACE + "ACTION_BROADCAST_UPDATED_ANNOTATION";
 
     public static String EXTRA_ID = Constants.NAMESPACE + "EXTRA_ID";
-    public static String EXTRA_ANNOTATIONS = Constants.NAMESPACE + "EXTRA_ANNOTATIONS";
     public static String EXTRA_ANNOTATION = Constants.NAMESPACE + "EXTRA_ANNOTATION";
 
     private User user;
@@ -361,11 +360,16 @@ public class AnnotationService extends Service {
 
                     return annotation;
                 })
-                .thenCompose((annotation) -> AnnotationRepository.createAnnotationMutation(
+                .thenCompose((annotation) ->
+                    AnnotationRepository.createAnnotationMutation(
                         AppSyncClientFactory.getInstanceForUser(context, user),
                         annotation.toCreateAnnotationInput()
-                ))
-                .thenApply(_result -> (Void) null)
+                    ).thenApply((_result) -> {
+                        // broadcast the processed annotation, not the annotation on the intent
+                        broadcastCreatedAnnotation(context, annotation.getId(), annotation);
+                        return (Void) null;
+                    })
+                )
                 .whenComplete((_void, e) -> {
                     Optional<CreateAnnotationNotification> notification = Optional.ofNullable(createAnnotationNotificationsByAnnotationId.get(createAnnotationIntent.getAnnotation().getId()));
                     if (e != null) {
@@ -382,11 +386,6 @@ public class AnnotationService extends Service {
                         n.setDidCompleteMutation(true);
                         this.onDisplayAggregateNotification(context, createAnnotationIntent);
                     });
-                    broadcastCreatedAnnotation(context, createAnnotationIntent.getId(), createAnnotationIntent.getAnnotation());
-
-                    if (createAnnotationIntent.getDisableNotification()) {
-                        return;
-                    }
                 });
     }
 

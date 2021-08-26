@@ -27,6 +27,7 @@ import java.util.Optional;
 
 import io.literal.lib.Callback;
 import io.literal.lib.ResultCallback;
+import io.literal.model.SourceInitializationStatus;
 import io.literal.model.WebArchive;
 import io.literal.repository.ErrorRepository;
 import io.literal.ui.view.MessagingWebView;
@@ -34,8 +35,12 @@ import kotlin.jvm.functions.Function1;
 
 public class SourceWebView extends MessagingWebView implements NestedScrollingChild {
 
+    public enum SourceLoadBehavior {
+        DEFAULT,
+        FORCE_NAVIGATE,
+        USER_TRIGGERED
+    }
     private final CreateAnnotationActionModeCallback.Builder createAnnotationActionModeCallbackBuilder;
-
     private ResultCallback<Integer, Void> onGetTextSelectionMenu;
 
     private Optional<Client.Builder> clientBuilder;
@@ -80,7 +85,7 @@ public class SourceWebView extends MessagingWebView implements NestedScrollingCh
         this.setWebChromeClient(webChromeClient);
     }
 
-    public void setSource(@NonNull Source source, boolean forceNavigate) {
+    public void setSource(@NonNull Source source, SourceLoadBehavior sourceLoadBehavior) {
         Optional<Source> oldSource = this.source;
         this.source = Optional.of(source);
 
@@ -104,7 +109,7 @@ public class SourceWebView extends MessagingWebView implements NestedScrollingCh
                     return null;
                 })
                 .setOnSourceChanged((newSource) -> {
-                    setSource(newSource, false);
+                    setSource(newSource, SourceLoadBehavior.USER_TRIGGERED);
                     return null;
                 })
                 .build();
@@ -115,15 +120,26 @@ public class SourceWebView extends MessagingWebView implements NestedScrollingCh
             return;
         }
 
-        if (!Optional.ofNullable(getUrl()).map(u -> u.equals(sourceURI.get().toString())).orElse(false) || forceNavigate) {
+        boolean uriChanged = !Optional.ofNullable(getUrl()).map(u -> u.equals(sourceURI.get().toString())).orElse(false);
+        boolean shouldLoadUrl = uriChanged || sourceLoadBehavior.equals(SourceLoadBehavior.FORCE_NAVIGATE);
+        boolean shouldUpdateClientAndSource = shouldLoadUrl || sourceLoadBehavior.equals(SourceLoadBehavior.USER_TRIGGERED);
+        if (shouldUpdateClientAndSource) {
             client.setShouldClearHistoryOnPageFinished(true);
             this.setWebViewClient(client);
-            this.loadUrl(sourceURI.get().toString());
+
+            if (shouldLoadUrl) {
+                this.loadUrl(sourceURI.get().toString());
+            }
+
             onSourceChanged.ifPresent(cb -> cb.invoke(source));
             if (oldSource.isPresent() && oldSource.get() != source) {
                 oldSource.get().getWebArchive().ifPresent(WebArchive::dispose);
             }
         }
+    }
+
+    public void setSource(@NonNull Source source) {
+        this.setSource(source, SourceLoadBehavior.DEFAULT);
     }
 
     public Optional<Source> getSource() {

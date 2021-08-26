@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -69,11 +70,14 @@ public class MainActivity extends InstrumentedActivity {
     private final BroadcastReceiver annotationCreatedBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String annotationsJSON = intent.getStringExtra(AnnotationService.EXTRA_ANNOTATIONS);
-            if (appWebViewPrimaryFragment != null && annotationsJSON != null) {
+            String annotationJSON = intent.getStringExtra(AnnotationService.EXTRA_ANNOTATION);
+            if (appWebViewPrimaryFragment != null && annotationJSON != null) {
+                Log.i("annotationCreatedBroadcastReceiver", "annotationJSON: " + annotationJSON);
                 try {
+                    Annotation annotation = Annotation.fromJson(new JSONObject(annotationJSON));
+                    Annotation[] annotations = { annotation };
                     JSONObject addCacheAnnotationsData = new JSONObject();
-                    addCacheAnnotationsData.put("annotations", annotationsJSON);
+                    addCacheAnnotationsData.put("annotations", JsonArrayUtil.stringifyObjectArray(annotations, Annotation::toJson).toString());
                     appWebViewPrimaryFragment.postWebEvent(new WebEvent(
                             WebEvent.TYPE_ADD_CACHE_ANNOTATIONS,
                             UUID.randomUUID().toString(),
