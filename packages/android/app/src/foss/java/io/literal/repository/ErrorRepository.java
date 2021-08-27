@@ -25,6 +25,10 @@ public class ErrorRepository {
         Log.d("captureException", context.toString(), exception);
     }
 
+    public static void captureMessage(String message, ErrorRepositoryLevel level, Map<String, Object> context) {
+        Log.d("captureMessage", message);
+    }
+
     public static void captureException(Throwable exception) {
         Log.d("captureException", "", exception);
     }
