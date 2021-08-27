@@ -1,0 +1,3 @@
+Fixes a bug affecting creating annotations from source from within the application and polishes the color scheme.
+
+See the full release notes and source code for this release here: https://github.com/literal-io/literal/releases/tag/v1.1.29
