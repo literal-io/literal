@@ -8,7 +8,7 @@ export class Highlighter {
     const span = document.createElement("span");
 
     span.role = "mark";
-    span.style.backgroundColor = "rgb(0, 0, 0)";
+    span.style.backgroundColor = "rgba(12, 12, 12, 0.92)";
     span.style.color = "rgba(255, 255, 255, 0.92)";
     span.style.display = "inline";
     span.style.userSelect = "none";

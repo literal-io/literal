@@ -49,6 +49,7 @@ import io.literal.repository.AnalyticsRepository;
 import io.literal.repository.ErrorRepository;
 import io.literal.repository.ToastRepository;
 import io.literal.service.AnnotationService;
+import io.literal.service.SplashService;
 import io.literal.ui.fragment.AppWebView;
 import io.literal.ui.fragment.AppWebViewBottomSheetAnimator;
 import io.literal.ui.fragment.SourceWebView;
@@ -72,7 +73,6 @@ public class MainActivity extends InstrumentedActivity {
         public void onReceive(Context context, Intent intent) {
             String annotationJSON = intent.getStringExtra(AnnotationService.EXTRA_ANNOTATION);
             if (appWebViewPrimaryFragment != null && annotationJSON != null) {
-                Log.i("annotationCreatedBroadcastReceiver", "annotationJSON: " + annotationJSON);
                 try {
                     Annotation annotation = Annotation.fromJson(new JSONObject(annotationJSON));
                     Annotation[] annotations = { annotation };
@@ -164,9 +164,9 @@ public class MainActivity extends InstrumentedActivity {
 
         appWebViewModelPrimary = new ViewModelProvider(this).get(APP_WEB_VIEW_PRIMARY_FRAGMENT_NAME, AppWebViewViewModel.class);
         appWebViewModelPrimary.getHasFinishedInitializing().observe(this, hasFinishedInitializing -> {
-            ViewGroup splash = findViewById(R.id.splash);
-            if (hasFinishedInitializing && splash.getVisibility() == View.VISIBLE) {
-                splash.setVisibility(View.INVISIBLE);
+            ViewGroup splashView = findViewById(R.id.splash);
+            if (hasFinishedInitializing && SplashService.isVisible(splashView)) {
+                SplashService.hide(this, splashView);
             }
         });
         appWebViewModelPrimary.getReceivedWebEvents().observe(this,

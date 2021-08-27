@@ -21,7 +21,7 @@ html {
 #__next {
   width: 100vw;
   height: var(--root-height);
-  background-color: black;
+  background-color: #0C0C0C;
   position: relative;
   overflow-y: auto;
   display: flex;

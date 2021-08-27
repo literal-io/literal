@@ -44,6 +44,7 @@ module.exports = {
         square: "square",
       },
       backgroundColor: {
+        black: '#0C0C0C',
         // white
         lightPrimary: "rgba(255, 255, 255, .92)",
         lightSecondary: "rgba(255, 255, 255, .72)",

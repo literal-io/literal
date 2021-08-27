@@ -44,6 +44,7 @@ import io.literal.repository.ErrorRepository;
 import io.literal.repository.NotificationRepository;
 import io.literal.repository.ToastRepository;
 import io.literal.service.CreateAnnotationIntent;
+import io.literal.service.SplashService;
 import io.literal.ui.fragment.AppWebView;
 import io.literal.ui.fragment.AppWebViewBottomSheetAnimator;
 import io.literal.ui.fragment.SourceWebView;
@@ -129,9 +130,9 @@ public class ShareTargetHandler extends InstrumentedActivity {
         sourceWebViewViewModel.getSourceInitializationStatus().observe(this, new Observer<SourceInitializationStatus>() {
             @Override
             public void onChanged(SourceInitializationStatus sourceInitializationStatus) {
-                ViewGroup splash = ShareTargetHandler.this.findViewById(R.id.share_target_handler_splash);
-                if (sourceInitializationStatus.equals(SourceInitializationStatus.INITIALIZED) && splash.getVisibility() == View.VISIBLE) {
-                    splash.setVisibility(View.INVISIBLE);
+                ViewGroup splashView = ShareTargetHandler.this.findViewById(R.id.share_target_handler_splash);
+                if (sourceInitializationStatus.equals(SourceInitializationStatus.INITIALIZED) && SplashService.isVisible(splashView)) {
+                    SplashService.hide(ShareTargetHandler.this, splashView);
                     ToastRepository.show(ShareTargetHandler.this, R.string.toast_create_from_source);
                     sourceWebViewViewModel.getSourceInitializationStatus().removeObserver(this);
                 }
@@ -185,8 +186,12 @@ public class ShareTargetHandler extends InstrumentedActivity {
 
         appWebViewViewModel = new ViewModelProvider(this).get(AppWebViewViewModel.class);
         appWebViewViewModel.getHasFinishedInitializing().observe(this, hasFinishedInitializing -> {
-            ViewGroup splash = findViewById(R.id.share_target_handler_splash);
-            splash.setVisibility(hasFinishedInitializing ? View.INVISIBLE : View.VISIBLE);
+            ViewGroup splashView = findViewById(R.id.share_target_handler_splash);
+            if (hasFinishedInitializing) {
+                SplashService.hide(this, splashView);
+            } else {
+                SplashService.show(this, splashView);
+            }
         });
         appWebViewFragment = AppWebView.newInstance(appWebViewUri, null);
         getSupportFragmentManager()

@@ -27,16 +27,5 @@
         android:elevation="12dp"
         android:background="@color/colorPrimary" />
 
-    <RelativeLayout
-        android:id="@+id/share_target_handler_splash"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/colorPrimaryDark">
-
-        <ImageView
-            android:layout_width="142dp"
-            android:layout_height="142dp"
-            android:layout_centerInParent="true"
-            android:src="@drawable/ic_logo" />
-    </RelativeLayout>
+    <include android:id="@+id/share_target_handler_splash" layout="@layout/splash" />
 </RelativeLayout>

@@ -89,7 +89,10 @@ let make = (~identityId, ~annotation, ~onExpand) => {
     className={Cn.fromList([
       "w-full",
       "h-full",
-      "bg-black",
+      "bg-darkAccent",
+      "border-b",
+      "border-dotted",
+      "border-lightDisabled",
       "flex",
       "flex-row",
     ])}>
@@ -103,11 +106,11 @@ let make = (~identityId, ~annotation, ~onExpand) => {
         "h-12",
         "w-12",
         "border-l",
-        "border-lightPrimary",
+        "border-lightDisabled",
         "border-dotted",
       ])}>
       <Svg
-        className={Cn.fromList(["w-8", "h-8", "pointer-events-none"])}
+        className={Cn.fromList(["w-6", "h-6", "pointer-events-none", "opacity-75"])}
         icon=Svg.arrowUp
       />
     </div>
