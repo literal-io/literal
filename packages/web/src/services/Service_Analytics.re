@@ -73,6 +73,7 @@ let track = event => {
                Webview.JavascriptInterface.isFlavorFoss()
                ->Belt.Option.getWithDefault(false)) {
         Amplitude.(getInstance()->logEventWithProperties(name, properties));
+        handled := true;
       };
     ();
   };
