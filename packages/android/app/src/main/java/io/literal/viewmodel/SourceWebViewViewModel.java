@@ -35,6 +35,7 @@ import io.literal.model.Motivation;
 import io.literal.model.SourceInitializationStatus;
 import io.literal.model.SourceJavaScriptConfig;
 import io.literal.model.SourceWebViewAnnotation;
+import io.literal.model.SpecificTarget;
 import io.literal.model.Target;
 import io.literal.model.TextDirection;
 import io.literal.model.TextualBody;
@@ -51,7 +52,7 @@ public class SourceWebViewViewModel extends ViewModel {
     private final MutableLiveData<SourceWebViewAnnotation[]> annotationsLiveData = new MutableLiveData<>(new SourceWebViewAnnotation[0]);
 
     private final HashMap<String, SourceWebViewAnnotation> annotations = new HashMap<>();
-    private final HashMap<String, CompletableFuture<Annotation>> compiledAnnotations = new HashMap<>();
+    private final HashMap<String, CompletableFuture<SpecificTarget>> annotationIdToCompiledSpecificTarget = new HashMap<>();
     private Optional<BottomSheetBehavior<FrameLayout>> bottomSheetBehavior = Optional.empty();
 
     public MutableLiveData<SourceWebViewAnnotation[]> getAnnotations() {
@@ -76,7 +77,7 @@ public class SourceWebViewViewModel extends ViewModel {
 
     public void reset() {
         this.annotations.clear();
-        this.compiledAnnotations.clear();
+        this.annotationIdToCompiledSpecificTarget.clear();
         this.sourceInitializationStatus.setValue(SourceInitializationStatus.UNINITIALIZED);
         this.annotationsLiveData.setValue(new SourceWebViewAnnotation[0]);
         this.sourceJavaScriptConfig.setValue(new SourceJavaScriptConfig(true, SourceJavaScriptConfig.Reason.AUTOMATIC));
@@ -204,21 +205,6 @@ public class SourceWebViewViewModel extends ViewModel {
         annotationsLiveData.setValue(annotations.values().toArray(new SourceWebViewAnnotation[0]));
     }
 
-    public void addAnnotations(Annotation[] annotationsToAdd) {
-        Arrays.stream(annotationsToAdd).forEach((annotation) -> {
-            annotations.put(
-                    annotation.getId(),
-                    new SourceWebViewAnnotation(
-                            annotation,
-                            null,
-                            SourceWebViewAnnotation.CreationStatus.CREATED,
-                            SourceWebViewAnnotation.FocusStatus.NOT_FOCUSED
-                    )
-            );
-        });
-        annotationsLiveData.setValue(annotations.values().toArray(new SourceWebViewAnnotation[0]));
-    }
-
     public boolean updateAnnotation(@NonNull Annotation annotation) {
         if (annotation.getId() == null) {
             return false;
@@ -241,23 +227,32 @@ public class SourceWebViewViewModel extends ViewModel {
         return didRemove;
     }
 
-    public Optional<CompletableFuture<Annotation>> compileAnnotation(Context context, User user, Executor executor, String annotationId) {
-        if (!compiledAnnotations.containsKey(annotationId)) {
+    public CompletableFuture<Annotation> getCompiledAnnotation(Context context, User user, Executor executor, String annotationId) {
+        if (!annotationIdToCompiledSpecificTarget.containsKey(annotationId)) {
             Optional<SourceWebViewAnnotation> annotation = Optional.ofNullable(annotations.get(annotationId));
             if (!annotation.isPresent()) {
-                ErrorRepository.captureWarning(new Exception("Tried to compile annotation where no SourceWebViewAnnotation exists."));
-                return Optional.empty();
+                CompletableFuture<Annotation> future = new CompletableFuture<>();
+                future.completeExceptionally(new IllegalStateException("Tried to compile annotation where no SourceWebViewAnnotation exists."));
+                return future;
             }
 
-            CompletableFuture<Annotation> compiledAnnotation = annotation.get().compileWebArchive(context, user, executor);
-            compiledAnnotations.put(annotationId, compiledAnnotation);
+            CompletableFuture<SpecificTarget> compiledSpecificTarget = annotation.get().compileWebArchive(context, user, executor);
+            annotationIdToCompiledSpecificTarget.put(annotationId, compiledSpecificTarget);
         }
 
-        return Optional.ofNullable(compiledAnnotations.get(annotationId));
-    }
+        return annotationIdToCompiledSpecificTarget.get(annotationId)
+                .thenCompose((compiledSpecificTarget) -> {
+                    CompletableFuture<Annotation> future = new CompletableFuture<>();
+                    Optional<SourceWebViewAnnotation> sourceWebViewAnnotation = Optional.ofNullable(annotations.get(annotationId));
+                    if (!sourceWebViewAnnotation.isPresent()) {
+                        future.completeExceptionally(new IllegalStateException("Tried to compile annotation where no SourceWebViewAnnotation exists."));
+                        return future;
+                    }
 
-    public Optional<CompletableFuture<Annotation>> getCompiledAnnotation(String annotationId) {
-        return Optional.ofNullable(compiledAnnotations.get(annotationId));
+                    Annotation compiledAnnotation = sourceWebViewAnnotation.get().getAnnotation().updateTarget(compiledSpecificTarget);
+                    future.complete(compiledAnnotation);
+                    return future;
+                });
     }
 
     public Optional<BottomSheetBehavior<FrameLayout>> getBottomSheetBehavior() {

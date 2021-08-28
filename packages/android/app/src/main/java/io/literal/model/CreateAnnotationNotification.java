@@ -77,7 +77,7 @@ public class CreateAnnotationNotification {
                     id
             );
             return Status.ERROR;
-        } else if (bytesCurrent.equals(bytesTotal)) {
+        } else if (bytesCurrent.equals(bytesTotal) && didCompleteMutation) {
             Uri annotationUri = Uri.parse(
                     WebRoutes.creatorsIdAnnotationCollectionId(
                             user.getAppSyncIdentity(),

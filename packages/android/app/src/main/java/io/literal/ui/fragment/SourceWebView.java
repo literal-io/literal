@@ -512,7 +512,7 @@ public class SourceWebView extends Fragment {
                             SourceWebViewAnnotation sourceWebViewAnnotation = sourceWebViewViewModel.createAnnotation(annotationsJSON, user.getAppSyncIdentity(), webArchive);
                             sourceWebViewViewModel.setFocusedAnnotationId(sourceWebViewAnnotation.getAnnotation().getId());
                             bottomSheetAppWebViewViewModel.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
-                            sourceWebViewViewModel.compileAnnotation(
+                            sourceWebViewViewModel.getCompiledAnnotation(
                                     getContext(),
                                     user,
                                     ((MainApplication) activity.getApplication()).getThreadPoolExecutor(),
@@ -1127,18 +1127,7 @@ public class SourceWebView extends Fragment {
                     .map(a -> (Executor) ((MainApplication) a.getApplication()).getThreadPoolExecutor())
                     .orElse(ForkJoinPool.commonPool());
             CompletableFuture[] compiledAnnotationFutures = Arrays.stream(annotationsToCreate)
-                    .map((a) -> {
-                        Optional<CompletableFuture<Annotation>> compiledAnnotation = sourceWebViewViewModel.getCompiledAnnotation(a.getAnnotation().getId());
-                        return compiledAnnotation
-                                .orElseGet(() ->
-                                        sourceWebViewViewModel.compileAnnotation(
-                                                getContext(),
-                                                user,
-                                                executor,
-                                                a.getAnnotation().getId()
-                                        ).orElse(null)
-                                );
-                    })
+                    .map((a) -> sourceWebViewViewModel.getCompiledAnnotation(getContext(), user, executor, a.getAnnotation().getId()))
                     .filter(Objects::nonNull)
                     .toArray(CompletableFuture[]::new);
 

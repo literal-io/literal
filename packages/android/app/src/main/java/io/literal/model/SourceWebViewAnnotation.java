@@ -6,6 +6,7 @@ import android.util.Log;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -26,31 +27,31 @@ public class SourceWebViewAnnotation {
         this.webArchive = webArchive;
     }
 
-    public CompletableFuture<Annotation> compileWebArchive(Context context, User user, Executor executor) {
-        CompletableFuture<Annotation> future = new CompletableFuture<>();
+    public CompletableFuture<SpecificTarget> compileWebArchive(Context context, User user, Executor executor) {
+        CompletableFuture<SpecificTarget> future = new CompletableFuture<>();
         executor.execute(() -> webArchive.compile(context, user)
                 .whenComplete((compiledWebArchive, e) -> {
                     if (e != null) {
                         future.completeExceptionally(e);
                     }
-                    Annotation updatedAnnotation = Arrays.stream(annotation.getTarget())
+
+                    Optional<SpecificTarget> updatedSpecificTarget = Arrays.stream(annotation.getTarget())
                             .filter(t -> t instanceof SpecificTarget)
                             .findFirst()
-                            .map((specificTarget) -> {
-                                SpecificTarget updatedSpecifcTarget = new SpecificTarget.Builder((SpecificTarget) specificTarget)
-                                        .setState(new State[]{
-                                                new TimeState(
-                                                        new URI[]{compiledWebArchive.getStorageObject().getCanonicalURI(context, user)},
-                                                        new String[]{DateUtil.toISO8601UTC(new Date())}
-                                                )
-                                        })
-                                        .build();
+                            .map((specificTarget) -> new SpecificTarget.Builder((SpecificTarget) specificTarget)
+                                    .setState(new State[]{
+                                            new TimeState(
+                                                    new URI[]{compiledWebArchive.getStorageObject().getCanonicalURI(context, user)},
+                                                    new String[]{DateUtil.toISO8601UTC(new Date())}
+                                            )
+                                    })
+                                    .build());
 
-                                return annotation.updateTarget(updatedSpecifcTarget);
-                            })
-                            .orElse(annotation);
-
-                    future.complete(updatedAnnotation);
+                    if (updatedSpecificTarget.isPresent()) {
+                        future.complete(updatedSpecificTarget.get());
+                    } else {
+                        future.completeExceptionally(new IllegalStateException("Unable to compile annotation."));
+                    }
                 }));
         return future;
     }
