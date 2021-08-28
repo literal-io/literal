@@ -179,12 +179,13 @@ let make =
       ();
     | _ => ()
     };
+
   let handleShare = (~format) => {
     let text = getTextToShare(~format, ~annotation);
     let contentType =
       switch (format) {
       | `Text => "text/plain"
-      | `Markdown => "text/markdown"
+      | `Markdown => "text/plain"
       };
 
     let handled = ref(false);

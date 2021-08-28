@@ -173,7 +173,11 @@ let make = (~hideDelete=false, ~onDelete, ~onShare) => {
         </MaterialUi.MenuItem>
         {hideDelete
            ? React.null
-           : <MaterialUi.MenuItem onClick={_ => onDelete()}>
+           : <MaterialUi.MenuItem
+               onClick={_ => {
+                 handleToggleIsMenuOpen();
+                 onDelete();
+               }}>
                <MaterialUi.ListItemIcon>
                  <Svg
                    className={Cn.fromList([
