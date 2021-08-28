@@ -239,64 +239,6 @@ let make =
       />
     </MaterialUi.IconButton>;
 
-  let title =
-    annotationCollection
-    ->Belt.Option.map(annotationCollection => {
-        let type_ =
-          annotationCollection##type_
-          ->Belt.Array.getBy(t =>
-              switch (t) {
-              | `TAG_COLLECTION
-              | `SOURCE_COLLECTION => true
-              | _ => false
-              }
-            )
-          ->Belt.Option.getWithDefault(`TAG_COLLECTION);
-
-        let (label, icon) =
-          switch (type_) {
-          | `SOURCE_COLLECTION => (
-              annotationCollection##label->Webapi.Url.make->Webapi.Url.host,
-              Svg.article,
-            )
-          | _ => (annotationCollection##label, Svg.label)
-          };
-
-        <div
-          className={Cn.fromList([
-            "flex",
-            "flex-grow-0",
-            "overflow-hidden",
-            "items-center",
-          ])}>
-          <Svg
-            className={Cn.fromList(["pointer-events-none", "opacity-75"])}
-            style={ReactDOMRe.Style.make(~width="1rem", ~height="1rem", ())}
-            icon
-          />
-          <span
-            className={Cn.fromList([
-              "ml-2",
-              "block",
-              "font-sans",
-              "text-lightPrimary",
-              "whitespace-no-wrap",
-              "overflow-x-hidden",
-              "truncate",
-              "font-bold",
-              "text-lg",
-            ])}>
-            {React.string(label)}
-          </span>
-        </div>;
-      })
-    ->Belt.Option.getWithDefault(
-        <Skeleton
-          variant=`text
-          className={Cn.fromList(["h-4", "w-32", "ml-6", "transform-none"])}
-        />,
-      );
-
   <>
     <Header
       className={cn([
@@ -320,9 +262,9 @@ let make =
           "flex-shrink",
           "overflow-x-auto",
         ])}>
-        title
+        <AnnotationCollectionHeader_Title ?annotationCollection />
       </div>
-      <div className={Cn.fromList(["flex", "items-center", "flex-shrink-0"])}>
+      <div className={Cn.fromList(["flex", "items-center", "flex-shrink-0", "ml-4"])}>
         {switch (identityId) {
          | Some(identityId) =>
            <Next.Link
