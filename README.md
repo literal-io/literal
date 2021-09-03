@@ -30,7 +30,7 @@ Literal is actively being used, but is also under active development. If you hav
 
 Literal is distributed as an Android application, with support for other platforms planned. To indicate your support for a platform add a reaction or comment on the issue for [adding iOS support](https://github.com/literal-io/literal/issues/81), [adding Web support](https://github.com/literal-io/literal/issues/82), [adding Web Extension support](https://github.com/literal-io/literal/issues/83), or by creating an issue for adding support to your platform of choice.
 
-Releases are regularly published on [Github](https://github.com/literal-io/literal/releases), [Google Play](https://play.google.com/store/apps/details?id=io.literal) and [F-Droid](https://f-droid.org/packages/io.literal/)
+Releases are regularly published on [Github](https://github.com/literal-io/literal/releases), [Google Play](https://play.google.com/store/apps/details?id=io.literal) and [F-Droid](https://f-droid.org/packages/io.literal/).
 
 ## Architecture
 
