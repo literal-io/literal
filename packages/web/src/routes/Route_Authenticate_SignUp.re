@@ -43,25 +43,29 @@ let default = () => {
   let handleSignInResult = result =>
     switch (result->Belt.Option.map(Webview.WebEvent.AuthSignInResult.decode)) {
     | Some(Ok({error: None, user: Some(user), shouldMergeUserIdentities})) =>
-      let authenticationUser =
-        user->Providers_Authentication_User.makeFromAuthGetUserResult;
-      let _ = setUser(~shouldMergeUserIdentities?, authenticationUser);
-      let _ = setIsAuthenticating(_ => false);
       let _ =
-        switch (authenticationUser) {
-        | SignedInUser({identityId}) =>
-          onNext(() =>
-            Next.Router.replaceWithAs(
-              Routes.CreatorsIdAnnotationCollectionsId.staticPath,
-              Routes.CreatorsIdAnnotationCollectionsId.path(
-                ~identityId,
-                ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
-              ),
-            )
-          );
-          ();
-        | _ => setAuthenticationError(_ => Some(SignUpFailed))
-        };
+        user
+        |> Providers_Authentication_User.makeFromAuthGetUserResult
+        |> Js.Promise.then_(authenticationUser => {
+             let _ = setUser(~shouldMergeUserIdentities?, authenticationUser);
+             let _ = setIsAuthenticating(_ => false);
+             let _ =
+               switch (authenticationUser) {
+               | SignedInUser({identityId}) =>
+                 onNext(() =>
+                   Next.Router.replaceWithAs(
+                     Routes.CreatorsIdAnnotationCollectionsId.staticPath,
+                     Routes.CreatorsIdAnnotationCollectionsId.path(
+                       ~identityId,
+                       ~annotationCollectionIdComponent=Lib_GraphQL.AnnotationCollection.recentAnnotationCollectionIdComponent,
+                     ),
+                   )
+                 );
+                 ();
+               | _ => setAuthenticationError(_ => Some(SignUpFailed))
+               };
+             Js.Promise.resolve();
+           });
       ();
     | Some(Ok({error: Some("SIGN_UP_FAILED_USER_EXISTS")})) =>
       setIsAuthenticating(_ => false);

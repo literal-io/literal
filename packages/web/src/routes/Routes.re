@@ -23,11 +23,21 @@ module CreatorsIdAnnotationsNew = {
   [@decco]
   type params = {identityId: string};
 
-  [@decco]
+  [@decco.decode]
   type searchParams = {
     id: option(string),
     fileUrl: option(string),
   };
+
+  let searchParams_encode = inst =>
+    [|
+      inst.id->Belt.Option.map(id => ("id", Js.Json.string(id))),
+      inst.fileUrl
+      ->Belt.Option.map(fileUrl => ("fileUrl", Js.Json.string(fileUrl))),
+    |]
+    ->Belt.Array.keepMap(identity => identity)
+    ->Js.Dict.fromArray
+    ->Js.Json.object_;
 };
 
 module CreatorsIdAnnotationCollections = {

@@ -1,7 +1,7 @@
 open Containers_NewAnnotationFromShareEditor_GraphQL;
 
 [@react.component]
-let make = (~annotationFragment as annotation, ~identityId) => {
+let make = (~annotationFragment as annotation, ~identityId, ~onComplete) => {
   let scrollContainerRef = React.useRef(Js.Nullable.null);
   let textInputRef = React.useRef(Js.Nullable.null);
   let (textValue, setTextValue) =
@@ -195,10 +195,7 @@ let make = (~annotationFragment as annotation, ~identityId) => {
            mutationResult;
          })
       |> Js.Promise.then_(_ => {
-           let _ =
-             Webview.(
-               postMessage(WebEvent.make(~type_="ACTIVITY_FINISH", ()))
-             );
+           let _ = onComplete();
            Js.Promise.resolve();
          });
     ();

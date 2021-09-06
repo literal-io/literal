@@ -1,7 +1,7 @@
 open Styles;
 
 [@react.component]
-let make = (~annotationFragment as annotation=?, ~identityId=?) => {
+let make = (~annotationFragment as annotation=?, ~identityId=?, ~onComplete) => {
   let (deleteAnnotationMutation, _s, _f) =
     ApolloHooks.useMutation(
       Containers_NewAnnotationFromShareHeader_GraphQL.DeleteAnnotationMutation.definition,
@@ -31,16 +31,12 @@ let make = (~annotationFragment as annotation=?, ~identityId=?) => {
       let _ =
         deleteAnnotationMutation(~variables, ())
         |> Js.Promise.then_(_ => {
-             let _ =
-               Webview.(
-                 postMessage(WebEvent.make(~type_="ACTIVITY_FINISH", ()))
-               );
+             let _ = onComplete();
              Js.Promise.resolve();
            });
       ();
     | _ =>
-      let _ =
-        Webview.(postMessage(WebEvent.make(~type_="ACTIVITY_FINISH", ())));
+      let _ = onComplete();
       ();
     };
     ();

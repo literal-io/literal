@@ -70,11 +70,17 @@ let default = (~rehydrated) => {
       | SignedInUserMergingIdentites(_) =>
         <QueryRenderers_NewAnnotationFromShare.Loading />
       | _ when !rehydrated => <QueryRenderers_NewAnnotationFromShare.Loading />
-      | SignedInUser({identityId})
+      | SignedInUser({identityId, s3IdentityId}) =>
+        <QueryRenderers_NewAnnotationFromShare
+          fileUrl=?{Some(fileUrl)}
+          identityId
+          s3IdentityId
+        />
       | GuestUser({identityId}) =>
         <QueryRenderers_NewAnnotationFromShare
           fileUrl=?{Some(fileUrl)}
           identityId
+          s3IdentityId=identityId
         />
       }
     | (_, Ok(_), Some(SearchVariantAnnotationId(annotationIdComponent)))
@@ -85,7 +91,18 @@ let default = (~rehydrated) => {
       | SignedInUserMergingIdentites(_) =>
         <QueryRenderers_NewAnnotationFromShare.Loading />
       | _ when !rehydrated => <QueryRenderers_NewAnnotationFromShare.Loading />
-      | SignedInUser({identityId})
+      | SignedInUser({identityId, s3IdentityId}) =>
+        <QueryRenderers_NewAnnotationFromShare
+          annotationId=?{
+            Lib_GraphQL.Annotation.makeIdFromComponent(
+              ~identityId,
+              ~annotationIdComponent,
+            )
+            ->Js.Option.some
+          }
+          identityId
+          s3IdentityId
+        />
       | GuestUser({identityId}) =>
         <QueryRenderers_NewAnnotationFromShare
           annotationId=?{
@@ -96,6 +113,7 @@ let default = (~rehydrated) => {
             ->Js.Option.some
           }
           identityId
+          s3IdentityId=identityId
         />
       }
     | (Unknown, _, _)
@@ -107,7 +125,15 @@ let default = (~rehydrated) => {
       <QueryRenderers_NewAnnotation identityId />
     };
 
-  <div className={Cn.fromList(["w-full", "h-full", "overflow-y-hidden", "flex", "flex-col", "relative"])}>
+  <div
+    className={Cn.fromList([
+      "w-full",
+      "h-full",
+      "overflow-y-hidden",
+      "flex",
+      "flex-col",
+      "relative",
+    ])}>
     main
     <Alert urlSearchParams=searchParams onClear=handleClear />
   </div>;

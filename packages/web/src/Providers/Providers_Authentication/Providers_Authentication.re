@@ -41,11 +41,12 @@ let getUserWebview = () =>
              )
            | Error(e) =>
              let _ = Error.(report(DeccoDecodeError(e)));
-             Providers_Authentication_User.Unknown;
+             Js.Promise.resolve(Providers_Authentication_User.Unknown);
            }
          )
-       ->Belt.Option.getWithDefault(Providers_Authentication_User.Unknown)
-       ->Js.Promise.resolve
+       ->Belt.Option.getWithDefault(
+           Js.Promise.resolve(Providers_Authentication_User.Unknown),
+         )
      );
 
 [@react.component]

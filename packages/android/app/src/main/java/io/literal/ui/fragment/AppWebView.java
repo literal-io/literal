@@ -289,25 +289,22 @@ public class AppWebView extends Fragment {
         appWebView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(android.webkit.WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
-                fileActivityResultCallback.setFilePathCallback(new ValueCallback<Uri[]>() {
-                    @Override
-                    public void onReceiveValue(Uri[] value) {
-                        ArrayList<Uri> absoluteUrls = new ArrayList<>();
-                        for (int idx = 0; idx < value.length; idx++) {
-                            if (value[idx] != null) {
-                                File file = ContentResolverLib.toFile(
-                                        getActivity(),
-                                        StorageObject.getDirectory(getContext(), StorageObject.Type.SCREENSHOT),
-                                        value[idx],
-                                        UUID.randomUUID().toString()
-                                );
-                                absoluteUrls.add(Uri.fromFile(file));
-                            }
+                fileActivityResultCallback.setFilePathCallback(value -> {
+                    ArrayList<Uri> absoluteUrls = new ArrayList<>();
+                    for (int idx = 0; idx < value.length; idx++) {
+                        if (value[idx] != null) {
+                            File file = ContentResolverLib.toFile(
+                                    getActivity(),
+                                    StorageObject.getDirectory(getContext(), StorageObject.Type.SCREENSHOT),
+                                    value[idx],
+                                    UUID.randomUUID().toString()
+                            );
+                            absoluteUrls.add(Uri.fromFile(file));
                         }
+                    }
 
-                        if (absoluteUrls.size() > 0) {
-                            filePathCallback.onReceiveValue(absoluteUrls.toArray(new Uri[0]));
-                        }
+                    if (absoluteUrls.size() > 0) {
+                        filePathCallback.onReceiveValue(absoluteUrls.toArray(new Uri[0]));
                     }
                 });
                 getFileContent.launch("image/*");

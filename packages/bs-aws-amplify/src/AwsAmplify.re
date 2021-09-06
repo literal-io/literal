@@ -55,8 +55,20 @@ module Credentials = {
 
   [@bs.send]
   external setSession:
-    (t, AmazonCognitoIdentity.UserSession.t, [@bs.as "session"] _) => unit =
+    (t, AmazonCognitoIdentity.UserSession.t, [@bs.as "session"] _) =>
+    Js.Promise.t(t) =
     "set";
+
+  [@bs.send]
+  external setGuest:
+    (t, [@bs.as {json|false|json}] _, [@bs.as "guest"] _) => Js.Promise.t(t) =
+    "set";
+
+  [@bs.send]
+  external loadCredentials:
+    (t, Js.Promise.t(t), string, bool, Js.Nullable.t(Js.Json.t)) =>
+    Js.Promise.t(t) =
+    "_loadCredentials";
 };
 
 module Auth = {
@@ -91,7 +103,8 @@ module Auth = {
   [@bs.send] external configure: (t, Config.t) => unit = "configure";
 
   [@bs.send]
-  external currentSession: t => Js.Promise.t(AmazonCognitoIdentity.UserSession.t) =
+  external currentSession:
+    t => Js.Promise.t(AmazonCognitoIdentity.UserSession.t) =
     "currentSession";
 
   [@bs.send]
@@ -125,7 +138,8 @@ module Auth = {
     "federatedSignIn";
 
   [@bs.send]
-  external createCognitoUser: (t, string) => AmazonCognitoIdentity.CognitoUser.t =
+  external createCognitoUser:
+    (t, string) => AmazonCognitoIdentity.CognitoUser.t =
     "createCognitoUser";
 };
 

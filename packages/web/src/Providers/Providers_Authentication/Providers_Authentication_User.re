@@ -8,6 +8,7 @@ type attributes = {
 
 type signedInUser = {
   cognitoUserSession: AmazonCognitoIdentity.UserSession.t,
+  s3IdentityId: string,
   identityId: string,
   username: string,
   attributes,
@@ -33,6 +34,7 @@ let makeFromAuthGetUserResult =
         Some(Webview.WebEvent.AuthGetUserResult.{tokens: Some(tokens)}),
       username: Some(username),
       attributes: Some(attributes),
+      identityId: Some(identityId)
     } =>
     let cognitoUserSession =
       AmazonCognitoIdentity.(
@@ -46,41 +48,73 @@ let makeFromAuthGetUserResult =
           },
         )
       );
-    let _ = AwsAmplify.Credentials.(setSession(inst, cognitoUserSession));
-    let _ =
-      cognitoUserSession
-      ->AmazonCognitoIdentity.UserSession.getIdToken
-      ->AmazonCognitoIdentity.IdToken.decodePayload
-      ->Js.Json.decodeObject
-      ->Belt.Option.flatMap(o => o->Js.Dict.get("cognito:username"))
-      ->Belt.Option.flatMap(o => o->Js.Json.decodeString)
-      ->Belt.Option.forEach(username => {
-          AwsAmplify.Auth.(createCognitoUser(inst, username))
-          ->AmazonCognitoIdentity.CognitoUser.setSignInUserSession(
-              cognitoUserSession,
-            )
-        });
 
-    SignedInUser({
-      identityId: username,
-      username,
-      attributes: {
-        email: attributes.email,
-        emailVerified: attributes.emailVerified == "true",
-        identities: attributes.identities,
-        sub: attributes.sub,
-      },
-      cognitoUserSession,
-    });
+    AwsAmplify.Credentials.(setSession(inst, cognitoUserSession))
+    |> Js.Promise.then_(_ => {
+         let _ =
+           cognitoUserSession
+           ->AmazonCognitoIdentity.UserSession.getIdToken
+           ->AmazonCognitoIdentity.IdToken.decodePayload
+           ->Js.Json.decodeObject
+           ->Belt.Option.flatMap(o => o->Js.Dict.get("cognito:username"))
+           ->Belt.Option.flatMap(o => o->Js.Json.decodeString)
+           ->Belt.Option.forEach(username => {
+               AwsAmplify.Auth.(createCognitoUser(inst, username))
+               ->AmazonCognitoIdentity.CognitoUser.setSignInUserSession(
+                   cognitoUserSession,
+                 )
+             });
+
+         Js.Promise.resolve(
+           SignedInUser({
+             identityId: username,
+             s3IdentityId: identityId,
+             username,
+             attributes: {
+               email: attributes.email,
+               emailVerified: attributes.emailVerified == "true",
+               identities: attributes.identities,
+               sub: attributes.sub,
+             },
+             cognitoUserSession,
+           }),
+         );
+       })
+    |> Js.Promise.catch(err => {
+         let _ = Error.(report(PromiseError(err)));
+         Js.Promise.resolve(SignedOutPromptAuthentication);
+       });
   | {
       credentials: Some({awsCredentials: Some(awsCredentials)}),
       identityId: Some(identityId),
     } =>
-    GuestUser({credentials: awsCredentials, identityId})
+    AwsAmplify.Credentials.(
+      loadCredentials(
+        inst,
+        Js.Promise.resolve(
+          awsCredentials->Providers_Authentication_Credentials.toAmplifyCredentials,
+        ),
+        "guest",
+        false,
+        Js.Nullable.null,
+      )
+    )
+    |> Js.Promise.then_(_ => AwsAmplify.Credentials.(setGuest(inst)))
+    |> Js.Promise.then_(_ =>
+         Js.Promise.resolve(
+           GuestUser({credentials: awsCredentials, identityId}),
+         )
+       )
+    |> Js.Promise.catch(err => {
+         Js.log(err);
+         let _ = Error.(report(PromiseError(err)));
+         Js.Promise.resolve(SignedOutPromptAuthentication);
+       })
+
   | {state: "SIGNED_OUT_FEDERATED_TOKENS_INVALID"}
   | {state: "SIGNED_OUT_USER_POOLS_TOKENS_INVALID"}
   | {state: "SIGNED_OUT"}
-  | _ => SignedOutPromptAuthentication
+  | _ => Js.Promise.resolve(SignedOutPromptAuthentication)
   };
 };
 
@@ -115,6 +149,8 @@ let makeFromAmplify = () =>
                  AwsAmplify.Auth.CurrentUserInfo.(userInfo->attributes->sub),
              },
              identityId: userInfo->AwsAmplify.Auth.CurrentUserInfo.id,
+             // FIXME: not sure if this is correct, should be the cognito identity id, not the username
+             s3IdentityId: userInfo->AwsAmplify.Auth.CurrentUserInfo.id,
            }),
          )
        | _ =>
