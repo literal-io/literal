@@ -24,11 +24,11 @@
   ],
   "license": "MIT - Hippocratic 1.2",
   "peerDependencies": {
-    "aws-sdk": "^2.541.0",
+    "aws-sdk": "^2.814.0",
     "bs-platform": "^8.4.2"
   },
   "devDependencies": {
-    "aws-sdk": "^2.541.0",
+    "aws-sdk": "^2.814.0",
     "bs-platform": "^8.4.2"
   }
 }
